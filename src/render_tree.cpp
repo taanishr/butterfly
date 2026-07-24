@@ -24,8 +24,7 @@ namespace tree {
         AxisResolution resolution,
         bool isText
     ) {
-        if (resolution != AxisResolution::MinContent &&
-            resolution != AxisResolution::MaxContent) {
+        if (resolution != AxisResolution::MinContent && resolution != AxisResolution::MaxContent) {
             return;
         }
 
@@ -723,12 +722,14 @@ namespace tree {
         auto& prelayout = *node->preLayout;
 
         bool isText = getText(node).has_value();
+
         applyContentResolution(
             measured.explicitWidth,
             node->shared.width,
             constraints.widthResolution,
             isText
         );
+
         applyContentResolution(
             measured.explicitHeight,
             node->shared.height,
@@ -746,6 +747,7 @@ namespace tree {
             !constraints.shrinkWidthToFit &&
             constraints.widthResolution == AxisResolution::Final &&
             node->shared.width.unit == Unit::Percent;
+
         bool shouldResolvePercentHeight =
             !constraints.shrinkHeightToFit &&
             constraints.heightResolution == AxisResolution::Final &&
@@ -779,6 +781,7 @@ namespace tree {
         auto layout = node->element->layout(constraints, node->shared, measured, atomized);
 
         auto childConstraints = layout.childConstraints;
+        
         if (constraints.shrinkWidthToFit && node->shared.width.isAuto()) {
             childConstraints.shrinkWidthToFit = true;
         }
@@ -797,10 +800,10 @@ namespace tree {
         if (node->shared.overflow != Overflow::Visible) {
             childConstraints.textOverflow = node->shared.textOverflow;
         }
-        float parentAvailableWidth  = childConstraints.availableWidth;
+        float parentAvailableWidth = childConstraints.availableWidth;
         float parentAvailableHeight = childConstraints.availableHeight;
-        float originX         = childConstraints.origin.x;
-        float originY         = childConstraints.origin.y;
+        float originX = childConstraints.origin.x;
+        float originY = childConstraints.origin.y;
 
         auto position = node->getPosition();
         if (position != Position::Static) {
