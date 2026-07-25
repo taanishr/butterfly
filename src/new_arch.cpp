@@ -649,7 +649,7 @@ namespace layout {
 
         lr.atomOffsets = atomOffsets;
         lr.consumedHeight = totalHeight;
-        lr.prevInlineHeight = totalHeight;
+        lr.prevInlineHeight = lineHeight;
 
         lr.siblingCursor = newCursor;
 
