@@ -1311,6 +1311,7 @@ auto index() -> void {
 
     using S = gui::Size;
 
+/*
     // Existing dark music player test.
     // Dark music player — scrollable playlist (left) + nested scrollable lyrics (right)
     div(S::percent(1.0), S::percent(1.0), simd_float4{0.09,0.09,0.11,1.0})
@@ -1691,6 +1692,29 @@ auto index() -> void {
                     text("Reverie, reverie —").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
                     text("a promise too fragile to keep.").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0})
                 )
+            )
+        )
+    );
+*/
+
+    // Auto-sized parent with a percentage-width child.
+    //
+    // The child's first percentage basis is the parent's unresolved auto width.
+    // The 600px grandchild supplies the intrinsic width, the parent's max-width
+    // clamps that auto width to 400px, and the child must then resolve 50% to 200px.
+    // The yellow grandchild intentionally overflows the 200px pink child so both
+    // the resolved child width and the clamped parent width remain visible.
+    div(S::percent(1.0), S::percent(1.0), simd_float4{0.06,0.07,0.09,1.0})
+    (
+        div(S::autoSize(), S::autoSize(), simd_float4{0.08,0.72,0.86,1.0})
+            .position(gui::Position::Absolute)
+            .left(S::px(80))
+            .top(S::px(80))
+            .maxWidth(S::px(400))
+        (
+            div(S::percent(0.5), S::px(120), simd_float4{0.96,0.30,0.46,1.0})
+            (
+                div(S::px(600), S::px(80), simd_float4{0.98,0.76,0.20,1.0})()
             )
         )
     );

@@ -907,8 +907,18 @@ namespace tree {
         float contentWidth = maxX - minX + layout.resolvedPadding.left + layout.resolvedPadding.right;
         float contentHeight = maxY - minY + layout.resolvedPadding.top + layout.resolvedPadding.bottom;
 
-        float usedWidth = layout.resolvedSize.width.value_or(contentWidth);
-        float usedHeight = layout.resolvedSize.height.value_or(contentHeight);
+        if (!layout.resolvedSize.width) {
+            layout.computedBox.width = contentWidth;
+        }
+        if (!layout.resolvedSize.height) {
+            layout.computedBox.height = contentHeight;
+            if (!layout.outOfFlow) {
+                layout.consumedHeight = contentHeight;
+            }
+        }
+
+        float usedWidth = layout.computedBox.width;
+        float usedHeight = layout.computedBox.height;
 
         if (constraints.widthResolution == AxisResolution::Final) {
             if (node->shared.maxWidth.has_value()) {
