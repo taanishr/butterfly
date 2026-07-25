@@ -570,7 +570,7 @@ namespace layout {
 
             if (fragmentIdx == 0) {
 
-                float inlineMargin = isLtr ? margins.right : margins.left;
+                float inlineMargin = isLtr ? margins.left : margins.right;
 
                 if (constraints.edgeIntent.edgeDisplayMode == Display::Inline) {
                     if (constraints.edgeIntent.collapsable) {
