@@ -282,12 +282,12 @@ namespace tree {
         bool hasBreakOpportunity,
         bool lineHasContent,
         float prospectiveWidth,
-        float availableWidth
+        Size availableWidth
     ) {
         if (!hasBreakOpportunity || !lineHasContent) return false;
         if (widthResolution == layout::AxisResolution::MinContent) return true;
         if (widthResolution == layout::AxisResolution::MaxContent) return false;
-        return prospectiveWidth > availableWidth;
+        return !availableWidth.isAuto() && prospectiveWidth > availableWidth.value;
     }
 
     void appendTextLineFragments(
@@ -297,7 +297,7 @@ namespace tree {
         WhiteSpace whiteSpace,
         WordBreak wordBreak,
         ResolvedMargins margins,
-        float availableWidth,
+        Size availableWidth,
         layout::AxisResolution widthResolution,
         std::vector<LineFragment>& fragments,
         std::vector<LineBox>& lineBoxes,
@@ -530,9 +530,13 @@ namespace tree {
             }
 
             auto resolvedWidth = node->shared.width.resolve(
-                Size::px(constraints.availableWidth)
+                constraints.availableWidth
             );
-            contentWidth = resolvedWidth.value_or(constraints.availableWidth);
+            if (resolvedWidth) {
+                contentWidth = *resolvedWidth;
+            } else if (!constraints.availableWidth.isAuto()) {
+                contentWidth = constraints.availableWidth.value;
+            }
 
             LayoutInput li{
                 .position = position,
@@ -561,8 +565,12 @@ namespace tree {
 
         auto& measured = *node->measured;
         Constraints childConstraints{};
-        childConstraints.availableWidth = measured.explicitWidth.value_or(constraints.availableWidth);
-        childConstraints.availableHeight = measured.explicitHeight.value_or(constraints.availableHeight);
+        childConstraints.availableWidth = measured.explicitWidth
+            ? Size::px(*measured.explicitWidth)
+            : Size::autoSize();
+        childConstraints.availableHeight = measured.explicitHeight
+            ? Size::px(*measured.explicitHeight)
+            : Size::autoSize();
         childConstraints.frameInfo = constraints.frameInfo;
 
         for (auto& child : node->children) {
@@ -572,7 +580,7 @@ namespace tree {
 
     layout::InlineFormattingInput buildIsolatedInlineBoxes(
         TreeNode* node,
-        float maxWidth,
+        Size maxWidth,
         layout::AxisResolution widthResolution
     ) {
         auto context = std::make_shared<layout::InlineFormattingContext>();

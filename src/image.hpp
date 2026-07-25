@@ -406,7 +406,7 @@ namespace elements {
             float borderWidth = 0.0;
 
             if (shared.borderWidth.unit == Unit::Px) {
-                borderWidth = shared.borderWidth.resolveOr(Size::px(constraints.availableWidth));
+                borderWidth = shared.borderWidth.resolveOr(constraints.availableWidth);
             }
 
             simd_float2 cornerRadius {

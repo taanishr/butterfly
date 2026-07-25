@@ -69,10 +69,10 @@ namespace layout {
                 : simd_float2{cross, main};
         }
 
-        float& mainAvailable(Constraints& c) {
+        Size& mainAvailable(Constraints& c) {
             return isRow ? c.availableWidth : c.availableHeight;
         }
-        float& crossAvailable(Constraints& c) {
+        Size& crossAvailable(Constraints& c) {
             return isRow ? c.availableHeight : c.availableWidth;
         }
         AxisResolution& mainResolution(Constraints& c) {
@@ -308,7 +308,7 @@ namespace layout {
 
         void addChild(float flexBaseSize, float crossSize, float grow, float shrink,
                       AlignSelf selfAlign, Size crossSizeRequest,
-                      float avMain, float gap, float minMainSize = 0.0f,
+                      Size avMain, float gap, float minMainSize = 0.0f,
                       std::optional<float> maxMainSize = std::nullopt) {
             float hypotheticalMainSize = flexBaseSize;
             if (maxMainSize.has_value()) {
@@ -316,8 +316,8 @@ namespace layout {
             }
             hypotheticalMainSize = std::max(hypotheticalMainSize, minMainSize);
 
-            if (flexWrap != FlexWrap::NoWrap && currentLine.count() > 0) {
-                if (currentLine.totalHypotheticalWithGap(gap) + gap + hypotheticalMainSize > avMain) {
+            if (flexWrap != FlexWrap::NoWrap && currentLine.count() > 0 && !avMain.isAuto()) {
+                if (currentLine.totalHypotheticalWithGap(gap) + gap + hypotheticalMainSize > avMain.value) {
                     lines.push_back(std::move(currentLine));
                     currentLine = FlexLine{};
                 }
@@ -486,9 +486,9 @@ namespace layout {
         const FrameInfo& frameInfo;
         Measured measured;
         bool mutate;
-        float childAvailableWidth;
-        float parentAvailableWidth;
-        float parentAvailableHeight;
+        Size childAvailableWidth;
+        Size parentAvailableWidth;
+        Size parentAvailableHeight;
 
         float minX;
         float minY;
@@ -509,7 +509,7 @@ namespace layout {
         FlexResolver(RenderTree& tree, TreeNode* node, const Constraints& parentConstraints,
                         const Constraints& childConstraints, FlexLayout flex, const FrameInfo& frameInfo,
                         Measured measured, bool mutate,
-                        float parentAvailableWidth, float parentAvailableHeight,
+                        Size parentAvailableWidth, Size parentAvailableHeight,
                         float minX, float minY, float maxX, float maxY)
             : tree{tree}, node{node}, parentConstraints{parentConstraints},
                 childConstraints{childConstraints}, flex{std::move(flex)},
@@ -533,13 +533,13 @@ namespace layout {
             }
         }
 
-        float parentAvailableMain() {
+        Size parentAvailableMain() {
             return flex.axis.isRow
                 ? parentAvailableWidth
                 : parentAvailableHeight;
         }
 
-        float parentAvailableCross() {
+        Size parentAvailableCross() {
             return flex.axis.isRow
                 ? parentAvailableHeight
                 : parentAvailableWidth;
@@ -567,7 +567,7 @@ namespace layout {
             auto resolvedWidth = child->shared.width.resolve(
                 basisIsIndefinite
                     ? Size::autoSize()
-                    : Size::px(parentAvailableWidth)
+                    : parentAvailableWidth
             );
 
             return !resolvedWidth &&
@@ -589,7 +589,7 @@ namespace layout {
             auto resolvedHeight = child->shared.height.resolve(
                 basisIsIndefinite
                     ? Size::autoSize()
-                    : Size::px(parentAvailableHeight)
+                    : parentAvailableHeight
             );
 
             return !resolvedHeight &&
@@ -617,7 +617,7 @@ namespace layout {
             }
             auto basis = basisIsIndefinite
                 ? Size::autoSize()
-                : Size::px(parentAvailableMain());
+                : parentAvailableMain();
             return request.resolve(basis);
         }
 
@@ -631,7 +631,7 @@ namespace layout {
             TreeNode* child
         ) {
             const auto& request = flex.axis.crossSize(child->shared);
-            float availableCross = flex.axis.isRow
+            Size availableCross = flex.axis.isRow
                 ? parentAvailableHeight
                 : parentAvailableWidth;
             auto& crossSize = flex.axis.crossExplicit(measured);
@@ -651,7 +651,7 @@ namespace layout {
             }
             auto basis = basisIsIndefinite
                 ? Size::autoSize()
-                : Size::px(availableCross);
+                : availableCross;
             return request.resolve(basis);
         }
 

@@ -202,7 +202,7 @@ namespace layout {
 
         float availableMain;
         if (mainSize) {
-            availableMain = parentAvailableMain();
+            availableMain = parentAvailableMain().isAuto() ? contentMainSize : parentAvailableMain().value;
         } else {
             switch (mainSize.error()) {
                 case SizeResolveFailure::Auto:
@@ -211,7 +211,7 @@ namespace layout {
                         flex.axis.mainResolution(parentConstraints) ==
                             AxisResolution::Final &&
                         !parentConstraints.shrinkWidthToFit
-                            ? parentAvailableMain()
+                            ? (parentAvailableMain().isAuto() ? contentMainSize : parentAvailableMain().value)
                             : contentMainSize;
                     break;
                 case SizeResolveFailure::IndefiniteBasis:
@@ -237,7 +237,7 @@ namespace layout {
         auto& crossSize = flex.axis.crossExplicit(measured);
 
         if (crossSize) {
-            return parentAvailableCross();
+            return parentAvailableCross().isAuto() ? contentCrossSize : parentAvailableCross().value;
         }
 
         switch (crossSize.error()) {
@@ -246,7 +246,7 @@ namespace layout {
                     flex.axis.crossResolution(parentConstraints) ==
                         AxisResolution::Final &&
                     !parentConstraints.shrinkWidthToFit) {
-                    return parentAvailableCross();
+                    return parentAvailableCross().isAuto() ? contentCrossSize : parentAvailableCross().value;
                 }
                 return contentCrossSize;
             case SizeResolveFailure::IndefiniteBasis:
@@ -259,7 +259,7 @@ namespace layout {
 
     void FlexResolver::phaseB() {
         float resolvedGap = node->getFlexGap()
-            .resolve(Size::px(parentAvailableMain()))
+            .resolve(parentAvailableMain())
             .value_or(0.0f);
 
         for (uint64_t i = 0; i < node->children.size(); ++i) {
@@ -353,7 +353,7 @@ namespace layout {
 
     FlexResolver::Bounds FlexResolver::phaseC() {
         float resolvedGap = node->getFlexGap()
-            .resolve(Size::px(parentAvailableMain()))
+            .resolve(parentAvailableMain())
             .value_or(0.0f);
 
         // size fallback if content based
@@ -397,7 +397,7 @@ namespace layout {
 
             preparedChildConstraints.origin = childPosition;
             preparedChildConstraints.cursor = childPosition;
-            flex.axis.mainAvailable(preparedChildConstraints) = p.mainSize;
+            flex.axis.mainAvailable(preparedChildConstraints) = Size::px(p.mainSize);
             flex.axis.mainResolution(preparedChildConstraints) = AxisResolution::Deferred;
             flex.axis.mainExplicit(childMeasured) = p.mainSize;
 
@@ -412,7 +412,7 @@ namespace layout {
             }
 
             flex.axis.crossAvailable(preparedChildConstraints) =
-                finalCrossSize;
+                Size::px(finalCrossSize);
             flex.axis.crossResolution(preparedChildConstraints) =
                 AxisResolution::Deferred;
             flex.axis.crossExplicit(childMeasured) = finalCrossSize;

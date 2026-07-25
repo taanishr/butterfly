@@ -477,8 +477,8 @@ namespace layout {
     struct Constraints {
         simd_float2 origin{};
         simd_float2 cursor{};
-        float availableWidth{};
-        float availableHeight{};
+        Size availableWidth{Size::autoSize()};
+        Size availableHeight{Size::autoSize()};
 
         InheritedProperties inheritedProperties{};
 
@@ -565,8 +565,8 @@ namespace layout {
         const std::optional<Size>&  left;
         const Size& requestedWidth;
         const Size& requestedHeight;
-        float availableWidth;
-        float availableHeight;
+        Size availableWidth;
+        Size availableHeight;
     };
 
     struct PositionResolutionContext {
@@ -658,7 +658,7 @@ namespace layout {
         static ResolvedMargins resolveAutoMargins(
             const LayoutInput& li,
             const ReplacedAttributes& replacedAttributes,
-            float availableWidth,
+            Size availableWidth,
             float contentWidth
         );
 

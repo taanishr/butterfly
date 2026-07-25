@@ -427,7 +427,7 @@ namespace tree {
     // inline context calculated for a single child, independently of other siblings
     layout::InlineFormattingInput buildIsolatedInlineBoxes(
         TreeNode* node,
-        float maxWidth,
+        Size maxWidth,
         layout::AxisResolution widthResolution
     );
 
