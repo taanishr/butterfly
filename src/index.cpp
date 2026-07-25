@@ -1310,7 +1310,7 @@ auto index() -> void {
 
 
     using S = gui::Size;
-
+    
     // Existing dark music player test.
     // Dark music player — scrollable playlist (left) + nested scrollable lyrics (right)
     div(S::percent(1.0), S::percent(1.0), simd_float4{0.09,0.09,0.11,1.0})

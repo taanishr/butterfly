@@ -968,6 +968,7 @@ namespace tree {
             );
 
             layout = node->element->layout(constraints, node->shared, retryMeasured, atomized);
+            
             childConstraints = layout.childConstraints;
             if (constraints.shrinkWidthToFit && node->shared.width.isAuto()) {
                 childConstraints.shrinkWidthToFit = true;
@@ -1040,6 +1041,10 @@ namespace tree {
             if (!layout.outOfFlow) {
                 layout.consumedHeight = layout.computedBox.height;
             }
+        }
+
+        if (!layout.outOfFlow && display == Display::Block) {
+            layout.siblingCursor.y = layout.computedBox.y + layout.consumedHeight;
         }
 
         // finalize layout of node
