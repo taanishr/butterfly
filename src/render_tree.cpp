@@ -943,11 +943,15 @@ namespace tree {
             usedHeight = std::max(usedHeight, node->shared.minHeight.resolveOr(constraints.availableHeight, usedHeight));
         }
 
-        bool retryWidth = usedWidth != layout.computedBox.width || !layout.resolvedSize.width;
-            
-        bool retryHeight = usedHeight != layout.computedBox.height;
+        // why do we retry only if width resolution or height resolution is final?
+        // consider flex using min content or max content or deferred
+        // it wants to know the potential computed box; there might be unresolved constraints
+        // as a result usedWidth != layout.computedBox.width || !layout.resolvedSize.width
+        // or usedHeight != layout.computedBox.height will drift as the computed box doesnt match the resolved size
+        // but we only care about the computed box in these passes 
+        bool retryWidth = (usedWidth != layout.computedBox.width || !layout.resolvedSize.width) && constraints.widthResolution == AxisResolution::Final;
+        bool retryHeight = usedHeight != layout.computedBox.height && constraints.heightResolution == AxisResolution::Final;
 
-        // std::println("retry width: {}", retryWidth);
 
         if (retryWidth || retryHeight) {
 
