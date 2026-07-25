@@ -627,6 +627,7 @@ namespace layout {
         std::vector<simd_float2> drawableAtomOffsets;
         InlineFormattingInput inlineFormatting;
 
+        ResolvedSize resolvedSize;
         LayoutBox computedBox;
         LayoutBox localComputedBox;
 

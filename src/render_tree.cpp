@@ -904,43 +904,34 @@ namespace tree {
             normalPass();
         }
 
-        // percent/auto does not contribute to parent intrinsic size. But we don't use intrinsic sizes to compute this. huh
-        
-        // resize width/height of underspecified elements
-        if (!measured.explicitWidth.has_value()) {
-            if (position != Position::Static || constraints.shrinkWidthToFit) {
-                layout.computedBox.width = maxX - minX + layout.resolvedPadding.left + layout.resolvedPadding.right;
-            }
-        }
+        float contentWidth = maxX - minX + layout.resolvedPadding.left + layout.resolvedPadding.right;
+        float contentHeight = maxY - minY + layout.resolvedPadding.top + layout.resolvedPadding.bottom;
 
-        float usedWidth = layout.computedBox.width;
-        if (constraints.widthResolution == AxisResolution::Final && node->shared.maxWidth.has_value()) {
-            usedWidth = std::min(usedWidth, node->shared.maxWidth->resolveOr(Size::px(constraints.availableWidth), usedWidth));
-        }
+        float usedWidth = layout.resolvedSize.width.value_or(contentWidth);
+        float usedHeight = layout.resolvedSize.height.value_or(contentHeight);
+
         if (constraints.widthResolution == AxisResolution::Final) {
+            if (node->shared.maxWidth.has_value()) {
+                usedWidth = std::min(usedWidth, node->shared.maxWidth->resolveOr(Size::px(constraints.availableWidth), usedWidth));
+            }
             usedWidth = std::max(usedWidth, node->shared.minWidth.resolveOr(Size::px(constraints.availableWidth), usedWidth));
         }
 
-        if (!measured.explicitHeight.has_value()) {
-            layout.computedBox.height = maxY - minY + layout.resolvedPadding.top + layout.resolvedPadding.bottom;
-            layout.consumedHeight = layout.computedBox.height;
-        }
-
-        float usedHeight = layout.computedBox.height;
-        if (constraints.heightResolution == AxisResolution::Final && node->shared.maxHeight.has_value()) {
-            usedHeight = std::min(usedHeight, node->shared.maxHeight->resolveOr(Size::px(constraints.availableHeight), usedHeight));
-        }
         if (constraints.heightResolution == AxisResolution::Final) {
+            if (node->shared.maxHeight.has_value()) {
+                usedHeight = std::min(usedHeight, node->shared.maxHeight->resolveOr(Size::px(constraints.availableHeight), usedHeight));
+            }
             usedHeight = std::max(usedHeight, node->shared.minHeight.resolveOr(Size::px(constraints.availableHeight), usedHeight));
         }
 
-        bool widthChanged = usedWidth != layout.computedBox.width;
-        bool heightChanged = usedHeight != layout.computedBox.height;
+        if (usedWidth != layout.computedBox.width ||
+            usedHeight != layout.computedBox.height) {
+            bool retryWidth = usedWidth != layout.computedBox.width;
+            bool retryHeight = usedHeight != layout.computedBox.height;
 
-        if (widthChanged || heightChanged) {
             Measured retryMeasured = measured;
-            if (widthChanged) retryMeasured.explicitWidth = usedWidth;
-            if (heightChanged) retryMeasured.explicitHeight = usedHeight;
+            if (retryWidth) retryMeasured.explicitWidth = usedWidth;
+            if (retryHeight) retryMeasured.explicitHeight = usedHeight;
 
             auto retryInput = layout::toLayoutInput(node->shared, retryMeasured);
             constraints.resolvedMargins = layout::LayoutEngine::resolveAutoMargins(
@@ -998,16 +989,15 @@ namespace tree {
                 normalPass();
             }
 
-            if (widthChanged) {
+            if (retryWidth) {
                 layout.computedBox.width = usedWidth;
-            } else if (!measured.explicitWidth.has_value() || constraints.shrinkWidthToFit) {
+            } else if (!layout.resolvedSize.width) {
                 layout.computedBox.width = maxX - minX + layout.resolvedPadding.left + layout.resolvedPadding.right;
             }
 
-            if (heightChanged) {
+            if (retryHeight) {
                 layout.computedBox.height = usedHeight;
-            } else if (!measured.explicitHeight.has_value() || constraints.shrinkHeightToFit) {
-                // std::cout << "maxY: " << maxY << " minY: " << minY << '\n';
+            } else if (!layout.resolvedSize.height) {
                 layout.computedBox.height = maxY - minY + layout.resolvedPadding.top + layout.resolvedPadding.bottom;
                 if (node->shared.maxHeight.has_value()) {
                     layout.computedBox.height = std::min(layout.computedBox.height, node->shared.maxHeight->resolveOr(Size::px(constraints.availableHeight), layout.computedBox.height));

@@ -337,8 +337,11 @@ namespace layout {
 
         simd_float2 position = resolvePosition(pctx);
 
-        float resolvedWidth = layoutInput.width.value_or(0.0f);
-        float resolvedHeight = layoutInput.height.value_or(0.0f);
+        lr.resolvedSize.width = layoutInput.width;
+        lr.resolvedSize.height = layoutInput.height;
+
+        float resolvedWidth = lr.resolvedSize.width.value_or(0.0f);
+        float resolvedHeight = lr.resolvedSize.height.value_or(0.0f);
 
         lr.computedBox = {
             .x = position.x,
@@ -439,8 +442,18 @@ namespace layout {
         childConstraints.origin = childConstraints.cursor;
         childConstraints.frameInfo = constraints.frameInfo;
 
-        float resolvedWidth = layoutInput.width.value_or(constraints.availableWidth);
-        float resolvedHeight = layoutInput.height.value_or(0.0f);
+        lr.resolvedSize.width = layoutInput.width;
+        lr.resolvedSize.height = layoutInput.height;
+
+        if (!lr.resolvedSize.width &&
+            lr.resolvedSize.width.error() == style::SizeResolveFailure::Auto &&
+            constraints.widthResolution == AxisResolution::Final &&
+            !constraints.shrinkWidthToFit) {
+            lr.resolvedSize.width = constraints.availableWidth;
+        }
+
+        float resolvedWidth = lr.resolvedSize.width.value_or(constraints.availableWidth);
+        float resolvedHeight = lr.resolvedSize.height.value_or(0.0f);
 
         lr.computedBox = {
             startingPos.x,
@@ -606,6 +619,9 @@ namespace layout {
         totalHeight += lineHeight;
         totalWidth = std::max(currentTotalWidth, totalWidth);
 
+        lr.resolvedSize.width = totalWidth;
+        lr.resolvedSize.height = totalHeight;
+
         lr.computedBox = {
             minX,
             minY,
@@ -730,6 +746,9 @@ namespace layout {
         totalHeight += lineHeight;
         totalWidth = std::max(currentTotalWidth, totalWidth);
 
+        lr.resolvedSize.width = totalWidth;
+        lr.resolvedSize.height = totalHeight;
+
         lr.computedBox = {
             minX,
             minY,
@@ -789,14 +808,6 @@ namespace layout {
 
         return lr;
     }
-
-    // LayoutResult layoutFlex(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized) {
-    //     // flex algorithm:
-    //         // all in preprocessing: gather sizes (flex-basis) of all elements
-    //         // if shrink is set: shrink elements; if grow is set: grow elements
-    //         // place sequentially; leave remaining space
-
-    // }
 
 
     LayoutResult LayoutEngine::resolveNormalFlow(Constraints& constraints, simd_float2 current_cursor, LayoutInput& layoutInput, Atomized& atomized) {
