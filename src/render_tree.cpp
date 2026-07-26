@@ -192,8 +192,10 @@ namespace tree {
         hash_combine(hash, constraints.frameInfo.scale);
         hash_combine(hash, constraints.absoluteContainingBlock.origin.x);
         hash_combine(hash, constraints.absoluteContainingBlock.origin.y);
-        hash_combine(hash, constraints.absoluteContainingBlock.width);
-        hash_combine(hash, constraints.absoluteContainingBlock.height);
+        hash_combine(hash, constraints.absoluteContainingBlock.width.value);
+        hash_combine(hash, static_cast<int>(constraints.absoluteContainingBlock.width.unit));
+        hash_combine(hash, constraints.absoluteContainingBlock.height.value);
+        hash_combine(hash, static_cast<int>(constraints.absoluteContainingBlock.height.unit));
         hash_combine(hash, static_cast<int>(constraints.edgeIntent.edgeDisplayMode));
         hash_combine(hash, constraints.edgeIntent.intent);
         hash_combine(hash, constraints.edgeIntent.collapsable);
@@ -399,8 +401,8 @@ namespace tree {
             .frameInfo = frameInfo,
             .absoluteContainingBlock = {
                 .origin = {0, 0},
-                .width = frameInfo.width,
-                .height = frameInfo.height
+                .width = Size::px(frameInfo.width),
+                .height = Size::px(frameInfo.height)
             },
             .clipUniforms = {
                 ClipUniform {
@@ -817,8 +819,8 @@ namespace tree {
         if (position != Position::Static) {
             childConstraints.absoluteContainingBlock = {
                 .origin = {0.0f, 0.0f},
-                .width = layout.computedBox.width,
-                .height = layout.computedBox.height
+                .width = layout.resolvedSize.width ? Size::px(layout.computedBox.width) : Size::autoSize(),
+                .height = layout.resolvedSize.height ? Size::px(layout.computedBox.height) : Size::autoSize()
             };
         } else {
             childConstraints.absoluteContainingBlock = constraints.absoluteContainingBlock;
@@ -994,8 +996,8 @@ namespace tree {
             if (position != Position::Static) {
                 childConstraints.absoluteContainingBlock = {
                     .origin = {0.0f, 0.0f},
-                    .width = layout.computedBox.width,
-                    .height = layout.computedBox.height
+                    .width = layout.resolvedSize.width ? Size::px(layout.computedBox.width) : Size::autoSize(),
+                    .height = layout.resolvedSize.height ? Size::px(layout.computedBox.height) : Size::autoSize()
                 };
             } else {
                 childConstraints.absoluteContainingBlock = constraints.absoluteContainingBlock;
@@ -1080,21 +1082,25 @@ namespace tree {
         auto position = node->getPosition();
 
         auto& dp = layout.deferredPosition;
-        if (dp.needsRightResolution) {
-            float newX = dp.containingBlockWidth - dp.marginRight - layout.computedBox.width - dp.resolvedRight;
-            float deltaX = newX - layout.computedBox.x;
-            layout.computedBox.x = newX;
-            for (auto& offset : layout.atomOffsets) {
-                offset.x += deltaX;
+        if (dp.right) {
+            auto containingBlockWidth = dp.containingBlockWidth.resolve(Size::autoSize());
+            auto right = dp.right->resolve(dp.containingBlockWidth);
+            if (containingBlockWidth && right) {
+                float newX = *containingBlockWidth - dp.marginRight - layout.computedBox.width - *right;
+                float deltaX = newX - layout.computedBox.x;
+                layout.computedBox.x = newX;
+                for (auto& offset : layout.atomOffsets) offset.x += deltaX;
             }
         }
 
-        if (dp.needsBottomResolution) {
-            float newY = dp.containingBlockHeight - dp.marginBottom - layout.computedBox.height - dp.resolvedBottom;
-            float deltaY = newY - layout.computedBox.y;
-            layout.computedBox.y = newY;
-            for (auto& offset : layout.atomOffsets) {
-                offset.y += deltaY;
+        if (dp.bottom) {
+            auto containingBlockHeight = dp.containingBlockHeight.resolve(Size::autoSize());
+            auto bottom = dp.bottom->resolve(dp.containingBlockHeight);
+            if (containingBlockHeight && bottom) {
+                float newY = *containingBlockHeight - dp.marginBottom - layout.computedBox.height - *bottom;
+                float deltaY = newY - layout.computedBox.y;
+                layout.computedBox.y = newY;
+                for (auto& offset : layout.atomOffsets) offset.y += deltaY;
             }
         }
 

@@ -49,17 +49,15 @@ namespace layout {
             }
             case layout::Position::Absolute: {
                 auto& cb = ctx.constraints.absoluteContainingBlock;
-                float refWidth = cb.width;
-                float refHeight = cb.height;
 
                 std::optional<float> left;
                 if (ctx.layoutInput.left.has_value()) {
-                    auto resolvedLeft = ctx.layoutInput.left->resolve(Size::px(refWidth));
+                    auto resolvedLeft = ctx.layoutInput.left->resolve(cb.width);
                     if (resolvedLeft) left = *resolvedLeft;
                 }
                 std::optional<float> top;
                 if (ctx.layoutInput.top.has_value()) {
-                    auto resolvedTop = ctx.layoutInput.top->resolve(Size::px(refHeight));
+                    auto resolvedTop = ctx.layoutInput.top->resolve(cb.height);
                     if (resolvedTop) top = *resolvedTop;
                 }
 
@@ -325,8 +323,8 @@ namespace layout {
             layoutInput.position == Position::Fixed
                 ? ContainingBlock {
                     .origin = {0.0f, 0.0f},
-                    .width = constraints.frameInfo.width,
-                    .height = constraints.frameInfo.height
+                    .width = Size::px(constraints.frameInfo.width),
+                    .height = Size::px(constraints.frameInfo.height)
                 }
                 : constraints.absoluteContainingBlock;
 
@@ -378,27 +376,14 @@ namespace layout {
 
         // Defer right/bottom positioning to postLayout where final sizes are known
         bool isRtl = constraints.inheritedProperties.direction == Direction::rtl;
-        std::optional<float> right;
-        if (layoutInput.right.has_value()) {
-            auto resolvedRight = layoutInput.right->resolve(Size::px(containingBlock.width));
-            if (resolvedRight) right = *resolvedRight;
-        }
-        std::optional<float> bottom;
-        if (layoutInput.bottom.has_value()) {
-            auto resolvedBottom = layoutInput.bottom->resolve(Size::px(containingBlock.height));
-            if (resolvedBottom) bottom = *resolvedBottom;
-        }
 
         lr.deferredPosition = {
-            .needsRightResolution = right.has_value() && (!layoutInput.left.has_value() || isRtl),
-            .needsBottomResolution = bottom.has_value() && !layoutInput.top.has_value(),
             .containingBlockWidth = containingBlock.width,
             .containingBlockHeight = containingBlock.height,
-            .resolvedRight = right.value_or(0.0f),
-            .resolvedBottom = bottom.value_or(0.0f),
+            .right = (!layoutInput.left.has_value() || isRtl) ? layoutInput.right : std::nullopt,
+            .bottom = !layoutInput.top.has_value() ? layoutInput.bottom : std::nullopt,
             .marginRight = margins.right,
-            .marginBottom = margins.bottom,
-            .direction = constraints.inheritedProperties.direction
+            .marginBottom = margins.bottom
         };
 
         return lr;
@@ -785,33 +770,20 @@ namespace layout {
             layoutInput.position == Position::Fixed
                 ? ContainingBlock {
                     .origin = {0.0f, 0.0f},
-                    .width = constraints.frameInfo.width,
-                    .height = constraints.frameInfo.height
+                    .width = Size::px(constraints.frameInfo.width),
+                    .height = Size::px(constraints.frameInfo.height)
                 }
                 : constraints.absoluteContainingBlock;
 
         bool isRtl = constraints.inheritedProperties.direction == Direction::rtl;
-        std::optional<float> right;
-        if (layoutInput.right.has_value()) {
-            auto resolvedRight = layoutInput.right->resolve(Size::px(containingBlock.width));
-            if (resolvedRight) right = *resolvedRight;
-        }
-        std::optional<float> bottom;
-        if (layoutInput.bottom.has_value()) {
-            auto resolvedBottom = layoutInput.bottom->resolve(Size::px(containingBlock.height));
-            if (resolvedBottom) bottom = *resolvedBottom;
-        }
 
         lr.deferredPosition = {
-            .needsRightResolution = right.has_value() && (!layoutInput.left.has_value() || isRtl),
-            .needsBottomResolution = bottom.has_value() && !layoutInput.top.has_value(),
             .containingBlockWidth = containingBlock.width,
             .containingBlockHeight = containingBlock.height,
-            .resolvedRight = right.value_or(0.0f),
-            .resolvedBottom = bottom.value_or(0.0f),
+            .right = (!layoutInput.left.has_value() || isRtl) ? layoutInput.right : std::nullopt,
+            .bottom = !layoutInput.top.has_value() ? layoutInput.bottom : std::nullopt,
             .marginRight = margins.right,
-            .marginBottom = margins.bottom,
-            .direction = constraints.inheritedProperties.direction
+            .marginBottom = margins.bottom
         };
 
         return lr;

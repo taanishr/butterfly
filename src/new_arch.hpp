@@ -463,8 +463,8 @@ namespace layout {
 
     struct ContainingBlock {
         simd_float2 origin{};
-        float width{};
-        float height{};
+        Size width{Size::autoSize()};
+        Size height{Size::autoSize()};
     };
 
     enum class AxisResolution {
@@ -605,15 +605,12 @@ namespace layout {
     // Info needed to resolve right/bottom positioning in postLayout
     // (deferred because element size may not be known during layout)
     struct DeferredPositionInfo {
-        bool needsRightResolution{};
-        bool needsBottomResolution{};
-        float containingBlockWidth{};
-        float containingBlockHeight{};
-        float resolvedRight{};   // already resolved from Size to float
-        float resolvedBottom{};
+        Size containingBlockWidth{Size::autoSize()};
+        Size containingBlockHeight{Size::autoSize()};
+        std::optional<Size> right;
+        std::optional<Size> bottom;
         float marginRight{};
         float marginBottom{};
-        Direction direction{Direction::ltr};
     };
 
     struct LayoutBox {
