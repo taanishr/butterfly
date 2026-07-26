@@ -22,13 +22,13 @@ namespace tree {
         std::expected<float, SizeResolveFailure>& explicitSize,
         const style::Size& requestedSize,
         AxisResolution resolution,
-        bool isText
+        bool isInline
     ) {
         if (resolution != AxisResolution::MinContent && resolution != AxisResolution::MaxContent) {
             return;
         }
 
-        if (isText) {
+        if (isInline) {
             explicitSize = 0.0f;
         } else if (requestedSize.unit == Unit::Auto) {
             explicitSize = std::unexpected(SizeResolveFailure::Auto);
@@ -727,20 +727,20 @@ namespace tree {
         auto& atomized = *node->atomized;
         auto& prelayout = *node->preLayout;
 
-        bool isText = getText(node).has_value();
+        bool isInline = node->element->isInline();
 
         applyContentResolution(
             measured.explicitWidth,
             node->shared.width,
             constraints.widthResolution,
-            isText
+            isInline
         );
 
         applyContentResolution(
             measured.explicitHeight,
             node->shared.height,
             constraints.heightResolution,
-            isText
+            isInline
         );
 
         constraints.resolvedMargins = prelayout.resolvedMargins;

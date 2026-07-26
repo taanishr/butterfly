@@ -90,6 +90,9 @@ namespace elements {
         virtual std::any request(RequestTarget target, std::any& payload) = 0;
         virtual void encode(MTL::RenderCommandEncoder* encoder, std::any& finalized) = 0;
         virtual std::string_view elementTypeName() const = 0;
+        virtual bool isInline() const {
+            return false;
+        }
         virtual bool preciseHitTest(simd_float2 point, const LayoutResult& layout, const std::any& finalized) {
             return true;
         }
@@ -147,6 +150,13 @@ namespace elements {
             }
 
             return "Unknown";
+        }
+
+        bool isInline() const override {
+            if constexpr (requires(const E& value) { value.isInline(); }) {
+                return element.isInline();
+            }
+            return false;
         }
 
         bool preciseHitTest(simd_float2 point, const LayoutResult& layout, const std::any& finalized) override {

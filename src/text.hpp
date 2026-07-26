@@ -140,6 +140,10 @@ namespace elements {
             return fragment;
         }
 
+        bool isInline() const {
+            return true;
+        }
+
         std::any request(RequestTarget target, std::any& payload) {
             switch (target) {
                 case RequestTarget::Descriptor: 
