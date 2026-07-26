@@ -1028,16 +1028,12 @@ namespace tree {
                 layout.computedBox.height = usedHeight;
             } else if (!layout.resolvedSize.height) {
                 layout.computedBox.height = maxY - minY + layout.resolvedPadding.top + layout.resolvedPadding.bottom;
-                if (node->shared.maxHeight.has_value()) {
-                    layout.computedBox.height = std::min(layout.computedBox.height, node->shared.maxHeight->resolveOr(constraints.availableHeight, layout.computedBox.height));
+                if (constraints.heightResolution == AxisResolution::Final) {
+                    if (node->shared.maxHeight.has_value()) {
+                        layout.computedBox.height = std::min(layout.computedBox.height, node->shared.maxHeight->resolveOr(constraints.availableHeight, layout.computedBox.height));
+                    }
+                    layout.computedBox.height = std::max(layout.computedBox.height, node->shared.minHeight.resolveOr(constraints.availableHeight, layout.computedBox.height));
                 }
-                layout.computedBox.height = std::max(
-                    layout.computedBox.height,
-                    node->shared.minHeight.resolveOr(
-                        constraints.availableHeight,
-                        layout.computedBox.height
-                    )
-                );
             }
 
             if (!layout.outOfFlow) {
