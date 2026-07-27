@@ -1040,7 +1040,7 @@ namespace tree {
         }
 
         if (constraints.heightResolution == AxisResolution::Final) {
-            if (supportsIntrinsicSizes && intrinsicHeightBounds) {
+            if (intrinsicHeightBounds) {
                 Measured intrinsicMeasured = measured;
                 intrinsicMeasured.explicitWidth = usedWidth;
                 heightIntrinsicSizes = measureIntrinsicSizes(node, frameInfo, constraints, intrinsicMeasured, Axis::Height);
