@@ -225,12 +225,15 @@ namespace layout {
     }
 
     void FlexResolver::phaseB() {
-        float resolvedGap = node->getFlexGap()
+        resolvedGap = node->getFlexGap()
             .resolve(parentAvailableMain())
             .value_or(0.0f);
 
         for (uint64_t i = 0; i < node->children.size(); ++i) {
             auto childAsPtr = node->children[i].get();
+            auto position = childAsPtr->getPosition();
+            if (position == Position::Absolute || position == Position::Fixed) continue;
+
             auto selfAlign = childAsPtr->getAlignSelf();
             auto mainSize = resolveMainSize(childAsPtr);
             auto resolvedCrossSize = resolveCrossSize(childAsPtr);
@@ -257,19 +260,6 @@ namespace layout {
                 flex.axis.crossResolution(preparedChildConstraints) = AxisResolution::Deferred;
             }
 
-            const auto& childOutput = tree.speculateLayout(
-                frameInfo,
-                childAsPtr,
-                preparedChildConstraints,
-                childMeasured
-            );
-
-            auto& childLayout = childOutput.layout;
-
-            if (childLayout.outOfFlow) continue;
-
-            float crossSize = flex.axis.crossSize(childLayout);
-
             float flexBaseSize = determineFlexBaseSize(
                 childAsPtr,
                 mainSize,
@@ -290,7 +280,6 @@ namespace layout {
                 i,
                 childAsPtr,
                 flexBaseSize,
-                crossSize,
                 minMainSize,
                 maxMainSize,
                 effectiveAlign,
@@ -303,14 +292,7 @@ namespace layout {
             flex.lines.push_back(std::move(flex.currentLine));
             flex.currentLine = FlexLine{};
         }
-    }
 
-    FlexResolver::Bounds FlexResolver::phaseC() {
-        float resolvedGap = node->getFlexGap()
-            .resolve(parentAvailableMain())
-            .value_or(0.0f);
-
-        // size fallback if content based
         float totalSizeFallback = 0;
         bool resolvingMinContent = flex.axis.mainResolution(parentConstraints) == AxisResolution::MinContent;
 
@@ -320,8 +302,50 @@ namespace layout {
                 : line.totalWithGap(resolvedGap);
         }
 
-        float availableMain = determineAvailableMain(totalSizeFallback);
-        auto resolved = flex.resolveSizes(availableMain, resolvedGap);
+        availableMain = determineAvailableMain(totalSizeFallback);
+        resolvedMainSizes = flex.resolveSizes(availableMain, resolvedGap);
+    }
+
+    FlexResolver::Bounds FlexResolver::phaseC() {
+        for (auto& line : flex.lines) {
+            line.maxCrossSize = 0.0f;
+
+            for (auto& item : line.items) {
+                auto childNode = node->children[item.childIndex].get();
+                auto resolvedCrossSize = resolveCrossSize(childNode);
+                auto preparedChildConstraints = prepareChildConstraints(childNode);
+                Measured childMeasured = *childNode->measured;
+
+                auto crossResolution = flex.axis.crossResolution(preparedChildConstraints);
+                bool resolvingIntrinsicCross = crossResolution == AxisResolution::MinContent || crossResolution == AxisResolution::MaxContent;
+                bool crossSizeCanDeferToStretch = !resolvedCrossSize &&
+                    (resolvedCrossSize.error() == SizeResolveFailure::Auto ||
+                     resolvedCrossSize.error() == SizeResolveFailure::IndefiniteBasis);
+
+                if (!resolvingIntrinsicCross && item.alignment == AlignItems::Stretch && crossSizeCanDeferToStretch) {
+                    flex.axis.crossResolution(preparedChildConstraints) = AxisResolution::Deferred;
+                }
+
+                flex.axis.mainAvailable(preparedChildConstraints) = Size::px(item.usedMainSize);
+                flex.axis.mainResolution(preparedChildConstraints) = AxisResolution::Deferred;
+                flex.axis.mainExplicit(childMeasured) = item.usedMainSize;
+                preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(
+                    childNode,
+                    preparedChildConstraints.availableWidth,
+                    preparedChildConstraints.widthResolution
+                );
+
+                const auto& childOutput = tree.speculateLayout(
+                    frameInfo,
+                    childNode,
+                    preparedChildConstraints,
+                    childMeasured
+                );
+
+                item.hypotheticalCrossSize = flex.axis.crossSize(childOutput.layout);
+                line.maxCrossSize = std::max(line.maxCrossSize, item.hypotheticalCrossSize);
+            }
+        }
 
         float naturalCross = 0;
 
@@ -330,7 +354,7 @@ namespace layout {
         float availableCross = determineAvailableCross(naturalCross);
 
         auto placements = flex.computePlacements(
-            resolved,
+            resolvedMainSizes,
             availableMain,
             availableCross,
             resolvedGap

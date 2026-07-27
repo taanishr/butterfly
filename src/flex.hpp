@@ -144,7 +144,6 @@ namespace layout {
         float maxCrossSize{};
 
         void addItem(FlexItem item) {
-            maxCrossSize = std::max(item.hypotheticalCrossSize, maxCrossSize);
             items.push_back(std::move(item));
         }
 
@@ -296,7 +295,6 @@ namespace layout {
             size_t childIndex,
             TreeNode* child,
             float flexBaseSize,
-            float hypotheticalCrossSize,
             float minMainSize,
             std::optional<float> maxMainSize,
             AlignItems alignment,
@@ -329,7 +327,7 @@ namespace layout {
                 .alignment = alignment,
                 .crossSizeRequest = axis.crossSize(child->shared),
                 .usedMainSize = flexBaseSize,
-                .hypotheticalCrossSize = hypotheticalCrossSize
+                .hypotheticalCrossSize = 0.0f
             });
         }
 
@@ -483,6 +481,9 @@ namespace layout {
         float minY;
         float maxX;
         float maxY;
+        float resolvedGap{};
+        float availableMain{};
+        FlexLayout::ResolveResult resolvedMainSizes;
 
         struct Bounds {
             float maxX;
