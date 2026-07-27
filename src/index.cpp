@@ -1695,62 +1695,62 @@ auto index() -> void {
     //     )
     // );
 
-    // Browser reference: react_tests/src/app/intrinsic-sizing/page.tsx
-    constexpr auto intrinsicText = "Intrinsic sizing chooses every soft break opportunity";
+    // // Browser reference: react_tests/src/app/intrinsic-sizing/page.tsx
+    // constexpr auto intrinsicText = "Intrinsic sizing chooses every soft break opportunity";
 
-    div(S::percent(1.0), S::percent(1.0), simd_float4{0.059,0.071,0.090,1.0})
-        .padding(S::px(32))
-        .overflow(gui::Overflow::Scroll)
-    (
-        div(S::minContent(), S::autoSize(), simd_float4{0.078,0.722,0.859,1.0})
-        (
-            text(intrinsicText)
-                .font(Arial)
-                .fontSize(S::pt(18))
-                .color(simd_float4{0.961,0.969,1.0,1.0})
-        ),
+    // div(S::percent(1.0), S::percent(1.0), simd_float4{0.059,0.071,0.090,1.0})
+    //     .padding(S::px(32))
+    //     .overflow(gui::Overflow::Scroll)
+    // (
+    //     div(S::minContent(), S::autoSize(), simd_float4{0.078,0.722,0.859,1.0})
+    //     (
+    //         text(intrinsicText)
+    //             .font(Arial)
+    //             .fontSize(S::pt(18))
+    //             .color(simd_float4{0.961,0.969,1.0,1.0})
+    //     ),
 
-        div(S::maxContent(), S::autoSize(), simd_float4{0.961,0.302,0.459,1.0})
-            .marginTop(S::px(20))
-        (
-            text(intrinsicText)
-                .font(Arial)
-                .fontSize(S::pt(18))
-                .color(simd_float4{0.961,0.969,1.0,1.0})
-        ),
+    //     div(S::maxContent(), S::autoSize(), simd_float4{0.961,0.302,0.459,1.0})
+    //         .marginTop(S::px(20))
+    //     (
+    //         text(intrinsicText)
+    //             .font(Arial)
+    //             .fontSize(S::pt(18))
+    //             .color(simd_float4{0.961,0.969,1.0,1.0})
+    //     ),
 
-        div(S::px(360), S::autoSize(), simd_float4{0.149,0.161,0.200,1.0})
-            .marginTop(S::px(20))
-        (
-            div(S::fitContent(), S::autoSize(), simd_float4{0.980,0.761,0.200,1.0})
-            (
-                text(intrinsicText)
-                    .font(Arial)
-                    .fontSize(S::pt(18))
-                    .color(simd_float4{0.078,0.090,0.110,1.0})
-            )
-        ),
+    //     div(S::px(360), S::autoSize(), simd_float4{0.149,0.161,0.200,1.0})
+    //         .marginTop(S::px(20))
+    //     (
+    //         div(S::fitContent(), S::autoSize(), simd_float4{0.980,0.761,0.200,1.0})
+    //         (
+    //             text(intrinsicText)
+    //                 .font(Arial)
+    //                 .fontSize(S::pt(18))
+    //                 .color(simd_float4{0.078,0.090,0.110,1.0})
+    //         )
+    //     ),
 
-        div(S::px(120), S::autoSize(), simd_float4{0.380,0.922,0.561,1.0})
-            .minWidth(S::maxContent())
-            .marginTop(S::px(20))
-        (
-            text(intrinsicText)
-                .font(Arial)
-                .fontSize(S::pt(18))
-                .color(simd_float4{0.078,0.090,0.110,1.0})
-        ),
+    //     div(S::px(120), S::autoSize(), simd_float4{0.380,0.922,0.561,1.0})
+    //         .minWidth(S::maxContent())
+    //         .marginTop(S::px(20))
+    //     (
+    //         text(intrinsicText)
+    //             .font(Arial)
+    //             .fontSize(S::pt(18))
+    //             .color(simd_float4{0.078,0.090,0.110,1.0})
+    //     ),
 
-        div(S::px(640), S::autoSize(), simd_float4{0.639,0.420,0.961,1.0})
-            .maxWidth(S::minContent())
-            .marginTop(S::px(20))
-        (
-            text(intrinsicText)
-                .font(Arial)
-                .fontSize(S::pt(18))
-                .color(simd_float4{0.961,0.969,1.0,1.0})
-        )
-    );
+    //     div(S::px(640), S::autoSize(), simd_float4{0.639,0.420,0.961,1.0})
+    //         .maxWidth(S::minContent())
+    //         .marginTop(S::px(20))
+    //     (
+    //         text(intrinsicText)
+    //             .font(Arial)
+    //             .fontSize(S::pt(18))
+    //             .color(simd_float4{0.961,0.969,1.0,1.0})
+    //     )
+    // );
 
 
     // // Auto-sized parent with a percentage-width child.

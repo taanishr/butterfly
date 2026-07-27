@@ -317,9 +317,6 @@ namespace layout {
                 childMeasured
             );
 
-            float resolvedGrow = childAsPtr->getFlexGrow().resolveOr(Size::px(0.0f), 0.0f);
-            float resolvedShrink = childAsPtr->getFlexShrink().resolveOr(Size::px(0.0f), 1.0f);
-
             float minMainSize = determineMinMainSize(
                 childAsPtr,
                 mainSize,
@@ -329,20 +326,17 @@ namespace layout {
 
             auto maxMainSize = determineMaxMainSize(childAsPtr);
 
-            flex.addChild(
+            flex.addItem(
+                i,
+                childAsPtr,
                 flexBaseSize,
                 crossSize,
-                resolvedGrow,
-                resolvedShrink,
-                selfAlign,
-                flex.axis.crossSize(childAsPtr->shared),
-                parentAvailableMain(),
-                resolvedGap,
                 minMainSize,
-                maxMainSize
+                maxMainSize,
+                effectiveAlign,
+                parentAvailableMain(),
+                resolvedGap
             );
-
-            inFlowIndices.push_back(i);
         }
 
         if (flex.currentLine.count() > 0) {
@@ -382,10 +376,9 @@ namespace layout {
             resolvedGap
         );
 
-        for (size_t pi = 0; pi < inFlowIndices.size(); ++pi) {
-            size_t i = inFlowIndices[pi];
+        for (auto& p : placements) {
+            size_t i = p.childIndex;
             auto childNode = node->children[i].get();
-            auto& p = placements[pi];
             Measured childMeasured = *childNode->measured;
 
             auto preparedChildConstraints = prepareChildConstraints(childNode);

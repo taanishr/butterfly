@@ -125,73 +125,58 @@ namespace layout {
     };
 
 
-    struct FlexLine {
-        std::vector<float> childSizes;
-        std::vector<float> hypotheticalMainSizes;
-        std::vector<float> minMainSizes;
-        std::vector<std::optional<float>> maxMainSizes;
-        std::vector<float> shrinkScaled;
-        std::vector<float> growthScaled;
+    struct FlexItem {
+        size_t childIndex;
+        float flexBaseSize;
+        float hypotheticalMainSize;
+        float minMainSize;
+        std::optional<float> maxMainSize;
+        float flexGrow;
+        float scaledFlexShrink;
+        AlignItems alignment;
+        Size crossSizeRequest;
+        float usedMainSize;
+        float hypotheticalCrossSize;
+    };
 
-        float totalSize{};
-        float shrinkScaledTotal{};
-        float growthScaledTotal{};
+    struct FlexLine {
+        std::vector<FlexItem> items;
         float maxCrossSize{};
 
-        void addChild(float mainSize, float hypotheticalMainSize, float crossSize, float grow, float shrink,
-                      float minMainSize = 0.0f, std::optional<float> maxMainSize = std::nullopt) {
-            childSizes.push_back(mainSize);
-            hypotheticalMainSizes.push_back(hypotheticalMainSize);
-            minMainSizes.push_back(minMainSize);
-            maxMainSizes.push_back(maxMainSize);
-            totalSize += mainSize;
-
-            if (shrink > 0.0f) {
-                shrinkScaled.push_back(mainSize * shrink);
-                shrinkScaledTotal += mainSize * shrink;
-            } else {
-                shrinkScaled.push_back(0.0f);
-            }
-
-            if (grow > 0.0f) {
-                growthScaled.push_back(grow);
-                growthScaledTotal += grow;
-            } else {
-                growthScaled.push_back(0.0f);
-            }
-
-            maxCrossSize = std::max(crossSize, maxCrossSize);
+        void addItem(FlexItem item) {
+            maxCrossSize = std::max(item.hypotheticalCrossSize, maxCrossSize);
+            items.push_back(std::move(item));
         }
 
-        size_t count() { return childSizes.size(); }
+        size_t count() { return items.size(); }
 
         float totalWithGap(float gap) {
-            return totalSize + (count() > 1 ? gap * (count() - 1) : 0.0f);
+            float total = 0.0f;
+            for (const auto& item : items) total += item.flexBaseSize;
+            return total + (count() > 1 ? gap * (count() - 1) : 0.0f);
         }
 
         float totalHypotheticalWithGap(float gap) {
             float total = 0.0f;
-            for (float size : hypotheticalMainSizes) total += size;
+            for (const auto& item : items) total += item.hypotheticalMainSize;
             return total + (count() > 1 ? gap * (count() - 1) : 0.0f);
         }
 
         float totalMinimumWithGap(float gap) {
             float total = 0.0f;
-            for (float size : minMainSizes) total += size;
+            for (const auto& item : items) total += item.minMainSize;
             return total + (count() > 1 ? gap * (count() - 1) : 0.0f);
         }
 
         struct ResolveResult {
-            std::vector<float> sizes;
             float totalAfter{};
             float remainingSpace{};
         };
 
         ResolveResult resolve(float availableMain) {
             ResolveResult result;
-            result.sizes = childSizes;
-
-            std::vector<bool> frozen(childSizes.size(), false);
+            std::vector<bool> frozen(items.size(), false);
+            for (auto& item : items) item.usedMainSize = item.flexBaseSize;
 
             while (true) {
                 float frozenTotal = 0.0f;
@@ -199,43 +184,46 @@ namespace layout {
                 float unfrozenGrowthTotal = 0.0f;
                 float unfrozenShrinkTotal = 0.0f;
 
-                for (size_t i = 0; i < childSizes.size(); ++i) {
+                for (size_t i = 0; i < items.size(); ++i) {
+                    auto& item = items[i];
                     if (frozen[i]) {
-                        frozenTotal += result.sizes[i];
+                        frozenTotal += item.usedMainSize;
                     } else {
-                        unfrozenBaseTotal += childSizes[i];
-                        unfrozenGrowthTotal += growthScaled[i];
-                        unfrozenShrinkTotal += shrinkScaled[i];
+                        unfrozenBaseTotal += item.flexBaseSize;
+                        unfrozenGrowthTotal += item.flexGrow;
+                        unfrozenShrinkTotal += item.scaledFlexShrink;
                     }
                 }
 
                 float space = availableMain - frozenTotal - unfrozenBaseTotal;
 
-                for (size_t i = 0; i < childSizes.size(); ++i) {
+                for (size_t i = 0; i < items.size(); ++i) {
                     if (frozen[i]) continue;
+                    auto& item = items[i];
 
-                    if (space > 0.0f && growthScaled[i] > 0.0f && unfrozenGrowthTotal > 0.0f) {
-                        result.sizes[i] = childSizes[i] + (growthScaled[i] / unfrozenGrowthTotal) * space;
-                    } else if (space < 0.0f && shrinkScaled[i] > 0.0f && unfrozenShrinkTotal > 0.0f) {
-                        result.sizes[i] = childSizes[i] + (shrinkScaled[i] / unfrozenShrinkTotal) * space;
+                    if (space > 0.0f && item.flexGrow > 0.0f && unfrozenGrowthTotal > 0.0f) {
+                        item.usedMainSize = item.flexBaseSize + (item.flexGrow / unfrozenGrowthTotal) * space;
+                    } else if (space < 0.0f && item.scaledFlexShrink > 0.0f && unfrozenShrinkTotal > 0.0f) {
+                        item.usedMainSize = item.flexBaseSize + (item.scaledFlexShrink / unfrozenShrinkTotal) * space;
                     } else {
-                        result.sizes[i] = childSizes[i];
+                        item.usedMainSize = item.flexBaseSize;
                     }
                 }
 
                 bool anyViolation = false;
 
-                for (size_t i = 0; i < childSizes.size(); ++i) {
+                for (size_t i = 0; i < items.size(); ++i) {
                     if (frozen[i]) continue;
+                    auto& item = items[i];
 
-                    float clamped = result.sizes[i];
-                    if (maxMainSizes[i].has_value()) {
-                        clamped = std::min(clamped, *maxMainSizes[i]);
+                    float clamped = item.usedMainSize;
+                    if (item.maxMainSize.has_value()) {
+                        clamped = std::min(clamped, *item.maxMainSize);
                     }
-                    clamped = std::max(clamped, minMainSizes[i]);
+                    clamped = std::max(clamped, item.minMainSize);
 
-                    if (clamped != result.sizes[i]) {
-                        result.sizes[i] = clamped;
+                    if (clamped != item.usedMainSize) {
+                        item.usedMainSize = clamped;
                         frozen[i] = true;
                         anyViolation = true;
                     }
@@ -244,7 +232,7 @@ namespace layout {
                 if (!anyViolation) break;
             }
 
-            for (auto size : result.sizes) result.totalAfter += size;
+            for (const auto& item : items) result.totalAfter += item.usedMainSize;
             result.remainingSpace = availableMain - result.totalAfter;
             return result;
         }
@@ -275,11 +263,9 @@ namespace layout {
 
         std::vector<FlexLine> lines;
         FlexLine currentLine;
-        std::vector<AlignSelf> childAlignSelfs;
-        std::vector<float> crossSizes;
-        std::vector<Size> childCrossSizeRequests;
 
         struct ChildPlacement {
+            size_t childIndex;
             float mainOffset;
             float crossOffset;
             float mainSize;
@@ -306,10 +292,17 @@ namespace layout {
             }
         }
 
-        void addChild(float flexBaseSize, float crossSize, float grow, float shrink,
-                      AlignSelf selfAlign, Size crossSizeRequest,
-                      Size avMain, float gap, float minMainSize = 0.0f,
-                      std::optional<float> maxMainSize = std::nullopt) {
+        void addItem(
+            size_t childIndex,
+            TreeNode* child,
+            float flexBaseSize,
+            float hypotheticalCrossSize,
+            float minMainSize,
+            std::optional<float> maxMainSize,
+            AlignItems alignment,
+            Size avMain,
+            float gap
+        ) {
             float hypotheticalMainSize = flexBaseSize;
             if (maxMainSize.has_value()) {
                 hypotheticalMainSize = std::min(hypotheticalMainSize, *maxMainSize);
@@ -323,22 +316,24 @@ namespace layout {
                 }
             }
 
-            currentLine.addChild(
-                flexBaseSize,
-                hypotheticalMainSize,
-                crossSize,
-                grow,
-                shrink,
-                minMainSize,
-                maxMainSize
-            );
-            childAlignSelfs.push_back(selfAlign);
-            crossSizes.push_back(crossSize);
-            childCrossSizeRequests.push_back(crossSizeRequest);
+            float grow = child->getFlexGrow().resolveOr(Size::px(0.0f), 0.0f);
+            float shrink = child->getFlexShrink().resolveOr(Size::px(0.0f), 1.0f);
+            currentLine.addItem({
+                .childIndex = childIndex,
+                .flexBaseSize = flexBaseSize,
+                .hypotheticalMainSize = hypotheticalMainSize,
+                .minMainSize = minMainSize,
+                .maxMainSize = maxMainSize,
+                .flexGrow = grow > 0.0f ? grow : 0.0f,
+                .scaledFlexShrink = shrink > 0.0f ? flexBaseSize * shrink : 0.0f,
+                .alignment = alignment,
+                .crossSizeRequest = axis.crossSize(child->shared),
+                .usedMainSize = flexBaseSize,
+                .hypotheticalCrossSize = hypotheticalCrossSize
+            });
         }
 
         struct ResolveResult {
-            std::vector<std::vector<float>> lineSizes; 
             std::vector<float> lineTotalsAfter;       
             float overallTotalAfter{};
         };
@@ -350,7 +345,6 @@ namespace layout {
                 auto lr = line.resolve(avMain - lineGap);
                 result.overallTotalAfter += lr.totalAfter;
                 result.lineTotalsAfter.push_back(lr.totalAfter);
-                result.lineSizes.push_back(std::move(lr.sizes));
             }
             return result;
         }
@@ -409,8 +403,6 @@ namespace layout {
 
             // Build per-child placements
             std::vector<ChildPlacement> placements;
-            size_t childIdx = 0;
-
             for (size_t li = 0; li < lineCount; ++li) {
                 auto& line = lines[li];
                 float lineGap = line.count() > 1 ? gap * (line.count() - 1) : 0.0f;
@@ -422,16 +414,14 @@ namespace layout {
                 float lineCrossBase = lineCrossOffsets[li];
 
                 for (size_t ci = 0; ci < line.count(); ++ci) {
+                    auto& item = line.items[ci];
                     ChildPlacement p;
+                    p.childIndex = item.childIndex;
                     p.mainOffset = accumulated;
-                    p.mainSize = resolved.lineSizes[li][ci];
+                    p.mainSize = item.usedMainSize;
 
-                    AlignSelf selfAlign = childAlignSelfs[childIdx];
-                    AlignItems effectiveAlign = this->effectiveAlign(selfAlign);
-
-                    float childCross = crossSizes[childIdx];
-                    const auto& crossSizeRequest = childCrossSizeRequests[childIdx];
-                    auto resolvedCrossSize = crossSizeRequest.resolve(
+                    float childCross = item.hypotheticalCrossSize;
+                    auto resolvedCrossSize = item.crossSizeRequest.resolve(
                         Size::px(lineCross)
                     );
 
@@ -441,10 +431,10 @@ namespace layout {
 
                     p.crossSize = childCross;
 
-                    switch (effectiveAlign) {
+                    switch (item.alignment) {
                         case AlignItems::Stretch:
                             p.crossOffset = lineCrossBase;
-                            if (crossSizeRequest.isAuto()) {
+                            if (item.crossSizeRequest.isAuto()) {
                                 p.crossSize = lineCross;
                                 p.crossSizeOverride = lineCross;
                             }
@@ -467,9 +457,8 @@ namespace layout {
                         p.mainOffset = availableMain - accumulated - p.mainSize;
                     }
 
-                    accumulated += resolved.lineSizes[li][ci] + mainAlign.spaceBetween + gap;
+                    accumulated += item.usedMainSize + mainAlign.spaceBetween + gap;
                     placements.push_back(p);
-                    childIdx++;
                 }
             }
 
@@ -503,8 +492,6 @@ namespace layout {
             float maxX;
             float maxY;
         };
-
-        std::vector<size_t> inFlowIndices;
 
         FlexResolver(RenderTree& tree, TreeNode* node, const Constraints& parentConstraints,
                         const Constraints& childConstraints, FlexLayout flex, const FrameInfo& frameInfo,
