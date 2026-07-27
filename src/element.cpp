@@ -632,11 +632,7 @@ namespace tree {
         }
     }
 
-    layout::InlineFormattingInput buildIsolatedInlineBoxes(
-        TreeNode* node,
-        Size maxWidth,
-        layout::AxisResolution widthResolution
-    ) {
+    layout::InlineFormattingInput buildIsolatedInlineBoxes(TreeNode* node, Size maxWidth, layout::AxisResolution widthResolution, bool calculateIntrinsicSizes) {
         auto context = std::make_shared<layout::InlineFormattingContext>();
         auto& fragments = context->fragments;
         auto& lineBoxes = context->lineBoxes;
@@ -686,6 +682,26 @@ namespace tree {
             lineBoxes.push_back(currentLineBox);
 
         reorderLineFragments(*context);
+
+        if (calculateIntrinsicSizes) {
+            layout::InlineFormattingInput currentInput{.context = context, .fragments = {.start = 0, .count = fragments.size()}};
+            auto minInput = widthResolution == layout::AxisResolution::MinContent ? currentInput : buildIsolatedInlineBoxes(node, Size::autoSize(), layout::AxisResolution::MinContent, false);
+            auto maxInput = widthResolution == layout::AxisResolution::MaxContent ? currentInput : buildIsolatedInlineBoxes(node, Size::autoSize(), layout::AxisResolution::MaxContent, false);
+            std::vector<float> minLineWidths(minInput.lineBoxes().size(), 0.0f);
+            for (const auto& fragment : minInput.lineFragments()) {
+                for (size_t i = 0; i < fragment.atomCount; ++i) minLineWidths[fragment.lineBoxIndex] += node->atomized->atoms[fragment.atomStart + i].width;
+            }
+            float minContent = 0.0f;
+            for (float width : minLineWidths) minContent = std::max(minContent, width);
+
+            std::vector<float> maxLineWidths(maxInput.lineBoxes().size(), 0.0f);
+            for (const auto& fragment : maxInput.lineFragments()) {
+                for (size_t i = 0; i < fragment.atomCount; ++i) maxLineWidths[fragment.lineBoxIndex] += node->atomized->atoms[fragment.atomStart + i].width;
+            }
+            float maxContent = 0.0f;
+            for (float width : maxLineWidths) maxContent = std::max(maxContent, width);
+            context->intrinsicSizes = layout::IntrinsicSizes{.minContent = Size::px(minContent), .maxContent = Size::px(maxContent)};
+        }
 
         const size_t fragmentCount = fragments.size();
         return {
@@ -769,6 +785,31 @@ namespace tree {
         }
 
         reorderLineFragments(*context);
+
+        if (childConstraints.intrinsicSizesAxis == layout::Axis::Width) {
+            auto minContext = context;
+            auto maxContext = context;
+            if (childConstraints.widthResolution != layout::AxisResolution::MinContent) {
+                Constraints minConstraints = childConstraints;
+                minConstraints.availableWidth = Size::autoSize();
+                minConstraints.widthResolution = layout::AxisResolution::MinContent;
+                minConstraints.intrinsicSizesAxis.reset();
+                minContext = buildInlineBoxes(node, minConstraints);
+            }
+            if (childConstraints.widthResolution != layout::AxisResolution::MaxContent) {
+                Constraints maxConstraints = childConstraints;
+                maxConstraints.availableWidth = Size::autoSize();
+                maxConstraints.widthResolution = layout::AxisResolution::MaxContent;
+                maxConstraints.intrinsicSizesAxis.reset();
+                maxContext = buildInlineBoxes(node, maxConstraints);
+            }
+
+            float minContent = 0.0f;
+            for (const auto& lineBox : minContext->lineBoxes) minContent = std::max(minContent, lineBox.width);
+            float maxContent = 0.0f;
+            for (const auto& lineBox : maxContext->lineBoxes) maxContent = std::max(maxContent, lineBox.width);
+            context->intrinsicSizes = layout::IntrinsicSizes{.minContent = Size::px(minContent), .maxContent = Size::px(maxContent)};
+        }
 
         return context;
     }

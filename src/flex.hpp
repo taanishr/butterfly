@@ -142,6 +142,8 @@ namespace layout {
     struct FlexLine {
         std::vector<FlexItem> items;
         float maxCrossSize{};
+        float intrinsicMinCrossSize{};
+        float intrinsicMaxCrossSize{};
 
         void addItem(FlexItem item) {
             items.push_back(std::move(item));
@@ -484,6 +486,7 @@ namespace layout {
         float resolvedGap{};
         float availableMain{};
         FlexLayout::ResolveResult resolvedMainSizes;
+        std::optional<IntrinsicSizes> intrinsicSizes;
 
         struct Bounds {
             float maxX;
@@ -580,19 +583,8 @@ namespace layout {
             return request.resolve(basis);
         }
 
-        float determineFlexBaseSize(
-            TreeNode* child,
-            std::expected<float, SizeResolveFailure>& mainSize,
-            Constraints& constraints,
-            Measured& measured
-        );
-
-        float determineMinMainSize(
-            TreeNode* child,
-            std::expected<float, SizeResolveFailure>& mainSize,
-            Constraints& constraints,
-            Measured& measured
-        );
+        float determineFlexBaseSize(std::expected<float, SizeResolveFailure>& mainSize, const std::optional<IntrinsicSizes>& intrinsicSizes);
+        float determineMinMainSize(TreeNode* child, std::expected<float, SizeResolveFailure>& mainSize, const std::optional<IntrinsicSizes>& intrinsicSizes);
 
         std::optional<float> determineMaxMainSize(TreeNode* child);
         float determineAvailableMain(float contentMainSize);

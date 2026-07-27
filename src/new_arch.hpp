@@ -85,10 +85,16 @@ namespace layout {
         size_t count{};
     };
 
+    struct IntrinsicSizes {
+        style::Size minContent;
+        style::Size maxContent;
+    };
+
     struct InlineFormattingContext {
         std::vector<LineFragment> fragments;
         std::vector<LineBox> lineBoxes;
         std::vector<InlineFragmentRange> childFragments;
+        std::optional<IntrinsicSizes> intrinsicSizes;
     };
 
     struct InlineFormattingInput {
@@ -505,6 +511,7 @@ namespace layout {
         bool shrinkHeightToFit{false};
         AxisResolution widthResolution{AxisResolution::Final};
         AxisResolution heightResolution{AxisResolution::Final};
+        std::optional<Axis> intrinsicSizesAxis;
     };
 
     struct LayoutInput {
@@ -653,6 +660,7 @@ namespace layout {
     struct LayoutOutput {
         Measured measured;
         LayoutResult layout;
+        std::optional<IntrinsicSizes> intrinsicSizes;
     };
 
     
