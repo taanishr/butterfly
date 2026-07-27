@@ -555,6 +555,18 @@ namespace tree {
         return {};
     }
 
+    void resolveComputedDisplays(TreeNode* node)
+    {
+        node->computedDisplay = node->shared.display;
+        if (node->parent && node->parent->getDisplay() == Display::Flex && node->element->isReplaced() && node->shared.display == Display::Inline) {
+            node->computedDisplay = Display::Block;
+        }
+
+        for (auto& child : node->children) {
+            resolveComputedDisplays(child.get());
+        }
+    }
+
     void buildCollapsedChains(
         TreeNode* node,
         std::unordered_map<ChainID, CollapsedChain>& chainMap,
@@ -676,6 +688,7 @@ namespace tree {
         collapsedChainMap.clear();
         nextChainId = 0;
 
+        resolveComputedDisplays(node);
         buildCollapsedChains(node, collapsedChainMap, nextChainId, nullptr, nullptr);
 
         precomputeMargins(node, constraints, collapsedChainMap);
@@ -784,9 +797,11 @@ namespace tree {
         auto& atomized = *node->atomized;
         auto& prelayout = *node->preLayout;
 
-        bool isInline = node->element->isInline();
         auto display = node->getDisplay();
+        bool isInline = node->element->isInline() && display == Display::Inline;
         bool isNormalFlow = display != Display::Flex && display != Display::Grid;
+        SharedDescriptor computedShared = node->shared;
+        computedShared.display = display;
 
         applyContentResolution(
             measured.explicitWidth,
@@ -849,7 +864,7 @@ namespace tree {
         }
 
 
-        auto layout = node->element->layout(constraints, node->shared, measured, atomized);
+        auto layout = node->element->layout(constraints, computedShared, measured, atomized);
 
         auto childConstraints = layout.childConstraints;
         
@@ -1048,7 +1063,7 @@ namespace tree {
             if (retryWidth) retryMeasured.explicitWidth = usedWidth;
             if (retryHeight) retryMeasured.explicitHeight = usedHeight;
 
-            auto retryInput = layout::toLayoutInput(node->shared, retryMeasured);
+            auto retryInput = layout::toLayoutInput(computedShared, retryMeasured);
             constraints.resolvedMargins = layout::LayoutEngine::resolveAutoMargins(
                 retryInput,
                 constraints.replacedAttributes,
@@ -1056,7 +1071,7 @@ namespace tree {
                 usedWidth
             );
 
-            layout = node->element->layout(constraints, node->shared, retryMeasured, atomized);
+            layout = node->element->layout(constraints, computedShared, retryMeasured, atomized);
             
             childConstraints = layout.childConstraints;
             if (constraints.shrinkWidthToFit && node->shared.width.isAuto()) {

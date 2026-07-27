@@ -93,6 +93,9 @@ namespace elements {
         virtual bool isInline() const {
             return false;
         }
+        virtual bool isReplaced() const {
+            return false;
+        }
         virtual bool preciseHitTest(simd_float2 point, const LayoutResult& layout, const std::any& finalized) {
             return true;
         }
@@ -155,6 +158,13 @@ namespace elements {
         bool isInline() const override {
             if constexpr (requires(const E& value) { value.isInline(); }) {
                 return element.isInline();
+            }
+            return false;
+        }
+
+        bool isReplaced() const override {
+            if constexpr (requires(const E& value) { value.isReplaced(); }) {
+                return element.isReplaced();
             }
             return false;
         }
@@ -364,7 +374,7 @@ namespace tree {
         }
 
         Position getPosition() const { return shared.position; }
-        Display getDisplay() const { return shared.display; }
+        Display getDisplay() const { return computedDisplay.value_or(shared.display); }
         Size getMarginTop() const { return shared.marginTop.value_or(shared.margin); }
         Size getMarginBottom() const { return shared.marginBottom.value_or(shared.margin); }
         Size getMarginLeft() const { return shared.marginLeft.value_or(shared.margin); }
@@ -412,6 +422,7 @@ namespace tree {
         simd_float2 scrollContentSize {0.0f, 0.0f};
         simd_float2 scrollViewportSize {0.0f, 0.0f};
         SharedDescriptor shared;
+        std::optional<Display> computedDisplay;
         DirtyBits dirtySelf{~DirtyBits::None};
         DirtyBits dirtySubtree{~DirtyBits::None};
         std::optional<ConstraintsKey> constraintsKey;

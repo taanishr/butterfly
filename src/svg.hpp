@@ -146,6 +146,10 @@ namespace elements {
             return true;
         }
 
+        bool isReplaced() const {
+            return true;
+        }
+
         std::any request(RequestTarget target, std::any payload) {
             switch (target) {
                 case RequestTarget::Descriptor:
