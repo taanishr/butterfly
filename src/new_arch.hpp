@@ -85,10 +85,25 @@ namespace layout {
         size_t count{};
     };
 
+    struct IntrinsicSizes {
+        style::Size minContent;
+        style::Size maxContent;
+    };
+
+    inline float resolveIntrinsicSize(const style::Size& request, const IntrinsicSizes& intrinsicSizes, style::Size availableSize) {
+        float minContent = intrinsicSizes.minContent.resolveOr(style::Size::autoSize());
+        float maxContent = intrinsicSizes.maxContent.resolveOr(style::Size::autoSize());
+        if (request.unit == style::Unit::MinContent) return minContent;
+        if (request.unit == style::Unit::MaxContent) return maxContent;
+        float stretch = availableSize.resolve(style::Size::autoSize()).value_or(maxContent);
+        return std::min(maxContent, std::max(minContent, stretch));
+    }
+
     struct InlineFormattingContext {
         std::vector<LineFragment> fragments;
         std::vector<LineBox> lineBoxes;
         std::vector<InlineFragmentRange> childFragments;
+        std::optional<IntrinsicSizes> intrinsicSizes;
     };
 
     struct InlineFormattingInput {
@@ -463,8 +478,13 @@ namespace layout {
 
     struct ContainingBlock {
         simd_float2 origin{};
-        float width{};
-        float height{};
+        Size width{Size::autoSize()};
+        Size height{Size::autoSize()};
+    };
+
+    enum class Axis {
+        Width,
+        Height
     };
 
     enum class AxisResolution {
@@ -477,8 +497,8 @@ namespace layout {
     struct Constraints {
         simd_float2 origin{};
         simd_float2 cursor{};
-        float availableWidth{};
-        float availableHeight{};
+        Size availableWidth{Size::autoSize()};
+        Size availableHeight{Size::autoSize()};
 
         InheritedProperties inheritedProperties{};
 
@@ -500,6 +520,7 @@ namespace layout {
         bool shrinkHeightToFit{false};
         AxisResolution widthResolution{AxisResolution::Final};
         AxisResolution heightResolution{AxisResolution::Final};
+        std::optional<Axis> intrinsicSizesAxis;
     };
 
     struct LayoutInput {
@@ -565,8 +586,8 @@ namespace layout {
         const std::optional<Size>&  left;
         const Size& requestedWidth;
         const Size& requestedHeight;
-        float availableWidth;
-        float availableHeight;
+        Size availableWidth;
+        Size availableHeight;
     };
 
     struct PositionResolutionContext {
@@ -605,15 +626,12 @@ namespace layout {
     // Info needed to resolve right/bottom positioning in postLayout
     // (deferred because element size may not be known during layout)
     struct DeferredPositionInfo {
-        bool needsRightResolution{};
-        bool needsBottomResolution{};
-        float containingBlockWidth{};
-        float containingBlockHeight{};
-        float resolvedRight{};   // already resolved from Size to float
-        float resolvedBottom{};
+        Size containingBlockWidth{Size::autoSize()};
+        Size containingBlockHeight{Size::autoSize()};
+        std::optional<Size> right;
+        std::optional<Size> bottom;
         float marginRight{};
         float marginBottom{};
-        Direction direction{Direction::ltr};
     };
 
     struct LayoutBox {
@@ -627,6 +645,7 @@ namespace layout {
         std::vector<simd_float2> drawableAtomOffsets;
         InlineFormattingInput inlineFormatting;
 
+        ResolvedSize resolvedSize;
         LayoutBox computedBox;
         LayoutBox localComputedBox;
 
@@ -650,6 +669,7 @@ namespace layout {
     struct LayoutOutput {
         Measured measured;
         LayoutResult layout;
+        std::optional<IntrinsicSizes> intrinsicSizes;
     };
 
     
@@ -657,7 +677,7 @@ namespace layout {
         static ResolvedMargins resolveAutoMargins(
             const LayoutInput& li,
             const ReplacedAttributes& replacedAttributes,
-            float availableWidth,
+            Size availableWidth,
             float contentWidth
         );
 
@@ -667,8 +687,8 @@ namespace layout {
         static LayoutResult resolveNormalFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized);
 
         // fixed and absolute, block/inline
-        static LayoutResult layoutAbsolute(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized);
-        static LayoutResult layoutFixed(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized);
+        static LayoutResult layoutBlockOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized);
+        static LayoutResult layoutInlineOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized);
         static LayoutResult resolveOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized);
 
         // flex

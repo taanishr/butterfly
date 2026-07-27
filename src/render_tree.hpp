@@ -68,6 +68,8 @@ namespace tree {
         void placePhase(TreeNode* node, const FrameInfo& frameInfo, Constraints& constraints);
         void finalizePhase(TreeNode* node, Constraints& constraints);
     private:
+        layout::IntrinsicSizes measureIntrinsicSizes(TreeNode* node, const FrameInfo& frameInfo, Constraints constraints, layout::Measured measured, layout::Axis axis);
+
         layout::LayoutOutput layoutRecursive(
             TreeNode* node,
             const FrameInfo& frameInfo,

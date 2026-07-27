@@ -69,6 +69,7 @@ namespace elements {
         auto currTree = TreeStack::getCurrentTree();
 
         auto builder = NodeBuilder(ctx, *currTree, std::move(elem), proc);
+        builder.display(Display::Inline);
         builder.width(width);
         builder.height(height);
         return builder;
@@ -85,6 +86,7 @@ namespace elements {
         auto currTree = TreeStack::getCurrentTree();
 
         auto builder = NodeBuilder(ctx, *currTree, std::move(elem), proc);
+        builder.display(Display::Inline);
         builder.width(width);
         builder.height(height);
         return builder;

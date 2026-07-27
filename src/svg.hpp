@@ -142,6 +142,14 @@ namespace elements {
             return fragment;
         }
 
+        bool isInline() const {
+            return true;
+        }
+
+        bool isReplaced() const {
+            return true;
+        }
+
         std::any request(RequestTarget target, std::any payload) {
             switch (target) {
                 case RequestTarget::Descriptor:
@@ -456,7 +464,7 @@ namespace elements {
             float borderWidth = 0.0;
 
             if (shared.borderWidth.unit == Unit::Px) {
-                borderWidth = shared.borderWidth.resolveOr(Size::px(constraints.availableWidth));
+                borderWidth = shared.borderWidth.resolveOr(constraints.availableWidth);
             }
 
             simd_float2 cornerRadius {

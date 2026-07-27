@@ -1309,8 +1309,8 @@ auto index() -> void {
 //     );
 
 
-    // using S = gui::Size;
-
+    using S = gui::Size;
+    
     // // Existing dark music player test.
     // // Dark music player — scrollable playlist (left) + nested scrollable lyrics (right)
     // div(S::percent(1.0), S::percent(1.0), simd_float4{0.09,0.09,0.11,1.0})
@@ -1691,6 +1691,84 @@ auto index() -> void {
     //                 text("Reverie, reverie —").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
     //                 text("a promise too fragile to keep.").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0})
     //             )
+    //         )
+    //     )
+    // );
+
+    // Browser reference: react_tests/src/app/intrinsic-sizing/page.tsx
+    constexpr auto intrinsicText = "Intrinsic sizing chooses every soft break opportunity";
+
+    div(S::percent(1.0), S::percent(1.0), simd_float4{0.059,0.071,0.090,1.0})
+        .padding(S::px(32))
+        .overflow(gui::Overflow::Scroll)
+    (
+        div(S::minContent(), S::autoSize(), simd_float4{0.078,0.722,0.859,1.0})
+        (
+            text(intrinsicText)
+                .font(Arial)
+                .fontSize(S::pt(18))
+                .color(simd_float4{0.961,0.969,1.0,1.0})
+        ),
+
+        div(S::maxContent(), S::autoSize(), simd_float4{0.961,0.302,0.459,1.0})
+            .marginTop(S::px(20))
+        (
+            text(intrinsicText)
+                .font(Arial)
+                .fontSize(S::pt(18))
+                .color(simd_float4{0.961,0.969,1.0,1.0})
+        ),
+
+        div(S::px(360), S::autoSize(), simd_float4{0.149,0.161,0.200,1.0})
+            .marginTop(S::px(20))
+        (
+            div(S::fitContent(), S::autoSize(), simd_float4{0.980,0.761,0.200,1.0})
+            (
+                text(intrinsicText)
+                    .font(Arial)
+                    .fontSize(S::pt(18))
+                    .color(simd_float4{0.078,0.090,0.110,1.0})
+            )
+        ),
+
+        div(S::px(120), S::autoSize(), simd_float4{0.380,0.922,0.561,1.0})
+            .minWidth(S::maxContent())
+            .marginTop(S::px(20))
+        (
+            text(intrinsicText)
+                .font(Arial)
+                .fontSize(S::pt(18))
+                .color(simd_float4{0.078,0.090,0.110,1.0})
+        ),
+
+        div(S::px(640), S::autoSize(), simd_float4{0.639,0.420,0.961,1.0})
+            .maxWidth(S::minContent())
+            .marginTop(S::px(20))
+        (
+            text(intrinsicText)
+                .font(Arial)
+                .fontSize(S::pt(18))
+                .color(simd_float4{0.961,0.969,1.0,1.0})
+        )
+    );
+
+
+    // // Auto-sized parent with a percentage-width child.
+    // //
+    // // The child's first percentage basis is the parent's unresolved auto width.
+    // // The 600px grandchild supplies the intrinsic width. Once the auto-sized parent
+    // // resolves to 600px, the child must resolve 50% to 300px. The yellow grandchild
+    // // intentionally overflows the pink child so the 300px boundary remains visible.
+    // div(S::percent(1.0), S::percent(1.0), simd_float4{0.06,0.07,0.09,1.0})
+    // (
+    //     div(S::autoSize(), S::autoSize(), simd_float4{0.08,0.72,0.86,1.0})
+    //         .position(gui::Position::Absolute)
+    //         .left(S::px(80))
+    //         .top(S::px(80))
+    //     (
+    //         div(S::percent(0.5), S::px(120), simd_float4{0.96,0.30,0.46,1.0})
+    //         (
+    //             div(S::px(600), S::px(80), simd_float4{0.98,0.76,0.20,1.0})()
     //         )
     //     )
     // );
@@ -3165,7 +3243,8 @@ div()
 // );
 
 
-// complex test scene
+// using S = gui::Size;
+// // complex test scene
 // div()
 //     .width(S::percent(1.0))
 //     .height(S::percent(1.0))
@@ -3268,34 +3347,34 @@ div()
 //     )
 // );
 
-    // Raster downsampling/post-layout test:
-    // - Both elements share the same 2000x2000 source asset.
-    // - The first image has a fixed 128x128 rendition.
-    // - The second image is sized by flex after measurement.
-    // Resize the window to make the flex image cross rendition bins and verify
-    // its post-layout atoms continue to use the current frame-buffer slot.
-    constexpr auto butterflyPath = "/Users/treja/projects/gui/assets/butterfly.png";
+//     // Raster downsampling/post-layout test:
+//     // - Both elements share the same 2000x2000 source asset.
+//     // - The first image has a fixed 128x128 rendition.
+//     // - The second image is sized by flex after measurement.
+//     // Resize the window to make the flex image cross rendition bins and verify
+//     // its post-layout atoms continue to use the current frame-buffer slot.
+//     constexpr auto butterflyPath = "/Users/treja/projects/gui/assets/butterfly.png";
 
-    div(gui::Size::percent(1.0), gui::Size::percent(1.0), simd_float4{0.94,0.94,0.96,1.0})
-        .display(gui::Display::Flex)
-        .alignItems(gui::AlignItems::Center)
-        .justifyContent(gui::JustifyContent::Center)
-    (
-        div()
-            .width(gui::Size::percent(0.8))
-            .height(gui::Size::px(260))
-            .minWidth(gui::Size::px(360))
-            .maxWidth(gui::Size::px(900))
-            .padding(gui::Size::px(20))
-            .flexGap(gui::Size::px(20))
-            .display(gui::Display::Flex)
-            .alignItems(gui::AlignItems::Stretch)
-            .color(simd_float4{1.0,1.0,1.0,1.0})
-            .cornerRadius(gui::Size::px(12))
-        (
-            image(butterflyPath, gui::Size::px(128), gui::Size::px(128)),
-            image(butterflyPath, gui::Size::autoSize(), gui::Size::autoSize())
-                .flexGrow(gui::Size::px(1.0))
-        )
-    );
+//     div(gui::Size::percent(1.0), gui::Size::percent(1.0), simd_float4{0.94,0.94,0.96,1.0})
+//         .display(gui::Display::Flex)
+//         .alignItems(gui::AlignItems::Center)
+//         .justifyContent(gui::JustifyContent::Center)
+//     (
+//         div()
+//             .width(gui::Size::percent(0.8))
+//             .height(gui::Size::px(260))
+//             .minWidth(gui::Size::px(360))
+//             .maxWidth(gui::Size::px(900))
+//             .padding(gui::Size::px(20))
+//             .flexGap(gui::Size::px(20))
+//             .display(gui::Display::Flex)
+//             .alignItems(gui::AlignItems::Stretch)
+//             .color(simd_float4{1.0,1.0,1.0,1.0})
+//             .cornerRadius(gui::Size::px(12))
+//         (
+//             image(butterflyPath, gui::Size::px(128), gui::Size::px(128)),
+//             image(butterflyPath, gui::Size::autoSize(), gui::Size::autoSize())
+//                 .flexGrow(gui::Size::px(1.0))
+//         )
+//     );
 }

@@ -275,7 +275,7 @@ namespace layout {
                                const Constraints& childConstraints,
                                const FrameInfo& frameInfo,
                                Measured measured, bool mutate,
-                               float parentAvailableWidth, float parentAvailableHeight,
+                               Size parentAvailableWidth, Size parentAvailableHeight,
                                float minX, float minY, float maxX, float maxY)
         : tree{tree}, node{node}, parentConstraints{parentConstraints},
           childConstraints{childConstraints},
@@ -306,7 +306,7 @@ namespace layout {
         auto resolvedWidth = child->shared.width.resolve(
             basisIsIndefinite
                 ? Size::autoSize()
-                : Size::px(parentAvailableWidth)
+                : parentAvailableWidth
         );
 
         return !resolvedWidth &&
@@ -326,7 +326,7 @@ namespace layout {
         auto resolvedHeight = child->shared.height.resolve(
             basisIsIndefinite
                 ? Size::autoSize()
-                : Size::px(parentAvailableHeight)
+                : parentAvailableHeight
         );
 
         return !resolvedHeight &&
@@ -409,15 +409,18 @@ namespace layout {
               measured.explicitHeight.error() ==
                 SizeResolveFailure::IndefiniteBasis));
 
-        bool widthDefinite = !widthBasisIsIndefinite;
-        bool heightDefinite = !heightBasisIsIndefinite;
+        bool widthDefinite = !widthBasisIsIndefinite && !parentAvailableWidth.isAuto();
+        bool heightDefinite = !heightBasisIsIndefinite && !parentAvailableHeight.isAuto();
 
         auto widthBasis = widthDefinite
-            ? Size::px(parentAvailableWidth)
+            ? parentAvailableWidth
             : Size::autoSize();
         auto heightBasis = heightDefinite
-            ? Size::px(parentAvailableHeight)
+            ? parentAvailableHeight
             : Size::autoSize();
+
+        float availableWidth = widthDefinite ? parentAvailableWidth.value : maxChildRight - minX;
+        float availableHeight = heightDefinite ? parentAvailableHeight.value : maxChildBottom - minY;
 
         float colGap = node->getGridColumnGap()
             .resolve(widthBasis)
@@ -466,13 +469,13 @@ namespace layout {
                 childLayout.computedBox.width,
                 childAsPtr->shared.minWidth,
                 childAsPtr->shared.maxWidth,
-                parentAvailableWidth
+                availableWidth
             );
             float itemHeight = applyMinMax(
                 childLayout.consumedHeight,
                 childAsPtr->shared.minHeight,
                 childAsPtr->shared.maxHeight,
-                parentAvailableHeight
+                availableHeight
             );
 
             itemWidths.push_back(itemWidth);
@@ -481,7 +484,7 @@ namespace layout {
 
         gridLayout.resolve(templateRows.size(), templateCols.size(),
             templateRows, templateCols,
-            parentAvailableWidth, parentAvailableHeight,
+            availableWidth, availableHeight,
             colGap, rowGap,
             itemWidths, itemHeights,
             widthDefinite, heightDefinite);
@@ -511,11 +514,11 @@ namespace layout {
 
             preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(
                 childAsPtr,
-                itemW,
+                Size::px(itemW),
                 preparedChildConstraints.widthResolution
             );
-            preparedChildConstraints.availableWidth = itemW;
-            preparedChildConstraints.availableHeight = itemH;
+            preparedChildConstraints.availableWidth = Size::px(itemW);
+            preparedChildConstraints.availableHeight = Size::px(itemH);
             preparedChildConstraints.origin = {cellX, cellY};
             preparedChildConstraints.cursor = {cellX, cellY};
             preparedChildConstraints.shrinkWidthToFit = false;

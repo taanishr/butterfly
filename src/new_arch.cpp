@@ -49,17 +49,15 @@ namespace layout {
             }
             case layout::Position::Absolute: {
                 auto& cb = ctx.constraints.absoluteContainingBlock;
-                float refWidth = cb.width;
-                float refHeight = cb.height;
 
                 std::optional<float> left;
                 if (ctx.layoutInput.left.has_value()) {
-                    auto resolvedLeft = ctx.layoutInput.left->resolve(Size::px(refWidth));
+                    auto resolvedLeft = ctx.layoutInput.left->resolve(cb.width);
                     if (resolvedLeft) left = *resolvedLeft;
                 }
                 std::optional<float> top;
                 if (ctx.layoutInput.top.has_value()) {
-                    auto resolvedTop = ctx.layoutInput.top->resolve(Size::px(refHeight));
+                    auto resolvedTop = ctx.layoutInput.top->resolve(cb.height);
                     if (resolvedTop) top = *resolvedTop;
                 }
 
@@ -80,6 +78,7 @@ namespace layout {
             case layout::Position::Static: {
                 switch (ctx.layoutInput.display) {
                     case layout::Display::Flex:
+                    case layout::Display::Grid:
                     case layout::Display::Block: {
                         float startingX = ctx.constraints.origin.x;
                         float startingY = ctx.constraints.cursor.y;
@@ -97,7 +96,9 @@ namespace layout {
                         if (ctx.constraints.inheritedProperties.direction == Direction::ltr) {
                             startingX += ctx.margins.left;
                         } else {
-                            startingX = ctx.constraints.origin.x + ctx.constraints.availableWidth - ctx.layoutInput.width.value_or(ctx.constraints.availableWidth) - ctx.margins.right;
+                            if (!ctx.constraints.availableWidth.isAuto()) {
+                                startingX = ctx.constraints.origin.x + ctx.constraints.availableWidth.value - ctx.layoutInput.width.value_or(ctx.constraints.availableWidth.value) - ctx.margins.right;
+                            }
                         }
 
                         resolvedPosition = {startingX, startingY};
@@ -114,15 +115,15 @@ namespace layout {
                 // Relative: apply offsets after computing static position
                 if (ctx.layoutInput.position == Position::Relative) {
                     if (ctx.layoutInput.top.has_value()) {
-                        resolvedPosition.y += ctx.layoutInput.top->resolveOr(Size::px(ctx.constraints.availableHeight), 0.0f);
+                        resolvedPosition.y += ctx.layoutInput.top->resolveOr(ctx.constraints.availableHeight, 0.0f);
                     } else if (ctx.layoutInput.bottom.has_value()) {
-                        resolvedPosition.y -= ctx.layoutInput.bottom->resolveOr(Size::px(ctx.constraints.availableHeight), 0.0f);
+                        resolvedPosition.y -= ctx.layoutInput.bottom->resolveOr(ctx.constraints.availableHeight, 0.0f);
                     }
 
                     if (ctx.layoutInput.left.has_value()) {
-                        resolvedPosition.x += ctx.layoutInput.left->resolveOr(Size::px(ctx.constraints.availableWidth), 0.0f);
+                        resolvedPosition.x += ctx.layoutInput.left->resolveOr(ctx.constraints.availableWidth, 0.0f);
                     } else if (ctx.layoutInput.right.has_value()) {
-                        resolvedPosition.x -= ctx.layoutInput.right->resolveOr(Size::px(ctx.constraints.availableWidth), 0.0f);
+                        resolvedPosition.x -= ctx.layoutInput.right->resolveOr(ctx.constraints.availableWidth, 0.0f);
                     }
                 }
 
@@ -143,42 +144,42 @@ namespace layout {
             case layout::Position::Absolute:
             case layout::Position::Fixed: {
                 resolvedSize.height =
-                    ctx.requestedHeight.resolve(Size::px(ctx.availableHeight));
+                    ctx.requestedHeight.resolve(ctx.availableHeight);
                 if (!resolvedSize.height &&
                     resolvedSize.height.error() == style::SizeResolveFailure::Auto) {
                     std::optional<float> resolvedTop;
                     std::optional<float> resolvedBottom;
 
-                    if (ctx.top.has_value()) {
-                        resolvedTop = ctx.top->resolveOr(Size::px(ctx.availableHeight), 0.0f);
+                    if (ctx.top.has_value() && !ctx.availableHeight.isAuto()) {
+                        resolvedTop = ctx.top->resolveOr(ctx.availableHeight, 0.0f);
                     }
 
-                    if (ctx.bottom.has_value()) {
-                        resolvedBottom = ctx.bottom->resolveOr(Size::px(ctx.availableHeight), 0.0f);
+                    if (ctx.bottom.has_value() && !ctx.availableHeight.isAuto()) {
+                        resolvedBottom = ctx.bottom->resolveOr(ctx.availableHeight, 0.0f);
                     }
 
                     if (resolvedTop.has_value() && resolvedBottom.has_value()) {
-                        resolvedSize.height = ctx.availableHeight - *resolvedTop - *resolvedBottom;
+                        resolvedSize.height = ctx.availableHeight.value - *resolvedTop - *resolvedBottom;
                     }
                 }
 
                 resolvedSize.width =
-                    ctx.requestedWidth.resolve(Size::px(ctx.availableWidth));
+                    ctx.requestedWidth.resolve(ctx.availableWidth);
                 if (!resolvedSize.width &&
                     resolvedSize.width.error() == style::SizeResolveFailure::Auto) {
                     std::optional<float> resolvedRight;
                     std::optional<float> resolvedLeft;
 
-                    if (ctx.right.has_value()) {
-                        resolvedRight = ctx.right->resolveOr(Size::px(ctx.availableWidth), 0.0f);
+                    if (ctx.right.has_value() && !ctx.availableWidth.isAuto()) {
+                        resolvedRight = ctx.right->resolveOr(ctx.availableWidth, 0.0f);
                     }
 
-                    if (ctx.left.has_value()) {
-                        resolvedLeft = ctx.left->resolveOr(Size::px(ctx.availableWidth), 0.0f);
+                    if (ctx.left.has_value() && !ctx.availableWidth.isAuto()) {
+                        resolvedLeft = ctx.left->resolveOr(ctx.availableWidth, 0.0f);
                     }
 
                     if (resolvedRight.has_value() && resolvedLeft.has_value()) {
-                        resolvedSize.width = ctx.availableWidth - *resolvedRight - * resolvedLeft;
+                        resolvedSize.width = ctx.availableWidth.value - *resolvedRight - * resolvedLeft;
                     }
                 }
 
@@ -186,9 +187,9 @@ namespace layout {
             }
             default: {
                 resolvedSize.height =
-                    ctx.requestedHeight.resolve(Size::px(ctx.availableHeight));
+                    ctx.requestedHeight.resolve(ctx.availableHeight);
                 resolvedSize.width =
-                    ctx.requestedWidth.resolve(Size::px(ctx.availableWidth));
+                    ctx.requestedWidth.resolve(ctx.availableWidth);
             }
         };
 
@@ -199,7 +200,7 @@ namespace layout {
     ResolvedMargins LayoutEngine::resolveAutoMargins(
         const LayoutInput& li,
         const ReplacedAttributes& replacedAttributes,
-        float availableWidth,
+        Size availableWidth,
         float contentWidth
     ) {
         ResolvedMargins margins;
@@ -229,7 +230,7 @@ namespace layout {
 
         if (leftAuto && rightAuto) {
             // Both auto: center horizontally
-            float remainingSpace = availableWidth - contentWidth;
+            float remainingSpace = availableWidth.isAuto() ? 0.0f : availableWidth.value - contentWidth;
             if (remainingSpace > 0) {
                 float autoMargin = remainingSpace / 2.0f;
                 margins.left = autoMargin;
@@ -241,17 +242,17 @@ namespace layout {
             }
         } else if (leftAuto) {
             // Only left auto: push to right (absorb remaining space)
-            margins.right = li.marginRight.resolveOr(Size::px(availableWidth), 0.0f);
-            float remainingSpace = availableWidth - contentWidth - margins.right;
+            margins.right = li.marginRight.resolveOr(availableWidth, 0.0f);
+            float remainingSpace = availableWidth.isAuto() ? 0.0f : availableWidth.value - contentWidth - margins.right;
             margins.left = std::max(0.0f, remainingSpace);
         } else if (rightAuto) {
             // Only right auto: resolves to 0 (default left alignment)
-            margins.left = li.marginLeft.resolveOr(Size::px(availableWidth), 0.0f);
+            margins.left = li.marginLeft.resolveOr(availableWidth, 0.0f);
             margins.right = 0.0f;
         } else {
             // Neither auto: resolve normally
-            margins.left = li.marginLeft.resolveOr(Size::px(availableWidth), 0.0f);
-            margins.right = li.marginRight.resolveOr(Size::px(availableWidth), 0.0f);
+            margins.left = li.marginLeft.resolveOr(availableWidth, 0.0f);
+            margins.right = li.marginRight.resolveOr(availableWidth, 0.0f);
         }
 
         return margins;
@@ -312,11 +313,20 @@ namespace runtime {
 }
 
 namespace layout {
-    LayoutResult LayoutEngine::layoutAbsolute(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized) {
+    LayoutResult LayoutEngine::layoutBlockOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized) {
         LayoutResult lr;
         lr.outOfFlow = true;
 
         auto margins = constraints.resolvedMargins;
+
+        ContainingBlock containingBlock =
+            layoutInput.position == Position::Fixed
+                ? ContainingBlock {
+                    .origin = {0.0f, 0.0f},
+                    .width = Size::px(constraints.frameInfo.width),
+                    .height = Size::px(constraints.frameInfo.height)
+                }
+                : constraints.absoluteContainingBlock;
 
         PositionResolutionContext pctx {
             .currentCursor = currentCursor,
@@ -325,185 +335,67 @@ namespace layout {
             .margins = margins
         };
 
-        simd_float2 absolutePosition = resolvePosition(pctx);
-        simd_float2 newCursor = absolutePosition;
+        simd_float2 position = resolvePosition(pctx);
 
-        float resolvedHeight = 0.0f;
-        float resolvedWidth = 0.0f;
+        lr.resolvedSize.width = layoutInput.width;
+        lr.resolvedSize.height = layoutInput.height;
 
-        std::vector<simd_float2> atomOffsets;
-        // blockify all elements
-        for (auto& atom : atomized.atoms) {
-            atomOffsets.push_back(newCursor);
-            newCursor.x += atom.width;  
-            resolvedWidth += atom.width;
-            resolvedHeight = std::max(resolvedHeight, atom.height);
-        }
+        float resolvedWidth = lr.resolvedSize.width.value_or(0.0f);
+        float resolvedHeight = lr.resolvedSize.height.value_or(0.0f);
 
-        lr.atomOffsets = atomOffsets;
+
+        lr.computedBox = {
+            .x = position.x,
+            .y = position.y,
+            .width = resolvedWidth,
+            .height = resolvedHeight
+        };
+
+        lr.atomOffsets = {
+            position
+        };
         lr.siblingCursor = currentCursor;
         lr.consumedHeight = 0;
 
         // std::println("resolvedWidth: {}", resolvedWidth - layoutInput.paddingLeft - layoutInput.paddingRight);
 
-        float paddingLeft = layoutInput.paddingLeft.resolveOr(Size::px(constraints.availableWidth));
-        float paddingTop = layoutInput.paddingTop.resolveOr(Size::px(constraints.availableHeight));
-        float paddingRight = layoutInput.paddingRight.resolveOr(Size::px(constraints.availableWidth));
-        float paddingBottom = layoutInput.paddingBottom.resolveOr(Size::px(constraints.availableHeight));
+        float paddingLeft = layoutInput.paddingLeft.resolveOr(constraints.availableWidth);
+        float paddingTop = layoutInput.paddingTop.resolveOr(constraints.availableHeight);
+        float paddingRight = layoutInput.paddingRight.resolveOr(constraints.availableWidth);
+        float paddingBottom = layoutInput.paddingBottom.resolveOr(constraints.availableHeight);
 
         lr.childConstraints = {
             .origin = {0, 0},
             .cursor = {0, 0},
-            .availableWidth = layoutInput.width.has_value() ? resolvedWidth - paddingLeft - paddingRight : constraints.absoluteContainingBlock.width,
-            .availableHeight = resolvedHeight - paddingTop - paddingBottom,
+            .availableWidth = layoutInput.width.has_value() ? Size::px(lr.computedBox.width - paddingLeft - paddingRight) : Size::autoSize(),
+            .availableHeight = layoutInput.height.has_value() ? Size::px(lr.computedBox.height - paddingTop - paddingBottom) : Size::autoSize(),
             .frameInfo = constraints.frameInfo
-        };
-
-        lr.computedBox = {
-            .x = absolutePosition.x,
-            .y = absolutePosition.y,
-            .width = resolvedWidth,
-            .height = resolvedHeight
         };
 
         lr.resolvedPadding = {paddingTop, paddingRight, paddingBottom, paddingLeft};
 
         // Defer right/bottom positioning to postLayout where final sizes are known
-        auto& cb = constraints.absoluteContainingBlock;
         bool isRtl = constraints.inheritedProperties.direction == Direction::rtl;
-        std::optional<float> right;
-        if (layoutInput.right.has_value()) {
-            auto resolvedRight = layoutInput.right->resolve(Size::px(cb.width));
-            if (resolvedRight) right = *resolvedRight;
-        }
-        std::optional<float> bottom;
-        if (layoutInput.bottom.has_value()) {
-            auto resolvedBottom = layoutInput.bottom->resolve(Size::px(cb.height));
-            if (resolvedBottom) bottom = *resolvedBottom;
-        }
 
         lr.deferredPosition = {
-            .needsRightResolution = right.has_value() && (!layoutInput.left.has_value() || isRtl),
-            .needsBottomResolution = bottom.has_value() && !layoutInput.top.has_value(),
-            .containingBlockWidth = cb.width,
-            .containingBlockHeight = cb.height,
-            .resolvedRight = right.value_or(0.0f),
-            .resolvedBottom = bottom.value_or(0.0f),
+            .containingBlockWidth = containingBlock.width,
+            .containingBlockHeight = containingBlock.height,
+            .right = (!layoutInput.left.has_value() || isRtl) ? layoutInput.right : std::nullopt,
+            .bottom = !layoutInput.top.has_value() ? layoutInput.bottom : std::nullopt,
             .marginRight = margins.right,
-            .marginBottom = margins.bottom,
-            .direction = constraints.inheritedProperties.direction
+            .marginBottom = margins.bottom
         };
 
         return lr;
     }
 
-
-    // fixed needs:
-    /*
-        - Out-of-flow: does not affect siblings or the parent cursor.
-        - Containing block: the viewport (screen). Coordinates are relative to viewport origin.
-        - Requires awareness of viewport dimensions (screenWidth/screenHeight) as available space.
-        - Internal layout respects inline vs block semantics; shrink-to-fit applies the same way:
-            - If minContentWidth > viewportAvailableWidth => degenerate to block-like stacking.
-        - Position and final atom placement are independent of scrolling of any containing block.
-    */
-    LayoutResult LayoutEngine::layoutFixed(
-        Constraints& constraints,
-        simd_float2 currentCursor,
-        LayoutInput& layoutInput,
-        Atomized& atomized
-    ) {
-        LayoutResult lr;
-        lr.outOfFlow = true;
-
-        auto margins = constraints.resolvedMargins;
-
-        PositionResolutionContext pctx {
-            .currentCursor = currentCursor,
-            .constraints = constraints,
-            .layoutInput = layoutInput,
-            .margins = margins
-        };
-
-        simd_float2 fixedPosition = resolvePosition(pctx);
-        
-        simd_float2 newCursor = fixedPosition;
-        float resolvedHeight = 0.0f;
-        float resolvedWidth = 0.0f;
-        std::vector<simd_float2> atomOffsets;
-
-        for (auto& atom : atomized.atoms) {
-            atomOffsets.push_back(newCursor);
-            newCursor.x += atom.width;
-            resolvedWidth += atom.width;
-            resolvedHeight = std::max(resolvedHeight, atom.height);
-        }
-
-        lr.atomOffsets = atomOffsets;
-        
-        lr.siblingCursor = currentCursor;
-        lr.consumedHeight = 0;
-
-        float paddingLeft = layoutInput.paddingLeft.resolveOr(Size::px(constraints.availableWidth));
-        float paddingTop = layoutInput.paddingTop.resolveOr(Size::px(constraints.availableHeight));
-        float paddingRight = layoutInput.paddingRight.resolveOr(Size::px(constraints.availableWidth));
-        float paddingBottom = layoutInput.paddingBottom.resolveOr(Size::px(constraints.availableHeight));
-
-        lr.childConstraints = {
-            .origin = {0, 0},
-            .cursor = {0, 0},
-            .availableWidth = layoutInput.width.has_value() ? resolvedWidth - paddingLeft - paddingRight : constraints.frameInfo.width,
-            .availableHeight = resolvedHeight - paddingTop - paddingBottom,
-            .frameInfo = constraints.frameInfo
-        };
-
-        lr.computedBox = {
-            .x = fixedPosition.x,
-            .y = fixedPosition.y,
-            .width = resolvedWidth,
-            .height = resolvedHeight
-        };
-
-        lr.resolvedPadding = {paddingTop, paddingRight, paddingBottom, paddingLeft};
-
-        // Defer right/bottom positioning to postLayout where final sizes are known
-        float refWidth = constraints.frameInfo.width;
-        float refHeight = constraints.frameInfo.height;
-        bool isRtl = constraints.inheritedProperties.direction == Direction::rtl;
-        std::optional<float> right;
-        if (layoutInput.right.has_value()) {
-            auto resolvedRight = layoutInput.right->resolve(Size::px(refWidth));
-            if (resolvedRight) right = *resolvedRight;
-        }
-        std::optional<float> bottom;
-        if (layoutInput.bottom.has_value()) {
-            auto resolvedBottom = layoutInput.bottom->resolve(Size::px(refHeight));
-            if (resolvedBottom) bottom = *resolvedBottom;
-        }
-
-        lr.deferredPosition = {
-            .needsRightResolution = right.has_value() && (!layoutInput.left.has_value() || isRtl),
-            .needsBottomResolution = bottom.has_value() && !layoutInput.top.has_value(),
-            .containingBlockWidth = refWidth,
-            .containingBlockHeight = refHeight,
-            .resolvedRight = right.value_or(0.0f),
-            .resolvedBottom = bottom.value_or(0.0f),
-            .marginRight = margins.right,
-            .marginBottom = margins.bottom,
-            .direction = constraints.inheritedProperties.direction
-        };
-
-        return lr;
-    }
-
-
-    LayoutResult LayoutEngine::resolveOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized){
+    LayoutResult LayoutEngine::resolveOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized) {
         LayoutResult lr;
 
-        if (layoutInput.position == Position::Absolute) {
-            lr = layoutAbsolute(constraints, currentCursor, layoutInput, atomized);
+        if (layoutInput.display == Display::Block || layoutInput.display == Display::Flex || layoutInput.display == Display::Grid) {
+            lr = layoutBlockOutOfFlow(constraints, currentCursor, layoutInput, atomized);
         }else {
-            lr =layoutFixed(constraints, currentCursor, layoutInput, atomized);
+            lr = layoutInlineOutOfFlow(constraints, currentCursor, layoutInput, atomized);
         }
 
         return lr;
@@ -512,7 +404,6 @@ namespace layout {
     // relative, block/inline
     LayoutResult LayoutEngine::layoutBlockNormalFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized) {
         LayoutResult lr;
-        std::vector<simd_float2> atomOffsets;
         Constraints childConstraints;
 
         auto margins = constraints.resolvedMargins;
@@ -529,33 +420,29 @@ namespace layout {
 
         lr.outOfFlow = false;
 
-        // float resolvedWidth = 0;
-        float resolvedHeight = 0;
-
-        float paddingLeft = layoutInput.paddingLeft.resolveOr(Size::px(constraints.availableWidth));
-        float paddingTop = layoutInput.paddingTop.resolveOr(Size::px(constraints.availableHeight));
-        float paddingRight = layoutInput.paddingRight.resolveOr(Size::px(constraints.availableWidth));
-        float paddingBottom = layoutInput.paddingBottom.resolveOr(Size::px(constraints.availableHeight));
+        float paddingLeft = layoutInput.paddingLeft.resolveOr(constraints.availableWidth);
+        float paddingTop = layoutInput.paddingTop.resolveOr(constraints.availableHeight);
+        float paddingRight = layoutInput.paddingRight.resolveOr(constraints.availableWidth);
+        float paddingBottom = layoutInput.paddingBottom.resolveOr(constraints.availableHeight);
 
         childConstraints.cursor.x = 0;
         childConstraints.cursor.y = 0;
         childConstraints.origin = childConstraints.cursor;
         childConstraints.frameInfo = constraints.frameInfo;
 
-        for (auto& atom : atomized.atoms) {
-            atomOffsets.push_back(newCursor);
-            newCursor.x += atom.width;
-            resolvedHeight = std::max(resolvedHeight, atom.height);
+        lr.resolvedSize.width = layoutInput.width;
+        lr.resolvedSize.height = layoutInput.height;
+
+        if (!lr.resolvedSize.width &&
+            lr.resolvedSize.width.error() == style::SizeResolveFailure::Auto &&
+            constraints.widthResolution == AxisResolution::Final &&
+            !constraints.shrinkWidthToFit &&
+            !constraints.availableWidth.isAuto()) {
+            lr.resolvedSize.width = constraints.availableWidth.value;
         }
 
-        float resolvedWidth = layoutInput.width.has_value() ? 
-        *layoutInput.width
-            : 
-        constraints.availableWidth;
-
-        if (layoutInput.height.has_value()) {
-            resolvedHeight = *layoutInput.height;
-        }
+        float resolvedWidth = lr.resolvedSize.width.value_or(0.0f);
+        float resolvedHeight = lr.resolvedSize.height.value_or(0.0f);
 
         lr.computedBox = {
             startingPos.x,
@@ -564,15 +451,22 @@ namespace layout {
             resolvedHeight
         };
 
-        lr.consumedHeight = resolvedHeight;
+        lr.atomOffsets = {
+            startingPos
+        };
 
-        childConstraints.availableHeight = resolvedHeight - paddingTop - paddingBottom;
-        childConstraints.availableWidth = resolvedWidth - paddingLeft - paddingRight;
+        lr.consumedHeight = lr.computedBox.height;
+
+        childConstraints.availableHeight = lr.resolvedSize.height
+            ? Size::px(lr.computedBox.height - paddingTop - paddingBottom)
+            : Size::autoSize();
+        childConstraints.availableWidth = lr.resolvedSize.width
+            ? Size::px(lr.computedBox.width - paddingLeft - paddingRight)
+            : Size::autoSize();
 
         lr.childConstraints = childConstraints;
-        lr.atomOffsets = atomOffsets;
 
-        newCursor.y += resolvedHeight;
+        newCursor.y += lr.computedBox.height;
         newCursor.x = constraints.origin.x;
 
         lr.siblingCursor = newCursor;
@@ -642,15 +536,15 @@ namespace layout {
             float lineOffset = 0.0f;
             switch (constraints.inheritedProperties.textAlign) {
                 case TextAlign::Start:
-                    lineOffset = isLtr ? 0.0f : constraints.availableWidth - lineBox.width;
+                    lineOffset = isLtr || constraints.availableWidth.isAuto() ? 0.0f : constraints.availableWidth.value - lineBox.width;
                     break;
                 case TextAlign::Left:
                     break;
                 case TextAlign::Center:
-                    lineOffset = (constraints.availableWidth - lineBox.width) / 2.0f;
+                    lineOffset = constraints.availableWidth.isAuto() ? 0.0f : (constraints.availableWidth.value - lineBox.width) / 2.0f;
                     break;
                 case TextAlign::Right:
-                    lineOffset = constraints.availableWidth - lineBox.width;
+                    lineOffset = constraints.availableWidth.isAuto() ? 0.0f : constraints.availableWidth.value - lineBox.width;
                     break;
             }
             float startingX = constraints.origin.x + lineOffset + offset;
@@ -661,7 +555,7 @@ namespace layout {
 
             if (fragmentIdx == 0) {
 
-                float inlineMargin = isLtr ? margins.right : margins.left;
+                float inlineMargin = isLtr ? margins.left : margins.right;
 
                 if (constraints.edgeIntent.edgeDisplayMode == Display::Inline) {
                     if (constraints.edgeIntent.collapsable) {
@@ -718,6 +612,9 @@ namespace layout {
         totalHeight += lineHeight;
         totalWidth = std::max(currentTotalWidth, totalWidth);
 
+        lr.resolvedSize.width = totalWidth;
+        lr.resolvedSize.height = totalHeight;
+
         lr.computedBox = {
             minX,
             minY,
@@ -725,19 +622,19 @@ namespace layout {
             totalHeight
         };
 
-        float paddingLeft = layoutInput.paddingLeft.resolveOr(Size::px(constraints.availableWidth));
-        float paddingTop = layoutInput.paddingTop.resolveOr(Size::px(constraints.availableHeight));
-        float paddingRight = layoutInput.paddingRight.resolveOr(Size::px(constraints.availableWidth));
-        float paddingBottom = layoutInput.paddingBottom.resolveOr(Size::px(constraints.availableHeight));
+        float paddingLeft = layoutInput.paddingLeft.resolveOr(constraints.availableWidth);
+        float paddingTop = layoutInput.paddingTop.resolveOr(constraints.availableHeight);
+        float paddingRight = layoutInput.paddingRight.resolveOr(constraints.availableWidth);
+        float paddingBottom = layoutInput.paddingBottom.resolveOr(constraints.availableHeight);
 
         lr.childConstraints.cursor = {0, 0};
-        lr.childConstraints.availableWidth = totalWidth - paddingLeft - paddingRight;
-        lr.childConstraints.availableHeight = totalHeight - paddingTop - paddingBottom;
+        lr.childConstraints.availableWidth = Size::px(totalWidth - paddingLeft - paddingRight);
+        lr.childConstraints.availableHeight = Size::px(totalHeight - paddingTop - paddingBottom);
         lr.childConstraints.frameInfo = constraints.frameInfo;
 
         lr.atomOffsets = atomOffsets;
         lr.consumedHeight = totalHeight;
-        lr.prevInlineHeight = totalHeight;
+        lr.prevInlineHeight = lineHeight;
 
         lr.siblingCursor = newCursor;
 
@@ -752,13 +649,145 @@ namespace layout {
         return lr;
     }
 
-    // LayoutResult layoutFlex(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized) {
-    //     // flex algorithm:
-    //         // all in preprocessing: gather sizes (flex-basis) of all elements
-    //         // if shrink is set: shrink elements; if grow is set: grow elements
-    //         // place sequentially; leave remaining space
+    LayoutResult LayoutEngine::layoutInlineOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized) {
+        LayoutResult lr;
+        lr.outOfFlow = true;
 
-    // }
+        ResolvedMargins margins = constraints.resolvedMargins;
+
+        std::vector<simd_float2> atomOffsets(atomized.atoms.size());
+
+        PositionResolutionContext pctx {
+            .currentCursor = currentCursor,
+            .constraints = constraints,
+            .layoutInput = layoutInput,
+            .margins = margins
+        };
+
+        simd_float2 newCursor = resolvePosition(pctx);
+        float originX = newCursor.x;
+
+        lr.childConstraints.origin = {0.0f, 0.0f};
+        float lineHeight = 0;
+        float totalHeight = 0;
+        float totalWidth = 0;
+        float currentTotalWidth = 0;
+        float minX = newCursor.x;
+        float minY = newCursor.y;
+
+        bool isLtr = constraints.inheritedProperties.direction == Direction::ltr;
+        size_t prevLineBoxIndex = -1;
+
+        auto lineFragments = constraints.inlineFormatting.lineFragments();
+        auto lineBoxes = constraints.inlineFormatting.lineBoxes();
+        for (auto it = lineFragments.begin(); it != lineFragments.end(); ++it) {
+            const LineFragment& fragment = *it;
+
+            const auto& lineBox = lineBoxes[fragment.lineBoxIndex];
+            float offset = lineBox.fragmentOffsets[fragment.fragmentIndex];
+            float lineOffset = 0.0f;
+            switch (constraints.inheritedProperties.textAlign) {
+                case TextAlign::Start:
+                    lineOffset = isLtr || constraints.availableWidth.isAuto() ? 0.0f : constraints.availableWidth.value - lineBox.width;
+                    break;
+                case TextAlign::Left:
+                    break;
+                case TextAlign::Center:
+                    lineOffset = constraints.availableWidth.isAuto() ? 0.0f : (constraints.availableWidth.value - lineBox.width) / 2.0f;
+                    break;
+                case TextAlign::Right:
+                    lineOffset = constraints.availableWidth.isAuto() ? 0.0f : constraints.availableWidth.value - lineBox.width;
+                    break;
+            }
+            float startingX = originX + lineOffset + offset;
+
+            newCursor.x = startingX;
+
+            minX = std::min(minX, newCursor.x);
+
+            if (fragment.lineBoxIndex != prevLineBoxIndex &&
+                prevLineBoxIndex != -1
+            ) {
+                newCursor.y += lineHeight;
+                totalHeight += lineHeight;
+                lineHeight = 0;
+                newCursor.x = startingX;
+                totalWidth = std::max(currentTotalWidth, totalWidth);
+                currentTotalWidth = 0;
+            }
+
+
+            size_t atomIndex = fragment.atomStart;
+            for (size_t i = 0; i < fragment.atomCount && atomIndex < atomized.atoms.size(); ++i, ++atomIndex) {
+                auto& atom = atomized.atoms[atomIndex];
+                float usedLineHeight = atom.lineHeight > 0.0f
+                    ? atom.lineHeight
+                    : atom.height;
+
+                atomOffsets[atomIndex] = newCursor + simd_float2{
+                    0.0f,
+                    (usedLineHeight - atom.height) / 2.0f
+                };
+                newCursor.x += atom.width;
+                lineHeight = std::max(lineHeight, usedLineHeight);
+                currentTotalWidth += atom.width;
+            }
+
+            prevLineBoxIndex = fragment.lineBoxIndex;
+        }
+
+        totalHeight += lineHeight;
+        totalWidth = std::max(currentTotalWidth, totalWidth);
+
+        lr.resolvedSize.width = totalWidth;
+        lr.resolvedSize.height = totalHeight;
+
+        lr.computedBox = {
+            minX,
+            minY,
+            totalWidth,
+            totalHeight
+        };
+
+        float paddingLeft = layoutInput.paddingLeft.resolveOr(constraints.availableWidth);
+        float paddingTop = layoutInput.paddingTop.resolveOr(constraints.availableHeight);
+        float paddingRight = layoutInput.paddingRight.resolveOr(constraints.availableWidth);
+        float paddingBottom = layoutInput.paddingBottom.resolveOr(constraints.availableHeight);
+
+        lr.childConstraints.cursor = {0, 0};
+        lr.childConstraints.availableWidth = Size::px(totalWidth - paddingLeft - paddingRight);
+        lr.childConstraints.availableHeight = Size::px(totalHeight - paddingTop - paddingBottom);
+        lr.childConstraints.frameInfo = constraints.frameInfo;
+
+        lr.atomOffsets = atomOffsets;
+        lr.consumedHeight = 0;
+
+        lr.siblingCursor = currentCursor;
+
+        lr.resolvedPadding = {paddingTop, paddingRight, paddingBottom, paddingLeft};
+
+        ContainingBlock containingBlock =
+            layoutInput.position == Position::Fixed
+                ? ContainingBlock {
+                    .origin = {0.0f, 0.0f},
+                    .width = Size::px(constraints.frameInfo.width),
+                    .height = Size::px(constraints.frameInfo.height)
+                }
+                : constraints.absoluteContainingBlock;
+
+        bool isRtl = constraints.inheritedProperties.direction == Direction::rtl;
+
+        lr.deferredPosition = {
+            .containingBlockWidth = containingBlock.width,
+            .containingBlockHeight = containingBlock.height,
+            .right = (!layoutInput.left.has_value() || isRtl) ? layoutInput.right : std::nullopt,
+            .bottom = !layoutInput.top.has_value() ? layoutInput.bottom : std::nullopt,
+            .marginRight = margins.right,
+            .marginBottom = margins.bottom
+        };
+
+        return lr;
+    }
 
 
     LayoutResult LayoutEngine::resolveNormalFlow(Constraints& constraints, simd_float2 current_cursor, LayoutInput& layoutInput, Atomized& atomized) {

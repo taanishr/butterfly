@@ -102,9 +102,9 @@ namespace layout {
         const FrameInfo&  frameInfo;
         Measured          measured;
         bool              mutate;
-        float             childAvailableWidth;
-        float             parentAvailableWidth;
-        float             parentAvailableHeight;
+        Size              childAvailableWidth;
+        Size              parentAvailableWidth;
+        Size              parentAvailableHeight;
 
         float minX;
         float minY;
@@ -127,7 +127,7 @@ namespace layout {
                      const Constraints& childConstraints,
                      const FrameInfo& frameInfo,
                      Measured measured, bool mutate,
-                     float parentAvailableWidth, float parentAvailableHeight,
+                     Size parentAvailableWidth, Size parentAvailableHeight,
                      float minX, float minY, float maxX, float maxY);
 
         bool isXIndefinite(TreeNode* child);

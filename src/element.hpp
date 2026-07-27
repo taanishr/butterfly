@@ -90,6 +90,12 @@ namespace elements {
         virtual std::any request(RequestTarget target, std::any& payload) = 0;
         virtual void encode(MTL::RenderCommandEncoder* encoder, std::any& finalized) = 0;
         virtual std::string_view elementTypeName() const = 0;
+        virtual bool isInline() const {
+            return false;
+        }
+        virtual bool isReplaced() const {
+            return false;
+        }
         virtual bool preciseHitTest(simd_float2 point, const LayoutResult& layout, const std::any& finalized) {
             return true;
         }
@@ -147,6 +153,20 @@ namespace elements {
             }
 
             return "Unknown";
+        }
+
+        bool isInline() const override {
+            if constexpr (requires(const E& value) { value.isInline(); }) {
+                return element.isInline();
+            }
+            return false;
+        }
+
+        bool isReplaced() const override {
+            if constexpr (requires(const E& value) { value.isReplaced(); }) {
+                return element.isReplaced();
+            }
+            return false;
         }
 
         bool preciseHitTest(simd_float2 point, const LayoutResult& layout, const std::any& finalized) override {
@@ -354,7 +374,7 @@ namespace tree {
         }
 
         Position getPosition() const { return shared.position; }
-        Display getDisplay() const { return shared.display; }
+        Display getDisplay() const { return computedDisplay.value_or(shared.display); }
         Size getMarginTop() const { return shared.marginTop.value_or(shared.margin); }
         Size getMarginBottom() const { return shared.marginBottom.value_or(shared.margin); }
         Size getMarginLeft() const { return shared.marginLeft.value_or(shared.margin); }
@@ -402,6 +422,7 @@ namespace tree {
         simd_float2 scrollContentSize {0.0f, 0.0f};
         simd_float2 scrollViewportSize {0.0f, 0.0f};
         SharedDescriptor shared;
+        std::optional<Display> computedDisplay;
         DirtyBits dirtySelf{~DirtyBits::None};
         DirtyBits dirtySubtree{~DirtyBits::None};
         std::optional<ConstraintsKey> constraintsKey;
@@ -425,11 +446,7 @@ namespace tree {
     std::shared_ptr<layout::InlineFormattingContext> buildInlineBoxes(TreeNode* node, Constraints& childConstraints);
 
     // inline context calculated for a single child, independently of other siblings
-    layout::InlineFormattingInput buildIsolatedInlineBoxes(
-        TreeNode* node,
-        float maxWidth,
-        layout::AxisResolution widthResolution
-    );
+    layout::InlineFormattingInput buildIsolatedInlineBoxes(TreeNode* node, Size maxWidth, layout::AxisResolution widthResolution, bool calculateIntrinsicSizes = false);
 
 }
 

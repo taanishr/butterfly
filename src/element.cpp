@@ -55,7 +55,7 @@ namespace tree {
         size_t sequenceStart = 0;
         while (sequenceStart < parent->children.size()) {
             while (sequenceStart < parent->children.size() &&
-                   !getText(parent->children[sequenceStart].get()).has_value()) {
+                   !parent->children[sequenceStart]->element->isInline()) {
                 ++sequenceStart;
             }
             if (sequenceStart == parent->children.size()) break;
@@ -63,19 +63,29 @@ namespace tree {
             size_t sequenceEnd = sequenceStart;
             std::string paragraph;
             std::vector<size_t> childStarts;
+            std::vector<size_t> childLengths;
             while (sequenceEnd < parent->children.size()) {
-                auto childText = getText(parent->children[sequenceEnd].get());
-                if (!childText.has_value()) break;
+                auto* child = parent->children[sequenceEnd].get();
+                if (!child->element->isInline()) break;
+
                 childStarts.push_back(paragraph.size());
-                std::string bidiText = *childText;
-                const auto whiteSpace = getWhiteSpace(parent->children[sequenceEnd].get())
-                    .value_or(WhiteSpace::Normal);
-                if (whiteSpace == WhiteSpace::Normal || whiteSpace == WhiteSpace::NoWrap) {
-                    for (char& byte : bidiText) {
-                        if (byte == '\r' || byte == '\n') byte = ' ';
+
+                if (auto childText = getText(child)) {
+                    std::string bidiText = *childText;
+                    const auto whiteSpace = getWhiteSpace(child)
+                        .value_or(WhiteSpace::Normal);
+                    if (whiteSpace == WhiteSpace::Normal || whiteSpace == WhiteSpace::NoWrap) {
+                        for (char& byte : bidiText) {
+                            if (byte == '\r' || byte == '\n') byte = ' ';
+                        }
                     }
+
+                    paragraph += bidiText;
+                } else {
+                    paragraph += "\xEF\xBF\xBC";
                 }
-                paragraph += bidiText;
+
+                childLengths.push_back(paragraph.size() - childStarts.back());
                 ++sequenceEnd;
             }
 
@@ -91,7 +101,7 @@ namespace tree {
 
             for (size_t i = sequenceStart; i < sequenceEnd; ++i) {
                 const size_t childStart = childStarts[i - sequenceStart];
-                const size_t childLength = getText(parent->children[i].get())->size();
+                const size_t childLength = childLengths[i - sequenceStart];
                 const size_t childEnd = childStart + childLength;
                 std::vector<bidi::TextShapingRun> childRuns;
                 for (const auto& run : context->runs()) {
@@ -282,12 +292,56 @@ namespace tree {
         bool hasBreakOpportunity,
         bool lineHasContent,
         float prospectiveWidth,
-        float availableWidth
+        Size availableWidth
     ) {
         if (!hasBreakOpportunity || !lineHasContent) return false;
         if (widthResolution == layout::AxisResolution::MinContent) return true;
         if (widthResolution == layout::AxisResolution::MaxContent) return false;
-        return prospectiveWidth > availableWidth;
+        return !availableWidth.isAuto() && prospectiveWidth > availableWidth.value;
+    }
+
+    void appendAtomicInlineFragment(
+        const std::vector<Atom>& atoms,
+        const bidi::TextShapingRun& run,
+        ResolvedMargins margins,
+        Size availableWidth,
+        layout::AxisResolution widthResolution,
+        std::vector<LineFragment>& fragments,
+        std::vector<LineBox>& lineBoxes,
+        LineBox& currentLineBox,
+        size_t& currentLineBoxIndex,
+        bool& lastFragmentHasBreakOpportunity
+    ) {
+        if (atoms.empty()) return;
+
+        float width = margins.left + margins.right;
+        for (const auto& atom : atoms) {
+            width += atom.width;
+        }
+
+        if (shouldTakeSoftBreak(
+                widthResolution,
+                true,
+                currentLineBox.fragmentCount > 0,
+                currentLineBox.width + width,
+                availableWidth
+            )) {
+            lineBoxes.push_back(currentLineBox);
+            currentLineBox = {};
+            currentLineBoxIndex++;
+        }
+
+        LineFragment fragment {
+            .width = width,
+            .atomStart = 0,
+            .atomCount = atoms.size(),
+            .bidiLevel = run.level,
+            .lineBoxIndex = currentLineBoxIndex,
+            .fragmentIndex = currentLineBox.fragmentCount
+        };
+        fragments.push_back(fragment);
+        currentLineBox.pushFragment(fragment);
+        lastFragmentHasBreakOpportunity = true;
     }
 
     void appendTextLineFragments(
@@ -297,7 +351,7 @@ namespace tree {
         WhiteSpace whiteSpace,
         WordBreak wordBreak,
         ResolvedMargins margins,
-        float availableWidth,
+        Size availableWidth,
         layout::AxisResolution widthResolution,
         std::vector<LineFragment>& fragments,
         std::vector<LineBox>& lineBoxes,
@@ -530,9 +584,13 @@ namespace tree {
             }
 
             auto resolvedWidth = node->shared.width.resolve(
-                Size::px(constraints.availableWidth)
+                constraints.availableWidth
             );
-            contentWidth = resolvedWidth.value_or(constraints.availableWidth);
+            if (resolvedWidth) {
+                contentWidth = *resolvedWidth;
+            } else if (!constraints.availableWidth.isAuto()) {
+                contentWidth = constraints.availableWidth.value;
+            }
 
             LayoutInput li{
                 .position = position,
@@ -561,8 +619,12 @@ namespace tree {
 
         auto& measured = *node->measured;
         Constraints childConstraints{};
-        childConstraints.availableWidth = measured.explicitWidth.value_or(constraints.availableWidth);
-        childConstraints.availableHeight = measured.explicitHeight.value_or(constraints.availableHeight);
+        childConstraints.availableWidth = measured.explicitWidth
+            ? Size::px(*measured.explicitWidth)
+            : Size::autoSize();
+        childConstraints.availableHeight = measured.explicitHeight
+            ? Size::px(*measured.explicitHeight)
+            : Size::autoSize();
         childConstraints.frameInfo = constraints.frameInfo;
 
         for (auto& child : node->children) {
@@ -570,11 +632,7 @@ namespace tree {
         }
     }
 
-    layout::InlineFormattingInput buildIsolatedInlineBoxes(
-        TreeNode* node,
-        float maxWidth,
-        layout::AxisResolution widthResolution
-    ) {
+    layout::InlineFormattingInput buildIsolatedInlineBoxes(TreeNode* node, Size maxWidth, layout::AxisResolution widthResolution, bool calculateIntrinsicSizes) {
         auto context = std::make_shared<layout::InlineFormattingContext>();
         auto& fragments = context->fragments;
         auto& lineBoxes = context->lineBoxes;
@@ -582,33 +640,68 @@ namespace tree {
         size_t currentLineBoxIndex = 0;
         bool lastFragmentHasBreakOpportunity = false;
 
-        auto textResp = getText(node);
-        if (textResp.has_value()) {
-            auto shapedRun = getShapedRun(node);
+        if (node->element->isInline()) {
+            auto textResp = getText(node);
             auto margins = node->preLayout->resolvedMargins;
-            auto text = *textResp;
             auto& atoms = node->atomized->atoms;
-            appendTextLineFragments(
-                text,
-                *shapedRun,
-                atoms,
-                getWhiteSpace(node).value_or(WhiteSpace::Normal),
-                getWordBreak(node).value_or(WordBreak::Normal),
-                margins,
-                maxWidth,
-                widthResolution,
-                fragments,
-                lineBoxes,
-                currentLineBox,
-                currentLineBoxIndex,
-                lastFragmentHasBreakOpportunity
-            );
+
+            if (textResp.has_value()) {
+                appendTextLineFragments(
+                    *textResp,
+                    *getShapedRun(node),
+                    atoms,
+                    getWhiteSpace(node).value_or(WhiteSpace::Normal),
+                    getWordBreak(node).value_or(WordBreak::Normal),
+                    margins,
+                    maxWidth,
+                    widthResolution,
+                    fragments,
+                    lineBoxes,
+                    currentLineBox,
+                    currentLineBoxIndex,
+                    lastFragmentHasBreakOpportunity
+                );
+            } else {
+                const auto& run = node->textBidiInput->runs.front();
+                appendAtomicInlineFragment(
+                    atoms,
+                    run,
+                    margins,
+                    maxWidth,
+                    widthResolution,
+                    fragments,
+                    lineBoxes,
+                    currentLineBox,
+                    currentLineBoxIndex,
+                    lastFragmentHasBreakOpportunity
+                );
+            }
         }
 
         if (currentLineBox.fragmentCount > 0)
             lineBoxes.push_back(currentLineBox);
 
         reorderLineFragments(*context);
+
+        if (calculateIntrinsicSizes) {
+            layout::InlineFormattingInput currentInput{.context = context, .fragments = {.start = 0, .count = fragments.size()}};
+            auto minInput = widthResolution == layout::AxisResolution::MinContent ? currentInput : buildIsolatedInlineBoxes(node, Size::autoSize(), layout::AxisResolution::MinContent, false);
+            auto maxInput = widthResolution == layout::AxisResolution::MaxContent ? currentInput : buildIsolatedInlineBoxes(node, Size::autoSize(), layout::AxisResolution::MaxContent, false);
+            std::vector<float> minLineWidths(minInput.lineBoxes().size(), 0.0f);
+            for (const auto& fragment : minInput.lineFragments()) {
+                for (size_t i = 0; i < fragment.atomCount; ++i) minLineWidths[fragment.lineBoxIndex] += node->atomized->atoms[fragment.atomStart + i].width;
+            }
+            float minContent = 0.0f;
+            for (float width : minLineWidths) minContent = std::max(minContent, width);
+
+            std::vector<float> maxLineWidths(maxInput.lineBoxes().size(), 0.0f);
+            for (const auto& fragment : maxInput.lineFragments()) {
+                for (size_t i = 0; i < fragment.atomCount; ++i) maxLineWidths[fragment.lineBoxIndex] += node->atomized->atoms[fragment.atomStart + i].width;
+            }
+            float maxContent = 0.0f;
+            for (float width : maxLineWidths) maxContent = std::max(maxContent, width);
+            context->intrinsicSizes = layout::IntrinsicSizes{.minContent = Size::px(minContent), .maxContent = Size::px(maxContent)};
+        }
 
         const size_t fragmentCount = fragments.size();
         return {
@@ -633,13 +726,9 @@ namespace tree {
 
             size_t childFragmentStart = fragments.size();
 
-            auto textResp = getText(child.get());
-
-            if (textResp.has_value()) {
-                auto shapedRun = getShapedRun(child.get());
+            if (child->element->isInline()) {
+                auto textResp = getText(child.get());
                 auto margins = child->preLayout->resolvedMargins;
-                auto text = *textResp;
-
                 auto& atoms = child->atomized->atoms;
 
                 if (i > 0 && !prevInline && currentLineBox.fragmentCount > 0) {
@@ -648,21 +737,37 @@ namespace tree {
                     currentLineBoxIndex++;
                 }
 
-                appendTextLineFragments(
-                    text,
-                    *shapedRun,
-                    atoms,
-                    getWhiteSpace(child.get()).value_or(WhiteSpace::Normal),
-                    getWordBreak(child.get()).value_or(WordBreak::Normal),
-                    margins,
-                    childConstraints.availableWidth,
-                    childConstraints.widthResolution,
-                    fragments,
-                    childrenLineBoxes,
-                    currentLineBox,
-                    currentLineBoxIndex,
-                    lastFragmentHasBreakOpportunity
-                );
+                if (textResp.has_value()) {
+                    appendTextLineFragments(
+                        *textResp,
+                        *getShapedRun(child.get()),
+                        atoms,
+                        getWhiteSpace(child.get()).value_or(WhiteSpace::Normal),
+                        getWordBreak(child.get()).value_or(WordBreak::Normal),
+                        margins,
+                        childConstraints.availableWidth,
+                        childConstraints.widthResolution,
+                        fragments,
+                        childrenLineBoxes,
+                        currentLineBox,
+                        currentLineBoxIndex,
+                        lastFragmentHasBreakOpportunity
+                    );
+                } else {
+                    const auto& run = child->textBidiInput->runs.front();
+                    appendAtomicInlineFragment(
+                        atoms,
+                        run,
+                        margins,
+                        childConstraints.availableWidth,
+                        childConstraints.widthResolution,
+                        fragments,
+                        childrenLineBoxes,
+                        currentLineBox,
+                        currentLineBoxIndex,
+                        lastFragmentHasBreakOpportunity
+                    );
+                }
 
                 prevInline = true;
             }else {
@@ -680,6 +785,31 @@ namespace tree {
         }
 
         reorderLineFragments(*context);
+
+        if (childConstraints.intrinsicSizesAxis == layout::Axis::Width) {
+            auto minContext = context;
+            auto maxContext = context;
+            if (childConstraints.widthResolution != layout::AxisResolution::MinContent) {
+                Constraints minConstraints = childConstraints;
+                minConstraints.availableWidth = Size::autoSize();
+                minConstraints.widthResolution = layout::AxisResolution::MinContent;
+                minConstraints.intrinsicSizesAxis.reset();
+                minContext = buildInlineBoxes(node, minConstraints);
+            }
+            if (childConstraints.widthResolution != layout::AxisResolution::MaxContent) {
+                Constraints maxConstraints = childConstraints;
+                maxConstraints.availableWidth = Size::autoSize();
+                maxConstraints.widthResolution = layout::AxisResolution::MaxContent;
+                maxConstraints.intrinsicSizesAxis.reset();
+                maxContext = buildInlineBoxes(node, maxConstraints);
+            }
+
+            float minContent = 0.0f;
+            for (const auto& lineBox : minContext->lineBoxes) minContent = std::max(minContent, lineBox.width);
+            float maxContent = 0.0f;
+            for (const auto& lineBox : maxContext->lineBoxes) maxContent = std::max(maxContent, lineBox.width);
+            context->intrinsicSizes = layout::IntrinsicSizes{.minContent = Size::px(minContent), .maxContent = Size::px(maxContent)};
+        }
 
         return context;
     }
