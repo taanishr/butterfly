@@ -484,10 +484,6 @@ namespace layout {
         float maxX;
         float maxY;
 
-        float maxChildRight = 0;
-        float maxChildBottom = 0;
-
-        bool hasIndefiniteChild = false;
         struct Bounds {
             float maxX;
             float maxY;
@@ -511,13 +507,6 @@ namespace layout {
 
             this->flex.axis.crossShrinkToFit(this->childConstraints) =
                 needsCrossShrink;
-
-            for (auto& child : node->children) {
-                if (isXIndefinite(child.get()) || isYIndefinite(child.get())) {
-                    hasIndefiniteChild = true;
-                    break;
-                }
-            }
         }
 
         Size parentAvailableMain() {
@@ -530,58 +519,6 @@ namespace layout {
             return flex.axis.isRow
                 ? parentAvailableHeight
                 : parentAvailableWidth;
-        }
-
-        // x and y axis indefinite checks are asymmetric
-        // because of how HTML/CSS auto-expands width (think block, flex, etc...)
-        // but does not do the same for height
-        bool isXIndefinite(TreeNode* child) {
-            /* axes are indefinite for three reasons:
-                - The axis is being shrink-to-fit measured.
-                - The axis is being measured as min/max-content.
-                - Measured explicitly says IndefiniteBasis.
-        
-                this 2 trillion line if statement effectively covers this case
-            */
-            bool basisIsIndefinite =
-                parentConstraints.shrinkWidthToFit ||
-                parentConstraints.widthResolution == AxisResolution::MinContent ||
-                parentConstraints.widthResolution == AxisResolution::MaxContent ||
-                (!measured.explicitWidth &&
-                 measured.explicitWidth.error() ==
-                    SizeResolveFailure::IndefiniteBasis);
-
-            auto resolvedWidth = child->shared.width.resolve(
-                basisIsIndefinite
-                    ? Size::autoSize()
-                    : parentAvailableWidth
-            );
-
-            return !resolvedWidth &&
-                resolvedWidth.error() ==
-                    SizeResolveFailure::IndefiniteBasis;
-        }
-
-        bool isYIndefinite(TreeNode* child) {
-            bool basisIsIndefinite =
-                parentConstraints.shrinkHeightToFit ||
-                parentConstraints.heightResolution == AxisResolution::MinContent ||
-                parentConstraints.heightResolution == AxisResolution::MaxContent ||
-                (!measured.explicitHeight &&
-                 (measured.explicitHeight.error() ==
-                    SizeResolveFailure::Auto ||
-                  measured.explicitHeight.error() ==
-                    SizeResolveFailure::IndefiniteBasis));
-
-            auto resolvedHeight = child->shared.height.resolve(
-                basisIsIndefinite
-                    ? Size::autoSize()
-                    : parentAvailableHeight
-            );
-
-            return !resolvedHeight &&
-                resolvedHeight.error() ==
-                    SizeResolveFailure::IndefiniteBasis;
         }
 
         std::expected<float, SizeResolveFailure> resolveMainSize(
@@ -661,7 +598,6 @@ namespace layout {
         float determineAvailableCross(float contentCrossSize);
 
         Constraints prepareChildConstraints(TreeNode* child);
-        void phaseA();
         void phaseB();
         Bounds phaseC();
     };

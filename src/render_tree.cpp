@@ -944,7 +944,6 @@ namespace tree {
                 parentAvailableWidth, parentAvailableHeight, minX, minY, maxX, maxY
             };
 
-            fr.phaseA();
             fr.phaseB();
             auto bounds = fr.phaseC();
 

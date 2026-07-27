@@ -98,39 +98,6 @@ namespace layout {
         return newChildConstraints;
     }
 
-    void FlexResolver::phaseA() {
-        if (!hasIndefiniteChild) return;
-
-        for (uint64_t i = 0; i < node->children.size(); ++i) {
-            auto childNode = node->children[i].get();
-            bool xIndef = isXIndefinite(childNode);
-            bool yIndef = isYIndefinite(childNode);
-
-            // mark sizes as indefinite if they are indefinite
-            Measured childMeasured = *childNode->measured;
-            if (xIndef) {
-                childMeasured.explicitWidth =
-                    std::unexpected(SizeResolveFailure::IndefiniteBasis);
-            }
-            if (yIndef) {
-                childMeasured.explicitHeight =
-                    std::unexpected(SizeResolveFailure::IndefiniteBasis);
-            }
-
-            auto preparedChildConstraints = prepareChildConstraints(childNode);
-            const auto& childOutput = tree.speculateLayout(
-                frameInfo,
-                childNode,
-                preparedChildConstraints,
-                childMeasured
-            );
-            auto& childLayout = childOutput.layout;
-
-            maxChildRight = std::max(maxChildRight, childLayout.computedBox.x + childLayout.computedBox.width);
-            maxChildBottom = std::max(maxChildBottom, childLayout.computedBox.y + childLayout.consumedHeight);
-        }
-    }
-
     float FlexResolver::determineFlexBaseSize(
         TreeNode* child,
         std::expected<float, SizeResolveFailure>& mainSize,
@@ -272,13 +239,6 @@ namespace layout {
             auto preparedChildConstraints = prepareChildConstraints(childAsPtr);
 
             Measured childMeasured = *childAsPtr->measured;
-            if (!resolvedCrossSize &&
-                resolvedCrossSize.error() == SizeResolveFailure::IndefiniteBasis) {
-                flex.axis.crossExplicit(childMeasured) = flex.axis.isRow
-                    ? maxChildBottom - minY
-                    : maxChildRight - minX;
-            }
-
             // we are currently resolving our intrinsic size
             auto crossResolution = flex.axis.crossResolution(preparedChildConstraints);
             bool resolvingIntrinsicCross = crossResolution == AxisResolution::MinContent || crossResolution == AxisResolution::MaxContent;
