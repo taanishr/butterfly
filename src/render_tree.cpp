@@ -726,12 +726,7 @@ namespace tree {
             measured.explicitHeight = std::unexpected(SizeResolveFailure::Auto);
         }
 
-        const auto& computedBox = speculateLayout(
-            frameInfo,
-            node,
-            constraints,
-            measured
-        ).layout.computedBox;
+        const auto& computedBox = speculateLayout(frameInfo, node, constraints, measured).layout.computedBox;
 
         return axis == Axis::Width ? computedBox.width : computedBox.height;
     }
@@ -751,40 +746,12 @@ namespace tree {
         if (requestedSize.unit == preferredSize.unit && explicitSize.has_value()) {
             resolvedSize = *explicitSize;
         } else if (requestedSize.unit == Unit::MinContent) {
-            resolvedSize = measureIntrinsicSize(
-                node,
-                frameInfo,
-                constraints,
-                measured,
-                axis,
-                AxisResolution::MinContent
-            );
+            resolvedSize = measureIntrinsicSize(node, frameInfo, constraints, measured, axis, AxisResolution::MinContent);
         } else if (requestedSize.unit == Unit::MaxContent) {
-            resolvedSize = measureIntrinsicSize(
-                node,
-                frameInfo,
-                constraints,
-                measured,
-                axis,
-                AxisResolution::MaxContent
-            );
+            resolvedSize = measureIntrinsicSize(node, frameInfo, constraints, measured, axis, AxisResolution::MaxContent);
         } else {
-            float minContent = measureIntrinsicSize(
-                node,
-                frameInfo,
-                constraints,
-                measured,
-                axis,
-                AxisResolution::MinContent
-            );
-            float maxContent = measureIntrinsicSize(
-                node,
-                frameInfo,
-                constraints,
-                measured,
-                axis,
-                AxisResolution::MaxContent
-            );
+            float minContent = measureIntrinsicSize(node, frameInfo, constraints, measured, axis, AxisResolution::MinContent);
+            float maxContent = measureIntrinsicSize(node, frameInfo, constraints, measured, axis, AxisResolution::MaxContent);
             Size availableSize = axis == Axis::Width ? constraints.availableWidth : constraints.availableHeight;
             float margins = axis == Axis::Width ? constraints.resolvedMargins.left + constraints.resolvedMargins.right : constraints.resolvedMargins.top + constraints.resolvedMargins.bottom;
             float stretch = maxContent;
@@ -837,20 +804,11 @@ namespace tree {
 
         constraints.resolvedMargins = prelayout.resolvedMargins;
 
-        if (isNormalFlow && !measured.explicitWidth && measured.explicitWidth.error() == SizeResolveFailure::ContentDependent) 
-        {
-            measured.explicitWidth = resolveContentDependentSize(
-                node,
-                frameInfo,
-                constraints,
-                measured,
-                Axis::Width,
-                node->shared.width
-            );
+        if (isNormalFlow && !measured.explicitWidth && measured.explicitWidth.error() == SizeResolveFailure::ContentDependent) {
+            measured.explicitWidth = resolveContentDependentSize(node, frameInfo, constraints, measured, Axis::Width, node->shared.width);
         }
 
-        if (isNormalFlow && !measured.explicitHeight && measured.explicitHeight.error() == SizeResolveFailure::ContentDependent) 
-        {
+        if (isNormalFlow && !measured.explicitHeight && measured.explicitHeight.error() == SizeResolveFailure::ContentDependent) {
             measured.explicitHeight = std::unexpected(SizeResolveFailure::Auto);
         }
 
@@ -1040,35 +998,14 @@ namespace tree {
             if (node->shared.maxWidth.has_value()) {
                 const auto& requestedMaxWidth = *node->shared.maxWidth;
                 float maxWidth = isNormalFlow && requestedMaxWidth.isContentDependent()
-                    ? resolveContentDependentSize(
-                        node,
-                        frameInfo,
-                        constraints,
-                        measured,
-                        Axis::Width,
-                        requestedMaxWidth
-                    )
-                    : requestedMaxWidth.resolveOr(
-                        constraints.availableWidth,
-                        usedWidth
-                    );
+                    ? resolveContentDependentSize(node, frameInfo, constraints, measured, Axis::Width, requestedMaxWidth)
+                    : requestedMaxWidth.resolveOr(constraints.availableWidth, usedWidth);
                 usedWidth = std::min(usedWidth, maxWidth);
             }
 
-            float minWidth = isNormalFlow &&
-                             node->shared.minWidth.isContentDependent()
-                ? resolveContentDependentSize(
-                    node,
-                    frameInfo,
-                    constraints,
-                    measured,
-                    Axis::Width,
-                    node->shared.minWidth
-                )
-                : node->shared.minWidth.resolveOr(
-                    constraints.availableWidth,
-                    usedWidth
-                );
+            float minWidth = isNormalFlow && node->shared.minWidth.isContentDependent()
+                ? resolveContentDependentSize(node, frameInfo, constraints, measured, Axis::Width, node->shared.minWidth)
+                : node->shared.minWidth.resolveOr(constraints.availableWidth, usedWidth);
             usedWidth = std::max(usedWidth, minWidth);
         }
 
@@ -1077,36 +1014,22 @@ namespace tree {
             bool intrinsicMaxHeight = isNormalFlow && node->shared.maxHeight.has_value() && node->shared.maxHeight->isContentDependent();
             float intrinsicHeight = contentHeight;
 
-            if (layout.resolvedSize.height && (intrinsicMinHeight || intrinsicMaxHeight)) 
-            {
+            if (layout.resolvedSize.height && (intrinsicMinHeight || intrinsicMaxHeight)) {
                 Measured intrinsicMeasured = measured;
                 intrinsicMeasured.explicitWidth = usedWidth;
-                intrinsicHeight = measureIntrinsicSize(
-                    node,
-                    frameInfo,
-                    constraints,
-                    intrinsicMeasured,
-                    Axis::Height,
-                    AxisResolution::MinContent
-                );
+                intrinsicHeight = measureIntrinsicSize(node, frameInfo, constraints, intrinsicMeasured, Axis::Height, AxisResolution::MinContent);
             }
 
             if (node->shared.maxHeight.has_value()) {
                 float maxHeight = intrinsicMaxHeight
                     ? intrinsicHeight
-                    : node->shared.maxHeight->resolveOr(
-                        constraints.availableHeight,
-                        usedHeight
-                    );
+                    : node->shared.maxHeight->resolveOr(constraints.availableHeight, usedHeight);
                 usedHeight = std::min(usedHeight, maxHeight);
             }
 
             float minHeight = intrinsicMinHeight
                 ? intrinsicHeight
-                : node->shared.minHeight.resolveOr(
-                    constraints.availableHeight,
-                    usedHeight
-                );
+                : node->shared.minHeight.resolveOr(constraints.availableHeight, usedHeight);
             usedHeight = std::max(usedHeight, minHeight);
         }
 
@@ -1198,20 +1121,14 @@ namespace tree {
                 if (constraints.heightResolution == AxisResolution::Final) {
                     if (node->shared.maxHeight.has_value()) {
                         float maxHeight = isNormalFlow && node->shared.maxHeight->isContentDependent()
-                                ? retryContentHeight
-                                : node->shared.maxHeight->resolveOr(
-                                    constraints.availableHeight,
-                                    layout.computedBox.height
-                                );
+                            ? retryContentHeight
+                            : node->shared.maxHeight->resolveOr(constraints.availableHeight, layout.computedBox.height);
                         layout.computedBox.height = std::min(layout.computedBox.height, maxHeight);
                     }
 
                     float minHeight = isNormalFlow && node->shared.minHeight.isContentDependent()
-                            ? retryContentHeight
-                            : node->shared.minHeight.resolveOr(
-                                constraints.availableHeight,
-                                layout.computedBox.height
-                            );
+                        ? retryContentHeight
+                        : node->shared.minHeight.resolveOr(constraints.availableHeight, layout.computedBox.height);
                     layout.computedBox.height = std::max(layout.computedBox.height, minHeight);
                 }
             }
