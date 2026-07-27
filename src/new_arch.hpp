@@ -467,6 +467,11 @@ namespace layout {
         Size height{Size::autoSize()};
     };
 
+    enum class Axis {
+        Width,
+        Height
+    };
+
     enum class AxisResolution {
         Final,
         MinContent,

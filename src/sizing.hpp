@@ -6,7 +6,8 @@ namespace style {
     enum class SizeResolveFailure {
         Auto,
         IndefiniteBasis,
-        FractionRequiresContext
+        FractionRequiresContext,
+        ContentDependent
     };
 
     enum class Unit {
@@ -14,7 +15,10 @@ namespace style {
         Percent,
         Auto,
         Pt,
-        Fr
+        Fr,
+        MinContent,
+        MaxContent,
+        FitContent
     };
 
     struct Size {
@@ -38,9 +42,17 @@ namespace style {
         }
         static Size autoSize()        { return {0.0f, Unit::Auto}; }
         static Size fr(float v)       { return {v, Unit::Fr}; }
+        static Size minContent()      { return {0.0f, Unit::MinContent}; }
+        static Size maxContent()      { return {0.0f, Unit::MaxContent}; }
+        static Size fitContent()      { return {0.0f, Unit::FitContent}; }
 
         bool isAuto() const { return unit == Unit::Auto; }
         bool isFr() const { return unit == Unit::Fr; }
+        bool isContentDependent() const {
+            return unit == Unit::MinContent
+                || unit == Unit::MaxContent
+                || unit == Unit::FitContent;
+        }
 
         std::expected<float, SizeResolveFailure> resolve(const Size& basis) const {
             switch (unit) {
@@ -57,6 +69,10 @@ namespace style {
                         return value * basis.value;
                     }
                     return std::unexpected(SizeResolveFailure::IndefiniteBasis);
+                case Unit::MinContent:
+                case Unit::MaxContent:
+                case Unit::FitContent:
+                    return std::unexpected(SizeResolveFailure::ContentDependent);
             }
         }
 
