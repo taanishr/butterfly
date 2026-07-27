@@ -90,6 +90,15 @@ namespace layout {
         style::Size maxContent;
     };
 
+    inline float resolveIntrinsicSize(const style::Size& request, const IntrinsicSizes& intrinsicSizes, style::Size availableSize) {
+        float minContent = intrinsicSizes.minContent.resolveOr(style::Size::autoSize());
+        float maxContent = intrinsicSizes.maxContent.resolveOr(style::Size::autoSize());
+        if (request.unit == style::Unit::MinContent) return minContent;
+        if (request.unit == style::Unit::MaxContent) return maxContent;
+        float stretch = availableSize.resolve(style::Size::autoSize()).value_or(maxContent);
+        return std::min(maxContent, std::max(minContent, stretch));
+    }
+
     struct InlineFormattingContext {
         std::vector<LineFragment> fragments;
         std::vector<LineBox> lineBoxes;

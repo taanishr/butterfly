@@ -102,9 +102,10 @@ namespace layout {
     }
 
     float FlexResolver::determineMinMainSize(TreeNode* child, std::expected<float, SizeResolveFailure>& mainSize, const std::optional<IntrinsicSizes>& intrinsicSizes) {
-        auto resolvedMinMain = resolveMainSize(
-            flex.axis.minMainSize(child->shared)
-        );
+        const auto& request = flex.axis.minMainSize(child->shared);
+        if (request.isContentDependent()) return resolveIntrinsicSize(request, *intrinsicSizes, parentAvailableMain());
+
+        auto resolvedMinMain = resolveMainSize(request);
         if (resolvedMinMain) return *resolvedMinMain;
 
         if (resolvedMinMain.error() ==
@@ -122,10 +123,10 @@ namespace layout {
         return minMainSize;
     }
 
-    std::optional<float> FlexResolver::determineMaxMainSize(TreeNode* child)
-    {
+    std::optional<float> FlexResolver::determineMaxMainSize(TreeNode* child, const std::optional<IntrinsicSizes>& intrinsicSizes) {
         const auto& request = flex.axis.maxMainSize(child->shared);
         if (!request.has_value()) return std::nullopt;
+        if (request->isContentDependent()) return resolveIntrinsicSize(*request, *intrinsicSizes, parentAvailableMain());
 
         auto resolved = resolveMainSize(*request);
         if (!resolved) return std::nullopt;
@@ -229,17 +230,19 @@ namespace layout {
                 flex.axis.crossResolution(preparedChildConstraints) = AxisResolution::Deferred;
             }
 
-            auto resolvedMinMain = resolveMainSize(flex.axis.minMainSize(childAsPtr->shared));
+            const auto& mainRequest = flex.axis.mainSize(childAsPtr->shared);
+            const auto& minMainRequest = flex.axis.minMainSize(childAsPtr->shared);
+            const auto& maxMainRequest = flex.axis.maxMainSize(childAsPtr->shared);
+            auto resolvedMinMain = resolveMainSize(minMainRequest);
             bool needsIntrinsicMinimum = !resolvedMinMain && resolvedMinMain.error() != SizeResolveFailure::FractionRequiresContext && childAsPtr->shared.overflow == Overflow::Visible;
+            bool needsIntrinsicMain = !mainSize || needsIntrinsicMinimum || minMainRequest.isContentDependent() || (maxMainRequest.has_value() && maxMainRequest->isContentDependent());
             std::optional<IntrinsicSizes> intrinsicMainSizes;
-            if (!mainSize || needsIntrinsicMinimum) {
-                intrinsicMainSizes = layoutIntrinsicMain(tree, childAsPtr, frameInfo, preparedChildConstraints, childMeasured, flex.axis);
-            }
+            if (needsIntrinsicMain) intrinsicMainSizes = layoutIntrinsicMain(tree, childAsPtr, frameInfo, preparedChildConstraints, childMeasured, flex.axis);
+            if (mainRequest.isContentDependent()) mainSize = resolveIntrinsicSize(mainRequest, *intrinsicMainSizes, parentAvailableMain());
 
             float flexBaseSize = determineFlexBaseSize(mainSize, intrinsicMainSizes);
             float minMainSize = determineMinMainSize(childAsPtr, mainSize, intrinsicMainSizes);
-
-            auto maxMainSize = determineMaxMainSize(childAsPtr);
+            auto maxMainSize = determineMaxMainSize(childAsPtr, intrinsicMainSizes);
 
             flex.addItem(
                 i,
@@ -284,7 +287,7 @@ namespace layout {
 
     FlexResolver::Bounds FlexResolver::phaseC() {
         Axis crossAxis = flex.axis.isRow ? Axis::Height : Axis::Width;
-        bool measureIntrinsicCross = parentConstraints.intrinsicSizesAxis == crossAxis;
+        bool parentRequestsIntrinsicCross = parentConstraints.intrinsicSizesAxis == crossAxis;
 
         for (auto& line : flex.lines) {
             line.maxCrossSize = 0.0f;
@@ -293,9 +296,13 @@ namespace layout {
 
             for (auto& item : line.items) {
                 auto childNode = node->children[item.childIndex].get();
+                const auto& crossRequest = flex.axis.crossSize(childNode->shared);
+                const auto& minCrossRequest = flex.axis.minCrossSize(childNode->shared);
+                const auto& maxCrossRequest = flex.axis.maxCrossSize(childNode->shared);
                 auto resolvedCrossSize = resolveCrossSize(childNode);
                 auto preparedChildConstraints = prepareChildConstraints(childNode);
                 Measured childMeasured = *childNode->measured;
+                bool needsIntrinsicCross = parentRequestsIntrinsicCross || crossRequest.isContentDependent() || minCrossRequest.isContentDependent() || (maxCrossRequest.has_value() && maxCrossRequest->isContentDependent());
 
                 auto crossResolution = flex.axis.crossResolution(preparedChildConstraints);
                 bool resolvingIntrinsicCross = crossResolution == AxisResolution::MinContent || crossResolution == AxisResolution::MaxContent;
@@ -310,9 +317,7 @@ namespace layout {
                 flex.axis.mainAvailable(preparedChildConstraints) = Size::px(item.usedMainSize);
                 flex.axis.mainResolution(preparedChildConstraints) = AxisResolution::Deferred;
                 flex.axis.mainExplicit(childMeasured) = item.usedMainSize;
-                if (measureIntrinsicCross) {
-                    preparedChildConstraints.intrinsicSizesAxis = crossAxis;
-                }
+                if (needsIntrinsicCross) preparedChildConstraints.intrinsicSizesAxis = crossAxis;
                 preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childNode, preparedChildConstraints.availableWidth, preparedChildConstraints.widthResolution, preparedChildConstraints.intrinsicSizesAxis == Axis::Width);
 
                 const auto& childOutput = tree.speculateLayout(
@@ -322,11 +327,28 @@ namespace layout {
                     childMeasured
                 );
 
-                item.hypotheticalCrossSize = flex.axis.crossSize(childOutput.layout);
+                if (crossRequest.isContentDependent()) resolvedCrossSize = resolveIntrinsicSize(crossRequest, *childOutput.intrinsicSizes, parentAvailableCross());
+                item.minCrossSize = minCrossRequest.isContentDependent() ? resolveIntrinsicSize(minCrossRequest, *childOutput.intrinsicSizes, parentAvailableCross()) : minCrossRequest.resolveOr(parentAvailableCross(), 0.0f);
+                if (maxCrossRequest.has_value() && maxCrossRequest->isContentDependent()) {
+                    item.maxCrossSize = resolveIntrinsicSize(*maxCrossRequest, *childOutput.intrinsicSizes, parentAvailableCross());
+                } else if (maxCrossRequest.has_value()) {
+                    auto resolvedMaxCross = maxCrossRequest->resolve(parentAvailableCross());
+                    if (resolvedMaxCross) item.maxCrossSize = *resolvedMaxCross;
+                }
+
+                item.hypotheticalCrossSize = resolvedCrossSize ? *resolvedCrossSize : flex.axis.crossSize(childOutput.layout);
+                item.hypotheticalCrossSize = std::max(item.hypotheticalCrossSize, item.minCrossSize);
+                if (item.maxCrossSize.has_value()) item.hypotheticalCrossSize = std::min(item.hypotheticalCrossSize, *item.maxCrossSize);
                 line.maxCrossSize = std::max(line.maxCrossSize, item.hypotheticalCrossSize);
-                if (measureIntrinsicCross && childOutput.intrinsicSizes.has_value()) {
+                if (parentRequestsIntrinsicCross && childOutput.intrinsicSizes.has_value()) {
                     float childMinCross = childOutput.intrinsicSizes->minContent.resolveOr(Size::autoSize());
                     float childMaxCross = childOutput.intrinsicSizes->maxContent.resolveOr(Size::autoSize());
+                    childMinCross = std::max(childMinCross, item.minCrossSize);
+                    childMaxCross = std::max(childMaxCross, item.minCrossSize);
+                    if (item.maxCrossSize.has_value()) {
+                        childMinCross = std::min(childMinCross, *item.maxCrossSize);
+                        childMaxCross = std::min(childMaxCross, *item.maxCrossSize);
+                    }
                     line.intrinsicMinCrossSize = std::max(line.intrinsicMinCrossSize, childMinCross);
                     line.intrinsicMaxCrossSize = std::max(line.intrinsicMaxCrossSize, childMaxCross);
                 }
@@ -337,7 +359,7 @@ namespace layout {
 
         for (auto& line : flex.lines) naturalCross += line.maxCrossSize;
         if (flex.lines.size() > 1) naturalCross += resolvedGap * (flex.lines.size() - 1);
-        if (measureIntrinsicCross) {
+        if (parentRequestsIntrinsicCross) {
             float minContent = 0.0f;
             float maxContent = 0.0f;
             for (auto& line : flex.lines) {
@@ -379,14 +401,7 @@ namespace layout {
             flex.axis.mainExplicit(childMeasured) = p.mainSize;
 
             float finalCrossSize = p.crossSize;
-
-            if (p.crossSizeOverride.has_value()) {
-                finalCrossSize = flex.axis.clampCrossSize(
-                    *p.crossSizeOverride,
-                    childNode->shared,
-                    availableCross
-                );
-            }
+            if (p.crossSizeOverride.has_value()) finalCrossSize = *p.crossSizeOverride;
 
             flex.axis.crossAvailable(preparedChildConstraints) =
                 Size::px(finalCrossSize);

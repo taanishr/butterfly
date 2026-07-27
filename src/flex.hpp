@@ -56,6 +56,12 @@ namespace layout {
         const std::optional<Size>& maxMainSize(const SharedDescriptor& shared) {
             return isRow ? shared.maxWidth : shared.maxHeight;
         }
+        const Size& minCrossSize(const SharedDescriptor& shared) {
+            return isRow ? shared.minHeight : shared.minWidth;
+        }
+        const std::optional<Size>& maxCrossSize(const SharedDescriptor& shared) {
+            return isRow ? shared.maxHeight : shared.maxWidth;
+        }
         std::expected<float, SizeResolveFailure>& mainExplicit(Measured& m) {
             return isRow ? m.explicitWidth : m.explicitHeight;
         }
@@ -87,41 +93,6 @@ namespace layout {
         bool& crossShrinkToFit(Constraints& c) {
             return isRow ? c.shrinkHeightToFit : c.shrinkWidthToFit;
         }
-        float clampCrossSize(float v, const SharedDescriptor& s, float referenceSize) {
-            auto& maxSize = isRow ? s.maxHeight : s.maxWidth;
-            const auto& minSize = isRow ? s.minHeight : s.minWidth;
-            auto basis = Size::px(referenceSize);
-            if (maxSize.has_value()) {
-                auto resolvedMax = maxSize->resolve(basis);
-                if (resolvedMax) {
-                    v = std::min(v, *resolvedMax);
-                } else {
-                    switch (resolvedMax.error()) {
-                        case SizeResolveFailure::Auto:
-                        case SizeResolveFailure::IndefiniteBasis:
-                            break;
-                        case SizeResolveFailure::FractionRequiresContext:
-                            // fr does not make sense as a flex max cross-size.
-                            break;
-                    }
-                }
-            }
-            auto resolvedMin = minSize.resolve(basis);
-            if (resolvedMin) {
-                v = std::max(v, *resolvedMin);
-            } else {
-                switch (resolvedMin.error()) {
-                    case SizeResolveFailure::Auto:
-                    case SizeResolveFailure::IndefiniteBasis:
-                        break;
-                    case SizeResolveFailure::FractionRequiresContext:
-                        // fr does not make sense as a flex min cross-size.
-                        break;
-                }
-            }
-            return v;
-        }
-
     };
 
 
@@ -135,6 +106,8 @@ namespace layout {
         float scaledFlexShrink;
         AlignItems alignment;
         Size crossSizeRequest;
+        float minCrossSize;
+        std::optional<float> maxCrossSize;
         float usedMainSize;
         float hypotheticalCrossSize;
     };
@@ -328,6 +301,8 @@ namespace layout {
                 .scaledFlexShrink = shrink > 0.0f ? flexBaseSize * shrink : 0.0f,
                 .alignment = alignment,
                 .crossSizeRequest = axis.crossSize(child->shared),
+                .minCrossSize = 0.0f,
+                .maxCrossSize = std::nullopt,
                 .usedMainSize = flexBaseSize,
                 .hypotheticalCrossSize = 0.0f
             });
@@ -435,8 +410,10 @@ namespace layout {
                         case AlignItems::Stretch:
                             p.crossOffset = lineCrossBase;
                             if (item.crossSizeRequest.isAuto()) {
-                                p.crossSize = lineCross;
-                                p.crossSizeOverride = lineCross;
+                                float stretchedCrossSize = std::max(lineCross, item.minCrossSize);
+                                if (item.maxCrossSize.has_value()) stretchedCrossSize = std::min(stretchedCrossSize, *item.maxCrossSize);
+                                p.crossSize = stretchedCrossSize;
+                                p.crossSizeOverride = stretchedCrossSize;
                             }
                             break;
                         case AlignItems::FlexStart:
@@ -585,8 +562,7 @@ namespace layout {
 
         float determineFlexBaseSize(std::expected<float, SizeResolveFailure>& mainSize, const std::optional<IntrinsicSizes>& intrinsicSizes);
         float determineMinMainSize(TreeNode* child, std::expected<float, SizeResolveFailure>& mainSize, const std::optional<IntrinsicSizes>& intrinsicSizes);
-
-        std::optional<float> determineMaxMainSize(TreeNode* child);
+        std::optional<float> determineMaxMainSize(TreeNode* child, const std::optional<IntrinsicSizes>& intrinsicSizes);
         float determineAvailableMain(float contentMainSize);
         float determineAvailableCross(float contentCrossSize);
 
