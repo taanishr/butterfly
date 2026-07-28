@@ -123,11 +123,6 @@ namespace layout {
         float maxX;
         float maxY;
 
-        float maxChildRight = 0;
-        float maxChildBottom = 0;
-
-        bool hasIndefiniteChild = false;
-
         struct Bounds {
             float maxX;
             float maxY;
@@ -141,11 +136,8 @@ namespace layout {
                      Size parentAvailableWidth, Size parentAvailableHeight,
                      float minX, float minY, float maxX, float maxY);
 
-        bool isXIndefinite(TreeNode* child);
-        bool isYIndefinite(TreeNode* child);
         Constraints prepareChildConstraints(TreeNode* child);
 
-        void phaseA();
         void phaseB();
         Bounds phaseC();
     };

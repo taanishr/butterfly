@@ -989,7 +989,6 @@ namespace tree {
                 parentAvailableWidth, parentAvailableHeight, minX, minY, maxX, maxY
             };
 
-            gr.phaseA();
             gr.phaseB();
 
             auto bounds = gr.phaseC();

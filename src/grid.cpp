@@ -381,53 +381,7 @@ namespace layout {
           childAvailableWidth{parentAvailableWidth},
           parentAvailableWidth{parentAvailableWidth}, parentAvailableHeight{parentAvailableHeight},
           minX{minX}, minY{minY}, maxX{maxX}, maxY{maxY}
-    {
-        for (auto& child : node->children) {
-            if (isXIndefinite(child.get()) || isYIndefinite(child.get())) {
-                hasIndefiniteChild = true;
-                break;
-            }
-        }
-    }
-
-    bool GridResolver::isXIndefinite(TreeNode* child) {
-        bool basisIsIndefinite =
-            parentConstraints.shrinkWidthToFit ||
-            parentConstraints.widthResolution == AxisResolution::MinContent ||
-            parentConstraints.widthResolution == AxisResolution::MaxContent ||
-            (!measured.explicitWidth &&
-             measured.explicitWidth.error() ==
-                SizeResolveFailure::IndefiniteBasis);
-
-        auto resolvedWidth = child->shared.width.resolve(
-            basisIsIndefinite
-                ? Size::autoSize()
-                : parentAvailableWidth
-        );
-
-        return !resolvedWidth &&
-            resolvedWidth.error() == SizeResolveFailure::IndefiniteBasis;
-    }
-
-    bool GridResolver::isYIndefinite(TreeNode* child) {
-        bool basisIsIndefinite =
-            parentConstraints.shrinkHeightToFit ||
-            parentConstraints.heightResolution == AxisResolution::MinContent ||
-            parentConstraints.heightResolution == AxisResolution::MaxContent ||
-            (!measured.explicitHeight &&
-             (measured.explicitHeight.error() == SizeResolveFailure::Auto ||
-              measured.explicitHeight.error() ==
-                SizeResolveFailure::IndefiniteBasis));
-
-        auto resolvedHeight = child->shared.height.resolve(
-            basisIsIndefinite
-                ? Size::autoSize()
-                : parentAvailableHeight
-        );
-
-        return !resolvedHeight &&
-            resolvedHeight.error() == SizeResolveFailure::IndefiniteBasis;
-    }
+    {}
 
     Constraints GridResolver::prepareChildConstraints(TreeNode* child) {
         auto preparedChildConstraints = childConstraints;
@@ -442,46 +396,6 @@ namespace layout {
             parentConstraints.inheritedProperties;
 
         return preparedChildConstraints;
-    }
-
-    void GridResolver::phaseA() {
-        if (!hasIndefiniteChild) return;
-
-        for (uint64_t i = 0; i < node->children.size(); ++i) {
-            auto childAsPtr = node->children[i].get();
-            bool xIndef = isXIndefinite(childAsPtr);
-            bool yIndef = isYIndefinite(childAsPtr);
-
-            Measured childMeasured = *childAsPtr->measured;
-            if (xIndef) {
-                childMeasured.explicitWidth =
-                    std::unexpected(style::SizeResolveFailure::IndefiniteBasis);
-            }
-            if (yIndef) {
-                childMeasured.explicitHeight =
-                    std::unexpected(style::SizeResolveFailure::IndefiniteBasis);
-            }
-
-            auto preparedChildConstraints =
-                prepareChildConstraints(childAsPtr);
-
-            const auto& childOutput = tree.speculateLayout(
-                frameInfo,
-                childAsPtr,
-                preparedChildConstraints,
-                childMeasured
-            );
-            auto& childLayout = childOutput.layout;
-
-            maxChildRight = std::max(
-                maxChildRight,
-                childLayout.computedBox.x + childLayout.computedBox.width
-            );
-            maxChildBottom = std::max(
-                maxChildBottom,
-                childLayout.computedBox.y + childLayout.consumedHeight
-            );
-        }
     }
 
     void GridResolver::phaseB() {
@@ -499,7 +413,7 @@ namespace layout {
         bool widthDefinite = !widthBasisIsIndefinite && !parentAvailableWidth.isAuto();
         auto widthBasis = widthDefinite ? parentAvailableWidth : Size::autoSize();
 
-        float availableWidth = widthDefinite ? parentAvailableWidth.value : maxChildRight - minX;
+        float availableWidth = widthDefinite ? parentAvailableWidth.value : 0.0f;
         float colGap = node->getGridColumnGap().resolve(widthBasis).value_or(0.0f);
 
         for (size_t i = 0; i < node->children.size(); ++i) {
@@ -508,19 +422,7 @@ namespace layout {
             if (childPos == Position::Absolute || childPos == Position::Fixed) continue;
 
             Measured childMeasured = *childAsPtr->measured;
-            if (isXIndefinite(childAsPtr)) {
-                childMeasured.explicitWidth = maxChildRight - minX;
-            }
-            if (isYIndefinite(childAsPtr)) {
-                childMeasured.explicitHeight = maxChildBottom - minY;
-            }
-
-            auto preparedChildConstraints =
-                prepareChildConstraints(childAsPtr);
-            if (!hasIndefiniteChild) {
-                preparedChildConstraints.shrinkWidthToFit = true;
-                preparedChildConstraints.shrinkHeightToFit = true;
-            }
+            auto preparedChildConstraints = prepareChildConstraints(childAsPtr);
             preparedChildConstraints.widthResolution = AxisResolution::MaxContent;
             preparedChildConstraints.intrinsicSizesAxis = Axis::Width;
             preparedChildConstraints.shrinkWidthToFit = true;
@@ -613,7 +515,7 @@ namespace layout {
               measured.explicitHeight.error() == SizeResolveFailure::IndefiniteBasis));
         bool heightDefinite = !heightBasisIsIndefinite && !parentAvailableHeight.isAuto();
         Size heightBasis = heightDefinite ? parentAvailableHeight : Size::autoSize();
-        float availableHeight = heightDefinite ? parentAvailableHeight.value : maxChildBottom - minY;
+        float availableHeight = heightDefinite ? parentAvailableHeight.value : 0.0f;
         float rowGap = node->getGridRowGap().resolve(heightBasis).value_or(0.0f);
 
         for (auto& item : gridLayout.items) {
