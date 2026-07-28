@@ -97,11 +97,8 @@ namespace layout {
             IntrinsicSizes* intrinsicSizes = nullptr
         );
 
-        void resolve(size_t numRows, size_t numCols,
-            const std::vector<Size>& templateRows, const std::vector<Size>& templateCols,
-            float availableWidth, float availableHeight,
-            float colGap, float rowGap,
-            bool widthDefinite, bool heightDefinite);
+        void resolveColumns(size_t numRows, size_t numCols, const std::vector<Size>& templateCols, float availableWidth, float colGap, bool widthDefinite);
+        void resolveRows(const std::vector<Size>& templateRows, float availableHeight, float rowGap, bool heightDefinite);
     };
 
     struct GridResolver {

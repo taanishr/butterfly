@@ -348,25 +348,21 @@ namespace layout {
         return tracks;
     }
 
-    void GridLayout::resolve(
-        size_t numRows, size_t numCols,
-        const std::vector<Size>& templateRows, const std::vector<Size>& templateCols,
-        float availableWidth, float availableHeight,
-        float colGap, float rowGap,
-        bool widthDefinite, bool heightDefinite) {
-        GridLayout::resolveStructure(numRows, numCols);
-
-        // init fixed tracks
-        std::vector<Size> rowDefs(grid.numRows, Size::autoSize());
+    void GridLayout::resolveColumns(size_t numRows, size_t numCols, const std::vector<Size>& templateCols, float availableWidth, float colGap, bool widthDefinite) {
+        resolveStructure(numRows, numCols);
         std::vector<Size> colDefs(grid.numCols, Size::autoSize());
-
-        for (int i = 0; i < templateRows.size(); ++i)
-            rowDefs[i] = templateRows[i];
 
         for (int j = 0; j < templateCols.size(); ++j)
             colDefs[j] = templateCols[j];
 
         colTracks = resolveTracks(colDefs, availableWidth, colGap, true, widthDefinite, &columnIntrinsicSizes);
+    }
+
+    void GridLayout::resolveRows(const std::vector<Size>& templateRows, float availableHeight, float rowGap, bool heightDefinite) {
+        std::vector<Size> rowDefs(grid.numRows, Size::autoSize());
+        for (int i = 0; i < templateRows.size(); ++i)
+            rowDefs[i] = templateRows[i];
+
         rowTracks = resolveTracks(rowDefs, availableHeight, rowGap, false, heightDefinite);
     }
 
@@ -500,34 +496,11 @@ namespace layout {
              measured.explicitWidth.error() ==
                 SizeResolveFailure::IndefiniteBasis);
 
-        bool heightBasisIsIndefinite =
-            parentConstraints.shrinkHeightToFit ||
-            parentConstraints.heightResolution == AxisResolution::MinContent ||
-            parentConstraints.heightResolution == AxisResolution::MaxContent ||
-            (!measured.explicitHeight &&
-             (measured.explicitHeight.error() == SizeResolveFailure::Auto ||
-              measured.explicitHeight.error() ==
-                SizeResolveFailure::IndefiniteBasis));
-
         bool widthDefinite = !widthBasisIsIndefinite && !parentAvailableWidth.isAuto();
-        bool heightDefinite = !heightBasisIsIndefinite && !parentAvailableHeight.isAuto();
-
-        auto widthBasis = widthDefinite
-            ? parentAvailableWidth
-            : Size::autoSize();
-        auto heightBasis = heightDefinite
-            ? parentAvailableHeight
-            : Size::autoSize();
+        auto widthBasis = widthDefinite ? parentAvailableWidth : Size::autoSize();
 
         float availableWidth = widthDefinite ? parentAvailableWidth.value : maxChildRight - minX;
-        float availableHeight = heightDefinite ? parentAvailableHeight.value : maxChildBottom - minY;
-
-        float colGap = node->getGridColumnGap()
-            .resolve(widthBasis)
-            .value_or(0.0f);
-        float rowGap = node->getGridRowGap()
-            .resolve(heightBasis)
-            .value_or(0.0f);
+        float colGap = node->getGridColumnGap().resolve(widthBasis).value_or(0.0f);
 
         for (size_t i = 0; i < node->children.size(); ++i) {
             auto childAsPtr = node->children[i].get();
@@ -623,25 +596,66 @@ namespace layout {
             if (maxWidth.has_value()) 
                 minimum = std::min(minimum, *maxWidth);
 
-            float itemHeight = applyMinMax(
-                childLayout.consumedHeight,
-                childAsPtr->shared.minHeight,
-                childAsPtr->shared.maxHeight,
-                availableHeight
-            );
-
-            gridLayout.addChild(i, childAsPtr, {.minimum = minimum, .minContent = minContent, .maxContent = maxContent}, itemHeight);
+            gridLayout.addChild(i, childAsPtr, {.minimum = minimum, .minContent = minContent, .maxContent = maxContent}, 0.0f);
         }
 
-        gridLayout.resolve(templateRows.size(), templateCols.size(),
-            templateRows, templateCols,
-            availableWidth, availableHeight,
-            colGap, rowGap,
-            widthDefinite, heightDefinite);
+        gridLayout.resolveColumns(templateRows.size(), templateCols.size(), templateCols, availableWidth, colGap, widthDefinite);
         if (parentConstraints.intrinsicSizesAxis == Axis::Width) intrinsicSizes = gridLayout.columnIntrinsicSizes;
     }
 
     GridResolver::Bounds GridResolver::phaseC() {
+        bool heightBasisIsIndefinite =
+            parentConstraints.shrinkHeightToFit ||
+            parentConstraints.heightResolution == AxisResolution::MinContent ||
+            parentConstraints.heightResolution == AxisResolution::MaxContent ||
+            (!measured.explicitHeight &&
+             (measured.explicitHeight.error() == SizeResolveFailure::Auto ||
+              measured.explicitHeight.error() == SizeResolveFailure::IndefiniteBasis));
+        bool heightDefinite = !heightBasisIsIndefinite && !parentAvailableHeight.isAuto();
+        Size heightBasis = heightDefinite ? parentAvailableHeight : Size::autoSize();
+        float availableHeight = heightDefinite ? parentAvailableHeight.value : maxChildBottom - minY;
+        float rowGap = node->getGridRowGap().resolve(heightBasis).value_or(0.0f);
+
+        for (auto& item : gridLayout.items) {
+            auto childAsPtr = node->children[item.childIndex].get();
+            auto& placement = item.placement;
+            float cellX = gridLayout.colTracks[*placement.colStart].offset;
+            float cellW = gridLayout.colTracks[*placement.colEnd - 1].offset + gridLayout.colTracks[*placement.colEnd - 1].size - cellX;
+            float itemW = applyMinMax(cellW, childAsPtr->shared.minWidth, childAsPtr->shared.maxWidth, cellW);
+            Measured childMeasured = *childAsPtr->measured;
+            auto preparedChildConstraints = prepareChildConstraints(childAsPtr);
+            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childAsPtr, Size::px(itemW), preparedChildConstraints.widthResolution);
+            preparedChildConstraints.availableWidth = Size::px(itemW);
+            preparedChildConstraints.availableHeight = Size::autoSize();
+            preparedChildConstraints.shrinkWidthToFit = false;
+            preparedChildConstraints.shrinkHeightToFit = false;
+
+            JustifyItems effectiveJustify = justifyItems;
+            auto selfJustify = childAsPtr->getJustifySelf();
+            if (selfJustify != JustifySelf::Auto) {
+                switch (selfJustify) {
+                    case JustifySelf::Stretch: effectiveJustify = JustifyItems::Stretch; break;
+                    case JustifySelf::Start:   effectiveJustify = JustifyItems::Start; break;
+                    case JustifySelf::End:     effectiveJustify = JustifyItems::End; break;
+                    case JustifySelf::Center:  effectiveJustify = JustifyItems::Center; break;
+                    default: break;
+                }
+            }
+
+            if (effectiveJustify == JustifyItems::Stretch && childAsPtr->shared.width.isAuto()) {
+                childMeasured.explicitWidth = itemW;
+            } else if (childAsPtr->shared.width.isAuto()) {
+                preparedChildConstraints.shrinkWidthToFit = true;
+            }
+            if (childAsPtr->shared.height.isAuto())
+                preparedChildConstraints.shrinkHeightToFit = true;
+
+            const auto& childOutput = tree.speculateLayout(frameInfo, childAsPtr, preparedChildConstraints, childMeasured);
+            item.heightContribution = applyMinMax(childOutput.layout.consumedHeight, childAsPtr->shared.minHeight, childAsPtr->shared.maxHeight, availableHeight);
+        }
+
+        gridLayout.resolveRows(node->getGridTemplateRows(), availableHeight, rowGap, heightDefinite);
+
         for (auto& item : gridLayout.items) {
             auto childAsPtr = node->children[item.childIndex].get();
             auto& placement = item.placement;
@@ -713,12 +727,7 @@ namespace layout {
                 preparedChildConstraints.shrinkHeightToFit = true;
             }
 
-            const LayoutOutput* childOutput = &tree.speculateLayout(
-                frameInfo,
-                childAsPtr,
-                preparedChildConstraints,
-                childMeasured
-            );
+            const LayoutOutput* childOutput = &tree.speculateLayout(frameInfo, childAsPtr, preparedChildConstraints, childMeasured);
 
             float dx = 0.0f;
             if (effectiveJustify == JustifyItems::Center) {
