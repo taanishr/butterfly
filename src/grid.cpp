@@ -24,7 +24,7 @@ namespace layout {
         }
     }
 
-    void GridLayout::addChild(TreeNode* node) {
+    void GridLayout::addChild(size_t childIndex, TreeNode* node) {
         auto gridPlacement = node->getGridPlacement();
 
         std::optional<int> cs, ce, rs, re;
@@ -49,14 +49,10 @@ namespace layout {
             }
         }
 
-        ItemPlacement item {
-            .colStart = cs,
-            .colEnd = ce,
-            .rowStart = rs,
-            .rowEnd = re
-        };
-
-        items.push_back(item);
+        items.push_back({
+            .childIndex = childIndex,
+            .placement = {.colStart = cs, .colEnd = ce, .rowStart = rs, .rowEnd = re}
+        });
     }
 
     Grid::Grid(size_t rows, size_t cols, GridDirection major): 
@@ -145,33 +141,35 @@ namespace layout {
 
         // place explicitly placed items : who wins if items conflict in explicit positions?
         for (auto& item : items) {
-            if (!item.colNeedsResolution() && !item.rowNeedsResolution()) {
-                for (int r = *item.rowStart; r < *item.rowEnd; ++r)
-                    for (int c = *item.colStart; c < *item.colEnd; ++c)
+            auto& placement = item.placement;
+            if (!placement.colNeedsResolution() && !placement.rowNeedsResolution()) {
+                for (int r = *placement.rowStart; r < *placement.rowEnd; ++r)
+                    for (int c = *placement.colStart; c < *placement.colEnd; ++c)
                         grid.mark(r, c);
             }
         }
 
         // place items with unresolved placements
         for (auto& item : items) {
-            if (!item.colNeedsResolution() && !item.rowNeedsResolution()) continue;
+            auto& placement = item.placement;
+            if (!placement.colNeedsResolution() && !placement.rowNeedsResolution()) continue;
 
-            int spanCols = item.colNeedsResolution() ? 1 : (*item.colEnd - *item.colStart);
-            int spanRows = item.rowNeedsResolution() ? 1 : (*item.rowEnd - *item.rowStart);
+            int spanCols = placement.colNeedsResolution() ? 1 : (*placement.colEnd - *placement.colStart);
+            int spanRows = placement.rowNeedsResolution() ? 1 : (*placement.rowEnd - *placement.rowStart);
 
             auto [row, col] = grid.findSpace(spanRows, spanCols);
 
-            if (item.colNeedsResolution()) {
-                item.colStart = col;
-                item.colEnd = col + spanCols;
+            if (placement.colNeedsResolution()) {
+                placement.colStart = col;
+                placement.colEnd = col + spanCols;
             }
-            if (item.rowNeedsResolution()) {
-                item.rowStart = row;
-                item.rowEnd = row + spanRows;
+            if (placement.rowNeedsResolution()) {
+                placement.rowStart = row;
+                placement.rowEnd = row + spanRows;
             }
 
-            for (int r = *item.rowStart; r < *item.rowEnd; ++r)
-                for (int c = *item.colStart; c < *item.colEnd; ++c)
+            for (int r = *placement.rowStart; r < *placement.rowEnd; ++r)
+                for (int c = *placement.colStart; c < *placement.colEnd; ++c)
                     grid.mark(r, c);
         }
     }
@@ -191,8 +189,8 @@ namespace layout {
         float autoTotal {};
 
         for (auto [item, itemSize]: std::ranges::views::zip(items, itemSizes)) {
-            size_t s = isCol ? *item.colStart : *item.rowStart;
-            size_t e = isCol ? *item.colEnd : *item.rowEnd;
+            size_t s = isCol ? *item.placement.colStart : *item.placement.rowStart;
+            size_t e = isCol ? *item.placement.colEnd : *item.placement.rowEnd;
 
             if (e - s > 1)
                 continue;
@@ -462,8 +460,7 @@ namespace layout {
             if (childLayout.outOfFlow) 
                 continue;
 
-            gridLayout.addChild(childAsPtr);
-            inFlowIndices.push_back(i);
+            gridLayout.addChild(i, childAsPtr);
 
             float itemWidth = applyMinMax(
                 childLayout.computedBox.width,
@@ -491,20 +488,19 @@ namespace layout {
     }
 
     GridResolver::Bounds GridResolver::phaseC() {
-        for (size_t pi = 0; pi < inFlowIndices.size(); ++pi) {
-            size_t i = inFlowIndices[pi];
-            auto childAsPtr = node->children[i].get();
-            auto& item = gridLayout.items[pi];
+        for (auto& item : gridLayout.items) {
+            auto childAsPtr = node->children[item.childIndex].get();
+            auto& placement = item.placement;
             Measured childMeasured = *childAsPtr->measured;
 
             auto& colTracks = gridLayout.colTracks;
             auto& rowTracks = gridLayout.rowTracks;
 
-            float cellX = colTracks[*item.colStart].offset;
-            float cellY = rowTracks[*item.rowStart].offset;
+            float cellX = colTracks[*placement.colStart].offset;
+            float cellY = rowTracks[*placement.rowStart].offset;
 
-            float cellW = colTracks[*item.colEnd - 1].offset + colTracks[*item.colEnd - 1].size - cellX;
-            float cellH = rowTracks[*item.rowEnd - 1].offset + rowTracks[*item.rowEnd - 1].size - cellY;
+            float cellW = colTracks[*placement.colEnd - 1].offset + colTracks[*placement.colEnd - 1].size - cellX;
+            float cellH = rowTracks[*placement.rowEnd - 1].offset + rowTracks[*placement.rowEnd - 1].size - cellY;
 
             float itemW = applyMinMax(cellW, childAsPtr->shared.minWidth, childAsPtr->shared.maxWidth, cellW);
             float itemH = applyMinMax(cellH, childAsPtr->shared.minHeight, childAsPtr->shared.maxHeight, cellH);

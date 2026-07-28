@@ -1695,62 +1695,62 @@ auto index() -> void {
     //     )
     // );
 
-    // Browser reference: react_tests/src/app/intrinsic-sizing/page.tsx
-    constexpr auto intrinsicText = "Intrinsic sizing chooses every soft break opportunity";
+    // // Browser reference: react_tests/src/app/intrinsic-sizing/page.tsx
+    // constexpr auto intrinsicText = "Intrinsic sizing chooses every soft break opportunity";
 
-    div(S::percent(1.0), S::percent(1.0), simd_float4{0.059,0.071,0.090,1.0})
-        .padding(S::px(32))
-        .overflow(gui::Overflow::Scroll)
-    (
-        div(S::minContent(), S::autoSize(), simd_float4{0.078,0.722,0.859,1.0})
-        (
-            text(intrinsicText)
-                .font(Arial)
-                .fontSize(S::pt(18))
-                .color(simd_float4{0.961,0.969,1.0,1.0})
-        ),
+    // div(S::percent(1.0), S::percent(1.0), simd_float4{0.059,0.071,0.090,1.0})
+    //     .padding(S::px(32))
+    //     .overflow(gui::Overflow::Scroll)
+    // (
+    //     div(S::minContent(), S::autoSize(), simd_float4{0.078,0.722,0.859,1.0})
+    //     (
+    //         text(intrinsicText)
+    //             .font(Arial)
+    //             .fontSize(S::pt(18))
+    //             .color(simd_float4{0.961,0.969,1.0,1.0})
+    //     ),
 
-        div(S::maxContent(), S::autoSize(), simd_float4{0.961,0.302,0.459,1.0})
-            .marginTop(S::px(20))
-        (
-            text(intrinsicText)
-                .font(Arial)
-                .fontSize(S::pt(18))
-                .color(simd_float4{0.961,0.969,1.0,1.0})
-        ),
+    //     div(S::maxContent(), S::autoSize(), simd_float4{0.961,0.302,0.459,1.0})
+    //         .marginTop(S::px(20))
+    //     (
+    //         text(intrinsicText)
+    //             .font(Arial)
+    //             .fontSize(S::pt(18))
+    //             .color(simd_float4{0.961,0.969,1.0,1.0})
+    //     ),
 
-        div(S::px(360), S::autoSize(), simd_float4{0.149,0.161,0.200,1.0})
-            .marginTop(S::px(20))
-        (
-            div(S::fitContent(), S::autoSize(), simd_float4{0.980,0.761,0.200,1.0})
-            (
-                text(intrinsicText)
-                    .font(Arial)
-                    .fontSize(S::pt(18))
-                    .color(simd_float4{0.078,0.090,0.110,1.0})
-            )
-        ),
+    //     div(S::px(360), S::autoSize(), simd_float4{0.149,0.161,0.200,1.0})
+    //         .marginTop(S::px(20))
+    //     (
+    //         div(S::fitContent(), S::autoSize(), simd_float4{0.980,0.761,0.200,1.0})
+    //         (
+    //             text(intrinsicText)
+    //                 .font(Arial)
+    //                 .fontSize(S::pt(18))
+    //                 .color(simd_float4{0.078,0.090,0.110,1.0})
+    //         )
+    //     ),
 
-        div(S::px(120), S::autoSize(), simd_float4{0.380,0.922,0.561,1.0})
-            .minWidth(S::maxContent())
-            .marginTop(S::px(20))
-        (
-            text(intrinsicText)
-                .font(Arial)
-                .fontSize(S::pt(18))
-                .color(simd_float4{0.078,0.090,0.110,1.0})
-        ),
+    //     div(S::px(120), S::autoSize(), simd_float4{0.380,0.922,0.561,1.0})
+    //         .minWidth(S::maxContent())
+    //         .marginTop(S::px(20))
+    //     (
+    //         text(intrinsicText)
+    //             .font(Arial)
+    //             .fontSize(S::pt(18))
+    //             .color(simd_float4{0.078,0.090,0.110,1.0})
+    //     ),
 
-        div(S::px(640), S::autoSize(), simd_float4{0.639,0.420,0.961,1.0})
-            .maxWidth(S::minContent())
-            .marginTop(S::px(20))
-        (
-            text(intrinsicText)
-                .font(Arial)
-                .fontSize(S::pt(18))
-                .color(simd_float4{0.961,0.969,1.0,1.0})
-        )
-    );
+    //     div(S::px(640), S::autoSize(), simd_float4{0.639,0.420,0.961,1.0})
+    //         .maxWidth(S::minContent())
+    //         .marginTop(S::px(20))
+    //     (
+    //         text(intrinsicText)
+    //             .font(Arial)
+    //             .fontSize(S::pt(18))
+    //             .color(simd_float4{0.961,0.969,1.0,1.0})
+    //     )
+    // );
 
 
     // // Auto-sized parent with a percentage-width child.
@@ -3243,109 +3243,109 @@ div()
 // );
 
 
-// using S = gui::Size;
-// // complex test scene
-// div()
-//     .width(S::percent(1.0))
-//     .height(S::percent(1.0))
-//     .color(simd_float4{0.04,0.04,0.05,1.0})
-//     .display(gui::Display::Grid)
-//     .gridTemplateColumns({S::px(260), S::percent(0.35), S::fr(1.0)})
-//     .gridTemplateRows({S::px(178), S::fr(1.0), S::px(148)})
-//     .gridColumnGap(S::px(14))
-//     .gridRowGap(S::px(14))
-//     .padding(S::px(22))
-// (
-//     div()
-//         .gridColumn(1, 4)
-//         .gridRow(1, 2)
-//         .color(simd_float4{0.12,0.12,0.15,1.0})
-//         .display(gui::Display::Flex)
-//         .flexDirection(gui::FlexDirection::Row)
-//         .flexGap(S::px(12))
-//         .padding(S::px(12))
-//         .minHeight(S::px(150))
-//     (
-//         div().width(S::px(170)).height(S::percent(1.0)).minWidth(S::px(120)).maxWidth(S::px(220)).color(simd_float4{0.00,0.78,0.58,1.0}).cornerRadius(S::px(5))(),
-//         div().width(S::percent(0.28)).height(S::percent(1.0)).minWidth(S::px(180)).maxWidth(S::px(420)).color(simd_float4{0.96,0.22,0.62,1.0}).cornerRadius(S::px(5))(),
-//         div().height(S::percent(1.0)).flexGrow(S::px(1)).minWidth(S::px(180)).maxWidth(S::px(520)).color(simd_float4{0.98,0.92,0.32,1.0}).cornerRadius(S::px(5))(),
-//         div().width(S::px(140)).height(S::percent(1.0)).minWidth(S::px(110)).maxWidth(S::px(180)).color(simd_float4{0.16,0.84,0.90,1.0}).cornerRadius(S::px(5))()
-//     ),
+using S = gui::Size;
+// complex test scene
+div()
+    .width(S::percent(1.0))
+    .height(S::percent(1.0))
+    .color(simd_float4{0.04,0.04,0.05,1.0})
+    .display(gui::Display::Grid)
+    .gridTemplateColumns({S::px(260), S::percent(0.35), S::fr(1.0)})
+    .gridTemplateRows({S::px(178), S::fr(1.0), S::px(148)})
+    .gridColumnGap(S::px(14))
+    .gridRowGap(S::px(14))
+    .padding(S::px(22))
+(
+    div()
+        .gridColumn(1, 4)
+        .gridRow(1, 2)
+        .color(simd_float4{0.12,0.12,0.15,1.0})
+        .display(gui::Display::Flex)
+        .flexDirection(gui::FlexDirection::Row)
+        .flexGap(S::px(12))
+        .padding(S::px(12))
+        .minHeight(S::px(150))
+    (
+        div().width(S::px(170)).height(S::percent(1.0)).minWidth(S::px(120)).maxWidth(S::px(220)).color(simd_float4{0.00,0.78,0.58,1.0}).cornerRadius(S::px(5))(),
+        div().width(S::percent(0.28)).height(S::percent(1.0)).minWidth(S::px(180)).maxWidth(S::px(420)).color(simd_float4{0.96,0.22,0.62,1.0}).cornerRadius(S::px(5))(),
+        div().height(S::percent(1.0)).flexGrow(S::px(1)).minWidth(S::px(180)).maxWidth(S::px(520)).color(simd_float4{0.98,0.92,0.32,1.0}).cornerRadius(S::px(5))(),
+        div().width(S::px(140)).height(S::percent(1.0)).minWidth(S::px(110)).maxWidth(S::px(180)).color(simd_float4{0.16,0.84,0.90,1.0}).cornerRadius(S::px(5))()
+    ),
 
-//     div()
-//         .gridColumn(1, 2)
-//         .gridRow(2, 3)
-//         .color(simd_float4{0.12,0.12,0.15,1.0})
-//         .display(gui::Display::Flex)
-//         .flexDirection(gui::FlexDirection::Col)
-//         .flexGap(S::px(10))
-//         .padding(S::px(12))
-//         .minWidth(S::px(220))
-//         .minHeight(S::px(220))
-//     (
-//         div().width(S::percent(1.0)).height(S::percent(0.22)).minHeight(S::px(46)).maxHeight(S::px(90)).color(simd_float4{0.95,0.18,0.22,1.0}).cornerRadius(S::px(5))(),
-//         div().width(S::px(155)).height(S::px(62)).minWidth(S::px(120)).maxWidth(S::px(210)).color(simd_float4{0.10,0.72,0.95,1.0}).cornerRadius(S::px(5))(),
-//         div().width(S::percent(0.72)).flexGrow(S::px(1)).minHeight(S::px(70)).maxHeight(S::px(180)).color(simd_float4{1.00,0.48,0.12,1.0}).cornerRadius(S::px(5))(),
-//         div().width(S::percent(0.45)).height(S::px(48)).minWidth(S::px(90)).maxWidth(S::px(150)).color(simd_float4{0.54,0.28,0.98,1.0}).cornerRadius(S::px(5))()
-//     ),
+    div()
+        .gridColumn(1, 2)
+        .gridRow(2, 3)
+        .color(simd_float4{0.12,0.12,0.15,1.0})
+        .display(gui::Display::Flex)
+        .flexDirection(gui::FlexDirection::Col)
+        .flexGap(S::px(10))
+        .padding(S::px(12))
+        .minWidth(S::px(220))
+        .minHeight(S::px(220))
+    (
+        div().width(S::percent(1.0)).height(S::percent(0.22)).minHeight(S::px(46)).maxHeight(S::px(90)).color(simd_float4{0.95,0.18,0.22,1.0}).cornerRadius(S::px(5))(),
+        div().width(S::px(155)).height(S::px(62)).minWidth(S::px(120)).maxWidth(S::px(210)).color(simd_float4{0.10,0.72,0.95,1.0}).cornerRadius(S::px(5))(),
+        div().width(S::percent(0.72)).flexGrow(S::px(1)).minHeight(S::px(70)).maxHeight(S::px(180)).color(simd_float4{1.00,0.48,0.12,1.0}).cornerRadius(S::px(5))(),
+        div().width(S::percent(0.45)).height(S::px(48)).minWidth(S::px(90)).maxWidth(S::px(150)).color(simd_float4{0.54,0.28,0.98,1.0}).cornerRadius(S::px(5))()
+    ),
 
-//     div()
-//         .gridColumn(2, 3)
-//         .gridRow(2, 3)
-//         .color(simd_float4{0.12,0.12,0.15,1.0})
-//         .display(gui::Display::Grid)
-//         .gridTemplateColumns({S::px(120), S::percent(0.45), S::fr(1.0)})
-//         .gridTemplateRows({S::px(64), S::percent(0.5), S::fr(1.0)})
-//         .gridColumnGap(S::px(10))
-//         .gridRowGap(S::px(10))
-//         .padding(S::px(12))
-//         .minWidth(S::px(300))
-//         .minHeight(S::px(220))
-//     (
-//         div().color(simd_float4{0.32,0.95,0.42,1.0}).minWidth(S::px(90)).minHeight(S::px(46)).cornerRadius(S::px(5))(),
-//         div().color(simd_float4{0.68,0.28,0.96,1.0}).minWidth(S::px(130)).maxWidth(S::px(240)).minHeight(S::px(50)).cornerRadius(S::px(5))(),
-//         div().color(simd_float4{0.98,0.92,0.32,1.0}).minWidth(S::px(80)).maxWidth(S::px(170)).minHeight(S::px(50)).cornerRadius(S::px(5))(),
-//         div().gridColumn(1, 3).color(simd_float4{0.16,0.36,0.98,1.0}).minHeight(S::px(74)).maxHeight(S::px(130)).cornerRadius(S::px(5))(),
-//         div().color(simd_float4{0.94,0.18,0.18,1.0}).minWidth(S::px(90)).minHeight(S::px(60)).cornerRadius(S::px(5))(),
-//         div().gridColumn(1, 4).color(simd_float4{0.16,0.84,0.90,1.0}).minHeight(S::px(46)).maxHeight(S::px(80)).cornerRadius(S::px(5))()
-//     ),
+    div()
+        .gridColumn(2, 3)
+        .gridRow(2, 3)
+        .color(simd_float4{0.12,0.12,0.15,1.0})
+        .display(gui::Display::Grid)
+        .gridTemplateColumns({S::px(120), S::percent(0.45), S::fr(1.0)})
+        .gridTemplateRows({S::px(64), S::percent(0.5), S::fr(1.0)})
+        .gridColumnGap(S::px(10))
+        .gridRowGap(S::px(10))
+        .padding(S::px(12))
+        .minWidth(S::px(300))
+        .minHeight(S::px(220))
+    (
+        div().color(simd_float4{0.32,0.95,0.42,1.0}).minWidth(S::px(90)).minHeight(S::px(46)).cornerRadius(S::px(5))(),
+        div().color(simd_float4{0.68,0.28,0.96,1.0}).minWidth(S::px(130)).maxWidth(S::px(240)).minHeight(S::px(50)).cornerRadius(S::px(5))(),
+        div().color(simd_float4{0.98,0.92,0.32,1.0}).minWidth(S::px(80)).maxWidth(S::px(170)).minHeight(S::px(50)).cornerRadius(S::px(5))(),
+        div().gridColumn(1, 3).color(simd_float4{0.16,0.36,0.98,1.0}).minHeight(S::px(74)).maxHeight(S::px(130)).cornerRadius(S::px(5))(),
+        div().color(simd_float4{0.94,0.18,0.18,1.0}).minWidth(S::px(90)).minHeight(S::px(60)).cornerRadius(S::px(5))(),
+        div().gridColumn(1, 4).color(simd_float4{0.16,0.84,0.90,1.0}).minHeight(S::px(46)).maxHeight(S::px(80)).cornerRadius(S::px(5))()
+    ),
 
-//     div()
-//         .gridColumn(3, 4)
-//         .gridRow(2, 3)
-//         .color(simd_float4{0.12,0.12,0.15,1.0})
-//         .display(gui::Display::Flex)
-//         .flexDirection(gui::FlexDirection::Row)
-//         .flexWrap(gui::FlexWrap::Wrap)
-//         .flexGap(S::px(10))
-//         .padding(S::px(12))
-//         .minWidth(S::px(260))
-//         .minHeight(S::px(220))
-//     (
-//         div().width(S::percent(0.36)).height(S::px(58)).minWidth(S::px(110)).maxWidth(S::px(210)).color(simd_float4{0.95,0.84,0.16,1.0}).cornerRadius(S::px(5))(),
-//         div().height(S::px(58)).flexGrow(S::px(1)).minWidth(S::px(120)).maxWidth(S::px(240)).color(simd_float4{0.00,0.78,0.58,1.0}).cornerRadius(S::px(5))(),
-//         div().width(S::px(180)).height(S::px(58)).minWidth(S::px(140)).maxWidth(S::px(220)).color(simd_float4{0.96,0.22,0.62,1.0}).cornerRadius(S::px(5))(),
-//         div().width(S::percent(0.62)).height(S::px(58)).minWidth(S::px(180)).maxWidth(S::px(340)).color(simd_float4{0.16,0.36,0.98,1.0}).cornerRadius(S::px(5))(),
-//         div().height(S::px(58)).flexGrow(S::px(1)).minWidth(S::px(90)).maxWidth(S::px(160)).color(simd_float4{1.00,0.48,0.12,1.0}).cornerRadius(S::px(5))()
-//     ),
+    div()
+        .gridColumn(3, 4)
+        .gridRow(2, 3)
+        .color(simd_float4{0.12,0.12,0.15,1.0})
+        .display(gui::Display::Flex)
+        .flexDirection(gui::FlexDirection::Row)
+        .flexWrap(gui::FlexWrap::Wrap)
+        .flexGap(S::px(10))
+        .padding(S::px(12))
+        .minWidth(S::px(260))
+        .minHeight(S::px(220))
+    (
+        div().width(S::percent(0.36)).height(S::px(58)).minWidth(S::px(110)).maxWidth(S::px(210)).color(simd_float4{0.95,0.84,0.16,1.0}).cornerRadius(S::px(5))(),
+        div().height(S::px(58)).flexGrow(S::px(1)).minWidth(S::px(120)).maxWidth(S::px(240)).color(simd_float4{0.00,0.78,0.58,1.0}).cornerRadius(S::px(5))(),
+        div().width(S::px(180)).height(S::px(58)).minWidth(S::px(140)).maxWidth(S::px(220)).color(simd_float4{0.96,0.22,0.62,1.0}).cornerRadius(S::px(5))(),
+        div().width(S::percent(0.62)).height(S::px(58)).minWidth(S::px(180)).maxWidth(S::px(340)).color(simd_float4{0.16,0.36,0.98,1.0}).cornerRadius(S::px(5))(),
+        div().height(S::px(58)).flexGrow(S::px(1)).minWidth(S::px(90)).maxWidth(S::px(160)).color(simd_float4{1.00,0.48,0.12,1.0}).cornerRadius(S::px(5))()
+    ),
 
-//     div()
-//         .gridColumn(1, 4)
-//         .gridRow(3, 4)
-//         .color(simd_float4{0.12,0.12,0.15,1.0})
-//         .display(gui::Display::Grid)
-//         .gridTemplateColumns({S::percent(0.25), S::px(220), S::fr(1.0), S::px(160)})
-//         .gridTemplateRows({S::fr(1.0)})
-//         .gridColumnGap(S::px(12))
-//         .padding(S::px(12))
-//         .minHeight(S::px(120))
-//     (
-//         div().color(simd_float4{0.68,0.28,0.96,1.0}).minWidth(S::px(120)).cornerRadius(S::px(5))(),
-//         div().color(simd_float4{0.10,0.72,0.95,1.0}).minWidth(S::px(160)).maxWidth(S::px(220)).cornerRadius(S::px(5))(),
-//         div().color(simd_float4{0.32,0.95,0.42,1.0}).minWidth(S::px(220)).cornerRadius(S::px(5))(),
-//         div().color(simd_float4{0.95,0.18,0.22,1.0}).minWidth(S::px(120)).cornerRadius(S::px(5))()
-//     )
-// );
+    div()
+        .gridColumn(1, 4)
+        .gridRow(3, 4)
+        .color(simd_float4{0.12,0.12,0.15,1.0})
+        .display(gui::Display::Grid)
+        .gridTemplateColumns({S::percent(0.25), S::px(220), S::fr(1.0), S::px(160)})
+        .gridTemplateRows({S::fr(1.0)})
+        .gridColumnGap(S::px(12))
+        .padding(S::px(12))
+        .minHeight(S::px(120))
+    (
+        div().color(simd_float4{0.68,0.28,0.96,1.0}).minWidth(S::px(120)).cornerRadius(S::px(5))(),
+        div().color(simd_float4{0.10,0.72,0.95,1.0}).minWidth(S::px(160)).maxWidth(S::px(220)).cornerRadius(S::px(5))(),
+        div().color(simd_float4{0.32,0.95,0.42,1.0}).minWidth(S::px(220)).cornerRadius(S::px(5))(),
+        div().color(simd_float4{0.95,0.18,0.22,1.0}).minWidth(S::px(120)).cornerRadius(S::px(5))()
+    )
+);
 
 //     // Raster downsampling/post-layout test:
 //     // - Both elements share the same 2000x2000 source asset.

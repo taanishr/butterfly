@@ -32,6 +32,11 @@ namespace layout {
         }
     };
 
+    struct GridItem {
+        size_t childIndex;
+        ItemPlacement placement;
+    };
+
     enum class GridDirection {
         Col,
         Row
@@ -65,12 +70,12 @@ namespace layout {
     };
 
     struct GridLayout {
-        std::vector<ItemPlacement> items;
+        std::vector<GridItem> items;
         Grid grid {0, 0};
         std::vector<Track> rowTracks;
         std::vector<Track> colTracks;
 
-        void addChild(TreeNode* node);
+        void addChild(size_t childIndex, TreeNode* node);
 
         // helpers
         void resolveStructure(size_t templateRows, size_t templateCols);
@@ -115,7 +120,6 @@ namespace layout {
         float maxChildBottom = 0;
 
         bool hasIndefiniteChild = false;
-        std::vector<size_t> inFlowIndices;
 
         struct Bounds {
             float maxX;
