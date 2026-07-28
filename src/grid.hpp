@@ -32,9 +32,17 @@ namespace layout {
         }
     };
 
+    struct GridItemContributions {
+        float minimum;
+        float minContent;
+        float maxContent;
+    };
+
     struct GridItem {
         size_t childIndex;
         ItemPlacement placement;
+        GridItemContributions widthContributions;
+        GridItemContributions heightContributions;
     };
 
     enum class GridDirection {
@@ -74,26 +82,24 @@ namespace layout {
         Grid grid {0, 0};
         std::vector<Track> rowTracks;
         std::vector<Track> colTracks;
+        IntrinsicSizes columnIntrinsicSizes;
+        IntrinsicSizes rowIntrinsicSizes;
 
-        void addChild(size_t childIndex, TreeNode* node);
+        void addChild(size_t childIndex, TreeNode* node, GridItemContributions widthContributions);
 
         // helpers
         void resolveStructure(size_t templateRows, size_t templateCols);
         std::vector<Track> resolveTracks(
             std::vector<Size>& templateTracks,
-            std::vector<float> itemSizes,
             float available,
             float gap,
             bool isCol,
-            bool axisDefinite
+            bool axisDefinite,
+            IntrinsicSizes* intrinsicSizes = nullptr
         );
 
-        void resolve(size_t numRows, size_t numCols,
-            const std::vector<Size>& templateRows, const std::vector<Size>& templateCols,
-            float availableWidth, float availableHeight,
-            float colGap, float rowGap,
-            std::vector<float> itemWidths, std::vector<float> itemHeights,
-            bool widthDefinite, bool heightDefinite);
+        void resolveColumns(size_t numRows, size_t numCols, const std::vector<Size>& templateCols, float availableWidth, float colGap, bool widthDefinite);
+        void resolveRows(const std::vector<Size>& templateRows, float availableHeight, float rowGap, bool heightDefinite);
     };
 
     struct GridResolver {
@@ -107,6 +113,7 @@ namespace layout {
         const FrameInfo&  frameInfo;
         Measured          measured;
         bool              mutate;
+        std::optional<IntrinsicSizes> intrinsicSizes;
         Size              childAvailableWidth;
         Size              parentAvailableWidth;
         Size              parentAvailableHeight;
@@ -115,11 +122,6 @@ namespace layout {
         float minY;
         float maxX;
         float maxY;
-
-        float maxChildRight = 0;
-        float maxChildBottom = 0;
-
-        bool hasIndefiniteChild = false;
 
         struct Bounds {
             float maxX;
@@ -134,11 +136,8 @@ namespace layout {
                      Size parentAvailableWidth, Size parentAvailableHeight,
                      float minX, float minY, float maxX, float maxY);
 
-        bool isXIndefinite(TreeNode* child);
-        bool isYIndefinite(TreeNode* child);
         Constraints prepareChildConstraints(TreeNode* child);
 
-        void phaseA();
         void phaseB();
         Bounds phaseC();
     };
