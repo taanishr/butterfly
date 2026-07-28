@@ -103,10 +103,12 @@ namespace layout {
 
     float FlexResolver::determineMinMainSize(TreeNode* child, std::expected<float, SizeResolveFailure>& mainSize, const std::optional<IntrinsicSizes>& intrinsicSizes) {
         const auto& request = flex.axis.minMainSize(child->shared);
-        if (request.isContentDependent()) return resolveIntrinsicSize(request, *intrinsicSizes, parentAvailableMain());
+        if (request.isContentDependent()) 
+            return resolveIntrinsicSize(request, *intrinsicSizes, parentAvailableMain());
 
         auto resolvedMinMain = resolveMainSize(request);
-        if (resolvedMinMain) return *resolvedMinMain;
+        if (resolvedMinMain) 
+            return *resolvedMinMain;
 
         if (resolvedMinMain.error() ==
             SizeResolveFailure::FractionRequiresContext) {

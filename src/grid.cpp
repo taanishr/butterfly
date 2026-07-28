@@ -24,7 +24,7 @@ namespace layout {
         }
     }
 
-    void GridLayout::addChild(size_t childIndex, TreeNode* node) {
+    void GridLayout::addChild(size_t childIndex, TreeNode* node, GridItemContributions widthContributions) {
         auto gridPlacement = node->getGridPlacement();
 
         std::optional<int> cs, ce, rs, re;
@@ -51,7 +51,8 @@ namespace layout {
 
         items.push_back({
             .childIndex = childIndex,
-            .placement = {.colStart = cs, .colEnd = ce, .rowStart = rs, .rowEnd = re}
+            .placement = {.colStart = cs, .colEnd = ce, .rowStart = rs, .rowEnd = re},
+            .widthContributions = widthContributions
         });
     }
 
@@ -449,6 +450,11 @@ namespace layout {
                 preparedChildConstraints.shrinkWidthToFit = true;
                 preparedChildConstraints.shrinkHeightToFit = true;
             }
+            preparedChildConstraints.widthResolution = AxisResolution::MaxContent;
+            preparedChildConstraints.intrinsicSizesAxis = Axis::Width;
+            preparedChildConstraints.shrinkWidthToFit = true;
+            childMeasured.explicitWidth = std::unexpected(SizeResolveFailure::Auto);
+            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childAsPtr, preparedChildConstraints.availableWidth, preparedChildConstraints.widthResolution, true);
 
             const auto& childOutput = tree.speculateLayout(
                 frameInfo,
@@ -460,14 +466,62 @@ namespace layout {
             if (childLayout.outOfFlow) 
                 continue;
 
-            gridLayout.addChild(i, childAsPtr);
+            IntrinsicSizes intrinsicWidths = childOutput.intrinsicSizes.value_or(IntrinsicSizes{
+                .minContent = Size::px(childLayout.computedBox.width),
+                .maxContent = Size::px(childLayout.computedBox.width)
+            });
+            float minContent = intrinsicWidths.minContent.resolveOr(Size::autoSize());
+            float maxContent = intrinsicWidths.maxContent.resolveOr(Size::autoSize());
 
-            float itemWidth = applyMinMax(
-                childLayout.computedBox.width,
-                childAsPtr->shared.minWidth,
-                childAsPtr->shared.maxWidth,
-                availableWidth
-            );
+            std::optional<float> preferredWidth;
+            if (childAsPtr->shared.width.isContentDependent()) {
+                preferredWidth = resolveIntrinsicSize(childAsPtr->shared.width, intrinsicWidths, widthBasis);
+            } else if (childAsPtr->shared.width.unit != style::Unit::Percent) {
+                auto resolved = childAsPtr->shared.width.resolve(widthBasis);
+                if (resolved) 
+                    preferredWidth = *resolved;
+            }
+
+            std::optional<float> minWidth;
+            if (childAsPtr->shared.minWidth.isContentDependent()) {
+                minWidth = resolveIntrinsicSize(childAsPtr->shared.minWidth, intrinsicWidths, widthBasis);
+            } else {
+                auto resolved = childAsPtr->shared.minWidth.resolve(widthBasis);
+                if (resolved) 
+                    minWidth = *resolved;
+            }
+
+            std::optional<float> maxWidth;
+            if (childAsPtr->shared.maxWidth.has_value()) {
+                const auto& requestedMaxWidth = *childAsPtr->shared.maxWidth;
+                if (requestedMaxWidth.isContentDependent()) {
+                    maxWidth = resolveIntrinsicSize(requestedMaxWidth, intrinsicWidths, widthBasis);
+                } else {
+                    auto resolved = requestedMaxWidth.resolve(widthBasis);
+                    if (resolved) 
+                        maxWidth = *resolved;
+                }
+            }
+
+            if (preferredWidth.has_value()) 
+                minContent = maxContent = *preferredWidth;
+
+            if (maxWidth.has_value()) {
+                minContent = std::min(minContent, *maxWidth);
+                maxContent = std::min(maxContent, *maxWidth);
+            }
+            if (minWidth.has_value()) {
+                minContent = std::max(minContent, *minWidth);
+                maxContent = std::max(maxContent, *minWidth);
+            }
+
+            float minimum = preferredWidth.has_value() || childAsPtr->shared.overflow == Overflow::Visible ? minContent : 0.0f;
+
+            if (maxWidth.has_value()) 
+                minimum = std::min(minimum, *maxWidth);
+            if (minWidth.has_value()) 
+                minimum = std::max(minimum, *minWidth);
+
             float itemHeight = applyMinMax(
                 childLayout.consumedHeight,
                 childAsPtr->shared.minHeight,
@@ -475,7 +529,8 @@ namespace layout {
                 availableHeight
             );
 
-            itemWidths.push_back(itemWidth);
+            gridLayout.addChild(i, childAsPtr, {.minimum = minimum, .minContent = minContent, .maxContent = maxContent});
+            itemWidths.push_back(maxContent);
             itemHeights.push_back(itemHeight);
         }
 

@@ -32,9 +32,16 @@ namespace layout {
         }
     };
 
+    struct GridItemContributions {
+        float minimum;
+        float minContent;
+        float maxContent;
+    };
+
     struct GridItem {
         size_t childIndex;
         ItemPlacement placement;
+        GridItemContributions widthContributions;
     };
 
     enum class GridDirection {
@@ -75,7 +82,7 @@ namespace layout {
         std::vector<Track> rowTracks;
         std::vector<Track> colTracks;
 
-        void addChild(size_t childIndex, TreeNode* node);
+        void addChild(size_t childIndex, TreeNode* node, GridItemContributions widthContributions);
 
         // helpers
         void resolveStructure(size_t templateRows, size_t templateCols);
