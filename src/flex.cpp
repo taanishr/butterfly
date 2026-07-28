@@ -154,6 +154,7 @@ namespace layout {
                             : contentMainSize;
                     break;
                 case SizeResolveFailure::IndefiniteBasis:
+                case SizeResolveFailure::ContentDependent:
                     availableMain = contentMainSize;
                     break;
                 case SizeResolveFailure::FractionRequiresContext:
@@ -189,6 +190,7 @@ namespace layout {
                 }
                 return contentCrossSize;
             case SizeResolveFailure::IndefiniteBasis:
+            case SizeResolveFailure::ContentDependent:
                 return contentCrossSize;
             case SizeResolveFailure::FractionRequiresContext:
                 // fr does not make sense as a flex container cross size.
