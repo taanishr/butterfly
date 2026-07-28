@@ -42,7 +42,7 @@ namespace layout {
         size_t childIndex;
         ItemPlacement placement;
         GridItemContributions widthContributions;
-        float heightContribution;
+        GridItemContributions heightContributions;
     };
 
     enum class GridDirection {
@@ -83,8 +83,9 @@ namespace layout {
         std::vector<Track> rowTracks;
         std::vector<Track> colTracks;
         IntrinsicSizes columnIntrinsicSizes;
+        IntrinsicSizes rowIntrinsicSizes;
 
-        void addChild(size_t childIndex, TreeNode* node, GridItemContributions widthContributions, float heightContribution);
+        void addChild(size_t childIndex, TreeNode* node, GridItemContributions widthContributions);
 
         // helpers
         void resolveStructure(size_t templateRows, size_t templateCols);

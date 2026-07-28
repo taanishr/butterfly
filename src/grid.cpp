@@ -55,7 +55,7 @@ namespace layout {
         }
     }
 
-    void GridLayout::addChild(size_t childIndex, TreeNode* node, GridItemContributions widthContributions, float heightContribution) {
+    void GridLayout::addChild(size_t childIndex, TreeNode* node, GridItemContributions widthContributions) {
         auto gridPlacement = node->getGridPlacement();
 
         std::optional<int> cs, ce, rs, re;
@@ -84,7 +84,7 @@ namespace layout {
             .childIndex = childIndex,
             .placement = {.colStart = cs, .colEnd = ce, .rowStart = rs, .rowEnd = re},
             .widthContributions = widthContributions,
-            .heightContribution = heightContribution
+            .heightContributions = {}
         });
     }
 
@@ -236,13 +236,13 @@ namespace layout {
             if (end - start != 1)
                 continue;
 
-            GridItemContributions contributions = isCol ? item.widthContributions : GridItemContributions{item.heightContribution, item.heightContribution, item.heightContribution};
+            GridItemContributions contributions = isCol ? item.widthContributions : item.heightContributions;
             minimums[start] = std::max(minimums[start], contributions.minimum);
             minContents[start] = std::max(minContents[start], contributions.minContent);
             maxContents[start] = std::max(maxContents[start], contributions.maxContent);
         }
 
-        for (size_t span = 2; isCol && span <= maxSpan; ++span) {
+        for (size_t span = 2; span <= maxSpan; ++span) {
             for (const auto& item : items) {
                 const auto& placement = item.placement;
                 size_t start = isCol ? *placement.colStart : *placement.rowStart;
@@ -250,7 +250,7 @@ namespace layout {
                 if (end - start != span)
                     continue;
 
-                GridItemContributions contributions = isCol ? item.widthContributions : GridItemContributions{item.heightContribution, item.heightContribution, item.heightContribution};
+                GridItemContributions contributions = isCol ? item.widthContributions : item.heightContributions;
                 bool spansFractionTrack = std::any_of(defs.begin() + start, defs.begin() + end, [](const Size& definition) { return definition.isFr(); });
                 if (!spansFractionTrack)
                     distributeSpanningContribution(minimums, fixedSizes, fixedTracks, defs, start, end, gap, contributions.minimum);
@@ -298,7 +298,7 @@ namespace layout {
                 IntrinsicSizes contributions{.minContent = Size::px(minContents[i]), .maxContent = Size::px(maxContents[i])};
                 sizes[i] = resolveIntrinsicSize(defs[i], contributions, basis);
             } else if (defs[i].isFr() && axisDefinite) {
-                sizes[i] = isCol ? minimums[i] : 0.0f;
+                sizes[i] = minimums[i];
                 fractionTotal += defs[i].value;
                 continue;
             } else {
@@ -319,7 +319,7 @@ namespace layout {
                     if (!defs[i].isFr() || frozen[i])
                         continue;
                     float share = defs[i].value * fractionSize;
-                    float minimum = isCol ? minimums[i] : 0.0f;
+                    float minimum = minimums[i];
                     if (share >= minimum)
                         continue;
                     sizes[i] = minimum;
@@ -363,7 +363,7 @@ namespace layout {
         for (int i = 0; i < templateRows.size(); ++i)
             rowDefs[i] = templateRows[i];
 
-        rowTracks = resolveTracks(rowDefs, availableHeight, rowGap, false, heightDefinite);
+        rowTracks = resolveTracks(rowDefs, availableHeight, rowGap, false, heightDefinite, &rowIntrinsicSizes);
     }
 
     GridResolver::GridResolver(RenderTree& tree, TreeNode* node,
@@ -596,7 +596,7 @@ namespace layout {
             if (maxWidth.has_value()) 
                 minimum = std::min(minimum, *maxWidth);
 
-            gridLayout.addChild(i, childAsPtr, {.minimum = minimum, .minContent = minContent, .maxContent = maxContent}, 0.0f);
+            gridLayout.addChild(i, childAsPtr, {.minimum = minimum, .minContent = minContent, .maxContent = maxContent});
         }
 
         gridLayout.resolveColumns(templateRows.size(), templateCols.size(), templateCols, availableWidth, colGap, widthDefinite);
@@ -629,6 +629,9 @@ namespace layout {
             preparedChildConstraints.availableHeight = Size::autoSize();
             preparedChildConstraints.shrinkWidthToFit = false;
             preparedChildConstraints.shrinkHeightToFit = false;
+            preparedChildConstraints.heightResolution = AxisResolution::MaxContent;
+            preparedChildConstraints.intrinsicSizesAxis = Axis::Height;
+            childMeasured.explicitHeight = std::unexpected(SizeResolveFailure::Auto);
 
             JustifyItems effectiveJustify = justifyItems;
             auto selfJustify = childAsPtr->getJustifySelf();
@@ -651,10 +654,69 @@ namespace layout {
                 preparedChildConstraints.shrinkHeightToFit = true;
 
             const auto& childOutput = tree.speculateLayout(frameInfo, childAsPtr, preparedChildConstraints, childMeasured);
-            item.heightContribution = applyMinMax(childOutput.layout.consumedHeight, childAsPtr->shared.minHeight, childAsPtr->shared.maxHeight, availableHeight);
+            IntrinsicSizes intrinsicHeights = childOutput.intrinsicSizes.value_or(IntrinsicSizes{
+                .minContent = Size::px(childOutput.layout.consumedHeight),
+                .maxContent = Size::px(childOutput.layout.consumedHeight)
+            });
+            float minContent = intrinsicHeights.minContent.resolveOr(Size::autoSize());
+            float maxContent = intrinsicHeights.maxContent.resolveOr(Size::autoSize());
+
+            std::optional<float> preferredHeight;
+            if (childAsPtr->shared.height.isContentDependent()) {
+                preferredHeight = resolveIntrinsicSize(childAsPtr->shared.height, intrinsicHeights, heightBasis);
+            } else if (childAsPtr->shared.height.unit != style::Unit::Percent) {
+                auto resolved = childAsPtr->shared.height.resolve(heightBasis);
+                if (resolved)
+                    preferredHeight = *resolved;
+            }
+
+            std::optional<float> minHeight;
+            if (childAsPtr->shared.minHeight.isContentDependent()) {
+                minHeight = resolveIntrinsicSize(childAsPtr->shared.minHeight, intrinsicHeights, heightBasis);
+            } else {
+                auto resolved = childAsPtr->shared.minHeight.resolve(heightBasis);
+                if (resolved)
+                    minHeight = *resolved;
+            }
+
+            std::optional<float> maxHeight;
+            if (childAsPtr->shared.maxHeight.has_value()) {
+                const auto& requestedMaxHeight = *childAsPtr->shared.maxHeight;
+                if (requestedMaxHeight.isContentDependent()) {
+                    maxHeight = resolveIntrinsicSize(requestedMaxHeight, intrinsicHeights, heightBasis);
+                } else {
+                    auto resolved = requestedMaxHeight.resolve(heightBasis);
+                    if (resolved)
+                        maxHeight = *resolved;
+                }
+            }
+
+            if (preferredHeight.has_value())
+                minContent = maxContent = *preferredHeight;
+            if (maxHeight.has_value()) {
+                minContent = std::min(minContent, *maxHeight);
+                maxContent = std::min(maxContent, *maxHeight);
+            }
+            if (minHeight.has_value()) {
+                minContent = std::max(minContent, *minHeight);
+                maxContent = std::max(maxContent, *minHeight);
+            }
+
+            float minimum = 0.0f;
+            if (minHeight.has_value()) {
+                minimum = *minHeight;
+            } else if (preferredHeight.has_value() || childAsPtr->shared.overflow == Overflow::Visible) {
+                minimum = minContent;
+            }
+            if (maxHeight.has_value())
+                minimum = std::min(minimum, *maxHeight);
+
+            item.heightContributions = {.minimum = minimum, .minContent = minContent, .maxContent = maxContent};
         }
 
         gridLayout.resolveRows(node->getGridTemplateRows(), availableHeight, rowGap, heightDefinite);
+        if (parentConstraints.intrinsicSizesAxis == Axis::Height)
+            intrinsicSizes = gridLayout.rowIntrinsicSizes;
 
         for (auto& item : gridLayout.items) {
             auto childAsPtr = node->children[item.childIndex].get();
