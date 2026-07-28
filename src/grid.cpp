@@ -22,9 +22,40 @@ namespace layout {
 
             return value;
         }
+
+        void distributeSpanningContribution(std::vector<float>& contributions, const std::vector<float>& fixedSizes, const std::vector<bool>& fixedTracks, const std::vector<Size>& definitions, size_t start, size_t end, float gap, float contribution) {
+            float covered = gap * static_cast<float>(end - start - 1);
+            bool spansFractionTrack = false;
+            for (size_t i = start; i < end; ++i) {
+                covered += fixedTracks[i] ? fixedSizes[i] : contributions[i];
+                spansFractionTrack = spansFractionTrack || definitions[i].isFr();
+            }
+
+            float extra = contribution - covered;
+            if (extra <= 0.0f)
+                return;
+
+            float totalWeight = 0.0f;
+            size_t eligibleTracks = 0;
+            for (size_t i = start; i < end; ++i) {
+                if (fixedTracks[i] || (spansFractionTrack && !definitions[i].isFr()))
+                    continue;
+                totalWeight += spansFractionTrack ? definitions[i].value : 1.0f;
+                eligibleTracks++;
+            }
+            if (eligibleTracks == 0)
+                return;
+
+            for (size_t i = start; i < end; ++i) {
+                if (fixedTracks[i] || (spansFractionTrack && !definitions[i].isFr()))
+                    continue;
+                float weight = spansFractionTrack && totalWeight > 0.0f ? definitions[i].value / totalWeight : 1.0f / static_cast<float>(eligibleTracks);
+                contributions[i] += extra * weight;
+            }
+        }
     }
 
-    void GridLayout::addChild(size_t childIndex, TreeNode* node, GridItemContributions widthContributions) {
+    void GridLayout::addChild(size_t childIndex, TreeNode* node, GridItemContributions widthContributions, float heightContribution) {
         auto gridPlacement = node->getGridPlacement();
 
         std::optional<int> cs, ce, rs, re;
@@ -52,7 +83,8 @@ namespace layout {
         items.push_back({
             .childIndex = childIndex,
             .placement = {.colStart = cs, .colEnd = ce, .rowStart = rs, .rowEnd = re},
-            .widthContributions = widthContributions
+            .widthContributions = widthContributions,
+            .heightContribution = heightContribution
         });
     }
 
@@ -176,67 +208,137 @@ namespace layout {
     }
 
 
-    std::vector<Track> GridLayout::resolveTracks(std::vector<Size>& defs, std::vector<float> itemSizes, float available, float gap, bool isCol, bool axisDefinite) {
+    std::vector<Track> GridLayout::resolveTracks(std::vector<Size>& defs, float available, float gap, bool isCol, bool axisDefinite, IntrinsicSizes* intrinsicSizes) {
         size_t n = defs.size();
         float totalGap = (n > 1) ? gap * (float)(n - 1) : 0;
-        float usable = available - totalGap;
+        float usable = std::max(0.0f, available - totalGap);
+        Size basis = axisDefinite ? Size::px(available) : Size::autoSize();
+        std::vector<float> fixedSizes(n, 0.0f);
+        std::vector<bool> fixedTracks(n, false);
+        std::vector<float> minimums(n, 0.0f);
+        std::vector<float> minContents(n, 0.0f);
+        std::vector<float> maxContents(n, 0.0f);
 
-        std::vector<float> sizes(n, 0);
-        std::vector<float> trackMinSizes(n, 0);
-        std::vector<Track> tracks {};
-
-        float fixedTotal {};
-        float frTotal {};
-        float autoTotal {};
-
-        for (auto [item, itemSize]: std::ranges::views::zip(items, itemSizes)) {
-            size_t s = isCol ? *item.placement.colStart : *item.placement.rowStart;
-            size_t e = isCol ? *item.placement.colEnd : *item.placement.rowEnd;
-
-            if (e - s > 1)
-                continue;
-
-            trackMinSizes[s] = std::max(trackMinSizes[s], itemSize);
-        }
-
-        // resolve fixed tracks
         for (size_t i = 0; i < n; ++i) {
-            auto basis = axisDefinite
-                ? Size::px(available)
-                : Size::autoSize();
             auto resolved = defs[i].resolve(basis);
-
             if (resolved) {
-                sizes[i] = *resolved;
-                fixedTotal += *resolved;
+                fixedSizes[i] = *resolved;
+                fixedTracks[i] = true;
+            }
+        }
+
+        size_t maxSpan = 1;
+        for (const auto& item : items) {
+            const auto& placement = item.placement;
+            size_t start = isCol ? *placement.colStart : *placement.rowStart;
+            size_t end = isCol ? *placement.colEnd : *placement.rowEnd;
+            maxSpan = std::max(maxSpan, end - start);
+            if (end - start != 1)
                 continue;
-            }
 
-            switch (resolved.error()) {
-                case SizeResolveFailure::Auto:
-                case SizeResolveFailure::IndefiniteBasis:
-                    sizes[i] = trackMinSizes[i];
-                    autoTotal += sizes[i];
-                    break;
-                case SizeResolveFailure::FractionRequiresContext:
-                    if (axisDefinite) {
-                        frTotal += defs[i].value;
-                    } else {
-                        sizes[i] = trackMinSizes[i];
-                        autoTotal += sizes[i];
-                    }
-                    break;
+            GridItemContributions contributions = isCol ? item.widthContributions : GridItemContributions{item.heightContribution, item.heightContribution, item.heightContribution};
+            minimums[start] = std::max(minimums[start], contributions.minimum);
+            minContents[start] = std::max(minContents[start], contributions.minContent);
+            maxContents[start] = std::max(maxContents[start], contributions.maxContent);
+        }
+
+        for (size_t span = 2; isCol && span <= maxSpan; ++span) {
+            for (const auto& item : items) {
+                const auto& placement = item.placement;
+                size_t start = isCol ? *placement.colStart : *placement.rowStart;
+                size_t end = isCol ? *placement.colEnd : *placement.rowEnd;
+                if (end - start != span)
+                    continue;
+
+                GridItemContributions contributions = isCol ? item.widthContributions : GridItemContributions{item.heightContribution, item.heightContribution, item.heightContribution};
+                bool spansFractionTrack = std::any_of(defs.begin() + start, defs.begin() + end, [](const Size& definition) { return definition.isFr(); });
+                if (!spansFractionTrack)
+                    distributeSpanningContribution(minimums, fixedSizes, fixedTracks, defs, start, end, gap, contributions.minimum);
+                distributeSpanningContribution(minContents, fixedSizes, fixedTracks, defs, start, end, gap, contributions.minContent);
+                distributeSpanningContribution(maxContents, fixedSizes, fixedTracks, defs, start, end, gap, contributions.maxContent);
             }
         }
 
-        // resolve fr
-        float remaining = std::max(0.0f, usable - fixedTotal - autoTotal);
-
-        if (frTotal > 0) {
-            for (size_t i = 0; i < n; ++i)
-                if (defs[i].isFr()) sizes[i] = (defs[i].value / frTotal) * remaining;
+        float intrinsicMin = totalGap;
+        float intrinsicMax = totalGap;
+        for (size_t i = 0; i < n; ++i) {
+            if (fixedTracks[i]) {
+                intrinsicMin += fixedSizes[i];
+                intrinsicMax += fixedSizes[i];
+            } else if (defs[i].unit == style::Unit::MinContent) {
+                intrinsicMin += minContents[i];
+                intrinsicMax += minContents[i];
+            } else if (defs[i].unit == style::Unit::MaxContent) {
+                intrinsicMin += maxContents[i];
+                intrinsicMax += maxContents[i];
+            } else if (defs[i].isFr()) {
+                intrinsicMin += minContents[i];
+                intrinsicMax += maxContents[i];
+            } else {
+                intrinsicMin += minContents[i];
+                intrinsicMax += maxContents[i];
+            }
+        }
+        if (intrinsicSizes) {
+            intrinsicSizes->minContent = Size::px(intrinsicMin);
+            intrinsicSizes->maxContent = Size::px(intrinsicMax);
         }
 
+        std::vector<float> sizes(n, 0.0f);
+        float nonFractionTotal = 0.0f;
+        float fractionTotal = 0.0f;
+        for (size_t i = 0; i < n; ++i) {
+            if (fixedTracks[i]) {
+                sizes[i] = fixedSizes[i];
+            } else if (defs[i].unit == style::Unit::MinContent) {
+                sizes[i] = minContents[i];
+            } else if (defs[i].unit == style::Unit::MaxContent) {
+                sizes[i] = maxContents[i];
+            } else if (defs[i].unit == style::Unit::FitContent) {
+                IntrinsicSizes contributions{.minContent = Size::px(minContents[i]), .maxContent = Size::px(maxContents[i])};
+                sizes[i] = resolveIntrinsicSize(defs[i], contributions, basis);
+            } else if (defs[i].isFr() && axisDefinite) {
+                sizes[i] = isCol ? minimums[i] : 0.0f;
+                fractionTotal += defs[i].value;
+                continue;
+            } else {
+                sizes[i] = maxContents[i];
+            }
+            nonFractionTotal += sizes[i];
+        }
+
+        if (fractionTotal > 0.0f) {
+            float remainingFractionSpace = std::max(0.0f, usable - nonFractionTotal);
+            std::vector<bool> frozen(n, false);
+            float unfrozenFractionTotal = fractionTotal;
+
+            while (unfrozenFractionTotal > 0.0f) {
+                float fractionSize = remainingFractionSpace / unfrozenFractionTotal;
+                bool frozeTrack = false;
+                for (size_t i = 0; i < n; ++i) {
+                    if (!defs[i].isFr() || frozen[i])
+                        continue;
+                    float share = defs[i].value * fractionSize;
+                    float minimum = isCol ? minimums[i] : 0.0f;
+                    if (share >= minimum)
+                        continue;
+                    sizes[i] = minimum;
+                    remainingFractionSpace = std::max(0.0f, remainingFractionSpace - sizes[i]);
+                    unfrozenFractionTotal -= defs[i].value;
+                    frozen[i] = true;
+                    frozeTrack = true;
+                }
+                if (frozeTrack)
+                    continue;
+                for (size_t i = 0; i < n; ++i) {
+                    if (defs[i].isFr() && !frozen[i])
+                        sizes[i] = defs[i].value * fractionSize;
+                }
+                break;
+            }
+        }
+
+        std::vector<Track> tracks;
         float offset = 0;
         for (size_t t = 0; t < n; ++t) {
             tracks.push_back({offset, sizes[t]});
@@ -251,7 +353,6 @@ namespace layout {
         const std::vector<Size>& templateRows, const std::vector<Size>& templateCols,
         float availableWidth, float availableHeight,
         float colGap, float rowGap,
-        std::vector<float> itemWidths, std::vector<float> itemHeights,
         bool widthDefinite, bool heightDefinite) {
         GridLayout::resolveStructure(numRows, numCols);
 
@@ -265,8 +366,8 @@ namespace layout {
         for (int j = 0; j < templateCols.size(); ++j)
             colDefs[j] = templateCols[j];
 
-        colTracks = resolveTracks(colDefs, itemWidths, availableWidth, colGap, true, widthDefinite);
-        rowTracks = resolveTracks(rowDefs, itemHeights, availableHeight, rowGap, false, heightDefinite);
+        colTracks = resolveTracks(colDefs, availableWidth, colGap, true, widthDefinite, &columnIntrinsicSizes);
+        rowTracks = resolveTracks(rowDefs, availableHeight, rowGap, false, heightDefinite);
     }
 
     GridResolver::GridResolver(RenderTree& tree, TreeNode* node,
@@ -428,9 +529,6 @@ namespace layout {
             .resolve(heightBasis)
             .value_or(0.0f);
 
-        std::vector<float> itemWidths;
-        std::vector<float> itemHeights;
-
         for (size_t i = 0; i < node->children.size(); ++i) {
             auto childAsPtr = node->children[i].get();
             auto childPos = childAsPtr->getPosition();
@@ -515,12 +613,15 @@ namespace layout {
                 maxContent = std::max(maxContent, *minWidth);
             }
 
-            float minimum = preferredWidth.has_value() || childAsPtr->shared.overflow == Overflow::Visible ? minContent : 0.0f;
+            float minimum = 0.0f;
+            if (minWidth.has_value()) {
+                minimum = *minWidth;
+            } else if (preferredWidth.has_value() || childAsPtr->shared.overflow == Overflow::Visible) {
+                minimum = minContent;
+            }
 
             if (maxWidth.has_value()) 
                 minimum = std::min(minimum, *maxWidth);
-            if (minWidth.has_value()) 
-                minimum = std::max(minimum, *minWidth);
 
             float itemHeight = applyMinMax(
                 childLayout.consumedHeight,
@@ -529,17 +630,15 @@ namespace layout {
                 availableHeight
             );
 
-            gridLayout.addChild(i, childAsPtr, {.minimum = minimum, .minContent = minContent, .maxContent = maxContent});
-            itemWidths.push_back(maxContent);
-            itemHeights.push_back(itemHeight);
+            gridLayout.addChild(i, childAsPtr, {.minimum = minimum, .minContent = minContent, .maxContent = maxContent}, itemHeight);
         }
 
         gridLayout.resolve(templateRows.size(), templateCols.size(),
             templateRows, templateCols,
             availableWidth, availableHeight,
             colGap, rowGap,
-            itemWidths, itemHeights,
             widthDefinite, heightDefinite);
+        if (parentConstraints.intrinsicSizesAxis == Axis::Width) intrinsicSizes = gridLayout.columnIntrinsicSizes;
     }
 
     GridResolver::Bounds GridResolver::phaseC() {

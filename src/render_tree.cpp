@@ -997,6 +997,12 @@ namespace tree {
 
             maxX = bounds.maxX;
             maxY = bounds.maxY;
+            intrinsicSizes = gr.intrinsicSizes;
+            if (intrinsicSizes.has_value()) {
+                float padding = constraints.intrinsicSizesAxis == Axis::Width ? layout.resolvedPadding.left + layout.resolvedPadding.right : layout.resolvedPadding.top + layout.resolvedPadding.bottom;
+                intrinsicSizes->minContent = Size::px(intrinsicSizes->minContent.resolveOr(Size::autoSize()) + padding);
+                intrinsicSizes->maxContent = Size::px(intrinsicSizes->maxContent.resolveOr(Size::autoSize()) + padding);
+            }
         };
 
         if (display == Display::Flex) {

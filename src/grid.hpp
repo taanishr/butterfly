@@ -42,6 +42,7 @@ namespace layout {
         size_t childIndex;
         ItemPlacement placement;
         GridItemContributions widthContributions;
+        float heightContribution;
     };
 
     enum class GridDirection {
@@ -81,25 +82,25 @@ namespace layout {
         Grid grid {0, 0};
         std::vector<Track> rowTracks;
         std::vector<Track> colTracks;
+        IntrinsicSizes columnIntrinsicSizes;
 
-        void addChild(size_t childIndex, TreeNode* node, GridItemContributions widthContributions);
+        void addChild(size_t childIndex, TreeNode* node, GridItemContributions widthContributions, float heightContribution);
 
         // helpers
         void resolveStructure(size_t templateRows, size_t templateCols);
         std::vector<Track> resolveTracks(
             std::vector<Size>& templateTracks,
-            std::vector<float> itemSizes,
             float available,
             float gap,
             bool isCol,
-            bool axisDefinite
+            bool axisDefinite,
+            IntrinsicSizes* intrinsicSizes = nullptr
         );
 
         void resolve(size_t numRows, size_t numCols,
             const std::vector<Size>& templateRows, const std::vector<Size>& templateCols,
             float availableWidth, float availableHeight,
             float colGap, float rowGap,
-            std::vector<float> itemWidths, std::vector<float> itemHeights,
             bool widthDefinite, bool heightDefinite);
     };
 
@@ -114,6 +115,7 @@ namespace layout {
         const FrameInfo&  frameInfo;
         Measured          measured;
         bool              mutate;
+        std::optional<IntrinsicSizes> intrinsicSizes;
         Size              childAvailableWidth;
         Size              parentAvailableWidth;
         Size              parentAvailableHeight;
