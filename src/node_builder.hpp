@@ -167,6 +167,15 @@ namespace elements {
             return self();
         }
 
+        Derived& aspectRatio(float width, float height = 1.0f) {
+            node->shared.aspectRatio =
+                width > 0.0f && height > 0.0f
+                    ? std::optional<float>{width / height}
+                    : std::nullopt;
+            markDirty(layoutDirtyBits());
+            return self();
+        }
+
         Size minHeight() const {
             return node->shared.minHeight;
         }

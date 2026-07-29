@@ -239,6 +239,15 @@ namespace layout {
             const auto& maxMainRequest = flex.axis.maxMainSize(childAsPtr->shared);
             auto resolvedMinMain = resolveMainSize(minMainRequest);
             bool needsIntrinsicMinimum = !resolvedMinMain && resolvedMinMain.error() != SizeResolveFailure::FractionRequiresContext && childAsPtr->shared.overflow == Overflow::Visible;
+
+            if (childAsPtr->shared.aspectRatio) {
+                if (flex.axis.isRow) {
+                    transferAspectRatio(mainSize, resolvedCrossSize, *childAsPtr->shared.aspectRatio);
+                } else {
+                    transferAspectRatio(resolvedCrossSize, mainSize, *childAsPtr->shared.aspectRatio);
+                }
+            }
+
             bool needsIntrinsicMain = !mainSize || needsIntrinsicMinimum || minMainRequest.isContentDependent() || (maxMainRequest.has_value() && maxMainRequest->isContentDependent());
             std::optional<IntrinsicSizes> intrinsicMainSizes;
             if (needsIntrinsicMain) intrinsicMainSizes = layoutIntrinsicMain(tree, childAsPtr, frameInfo, preparedChildConstraints, childMeasured, flex.axis);
@@ -321,6 +330,12 @@ namespace layout {
                 flex.axis.mainAvailable(preparedChildConstraints) = Size::px(item.usedMainSize);
                 flex.axis.mainResolution(preparedChildConstraints) = AxisResolution::Deferred;
                 flex.axis.mainExplicit(childMeasured) = item.usedMainSize;
+                if (childNode->shared.aspectRatio)
+                    transferAspectRatio(
+                        childMeasured.explicitWidth,
+                        childMeasured.explicitHeight,
+                        *childNode->shared.aspectRatio
+                    );
                 if (needsIntrinsicCross) preparedChildConstraints.intrinsicSizesAxis = crossAxis;
                 preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childNode, preparedChildConstraints.availableWidth, preparedChildConstraints.widthResolution, preparedChildConstraints.intrinsicSizesAxis == Axis::Width);
 
