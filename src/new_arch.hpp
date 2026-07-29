@@ -398,6 +398,7 @@ namespace style {
         Size minWidth{Size::autoSize()};
         Size minHeight{Size::autoSize()};
         std::optional<Size> maxWidth, maxHeight;
+        std::optional<float> aspectRatio;
         std::optional<Size> top, left, bottom, right;
 
         Size margin{};
@@ -609,6 +610,11 @@ namespace layout {
     
     simd_float2 resolvePosition(const PositionResolutionContext& ctx);
     ResolvedSize resolveSize(const SizeResolutionContext& sizeContext);
+    void transferAspectRatio(
+        std::expected<float, style::SizeResolveFailure>& width,
+        std::expected<float, style::SizeResolveFailure>& height,
+        float ratio
+    );
 
 
     using ChainID = uint64_t;

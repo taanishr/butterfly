@@ -427,6 +427,12 @@ namespace layout {
             preparedChildConstraints.intrinsicSizesAxis = Axis::Width;
             preparedChildConstraints.shrinkWidthToFit = true;
             childMeasured.explicitWidth = std::unexpected(SizeResolveFailure::Auto);
+            if (childAsPtr->shared.aspectRatio)
+                transferAspectRatio(
+                    childMeasured.explicitWidth,
+                    childMeasured.explicitHeight,
+                    *childAsPtr->shared.aspectRatio
+                );
             preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childAsPtr, preparedChildConstraints.availableWidth, preparedChildConstraints.widthResolution, true);
 
             const auto& childOutput = tree.speculateLayout(
@@ -447,7 +453,9 @@ namespace layout {
             float maxContent = intrinsicWidths.maxContent.resolveOr(Size::autoSize());
 
             std::optional<float> preferredWidth;
-            if (childAsPtr->shared.width.isContentDependent()) {
+            if (childLayout.resolvedSize.width) {
+                preferredWidth = *childLayout.resolvedSize.width;
+            } else if (childAsPtr->shared.width.isContentDependent()) {
                 preferredWidth = resolveIntrinsicSize(childAsPtr->shared.width, intrinsicWidths, widthBasis);
             } else if (childAsPtr->shared.width.unit != style::Unit::Percent) {
                 auto resolved = childAsPtr->shared.width.resolve(widthBasis);
@@ -555,6 +563,13 @@ namespace layout {
             if (childAsPtr->shared.height.isAuto())
                 preparedChildConstraints.shrinkHeightToFit = true;
 
+            if (childAsPtr->shared.aspectRatio)
+                transferAspectRatio(
+                    childMeasured.explicitWidth,
+                    childMeasured.explicitHeight,
+                    *childAsPtr->shared.aspectRatio
+                );
+
             const auto& childOutput = tree.speculateLayout(frameInfo, childAsPtr, preparedChildConstraints, childMeasured);
             IntrinsicSizes intrinsicHeights = childOutput.intrinsicSizes.value_or(IntrinsicSizes{
                 .minContent = Size::px(childOutput.layout.consumedHeight),
@@ -564,7 +579,9 @@ namespace layout {
             float maxContent = intrinsicHeights.maxContent.resolveOr(Size::autoSize());
 
             std::optional<float> preferredHeight;
-            if (childAsPtr->shared.height.isContentDependent()) {
+            if (childOutput.layout.resolvedSize.height) {
+                preferredHeight = *childOutput.layout.resolvedSize.height;
+            } else if (childAsPtr->shared.height.isContentDependent()) {
                 preferredHeight = resolveIntrinsicSize(childAsPtr->shared.height, intrinsicHeights, heightBasis);
             } else if (childAsPtr->shared.height.unit != style::Unit::Percent) {
                 auto resolved = childAsPtr->shared.height.resolve(heightBasis);
@@ -690,6 +707,13 @@ namespace layout {
             } else if (childAsPtr->shared.height.isAuto()) {
                 preparedChildConstraints.shrinkHeightToFit = true;
             }
+
+            if (childAsPtr->shared.aspectRatio)
+                transferAspectRatio(
+                    childMeasured.explicitWidth,
+                    childMeasured.explicitHeight,
+                    *childAsPtr->shared.aspectRatio
+                );
 
             const LayoutOutput* childOutput = &tree.speculateLayout(frameInfo, childAsPtr, preparedChildConstraints, childMeasured);
 

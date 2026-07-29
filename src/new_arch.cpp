@@ -196,6 +196,20 @@ namespace layout {
         return resolvedSize;
     }
 
+    void transferAspectRatio(
+        std::expected<float, style::SizeResolveFailure>& width,
+        std::expected<float, style::SizeResolveFailure>& height,
+        float ratio
+    ) {
+        if (ratio <= 0.0f) return;
+
+        if (width && !height) {
+            height = *width / ratio;
+        } else if (height && !width) {
+            width = *height * ratio;
+        }
+    }
+
     // Resolve auto margins for centering
     ResolvedMargins LayoutEngine::resolveAutoMargins(
         const LayoutInput& li,
