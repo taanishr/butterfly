@@ -3243,6 +3243,7 @@ div()
 // );
 
 
+
 using S = gui::Size;
 // complex test scene
 div()
@@ -3346,6 +3347,275 @@ div()
         div().color(simd_float4{0.95,0.18,0.22,1.0}).minWidth(S::px(120)).cornerRadius(S::px(5))()
     )
 );
+
+
+// using S = gui::Size;
+// constexpr auto butterflyPath = "/Users/treja/projects/gui/assets/butterfly.png";
+
+// div()
+//     .width(S::percent(1.0))
+//     .height(S::percent(1.0))
+//     .padding(S::px(24))
+//     .overflow(gui::Overflow::Scroll)
+//     .color(simd_float4{0.055,0.067,0.086,1.0})
+//     .display(gui::Display::Flex)
+//     .flexDirection(gui::FlexDirection::Col)
+//     .flexGap(S::px(18))
+// (
+//     div()
+//         .width(S::percent(1.0))
+//         .height(S::px(56))
+//         .flexShrink(S::px(0))
+//         .paddingLeft(S::px(18))
+//         .paddingRight(S::px(18))
+//         .display(gui::Display::Flex)
+//         .alignItems(gui::AlignItems::Center)
+//         .justifyContent(gui::JustifyContent::SpaceBetween)
+//         .color(simd_float4{0.102,0.122,0.161,1.0})
+//     (
+//         text("FIELD NOTES")
+//             .font(ArialBold)
+//             .fontSize(S::pt(24))
+//             .color(simd_float4{1.0,1.0,1.0,1.0}),
+//         text("Aspect-ratio layout study")
+//             .font(Arial)
+//             .fontSize(S::pt(16))
+//             .color(simd_float4{0.522,0.569,0.678,1.0})
+//     ),
+
+//     div()
+//         .width(S::percent(1.0))
+//         .display(gui::Display::Flex)
+//         .alignItems(gui::AlignItems::FlexStart)
+//         .flexGap(S::px(18))
+//     (
+//         div()
+//             .minWidth(S::px(0))
+//             .flexGrow(S::px(1))
+//             .display(gui::Display::Flex)
+//             .flexDirection(gui::FlexDirection::Col)
+//             .flexGap(S::px(16))
+//         (
+//             div()
+//                 .position(gui::Position::Relative)
+//                 .width(S::percent(1.0))
+//                 .height(S::autoSize())
+//                 .aspectRatio(4, 1)
+//                 .padding(S::px(24))
+//                 .color(simd_float4{0.180,0.478,0.722,1.0})
+//             (
+//                 div()
+//                 (
+//                     text("DESERT LIGHT")
+//                         .font(ArialBold)
+//                         .fontSize(S::pt(37))
+//                         .color(simd_float4{1.0,1.0,1.0,1.0})
+//                 ),
+//                 div()
+//                 (
+//                     text("A responsive hero whose height follows its final width.")
+//                         .font(Arial)
+//                         .fontSize(S::pt(17))
+//                         .color(simd_float4{0.820,0.902,0.980,1.0})
+//                 ),
+//                 div()
+//                     .position(gui::Position::Absolute)
+//                     .width(S::px(164))
+//                     .height(S::autoSize())
+//                     .aspectRatio(2, 1)
+//                     .right(S::px(24))
+//                     .top(S::px(24))
+//                     .padding(S::px(12))
+//                     .color(simd_float4{0.980,0.761,0.200,1.0})
+//                 (
+//                     text("FEATURED")
+//                         .font(ArialBold)
+//                         .fontSize(S::pt(15))
+//                         .color(simd_float4{0.161,0.122,0.039,1.0})
+//                 )
+//             ),
+
+//             div()
+//                 .width(S::percent(1.0))
+//                 .display(gui::Display::Grid)
+//                 .gridTemplateColumns({S::fr(1), S::fr(1), S::fr(1)})
+//                 .gridColumnGap(S::px(14))
+//             (
+//                 div()
+//                     .width(S::percent(1.0))
+//                     .height(S::autoSize())
+//                     .aspectRatio(5, 3)
+//                     .padding(S::px(16))
+//                     .color(simd_float4{0.961,0.302,0.459,1.0})
+//                 (
+//                     text("CANYON").font(ArialBold).fontSize(S::pt(16)).color(simd_float4{1.0,1.0,1.0,1.0})
+//                 ),
+//                 div()
+//                     .width(S::percent(1.0))
+//                     .height(S::autoSize())
+//                     .aspectRatio(5, 3)
+//                     .padding(S::px(16))
+//                     .color(simd_float4{0.380,0.922,0.561,1.0})
+//                 (
+//                     text("TIDELINE").font(ArialBold).fontSize(S::pt(16)).color(simd_float4{0.039,0.141,0.090,1.0})
+//                 ),
+//                 div()
+//                     .width(S::percent(1.0))
+//                     .height(S::autoSize())
+//                     .aspectRatio(5, 3)
+//                     .padding(S::px(16))
+//                     .color(simd_float4{0.639,0.420,0.961,1.0})
+//                 (
+//                     text("NIGHTFALL").font(ArialBold).fontSize(S::pt(16)).color(simd_float4{1.0,1.0,1.0,1.0})
+//                 )
+//             )
+//         ),
+
+//         div()
+//             .width(S::px(300))
+//             .flexShrink(S::px(0))
+//             .padding(S::px(14))
+//             .display(gui::Display::Flex)
+//             .flexDirection(gui::FlexDirection::Col)
+//             .flexGap(S::px(14))
+//             .color(simd_float4{0.102,0.122,0.161,1.0})
+//         (
+//             image(butterflyPath, S::percent(1.0), S::autoSize())
+//                 .aspectRatio(1, 1),
+//             text("SPECIMEN 07")
+//                 .font(ArialBold)
+//                 .fontSize(S::pt(19))
+//                 .color(simd_float4{1.0,1.0,1.0,1.0}),
+//             text("The replaced image shares the same square presentation as the GUI reference.")
+//                 .font(Arial)
+//                 .fontSize(S::pt(16))
+//                 .color(simd_float4{0.522,0.569,0.678,1.0}),
+//             div()
+//                 .width(S::percent(1.0))
+//                 .height(S::autoSize())
+//                 .aspectRatio(3, 1)
+//                 .padding(S::px(12))
+//                 .color(simd_float4{0.980,0.761,0.200,1.0})
+//             (
+//                 text("VIEW COLLECTION")
+//                     .font(ArialBold)
+//                     .fontSize(S::pt(15))
+//                     .color(simd_float4{0.161,0.122,0.039,1.0})
+//             )
+//         )
+//     ),
+
+//     div()
+//         .width(S::percent(1.0))
+//         .height(S::autoSize())
+//         .maxHeight(S::px(120))
+//         .aspectRatio(10, 1)
+//         .flexShrink(S::px(0))
+//         .paddingLeft(S::px(22))
+//         .paddingRight(S::px(22))
+//         .display(gui::Display::Flex)
+//         .alignItems(gui::AlignItems::Center)
+//         .justifyContent(gui::JustifyContent::SpaceBetween)
+//         .color(simd_float4{0.141,0.161,0.212,1.0})
+//     (
+//         text("Build a collection around the dimensions that matter.")
+//             .font(ArialBold)
+//             .fontSize(S::pt(19))
+//             .color(simd_float4{1.0,1.0,1.0,1.0}),
+//         text("EXPLORE ->")
+//             .font(ArialBold)
+//             .fontSize(S::pt(16))
+//             .color(simd_float4{0.980,0.761,0.200,1.0})
+//     ),
+
+//     div()
+//         .position(gui::Position::Relative)
+//         .width(S::percent(1.0))
+//         .height(S::px(220))
+//         .flexShrink(S::px(0))
+//         .padding(S::px(22))
+//         .color(simd_float4{0.102,0.122,0.161,1.0})
+//     (
+//         div()
+//         (
+//             text("FLOATING EXHIBIT")
+//                 .font(ArialBold)
+//                 .fontSize(S::pt(19))
+//                 .color(simd_float4{1.0,1.0,1.0,1.0})
+//         ),
+//         div()
+//         (
+//             text("This inset-resolved card intentionally crosses the section boundary.")
+//                 .font(Arial)
+//                 .fontSize(S::pt(16))
+//                 .color(simd_float4{0.522,0.569,0.678,1.0})
+//         ),
+//         div()
+//             .position(gui::Position::Absolute)
+//             .left(S::px(32))
+//             .right(S::px(160))
+//             .top(S::px(76))
+//             .width(S::autoSize())
+//             .height(S::autoSize())
+//             .aspectRatio(6, 1)
+//             .padding(S::px(18))
+//             .color(simd_float4{0.961,0.302,0.459,1.0})
+//         (
+//             div()
+//                 .width(S::percent(0.46))
+//                 .height(S::percent(0.34))
+//                 .color(simd_float4{0.980,0.761,0.200,1.0})
+//             (),
+//             text("OUT OF FLOW / IN PROPORTION")
+//                 .font(ArialBold)
+//                 .fontSize(S::pt(17))
+//                 .color(simd_float4{1.0,1.0,1.0,1.0})
+//         )
+//     ),
+
+//     div()
+//         .width(S::percent(1.0))
+//         .height(S::px(420))
+//         .flexShrink(S::px(0))
+//         .paddingTop(S::px(180))
+//         .paddingLeft(S::px(22))
+//         .paddingRight(S::px(22))
+//         .color(simd_float4{0.122,0.141,0.188,1.0})
+//     (
+//         text("ARCHIVE")
+//             .font(ArialBold)
+//             .fontSize(S::pt(20))
+//             .color(simd_float4{1.0,1.0,1.0,1.0}),
+//         div()
+//             .width(S::percent(1.0))
+//             .display(gui::Display::Flex)
+//             .alignItems(gui::AlignItems::FlexStart)
+//             .flexGap(S::px(14))
+//             .marginTop(S::px(14))
+//         (
+//             div()
+//                 .width(S::autoSize())
+//                 .height(S::px(76))
+//                 .aspectRatio(2, 1)
+//                 .flexShrink(S::px(0))
+//                 .color(simd_float4{0.078,0.722,0.859,1.0})
+//             (),
+//             div()
+//                 .width(S::percent(0.38))
+//                 .maxWidth(S::px(360))
+//                 .height(S::autoSize())
+//                 .aspectRatio(3, 1)
+//                 .color(simd_float4{0.380,0.922,0.561,1.0})
+//             (),
+//             div()
+//                 .width(S::px(180))
+//                 .height(S::autoSize())
+//                 .aspectRatio(3, 2)
+//                 .color(simd_float4{0.639,0.420,0.961,1.0})
+//             ()
+//         )
+//     )
+// );
 
 //     // Raster downsampling/post-layout test:
 //     // - Both elements share the same 2000x2000 source asset.

@@ -1061,6 +1061,21 @@ namespace tree {
             usedHeight = std::max(usedHeight, minHeight);
         }
 
+        if (layout.resolvedSize.width)
+            layout.resolvedSize.width = usedWidth;
+        if (layout.resolvedSize.height)
+            layout.resolvedSize.height = usedHeight;
+
+        if (node->shared.aspectRatio)
+            layout::transferAspectRatio(
+                layout.resolvedSize.width,
+                layout.resolvedSize.height,
+                *node->shared.aspectRatio
+            );
+
+        usedWidth = layout.resolvedSize.width.value_or(usedWidth);
+        usedHeight = layout.resolvedSize.height.value_or(usedHeight);
+
         // why do we retry only if width resolution or height resolution is final?
         // consider flex using min content or max content or deferred
         // it wants to know the potential computed box; there might be unresolved constraints
