@@ -158,9 +158,8 @@ Goal: expand the engine toward practical app UI.
    - `aspectRatio(...)`
 
 2. Better positioning.
+   - refactor sizing requests
    - `position: sticky`
-   - `inset(...)`
-   - `pointerEvents: Auto | None`
 
 3. Better visual styling.
    - Opacity.
