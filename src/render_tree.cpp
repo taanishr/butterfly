@@ -771,19 +771,23 @@ namespace tree {
         SharedDescriptor computedShared = node->shared;
         computedShared.display = display;
 
-        applyContentResolution(
-            measured.explicitWidth,
-            node->shared.width,
-            constraints.widthResolution,
-            isInline
-        );
+        // unnecessary because error resolution/reset should ALREADY happen in other phases
+        // but it does force the user to do that in multiple places
+        // this just double checks this
+        // I should think better about how to go about the size normalization process
+        // applyContentResolution(
+        //     measured.explicitWidth,
+        //     node->shared.width,
+        //     constraints.widthResolution,
+        //     isInline
+        // );
 
-        applyContentResolution(
-            measured.explicitHeight,
-            node->shared.height,
-            constraints.heightResolution,
-            isInline
-        );
+        // applyContentResolution(
+        //     measured.explicitHeight,
+        //     node->shared.height,
+        //     constraints.heightResolution,
+        //     isInline
+        // );
 
         constraints.resolvedMargins = prelayout.resolvedMargins;
         bool intrinsicPreferredWidth = !measured.explicitWidth && measured.explicitWidth.error() == SizeResolveFailure::ContentDependent;
@@ -869,10 +873,6 @@ namespace tree {
             childConstraints.heightResolution = constraints.heightResolution;
         }
         
-        childConstraints.textOverflow = constraints.textOverflow;
-        if (node->shared.overflow != Overflow::Visible) {
-            childConstraints.textOverflow = node->shared.textOverflow;
-        }
         Size parentAvailableWidth = childConstraints.availableWidth;
         Size parentAvailableHeight = childConstraints.availableHeight;
         float originX = childConstraints.origin.x;
@@ -896,8 +896,6 @@ namespace tree {
 
         auto inlineFormatting = buildInlineBoxes(node, childConstraints);
         std::optional<IntrinsicSizes> intrinsicSizes;
-        float intrinsicMinHeightAdjustment = 0.0f;
-        float intrinsicMaxHeightAdjustment = 0.0f;
 
         auto normalPass = [&](){
             if (constraints.intrinsicSizesAxis == Axis::Width) {
@@ -910,8 +908,6 @@ namespace tree {
                     intrinsicSizes->maxContent = Size::px(intrinsicSizes->maxContent.resolveOr(Size::autoSize()) + horizontalPadding);
                 }
             }
-            intrinsicMinHeightAdjustment = 0.0f;
-            intrinsicMaxHeightAdjustment = 0.0f;
 
             for (uint64_t i = 0; i < node->children.size(); ++i) {
                 auto& child = node->children[i];
@@ -938,11 +934,8 @@ namespace tree {
                         float childMaxContent = childOutput.intrinsicSizes->maxContent.resolveOr(Size::autoSize());
                         intrinsicSizes->minContent = Size::px(std::max(intrinsicSizes->minContent.resolveOr(Size::autoSize()), leadingMargin + childMinContent));
                         intrinsicSizes->maxContent = Size::px(std::max(intrinsicSizes->maxContent.resolveOr(Size::autoSize()), leadingMargin + childMaxContent));
-                    } else if (constraints.intrinsicSizesAxis == Axis::Height && childAsPtr->getDisplay() != Display::Inline && childOutput.intrinsicSizes.has_value()) {
-                        intrinsicMinHeightAdjustment += childOutput.intrinsicSizes->minContent.resolveOr(Size::autoSize()) - childLayout.computedBox.height;
-                        intrinsicMaxHeightAdjustment += childOutput.intrinsicSizes->maxContent.resolveOr(Size::autoSize()) - childLayout.computedBox.height;
                     }
-
+                    
                     childConstraints.cursor = childLayout.siblingCursor;
                     childConstraints.edgeIntent = childLayout.edgeIntent;
                     childConstraints.prevInlineHeight = childLayout.prevInlineHeight;
@@ -1017,7 +1010,7 @@ namespace tree {
         float contentHeight = maxY - minY + layout.resolvedPadding.top + layout.resolvedPadding.bottom;
         if (constraints.intrinsicSizesAxis == Axis::Height && isNormalFlow) {
             float intrinsicHeight = isInline || node->children.empty() ? layout.computedBox.height : contentHeight;
-            intrinsicSizes = IntrinsicSizes{.minContent = Size::px(intrinsicHeight + intrinsicMinHeightAdjustment), .maxContent = Size::px(intrinsicHeight + intrinsicMaxHeightAdjustment)};
+            intrinsicSizes = IntrinsicSizes{.minContent = Size::px(intrinsicHeight), .maxContent = Size::px(intrinsicHeight)};
         }
 
         if (!layout.resolvedSize.width) {
@@ -1087,7 +1080,6 @@ namespace tree {
 
 
         if (retryWidth || retryHeight) {
-
             Measured retryMeasured = measured;
             if (retryWidth) retryMeasured.explicitWidth = usedWidth;
             if (retryHeight) retryMeasured.explicitHeight = usedHeight;
@@ -1104,27 +1096,15 @@ namespace tree {
             
             childConstraints = layout.childConstraints;
             childConstraints.intrinsicSizesAxis = constraints.intrinsicSizesAxis;
+
             if (constraints.shrinkWidthToFit && node->shared.width.isAuto()) {
                 childConstraints.shrinkWidthToFit = true;
             }
+
             if (constraints.shrinkHeightToFit && node->shared.height.isAuto()) {
                 childConstraints.shrinkHeightToFit = true;
             }
-            if (constraints.widthResolution == AxisResolution::MinContent ||
-                constraints.widthResolution == AxisResolution::MaxContent) {
-                childConstraints.widthResolution = constraints.widthResolution;
-            }
-            if (constraints.heightResolution == AxisResolution::MinContent ||
-                constraints.heightResolution == AxisResolution::MaxContent) {
-                childConstraints.heightResolution = constraints.heightResolution;
-            }
-            childConstraints.textOverflow = constraints.textOverflow;
-            if (node->shared.overflow != Overflow::Visible) {
-                childConstraints.textOverflow = node->shared.textOverflow;
-            }
-            parentAvailableWidth  = childConstraints.availableWidth;
-            parentAvailableHeight = childConstraints.availableHeight;
-
+        
             if (position != Position::Static) {
                 childConstraints.absoluteContainingBlock = {
                     .origin = {0.0f, 0.0f},
@@ -1153,7 +1133,7 @@ namespace tree {
             float retryContentHeight = maxY - minY + layout.resolvedPadding.top + layout.resolvedPadding.bottom;
             if (constraints.intrinsicSizesAxis == Axis::Height && isNormalFlow) {
                 float intrinsicHeight = isInline || node->children.empty() ? layout.computedBox.height : retryContentHeight;
-                intrinsicSizes = IntrinsicSizes{.minContent = Size::px(intrinsicHeight + intrinsicMinHeightAdjustment), .maxContent = Size::px(intrinsicHeight + intrinsicMaxHeightAdjustment)};
+                intrinsicSizes = IntrinsicSizes{.minContent = Size::px(intrinsicHeight), .maxContent = Size::px(intrinsicHeight)};
             }
 
             if (retryWidth) {
