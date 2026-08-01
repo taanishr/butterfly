@@ -419,7 +419,8 @@ namespace layout {
         for (size_t i = 0; i < node->children.size(); ++i) {
             auto childAsPtr = node->children[i].get();
             auto childPos = childAsPtr->getPosition();
-            if (childPos == Position::Absolute || childPos == Position::Fixed) continue;
+            if (childPos == Position::Absolute || childPos == Position::Fixed) 
+                continue;
 
             Measured childMeasured = *childAsPtr->measured;
             auto preparedChildConstraints = prepareChildConstraints(childAsPtr);

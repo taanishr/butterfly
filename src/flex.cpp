@@ -206,10 +206,11 @@ namespace layout {
         for (uint64_t i = 0; i < node->children.size(); ++i) {
             auto childAsPtr = node->children[i].get();
             auto position = childAsPtr->getPosition();
-            if (position == Position::Absolute || position == Position::Fixed) continue;
+            if (position == Position::Absolute || position == Position::Fixed) 
+                continue;
 
             auto selfAlign = childAsPtr->getAlignSelf();
-            auto mainSize = resolveMainSize(childAsPtr);
+            auto mainSize = resolveMainSize(flex.axis.mainSize(childAsPtr->shared));
             auto resolvedCrossSize = resolveCrossSize(childAsPtr);
             AlignItems effectiveAlign = flex.effectiveAlign(selfAlign);
 
@@ -227,6 +228,7 @@ namespace layout {
             // if we aren't currently resolving our intrinsic cross
             // and we can stretch (auto/indefintie sizing)
             // then we want to defer sizing to phase C
+            // ok but we always are? Im confused
             if (!resolvingIntrinsicCross &&
                 effectiveAlign == AlignItems::Stretch &&
                 crossSizeCanDeferToStretch
@@ -323,9 +325,8 @@ namespace layout {
                     (resolvedCrossSize.error() == SizeResolveFailure::Auto ||
                      resolvedCrossSize.error() == SizeResolveFailure::IndefiniteBasis);
 
-                if (!resolvingIntrinsicCross && item.alignment == AlignItems::Stretch && crossSizeCanDeferToStretch) {
+                if (!resolvingIntrinsicCross && item.alignment == AlignItems::Stretch && crossSizeCanDeferToStretch)
                     flex.axis.crossResolution(preparedChildConstraints) = AxisResolution::Deferred;
-                }
 
                 flex.axis.mainAvailable(preparedChildConstraints) = Size::px(item.usedMainSize);
                 flex.axis.mainResolution(preparedChildConstraints) = AxisResolution::Deferred;
@@ -346,18 +347,23 @@ namespace layout {
                     childMeasured
                 );
 
-                if (crossRequest.isContentDependent()) resolvedCrossSize = resolveIntrinsicSize(crossRequest, *childOutput.intrinsicSizes, parentAvailableCross());
+                if (crossRequest.isContentDependent()) 
+                    resolvedCrossSize = resolveIntrinsicSize(crossRequest, *childOutput.intrinsicSizes, parentAvailableCross());
+
                 item.minCrossSize = minCrossRequest.isContentDependent() ? resolveIntrinsicSize(minCrossRequest, *childOutput.intrinsicSizes, parentAvailableCross()) : minCrossRequest.resolveOr(parentAvailableCross(), 0.0f);
                 if (maxCrossRequest.has_value() && maxCrossRequest->isContentDependent()) {
                     item.maxCrossSize = resolveIntrinsicSize(*maxCrossRequest, *childOutput.intrinsicSizes, parentAvailableCross());
                 } else if (maxCrossRequest.has_value()) {
                     auto resolvedMaxCross = maxCrossRequest->resolve(parentAvailableCross());
-                    if (resolvedMaxCross) item.maxCrossSize = *resolvedMaxCross;
+                    if (resolvedMaxCross) 
+                        item.maxCrossSize = *resolvedMaxCross;
                 }
 
                 item.hypotheticalCrossSize = resolvedCrossSize ? *resolvedCrossSize : flex.axis.crossSize(childOutput.layout);
                 item.hypotheticalCrossSize = std::max(item.hypotheticalCrossSize, item.minCrossSize);
-                if (item.maxCrossSize.has_value()) item.hypotheticalCrossSize = std::min(item.hypotheticalCrossSize, *item.maxCrossSize);
+                if (item.maxCrossSize.has_value()) 
+                    item.hypotheticalCrossSize = std::min(item.hypotheticalCrossSize, *item.maxCrossSize);
+
                 line.maxCrossSize = std::max(line.maxCrossSize, item.hypotheticalCrossSize);
                 if (parentRequestsIntrinsicCross && childOutput.intrinsicSizes.has_value()) {
                     float childMinCross = childOutput.intrinsicSizes->minContent.resolveOr(Size::autoSize());
@@ -376,8 +382,11 @@ namespace layout {
 
         float naturalCross = 0;
 
-        for (auto& line : flex.lines) naturalCross += line.maxCrossSize;
-        if (flex.lines.size() > 1) naturalCross += resolvedGap * (flex.lines.size() - 1);
+        for (auto& line : flex.lines) 
+            naturalCross += line.maxCrossSize;
+        if (flex.lines.size() > 1) 
+            naturalCross += resolvedGap * (flex.lines.size() - 1);
+        
         if (parentRequestsIntrinsicCross) {
             float minContent = 0.0f;
             float maxContent = 0.0f;

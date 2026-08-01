@@ -526,11 +526,6 @@ namespace layout {
             return request.resolve(basis);
         }
 
-        std::expected<float, SizeResolveFailure> resolveMainSize(
-            TreeNode* child
-        ) {
-            return resolveMainSize(flex.axis.mainSize(child->shared));
-        }
 
         std::expected<float, SizeResolveFailure> resolveCrossSize(
             TreeNode* child
