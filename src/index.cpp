@@ -3,6 +3,7 @@
 #include "fonts.hpp"
 #include "new_arch.hpp"
 #include "sizing.hpp"
+#include "layout_test_scenes.hpp"
 #include <MacTypes.h>
 #include <print>
 #include <simd/vector_types.h>
@@ -3649,11 +3650,7 @@ div()
 //         )
 //     );
 
-using gui::Size;
-
-div(Size::px(100), Size::px(100), simd_float4{1,0,0,1})(
-    text("hello world")
-);
+layout_test::scenes::buildBrowser();
 
 // div(Size::px(100), Size::autoSize(), simd_float4{1,0,0,1})(
 //     text("hello world")

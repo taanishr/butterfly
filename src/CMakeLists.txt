@@ -56,6 +56,7 @@ set(GUI_SOURCES
     index.cpp
     instrumentation.cpp
     inspector.cpp
+    layout_test_scenes.cpp
     main.cpp
     new_arch.cpp
     node_builder.cpp
@@ -119,6 +120,8 @@ set_target_properties(gui PROPERTIES
 target_compile_definitions(gui PRIVATE
     GUI_ENABLE_INSPECTOR=$<BOOL:${GUI_ENABLE_INSPECTOR}>
     GUI_ENABLE_INSTRUMENTATION=$<BOOL:${GUI_ENABLE_INSTRUMENTATION}>
+    GUI_FRAME_WIDTH=${GUI_FRAME_WIDTH}
+    GUI_FRAME_HEIGHT=${GUI_FRAME_HEIGHT}
     _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_NONE
 )
 
