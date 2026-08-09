@@ -673,7 +673,6 @@ namespace layout {
     };
 
     struct LayoutOutput {
-        Measured measured;
         LayoutResult layout;
         std::optional<IntrinsicSizes> intrinsicSizes;
     };

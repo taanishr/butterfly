@@ -337,6 +337,7 @@ namespace layout {
                         childMeasured.explicitHeight,
                         *childNode->shared.aspectRatio
                     );
+                    
                 if (needsIntrinsicCross) preparedChildConstraints.intrinsicSizesAxis = crossAxis;
                 preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childNode, preparedChildConstraints.availableWidth, preparedChildConstraints.widthResolution, preparedChildConstraints.intrinsicSizesAxis == Axis::Width);
 
