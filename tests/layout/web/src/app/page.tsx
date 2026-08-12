@@ -31,12 +31,12 @@ export default function Home() {
   //         backgroundColor: "rgba(144,238,144,1)",
   //       }}
   //     >
-  //       <span style={{ fontSize: 16, color: "rgba(0,0,0,1)" }}>
+  //       <span style={{ fontSizeSpec: 16, color: "rgba(0,0,0,1)" }}>
   //         Inline element 1{" "}
-  //         <span style={{ fontSize: 16, color: "rgba(0,0,0,1)" }}>
+  //         <span style={{ fontSizeSpec: 16, color: "rgba(0,0,0,1)" }}>
   //           Nested inline element 1{" "}
   //         </span>
-  //         <span style={{ fontSize: 16, color: "rgba(0,0,0,1)" }}>
+  //         <span style={{ fontSizeSpec: 16, color: "rgba(0,0,0,1)" }}>
   //           Nested inline element 2
   //         </span>
   //         <div
@@ -49,7 +49,7 @@ export default function Home() {
   //         />
   //       </span>
 
-  //       <span style={{ fontSize: 16, color: "rgba(0,0,0,1)" }}>
+  //       <span style={{ fontSizeSpec: 16, color: "rgba(0,0,0,1)" }}>
   //         Inline element 2
   //       </span>
 
@@ -404,7 +404,7 @@ Second   line with Supercalifragilisticexpialidocious tail`;
           key={testCase.label}
           style={{ display: "flex", flexDirection: "column", gap: 4 }}
         >
-          <div style={{ color: "#525966", fontSize: "12pt" }}>
+          <div style={{ color: "#525966", fontSizeSpec: "12pt" }}>
             {testCase.label}
           </div>
           <div
@@ -412,7 +412,7 @@ Second   line with Supercalifragilisticexpialidocious tail`;
               width: 280,
               minHeight: 90,
               background: "#f0f2f7",
-              fontSize: "16pt",
+              fontSizeSpec: "16pt",
               lineHeight: 1.25,
               whiteSpace: testCase.whiteSpace,
               wordBreak: testCase.wordBreak,
@@ -459,7 +459,7 @@ Second   line with Supercalifragilisticexpialidocious tail`;
           key={testCase.label}
           style={{ display: "flex", flexDirection: "column", gap: 4 }}
         >
-          <div style={{ color: "#525966", fontSize: "12pt" }}>
+          <div style={{ color: "#525966", fontSizeSpec: "12pt" }}>
             {testCase.label}
           </div>
           <div
@@ -468,7 +468,7 @@ Second   line with Supercalifragilisticexpialidocious tail`;
               height: 32,
               overflow: testCase.overflow,
               background: "#f0f2f7",
-              fontSize: "16pt",
+              fontSizeSpec: "16pt",
               lineHeight: 1.25,
               whiteSpace: "nowrap",
               textOverflow: testCase.textOverflow,
@@ -479,7 +479,7 @@ Second   line with Supercalifragilisticexpialidocious tail`;
         </section>
       ))}
       <section style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-        <div style={{ color: "#525966", fontSize: "12pt" }}>
+        <div style={{ color: "#525966", fontSizeSpec: "12pt" }}>
           Nested clipping ancestor
         </div>
         <div
@@ -488,7 +488,7 @@ Second   line with Supercalifragilisticexpialidocious tail`;
             height: 32,
             overflow: "hidden",
             background: "#f0f2f7",
-            fontSize: "16pt",
+            fontSizeSpec: "16pt",
             lineHeight: 1.25,
             whiteSpace: "nowrap",
             textOverflow: "ellipsis",
@@ -532,7 +532,7 @@ A considerably longer line that wraps inside the panel`;
           key={testCase.label}
           style={{ display: "flex", flexDirection: "column", gap: 4 }}
         >
-          <div style={{ color: "#525966", fontSize: "12pt" }}>
+          <div style={{ color: "#525966", fontSizeSpec: "12pt" }}>
             {testCase.label}
           </div>
           <div
@@ -540,7 +540,7 @@ A considerably longer line that wraps inside the panel`;
               width: 280,
               minHeight: 90,
               background: "#f0f2f7",
-              fontSize: "16pt",
+              fontSizeSpec: "16pt",
               lineHeight: 1.25,
               whiteSpace: "pre-wrap",
               textAlign: testCase.textAlign,

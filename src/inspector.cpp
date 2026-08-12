@@ -637,7 +637,7 @@ namespace Inspector {
         const auto& box = layout.computedBox;
         auto margins = node->preLayout.has_value()
             ? node->preLayout->resolvedMargins
-            : layout::ResolvedMargins{};
+            : ResolvedMargins{};
 
         marginOverlayState
             .left(style::Size::px(box.x - margins.left))

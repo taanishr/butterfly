@@ -28,7 +28,6 @@ namespace tree {
     using layout::LayoutInput;
     using layout::LineBox;
     using layout::LineFragment;
-    using layout::ResolvedMargins;
     using style::Display;
     using style::Position;
     using style::Size;
@@ -597,7 +596,7 @@ namespace tree {
                 .display = display,
                 .width = resolvedWidth,
                 .height = std::unexpected(
-                    style::SizeResolveFailure::Auto
+                    style::SizeError::Auto
                 ),
                 .marginTop = marginTop,
                 .marginRight = marginRight,

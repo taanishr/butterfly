@@ -408,7 +408,7 @@ namespace layout {
             parentConstraints.widthResolution == AxisResolution::MaxContent ||
             (!measured.explicitWidth &&
              measured.explicitWidth.error() ==
-                SizeResolveFailure::IndefiniteBasis);
+                SizeError::IndefiniteBasis);
 
         bool widthDefinite = !widthBasisIsIndefinite && !parentAvailableWidth.isAuto();
         auto widthBasis = widthDefinite ? parentAvailableWidth : Size::autoSize();
@@ -427,7 +427,7 @@ namespace layout {
             preparedChildConstraints.widthResolution = AxisResolution::MaxContent;
             preparedChildConstraints.intrinsicSizesAxis = Axis::Width;
             preparedChildConstraints.shrinkWidthToFit = true;
-            childMeasured.explicitWidth = std::unexpected(SizeResolveFailure::Auto);
+            childMeasured.explicitWidth = std::unexpected(SizeError::Auto);
             if (childAsPtr->shared.aspectRatio)
                 transferAspectRatio(
                     childMeasured.explicitWidth,
@@ -520,8 +520,8 @@ namespace layout {
             parentConstraints.heightResolution == AxisResolution::MinContent ||
             parentConstraints.heightResolution == AxisResolution::MaxContent ||
             (!measured.explicitHeight &&
-             (measured.explicitHeight.error() == SizeResolveFailure::Auto ||
-              measured.explicitHeight.error() == SizeResolveFailure::IndefiniteBasis));
+             (measured.explicitHeight.error() == SizeError::Auto ||
+              measured.explicitHeight.error() == SizeError::IndefiniteBasis));
         bool heightDefinite = !heightBasisIsIndefinite && !parentAvailableHeight.isAuto();
         Size heightBasis = heightDefinite ? parentAvailableHeight : Size::autoSize();
         float availableHeight = heightDefinite ? parentAvailableHeight.value : 0.0f;
@@ -542,7 +542,7 @@ namespace layout {
             preparedChildConstraints.shrinkHeightToFit = false;
             preparedChildConstraints.heightResolution = AxisResolution::MaxContent;
             preparedChildConstraints.intrinsicSizesAxis = Axis::Height;
-            childMeasured.explicitHeight = std::unexpected(SizeResolveFailure::Auto);
+            childMeasured.explicitHeight = std::unexpected(SizeError::Auto);
 
             JustifyItems effectiveJustify = justifyItems;
             auto selfJustify = childAsPtr->getJustifySelf();

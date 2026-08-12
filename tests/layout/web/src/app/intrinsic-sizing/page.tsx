@@ -2,7 +2,7 @@ const intrinsicText = "Intrinsic sizing chooses every soft break opportunity";
 
 const sample = {
   fontFamily: "Arial, sans-serif",
-  fontSize: 18,
+  fontSizeSpec: 18,
   lineHeight: "normal",
 } as const;
 

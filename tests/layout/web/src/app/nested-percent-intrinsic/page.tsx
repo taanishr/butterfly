@@ -14,7 +14,7 @@ export default function NestedPercentIntrinsicPage() {
     >
       <span
         style={{
-          fontSize: 22,
+          fontSizeSpec: 22,
           color: "rgb(96% 97% 100%)",
         }}
       >
@@ -22,7 +22,7 @@ export default function NestedPercentIntrinsicPage() {
       </span>
       <span
         style={{
-          fontSize: 14,
+          fontSizeSpec: 14,
           color: "rgb(70% 73% 80%)",
         }}
       >
@@ -42,7 +42,7 @@ export default function NestedPercentIntrinsicPage() {
       >
         <span
           style={{
-            fontSize: 12,
+            fontSizeSpec: 12,
             color: "rgb(38% 92% 56%)",
           }}
         >
@@ -65,7 +65,7 @@ export default function NestedPercentIntrinsicPage() {
           >
             <span
               style={{
-                fontSize: 16,
+                fontSizeSpec: 16,
                 color: "rgb(4% 5% 6%)",
               }}
             >
@@ -88,7 +88,7 @@ export default function NestedPercentIntrinsicPage() {
       >
         <span
           style={{
-            fontSize: 12,
+            fontSizeSpec: 12,
             color: "rgb(10% 72% 95%)",
           }}
         >
@@ -111,7 +111,7 @@ export default function NestedPercentIntrinsicPage() {
           >
             <span
               style={{
-                fontSize: 16,
+                fontSizeSpec: 16,
                 color: "rgb(4% 5% 6%)",
               }}
             >

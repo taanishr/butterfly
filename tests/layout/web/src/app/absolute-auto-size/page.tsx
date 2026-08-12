@@ -1,4 +1,4 @@
-export default function AbsoluteAutoSizePage() {
+export default function AbsoluteAutoSizeSpecPage() {
   return (
     <main
       style={{

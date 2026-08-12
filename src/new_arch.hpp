@@ -19,10 +19,12 @@
 #include <span>
 #include <memory>
 #include <format>
+#include "margins.hpp"
 #include "AppKit_Extensions.hpp"
 #include <any>
 #include <unordered_map>
 #include <string>
+#include "new_sizing.hpp"
 #include <utility>
 #include <vector>
 
@@ -30,21 +32,16 @@ class Renderer;
 
 namespace layout {
 
-
-    struct ResolvedMargins {
-        float top, right, bottom, left;
-    };
-
     
     using FragmentID = uint64_t;
 
     struct Measured {
         FragmentID id;
-        std::expected<float, style::SizeResolveFailure> explicitWidth{
-            std::unexpected(style::SizeResolveFailure::Auto)
+        std::expected<float, style::SizeError> explicitWidth{
+            std::unexpected(style::SizeError::Auto)
         };
-        std::expected<float, style::SizeResolveFailure> explicitHeight{
-            std::unexpected(style::SizeResolveFailure::Auto)
+        std::expected<float, style::SizeError> explicitHeight{
+            std::unexpected(style::SizeError::Auto)
         };
     };
 
@@ -517,6 +514,8 @@ namespace layout {
         std::vector<ClipUniform> clipUniforms {};
         std::optional<TextOverflow> textOverflow{};
 
+        std::optional<SizeState> parentOverride;
+
         bool shrinkWidthToFit{false};
         bool shrinkHeightToFit{false};
         AxisResolution widthResolution{AxisResolution::Final};
@@ -528,11 +527,11 @@ namespace layout {
         Position position;
         Display display;
 
-        std::expected<float, style::SizeResolveFailure> width{
-            std::unexpected(style::SizeResolveFailure::Auto)
+        std::expected<float, style::SizeError> width{
+            std::unexpected(style::SizeError::Auto)
         };
-        std::expected<float, style::SizeResolveFailure> height{
-            std::unexpected(style::SizeResolveFailure::Auto)
+        std::expected<float, style::SizeError> height{
+            std::unexpected(style::SizeError::Auto)
         };
         Size minWidth{Size::autoSize()};
         Size minHeight{Size::autoSize()};
@@ -600,19 +599,19 @@ namespace layout {
 
 
     struct ResolvedSize {
-        std::expected<float, style::SizeResolveFailure> width{
-            std::unexpected(style::SizeResolveFailure::Auto)
+        std::expected<float, style::SizeError> width{
+            std::unexpected(style::SizeError::Auto)
         };
-        std::expected<float, style::SizeResolveFailure> height{
-            std::unexpected(style::SizeResolveFailure::Auto)
+        std::expected<float, style::SizeError> height{
+            std::unexpected(style::SizeError::Auto)
         };
     };
     
     simd_float2 resolvePosition(const PositionResolutionContext& ctx);
     ResolvedSize resolveSize(const SizeResolutionContext& sizeContext);
     void transferAspectRatio(
-        std::expected<float, style::SizeResolveFailure>& width,
-        std::expected<float, style::SizeResolveFailure>& height,
+        std::expected<float, style::SizeError>& width,
+        std::expected<float, style::SizeError>& height,
         float ratio
     );
 

@@ -146,7 +146,7 @@ namespace layout {
                 resolvedSize.height =
                     ctx.requestedHeight.resolve(ctx.availableHeight);
                 if (!resolvedSize.height &&
-                    resolvedSize.height.error() == style::SizeResolveFailure::Auto) {
+                    resolvedSize.height.error() == style::SizeError::Auto) {
                     std::optional<float> resolvedTop;
                     std::optional<float> resolvedBottom;
 
@@ -166,7 +166,7 @@ namespace layout {
                 resolvedSize.width =
                     ctx.requestedWidth.resolve(ctx.availableWidth);
                 if (!resolvedSize.width &&
-                    resolvedSize.width.error() == style::SizeResolveFailure::Auto) {
+                    resolvedSize.width.error() == style::SizeError::Auto) {
                     std::optional<float> resolvedRight;
                     std::optional<float> resolvedLeft;
 
@@ -197,8 +197,8 @@ namespace layout {
     }
 
     void transferAspectRatio(
-        std::expected<float, style::SizeResolveFailure>& width,
-        std::expected<float, style::SizeResolveFailure>& height,
+        std::expected<float, style::SizeError>& width,
+        std::expected<float, style::SizeError>& height,
         float ratio
     ) {
         if (ratio <= 0.0f) return;
@@ -448,7 +448,7 @@ namespace layout {
         lr.resolvedSize.height = layoutInput.height;
 
         if (!lr.resolvedSize.width &&
-            lr.resolvedSize.width.error() == style::SizeResolveFailure::Auto &&
+            lr.resolvedSize.width.error() == style::SizeError::Auto &&
             constraints.widthResolution == AxisResolution::Final &&
             !constraints.shrinkWidthToFit &&
             !constraints.availableWidth.isAuto()) {

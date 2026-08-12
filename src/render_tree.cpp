@@ -17,7 +17,7 @@ namespace tree {
     using layout::AxisResolution;
     using layout::IntrinsicSizes;
     using style::ClipUniform;
-    using style::SizeResolveFailure;
+    using style::SizeError;
     using style::Unit;
 
     void RenderTree::markDirty(std::source_location source) {
@@ -717,10 +717,10 @@ namespace tree {
         constraints.intrinsicSizesAxis = axis;
         if (axis == Axis::Width) {
             constraints.widthResolution = AxisResolution::MaxContent;
-            measured.explicitWidth = std::unexpected(SizeResolveFailure::Auto);
+            measured.explicitWidth = std::unexpected(SizeError::Auto);
         } else {
             constraints.heightResolution = AxisResolution::MaxContent;
-            measured.explicitHeight = std::unexpected(SizeResolveFailure::Auto);
+            measured.explicitHeight = std::unexpected(SizeError::Auto);
         }
 
         const auto& output = speculateLayout(frameInfo, node, constraints, measured);
@@ -759,20 +759,28 @@ namespace tree {
         computedShared.display = display;
 
         constraints.resolvedMargins = prelayout.resolvedMargins;
-        bool intrinsicPreferredWidth = !measured.explicitWidth && measured.explicitWidth.error() == SizeResolveFailure::ContentDependent;
-        bool intrinsicPreferredHeight = !measured.explicitHeight && measured.explicitHeight.error() == SizeResolveFailure::ContentDependent;
+        bool intrinsicPreferredWidth = !measured.explicitWidth && measured.explicitWidth.error() == SizeError::ContentDependent;
+        bool intrinsicPreferredHeight = !measured.explicitHeight && measured.explicitHeight.error() == SizeError::ContentDependent;
+
+        // I can replace axis res deferred with a parent override
+        // then if theres a parent override that goes into the req, we know to replace that
+        // this fucking guard is going to kill me (final)
+        // it literally makes this refactor damn enar fucking impossible
         bool intrinsicWidthBounds = constraints.widthResolution == AxisResolution::Final && (node->shared.minWidth.isContentDependent() || (node->shared.maxWidth.has_value() && node->shared.maxWidth->isContentDependent()));
         bool intrinsicHeightBounds = constraints.heightResolution == AxisResolution::Final && (node->shared.minHeight.isContentDependent() || (node->shared.maxHeight.has_value() && node->shared.maxHeight->isContentDependent()));
         std::optional<IntrinsicSizes> widthIntrinsicSizes;
         std::optional<IntrinsicSizes> heightIntrinsicSizes;
 
-        // sizing decision 1
-        Size intrinsicAvailableWidth = constraints.availableWidth;
-        Size intrinsicAvailableHeight = constraints.availableHeight;
-        if (auto availableWidth = intrinsicAvailableWidth.resolve(Size::autoSize())) 
-            intrinsicAvailableWidth = Size::px(std::max(0.0f, *availableWidth - constraints.resolvedMargins.left - constraints.resolvedMargins.right));
-        if (auto availableHeight = intrinsicAvailableHeight.resolve(Size::autoSize())) 
-            intrinsicAvailableHeight = Size::px(std::max(0.0f, *availableHeight - constraints.resolvedMargins.top - constraints.resolvedMargins.bottom));
+        // sizing decision 1 (lots of extraneous stuff here)
+        // how do I break this down?
+        // basically, we are generating intrinsic sizes if
+        // min/max-dim are content dependent or dim is content dependent
+        // the intrinsic height bounds are deferred - but why?
+        // if (auto availableWidth = constraints.availableWidth.resolve(Size::autoSize())) 
+        //     intrinsicAvailableWidth = Size::px(std::max(0.0f, *availableWidth - constraints.resolvedMargins.left - constraints.resolvedMargins.right));
+        // if (auto availableHeight = constraints.availableHeight.resolve(Size::autoSize())) 
+        //     intrinsicAvailableHeight = Size::px(std::max(0.0f, *availableHeight - constraints.resolvedMargins.top - constraints.resolvedMargins.bottom));
+
 
         if (intrinsicPreferredWidth || intrinsicWidthBounds) 
             widthIntrinsicSizes = measureIntrinsicSizes(node, frameInfo, constraints, measured, Axis::Width);
@@ -780,9 +788,9 @@ namespace tree {
             heightIntrinsicSizes = measureIntrinsicSizes(node, frameInfo, constraints, measured, Axis::Height);
         
         if (intrinsicPreferredWidth && widthIntrinsicSizes.has_value()) 
-            measured.explicitWidth = layout::resolveIntrinsicSize(node->shared.width, *widthIntrinsicSizes, intrinsicAvailableWidth);
+            measured.explicitWidth = layout::resolveIntrinsicSize(node->shared.width, *widthIntrinsicSizes, constraints.availableWidth);
         if (intrinsicPreferredHeight && heightIntrinsicSizes.has_value()) 
-            measured.explicitHeight = layout::resolveIntrinsicSize(node->shared.height, *heightIntrinsicSizes, intrinsicAvailableHeight);
+            measured.explicitHeight = layout::resolveIntrinsicSize(node->shared.height, *heightIntrinsicSizes, constraints.availableHeight);
 
         // Re-resolve percent sizes from current constraints, but only in final layout
         // passes that are not shrink-to-fit on the relevant axis.
@@ -1011,11 +1019,11 @@ namespace tree {
         if (constraints.widthResolution == AxisResolution::Final) {
             if (node->shared.maxWidth.has_value()) {
                 const auto& requestedMaxWidth = *node->shared.maxWidth;
-                float maxWidth = requestedMaxWidth.isContentDependent() && widthIntrinsicSizes.has_value() ? layout::resolveIntrinsicSize(requestedMaxWidth, *widthIntrinsicSizes, intrinsicAvailableWidth) : requestedMaxWidth.resolveOr(constraints.availableWidth, usedWidth);
+                float maxWidth = requestedMaxWidth.isContentDependent() && widthIntrinsicSizes.has_value() ? layout::resolveIntrinsicSize(requestedMaxWidth, *widthIntrinsicSizes, constraints.availableWidth) : requestedMaxWidth.resolveOr(constraints.availableWidth, usedWidth);
                 usedWidth = std::min(usedWidth, maxWidth);
             }
 
-            float minWidth = node->shared.minWidth.isContentDependent() && widthIntrinsicSizes.has_value() ? layout::resolveIntrinsicSize(node->shared.minWidth, *widthIntrinsicSizes, intrinsicAvailableWidth) : node->shared.minWidth.resolveOr(constraints.availableWidth, usedWidth);
+            float minWidth = node->shared.minWidth.isContentDependent() && widthIntrinsicSizes.has_value() ? layout::resolveIntrinsicSize(node->shared.minWidth, *widthIntrinsicSizes, constraints.availableWidth) : node->shared.minWidth.resolveOr(constraints.availableWidth, usedWidth);
             usedWidth = std::max(usedWidth, minWidth);
         }
 
@@ -1028,11 +1036,11 @@ namespace tree {
 
             if (node->shared.maxHeight.has_value()) {
                 const auto& requestedMaxHeight = *node->shared.maxHeight;
-                float maxHeight = requestedMaxHeight.isContentDependent() && heightIntrinsicSizes.has_value() ? layout::resolveIntrinsicSize(requestedMaxHeight, *heightIntrinsicSizes, intrinsicAvailableHeight) : requestedMaxHeight.resolveOr(constraints.availableHeight, usedHeight);
+                float maxHeight = requestedMaxHeight.isContentDependent() && heightIntrinsicSizes.has_value() ? layout::resolveIntrinsicSize(requestedMaxHeight, *heightIntrinsicSizes, constraints.availableHeight) : requestedMaxHeight.resolveOr(constraints.availableHeight, usedHeight);
                 usedHeight = std::min(usedHeight, maxHeight);
             }
 
-            float minHeight = node->shared.minHeight.isContentDependent() && heightIntrinsicSizes.has_value() ? layout::resolveIntrinsicSize(node->shared.minHeight, *heightIntrinsicSizes, intrinsicAvailableHeight) : node->shared.minHeight.resolveOr(constraints.availableHeight, usedHeight);
+            float minHeight = node->shared.minHeight.isContentDependent() && heightIntrinsicSizes.has_value() ? layout::resolveIntrinsicSize(node->shared.minHeight, *heightIntrinsicSizes, constraints.availableHeight) : node->shared.minHeight.resolveOr(constraints.availableHeight, usedHeight);
             usedHeight = std::max(usedHeight, minHeight);
         }
 
@@ -1145,11 +1153,11 @@ namespace tree {
                 if (constraints.heightResolution == AxisResolution::Final) {
                     if (node->shared.maxHeight.has_value()) {
                         const auto& requestedMaxHeight = *node->shared.maxHeight;
-                        float maxHeight = requestedMaxHeight.isContentDependent() && heightIntrinsicSizes.has_value() ? layout::resolveIntrinsicSize(requestedMaxHeight, *heightIntrinsicSizes, intrinsicAvailableHeight) : requestedMaxHeight.resolveOr(constraints.availableHeight, layout.computedBox.height);
+                        float maxHeight = requestedMaxHeight.isContentDependent() && heightIntrinsicSizes.has_value() ? layout::resolveIntrinsicSize(requestedMaxHeight, *heightIntrinsicSizes, constraints.availableHeight) : requestedMaxHeight.resolveOr(constraints.availableHeight, layout.computedBox.height);
                         layout.computedBox.height = std::min(layout.computedBox.height, maxHeight);
                     }
 
-                    float minHeight = node->shared.minHeight.isContentDependent() && heightIntrinsicSizes.has_value() ? layout::resolveIntrinsicSize(node->shared.minHeight, *heightIntrinsicSizes, intrinsicAvailableHeight) : node->shared.minHeight.resolveOr(constraints.availableHeight, layout.computedBox.height);
+                    float minHeight = node->shared.minHeight.isContentDependent() && heightIntrinsicSizes.has_value() ? layout::resolveIntrinsicSize(node->shared.minHeight, *heightIntrinsicSizes, constraints.availableHeight) : node->shared.minHeight.resolveOr(constraints.availableHeight, layout.computedBox.height);
                     layout.computedBox.height = std::max(layout.computedBox.height, minHeight);
                 }
             }

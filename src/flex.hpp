@@ -17,7 +17,7 @@ namespace layout {
     using style::JustifyContent;
     using style::Overflow;
     using style::Size;
-    using style::SizeResolveFailure;
+    using style::SizeError;
     using style::Unit;
     using tree::RenderTree;
     using tree::TreeNode;
@@ -62,10 +62,10 @@ namespace layout {
         const std::optional<Size>& maxCrossSize(const SharedDescriptor& shared) {
             return isRow ? shared.maxHeight : shared.maxWidth;
         }
-        std::expected<float, SizeResolveFailure>& mainExplicit(Measured& m) {
+        std::expected<float, SizeError>& mainExplicit(Measured& m) {
             return isRow ? m.explicitWidth : m.explicitHeight;
         }
-        std::expected<float, SizeResolveFailure>& crossExplicit(Measured& m) {
+        std::expected<float, SizeError>& crossExplicit(Measured& m) {
             return isRow ? m.explicitHeight : m.explicitWidth;
         }
 
@@ -502,7 +502,7 @@ namespace layout {
                 : parentAvailableWidth;
         }
 
-        std::expected<float, SizeResolveFailure> resolveMainSize(
+        std::expected<float, SizeError> resolveMainSize(
             const Size& request
         ) {
             auto& mainSize = flex.axis.mainExplicit(measured);
@@ -516,9 +516,9 @@ namespace layout {
             if (!mainSize) {
                 basisIsIndefinite = basisIsIndefinite ||
                     mainSize.error() ==
-                        SizeResolveFailure::IndefiniteBasis ||
+                        SizeError::IndefiniteBasis ||
                     (!flex.axis.isRow &&
-                     mainSize.error() == SizeResolveFailure::Auto);
+                     mainSize.error() == SizeError::Auto);
             }
             auto basis = basisIsIndefinite
                 ? Size::autoSize()
@@ -527,7 +527,7 @@ namespace layout {
         }
 
 
-        std::expected<float, SizeResolveFailure> resolveCrossSize(
+        std::expected<float, SizeError> resolveCrossSize(
             TreeNode* child
         ) {
             const auto& request = flex.axis.crossSize(child->shared);
@@ -545,9 +545,9 @@ namespace layout {
             if (!crossSize) {
                 basisIsIndefinite = basisIsIndefinite ||
                     crossSize.error() ==
-                        SizeResolveFailure::IndefiniteBasis ||
+                        SizeError::IndefiniteBasis ||
                     (flex.axis.isRow &&
-                     crossSize.error() == SizeResolveFailure::Auto);
+                     crossSize.error() == SizeError::Auto);
             }
             auto basis = basisIsIndefinite
                 ? Size::autoSize()
@@ -555,8 +555,8 @@ namespace layout {
             return request.resolve(basis);
         }
 
-        float determineFlexBaseSize(std::expected<float, SizeResolveFailure>& mainSize, const std::optional<IntrinsicSizes>& intrinsicSizes);
-        float determineMinMainSize(TreeNode* child, std::expected<float, SizeResolveFailure>& mainSize, const std::optional<IntrinsicSizes>& intrinsicSizes);
+        float determineFlexBaseSize(std::expected<float, SizeError>& mainSize, const std::optional<IntrinsicSizes>& intrinsicSizes);
+        float determineMinMainSize(TreeNode* child, std::expected<float, SizeError>& mainSize, const std::optional<IntrinsicSizes>& intrinsicSizes);
         std::optional<float> determineMaxMainSize(TreeNode* child, const std::optional<IntrinsicSizes>& intrinsicSizes);
         float determineAvailableMain(float contentMainSize);
         float determineAvailableCross(float contentCrossSize);

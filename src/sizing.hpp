@@ -3,7 +3,7 @@
 #include <optional>
 
 namespace style {
-    enum class SizeResolveFailure {
+    enum class SizeError {
         Auto,
         IndefiniteBasis,
         FractionRequiresContext,
@@ -54,25 +54,25 @@ namespace style {
                 || unit == Unit::FitContent;
         }
 
-        std::expected<float, SizeResolveFailure> resolve(const Size& basis) const {
+        std::expected<float, SizeError> resolve(const Size& basis) const {
             switch (unit) {
                 case Unit::Px:
                     return value;
                 case Unit::Auto:
-                    return std::unexpected(SizeResolveFailure::Auto);
+                    return std::unexpected(SizeError::Auto);
                 case Unit::Pt:
                     return value;
                 case Unit::Fr:
-                    return std::unexpected(SizeResolveFailure::FractionRequiresContext);
+                    return std::unexpected(SizeError::FractionRequiresContext);
                 case Unit::Percent:
                     if (basis.unit == Unit::Px || basis.unit == Unit::Pt) {
                         return value * basis.value;
                     }
-                    return std::unexpected(SizeResolveFailure::IndefiniteBasis);
+                    return std::unexpected(SizeError::IndefiniteBasis);
                 case Unit::MinContent:
                 case Unit::MaxContent:
                 case Unit::FitContent:
-                    return std::unexpected(SizeResolveFailure::ContentDependent);
+                    return std::unexpected(SizeError::ContentDependent);
             }
         }
 

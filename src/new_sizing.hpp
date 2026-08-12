@@ -1,43 +1,56 @@
+#pragma once
+
+// #include "element.hpp"
+#include "margins.hpp"
+#include "sizing.hpp"
 #include <optional>
+#include <variant>
 
 // existing problem with current Size
-// the current size is a good descriptor of what the size is
+// the current Size is a good descriptor of what the Size is
 // but internally, everything should be rerpesented in pixel space
 // resolved size is a bad name; ill consider renaming it smth else
-struct ResolvedSize {
-    std::optional<float> width;
-    std::optional<float> height;
-};
+using style::SizeError;
 
-// requesters pass context as a size request + constraints to evaulator
+// Either a spec, float, or error
+using SizeState = std::variant<style::Size, float, SizeError>;
+
+// requesters pass context as a SizeSpec request + constraints to evaulator
 /*
     things a req should include:
-    1) do you want intrinsic sizes back? (yes/no)
+    1) do you want intrinsic SizeSpecs back? (yes/no)
     2) what is the content width?
-    3) what is the specified size you want? 
+    3) what is the specified SizeSpec you want? 
     4) is there a parent override?
 */
+
+enum class IntrinsicRequest {
+    Minimum,
+    Maximum
+};
 
 // CHILDREN SHOULD MAKE THEIR OWN SIZING REQUEST based ON parent constraints
 // so parents do not provide the request, they provide the information to make a request
 struct SizeRequest {
-    ResolvedSize specified; // specified h/w
-    ResolvedSize override;  // parent override
-    ResolvedSize content;   // content box
+    SizeState specified; // specified h/w
+    SizeState override;  // parent override
+    SizeState content;   // content box
     
-    bool requestWidthIntrinsicSize {};
-    bool requestHeightIntrinsicSize {};
+    ResolvedMargins margins; // margins (req for some sizing)
+    
+    std::optional<IntrinsicRequest> requestWidthIntrinsicSizeSpec {};
+    std::optional<IntrinsicRequest> requestHeightIntrinsicSizeSpec {};
 };  
 
-// central evaluator gives back a coherently shaped size resolution
-// size *may or may not* be fully resolved; that is fine
-struct SizeResolution {
-    ResolvedSize size;      // preferred size recieved back
-    ResolvedSize minimum;   // min width constraint evaluated against content box
-    ResolvedSize maximum;   // max width constraint evaluated against content box
+// central evaluator gives back a coherently shaped SizeSpec resolution
+// SizeSpec *may or may not* be fully resolved; that is fine
+struct SizeResult {
+    SizeState size;      // preferred SizeSpec recieved back
+    SizeState minimum;   // min width constraint evaluated against content box
+    SizeState maximum;   // max width constraint evaluated against content box
     
-    ResolvedSize widthIntrinsicSizes; // intrinsicSizes if driven by width constraints
-    ResolvedSize heightIntrinsicSizes; // intrinsic sizes if driven by height constraints
+    std::optional<SizeState> widthIntrinsicSizeSpecs; // intrinsicSizeSpecs if driven by width constraints
+    std::optional<SizeState> heightIntrinsicSizeSpecs; // intrinsic SizeSpecs if driven by height constraints
 };
 
-auto evaluateSize(SizeRequest) -> SizeResolution;
+auto evaluateSizeSpec(SizeRequest) -> SizeResult;

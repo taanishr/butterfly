@@ -13,7 +13,7 @@ namespace layout {
     using style::JustifyItems;
     using style::JustifySelf;
     using style::Size;
-    using style::SizeResolveFailure;
+    using style::SizeError;
     using tree::RenderTree;
     using tree::TreeNode;
 
