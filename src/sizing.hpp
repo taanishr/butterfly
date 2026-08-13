@@ -1,6 +1,7 @@
 #pragma once
 #include <expected>
 #include <optional>
+#include <variant>
 
 namespace style {
     enum class SizeError {
@@ -83,5 +84,19 @@ namespace style {
 
         private:
             constexpr Size(float v, Unit u) : value(v), unit(u) {}
+    };
+}
+
+using SizeState = std::variant<style::Size, float, style::SizeError>;
+
+struct SizePair {
+    SizeState width;
+    SizeState height;
+};
+
+namespace layout {
+    struct IntrinsicSizes {
+        style::Size minContent;
+        style::Size maxContent;
     };
 }

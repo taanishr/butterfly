@@ -67,8 +67,9 @@ namespace tree {
 
         void placePhase(TreeNode* node, const FrameInfo& frameInfo, Constraints& constraints);
         void finalizePhase(TreeNode* node, Constraints& constraints);
-    private:
+
         layout::IntrinsicSizes measureIntrinsicSizes(TreeNode* node, const FrameInfo& frameInfo, Constraints constraints, layout::Measured measured, layout::Axis axis);
+
 
         layout::LayoutOutput layoutRecursive(
             TreeNode* node,
@@ -77,7 +78,7 @@ namespace tree {
             layout::Measured measured,
             bool mutate
         );
-
+    private:
         bool isFrameInfoChanged(const FrameInfo& frameInfo) const;
         ConstraintsKey makeConstraintsKey(const Constraints& constraints,
                                           simd_float2 extraOriginA = {0.0f, 0.0f},

@@ -330,7 +330,7 @@ namespace layout {
 
                 flex.axis.mainAvailable(preparedChildConstraints) = Size::px(item.usedMainSize);
                 flex.axis.mainResolution(preparedChildConstraints) = AxisResolution::Deferred;
-                preparedChildConstraints.parentOverride = item.usedMainSize;
+                // preparedChildConstraints.parentOverride = item.usedMainSize;
                 flex.axis.mainExplicit(childMeasured) = item.usedMainSize;
                 if (childNode->shared.aspectRatio)
                     transferAspectRatio(
@@ -428,7 +428,7 @@ namespace layout {
             preparedChildConstraints.cursor = childPosition;
             flex.axis.mainAvailable(preparedChildConstraints) = Size::px(p.mainSize);
             flex.axis.mainResolution(preparedChildConstraints) = AxisResolution::Deferred;
-            preparedChildConstraints.parentOverride = p.mainSize;
+            // preparedChildConstraints.parentOverride = p.mainSize;
             flex.axis.mainExplicit(childMeasured) = p.mainSize;
 
             float finalCrossSize = p.crossSize;
@@ -438,7 +438,7 @@ namespace layout {
                 Size::px(finalCrossSize);
             flex.axis.crossResolution(preparedChildConstraints) =
                 AxisResolution::Deferred;
-            preparedChildConstraints.parentOverride = finalCrossSize;
+            // preparedChildConstraints.parentOverride = finalCrossSize;
             flex.axis.crossExplicit(childMeasured) = finalCrossSize;
             flex.axis.crossShrinkToFit(preparedChildConstraints) =
                 p.needsCrossShrinkToFit;

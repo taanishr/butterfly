@@ -59,6 +59,7 @@ set(GUI_SOURCES
     layout_test_scenes.cpp
     main.cpp
     new_arch.cpp
+    new_sizing.cpp
     node_builder.cpp
     printers.cpp
     render_tree.cpp

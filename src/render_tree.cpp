@@ -766,8 +766,11 @@ namespace tree {
         // then if theres a parent override that goes into the req, we know to replace that
         // this fucking guard is going to kill me (final)
         // it literally makes this refactor damn enar fucking impossible
-        bool intrinsicWidthBounds = constraints.widthResolution == AxisResolution::Final && (node->shared.minWidth.isContentDependent() || (node->shared.maxWidth.has_value() && node->shared.maxWidth->isContentDependent()));
-        bool intrinsicHeightBounds = constraints.heightResolution == AxisResolution::Final && (node->shared.minHeight.isContentDependent() || (node->shared.maxHeight.has_value() && node->shared.maxHeight->isContentDependent()));
+        
+        // // if we arent already resolving the width axis and we fit all the conditions, resolve width!
+        // bool intrinsicWidthBounds = constraints.intrinsicSizesAxis != Axis::Width && (node->shared.minWidth.isContentDependent() || (node->shared.maxWidth.has_value() && node->shared.maxWidth->isContentDependent()));
+        // // same here
+        bool intrinsicHeightBounds = constraints.intrinsicSizesAxis != Axis::Height && (node->shared.minHeight.isContentDependent() || (node->shared.maxHeight.has_value() && node->shared.maxHeight->isContentDependent()));
         std::optional<IntrinsicSizes> widthIntrinsicSizes;
         std::optional<IntrinsicSizes> heightIntrinsicSizes;
 
@@ -782,13 +785,30 @@ namespace tree {
         //     intrinsicAvailableHeight = Size::px(std::max(0.0f, *availableHeight - constraints.resolvedMargins.top - constraints.resolvedMargins.bottom));
 
 
-        if (intrinsicPreferredWidth || intrinsicWidthBounds) 
-            widthIntrinsicSizes = measureIntrinsicSizes(node, frameInfo, constraints, measured, Axis::Width);
-        if (intrinsicPreferredHeight) 
-            heightIntrinsicSizes = measureIntrinsicSizes(node, frameInfo, constraints, measured, Axis::Height);
-        
+        // if (intrinsicPreferredWidth || intrinsicWidthBounds) 
+        SizeRequest sizeRequest {
+            .specified = {.width = node->shared.width, .height = node->shared.height},
+            .override = constraints.parentOverride.value_or(SizePair {.width = SizeError::Auto, .height = SizeError::Auto}),
+            .content = {.width = constraints.availableWidth, .height = constraints.availableHeight},
+            .minimum = {.width = node->shared.minWidth, .height = node->shared.minHeight},
+            .maximum = {.width = node->shared.maxWidth.value_or(Size::autoSize()), .height = node->shared.maxHeight.value_or(Size::autoSize())},
+            .available = {.width = constraints.availableWidth, .height = constraints.availableHeight},
+            .margins = constraints.resolvedMargins,
+        };
+
+        auto sizeResult = evaluateSize(*this, node, frameInfo, constraints, measured, sizeRequest);
+
+        widthIntrinsicSizes = sizeResult.widthIntrinsicSizes;
+        heightIntrinsicSizes = sizeResult.heightIntrinsicSizes;
+
         if (intrinsicPreferredWidth && widthIntrinsicSizes.has_value()) 
-            measured.explicitWidth = layout::resolveIntrinsicSize(node->shared.width, *widthIntrinsicSizes, constraints.availableWidth);
+            measured.explicitWidth = layout::resolveIntrinsicSize(node->shared.width, *widthIntrinsicSizes, constraints.availableWidth);;
+
+        // if (intrinsicPreferredHeight) 
+        //     heightIntrinsicSizes = measureIntrinsicSizes(node, frameInfo, constraints, measured, Axis::Height);
+        
+        // if (intrinsicPreferredWidth && widthIntrinsicSizes.has_value()) 
+        //     measured.explicitWidth = layout::resolveIntrinsicSize(node->shared.width, *widthIntrinsicSizes, constraints.availableWidth);
         if (intrinsicPreferredHeight && heightIntrinsicSizes.has_value()) 
             measured.explicitHeight = layout::resolveIntrinsicSize(node->shared.height, *heightIntrinsicSizes, constraints.availableHeight);
 

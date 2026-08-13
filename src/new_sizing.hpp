@@ -4,16 +4,25 @@
 #include "margins.hpp"
 #include "sizing.hpp"
 #include <optional>
-#include <variant>
+
+struct FrameInfo;
+
+namespace layout {
+    struct Constraints;
+    struct IntrinsicSizes;
+    struct Measured;
+}
+
+namespace tree {
+    struct RenderTree;
+    struct TreeNode;
+}
 
 // existing problem with current Size
 // the current Size is a good descriptor of what the Size is
 // but internally, everything should be rerpesented in pixel space
 // resolved size is a bad name; ill consider renaming it smth else
 using style::SizeError;
-
-// Either a spec, float, or error
-using SizeState = std::variant<style::Size, float, SizeError>;
 
 // requesters pass context as a SizeSpec request + constraints to evaulator
 /*
@@ -29,28 +38,39 @@ enum class IntrinsicRequest {
     Maximum
 };
 
+
 // CHILDREN SHOULD MAKE THEIR OWN SIZING REQUEST based ON parent constraints
 // so parents do not provide the request, they provide the information to make a request
 struct SizeRequest {
-    SizeState specified; // specified h/w
-    SizeState override;  // parent override
-    SizeState content;   // content box
+    SizePair specified; // specified h/w
+    SizePair override;  // parent override
+    SizePair content;   // content box
+    SizePair minimum; // minimums
+    SizePair maximum; // maximums
+    SizePair available;
     
     ResolvedMargins margins; // margins (req for some sizing)
     
-    std::optional<IntrinsicRequest> requestWidthIntrinsicSizeSpec {};
-    std::optional<IntrinsicRequest> requestHeightIntrinsicSizeSpec {};
+    // std::optional<IntrinsicRequest> intrinsicWidthRequest {};
+    // std::optional<IntrinsicRequest> intrinsicHeightRequest {};
 };  
 
 // central evaluator gives back a coherently shaped SizeSpec resolution
 // SizeSpec *may or may not* be fully resolved; that is fine
 struct SizeResult {
-    SizeState size;      // preferred SizeSpec recieved back
-    SizeState minimum;   // min width constraint evaluated against content box
-    SizeState maximum;   // max width constraint evaluated against content box
+    SizePair size;      // preferred SizeSpec recieved back
+    SizePair minimum;   // min dim constraints evaluated against content box
+    SizePair maximum; // max dim constraints evaluated against content box
     
-    std::optional<SizeState> widthIntrinsicSizeSpecs; // intrinsicSizeSpecs if driven by width constraints
-    std::optional<SizeState> heightIntrinsicSizeSpecs; // intrinsic SizeSpecs if driven by height constraints
+    std::optional<layout::IntrinsicSizes> widthIntrinsicSizes; // intrinsicSizeSpecs if driven by width constraints
+    std::optional<layout::IntrinsicSizes> heightIntrinsicSizes; // intrinsic SizeSpecs if driven by height constraints
 };
 
-auto evaluateSizeSpec(SizeRequest) -> SizeResult;
+auto evaluateSize(
+    tree::RenderTree& tree,
+    tree::TreeNode* node,
+    const FrameInfo& frameInfo,
+    layout::Constraints constraints,
+    layout::Measured measured,
+    SizeRequest req
+) -> SizeResult;

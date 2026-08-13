@@ -82,11 +82,6 @@ namespace layout {
         size_t count{};
     };
 
-    struct IntrinsicSizes {
-        style::Size minContent;
-        style::Size maxContent;
-    };
-
     inline float resolveIntrinsicSize(const style::Size& request, const IntrinsicSizes& intrinsicSizes, style::Size availableSize) {
         float minContent = intrinsicSizes.minContent.resolveOr(style::Size::autoSize());
         float maxContent = intrinsicSizes.maxContent.resolveOr(style::Size::autoSize());
@@ -514,7 +509,7 @@ namespace layout {
         std::vector<ClipUniform> clipUniforms {};
         std::optional<TextOverflow> textOverflow{};
 
-        std::optional<SizeState> parentOverride;
+        std::optional<SizePair> parentOverride;
 
         bool shrinkWidthToFit{false};
         bool shrinkHeightToFit{false};
