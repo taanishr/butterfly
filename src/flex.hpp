@@ -84,11 +84,11 @@ namespace layout {
             return isRow ? c.availableHeight : c.availableWidth;
         }
 
-        AxisResolution& mainResolution(Constraints& c) {
+        std::optional<AxisResolution>& mainResolution(Constraints& c) {
             return isRow ? c.widthResolution : c.heightResolution;
         }
 
-        AxisResolution& crossResolution(Constraints& c) {
+        std::optional<AxisResolution>& crossResolution(Constraints& c) {
             return isRow ? c.heightResolution : c.widthResolution;
         }
         

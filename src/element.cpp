@@ -287,7 +287,7 @@ namespace tree {
     }
 
     bool shouldTakeSoftBreak(
-        layout::AxisResolution widthResolution,
+        std::optional<layout::AxisResolution> widthResolution,
         bool hasBreakOpportunity,
         bool lineHasContent,
         float prospectiveWidth,
@@ -304,7 +304,7 @@ namespace tree {
         const bidi::TextShapingRun& run,
         ResolvedMargins margins,
         Size availableWidth,
-        layout::AxisResolution widthResolution,
+        std::optional<layout::AxisResolution> widthResolution,
         std::vector<LineFragment>& fragments,
         std::vector<LineBox>& lineBoxes,
         LineBox& currentLineBox,
@@ -351,7 +351,7 @@ namespace tree {
         WordBreak wordBreak,
         ResolvedMargins margins,
         Size availableWidth,
-        layout::AxisResolution widthResolution,
+        std::optional<layout::AxisResolution> widthResolution,
         std::vector<LineFragment>& fragments,
         std::vector<LineBox>& lineBoxes,
         LineBox& currentLineBox,
@@ -631,7 +631,7 @@ namespace tree {
         }
     }
 
-    layout::InlineFormattingInput buildIsolatedInlineBoxes(TreeNode* node, Size maxWidth, layout::AxisResolution widthResolution, bool calculateIntrinsicSizes) {
+    layout::InlineFormattingInput buildIsolatedInlineBoxes(TreeNode* node, Size maxWidth, std::optional<layout::AxisResolution> widthResolution, bool calculateIntrinsicSizes) {
         auto context = std::make_shared<layout::InlineFormattingContext>();
         auto& fragments = context->fragments;
         auto& lineBoxes = context->lineBoxes;

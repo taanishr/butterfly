@@ -200,8 +200,10 @@ namespace tree {
         hashOptionalSize(constraints.replacedAttributes.marginBottom);
         hash_combine(hash, constraints.shrinkWidthToFit);
         hash_combine(hash, constraints.shrinkHeightToFit);
-        hash_combine(hash, static_cast<int>(constraints.widthResolution));
-        hash_combine(hash, static_cast<int>(constraints.heightResolution));
+        hash_combine(hash, constraints.widthResolution.has_value());
+        if (constraints.widthResolution.has_value()) hash_combine(hash, static_cast<int>(*constraints.widthResolution));
+        hash_combine(hash, constraints.heightResolution.has_value());
+        if (constraints.heightResolution.has_value()) hash_combine(hash, static_cast<int>(*constraints.heightResolution));
         hash_combine(hash, constraints.intrinsicSizesAxis.has_value());
         if (constraints.intrinsicSizesAxis.has_value()) hash_combine(hash, static_cast<int>(*constraints.intrinsicSizesAxis));
         auto lineFragments = constraints.inlineFormatting.lineFragments();
@@ -816,13 +818,13 @@ namespace tree {
         // passes that are not shrink-to-fit on the relevant axis.
         // During intermediate measurements, percentage bases may be indefinite and
         // maxWidth comes from an indefinite ancestor and would give wrong values.
-        bool shouldResolvePercentWidth =
-                                            std::holds_alternative<std::monostate>(constraints.parentOverride.width) &&
-                                            node->shared.width.unit == Unit::Percent;
+        bool shouldResolvePercentWidth = !constraints.shrinkWidthToFit &&
+                                         std::holds_alternative<std::monostate>(constraints.parentOverride.width) &&
+                                         node->shared.width.unit == Unit::Percent;
 
-        bool shouldResolvePercentHeight = 
-                                            std::holds_alternative<std::monostate>(constraints.parentOverride.height) &&
-                                            node->shared.height.unit == Unit::Percent;
+        bool shouldResolvePercentHeight = !constraints.shrinkHeightToFit &&
+                                          std::holds_alternative<std::monostate>(constraints.parentOverride.height) &&
+                                          node->shared.height.unit == Unit::Percent;
                  
         // more sizing decisiosn
         if (shouldResolvePercentWidth || shouldResolvePercentHeight) {

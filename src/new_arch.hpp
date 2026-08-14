@@ -481,7 +481,6 @@ namespace layout {
     };
 
     enum class AxisResolution {
-        Final,
         MinContent,
         MaxContent
     };
@@ -512,8 +511,8 @@ namespace layout {
 
         bool shrinkWidthToFit{false};
         bool shrinkHeightToFit{false};
-        AxisResolution widthResolution{AxisResolution::Final};
-        AxisResolution heightResolution{AxisResolution::Final};
+        std::optional<AxisResolution> widthResolution;
+        std::optional<AxisResolution> heightResolution;
         std::optional<Axis> intrinsicSizesAxis;
     };
 
