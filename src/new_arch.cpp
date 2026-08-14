@@ -449,7 +449,7 @@ namespace layout {
 
         if (!lr.resolvedSize.width &&
             lr.resolvedSize.width.error() == style::SizeError::Auto &&
-            constraints.widthResolution == AxisResolution::Final &&
+            std::holds_alternative<std::monostate>(constraints.parentOverride.width) &&
             !constraints.shrinkWidthToFit &&
             !constraints.availableWidth.isAuto()) {
             lr.resolvedSize.width = constraints.availableWidth.value;

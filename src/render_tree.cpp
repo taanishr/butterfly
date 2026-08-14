@@ -788,7 +788,7 @@ namespace tree {
         // if (intrinsicPreferredWidth || intrinsicWidthBounds) 
         SizeRequest sizeRequest {
             .specified = {.width = node->shared.width, .height = node->shared.height},
-            .override = constraints.parentOverride.value_or(SizePair {.width = SizeError::Auto, .height = SizeError::Auto}),
+            .override = constraints.parentOverride,
             .content = {.width = constraints.availableWidth, .height = constraints.availableHeight},
             .minimum = {.width = node->shared.minWidth, .height = node->shared.minHeight},
             .maximum = {.width = node->shared.maxWidth.value_or(Size::autoSize()), .height = node->shared.maxHeight.value_or(Size::autoSize())},
@@ -816,12 +816,12 @@ namespace tree {
         // passes that are not shrink-to-fit on the relevant axis.
         // During intermediate measurements, percentage bases may be indefinite and
         // maxWidth comes from an indefinite ancestor and would give wrong values.
-        bool shouldResolvePercentWidth = !constraints.shrinkWidthToFit &&
-                                            constraints.widthResolution == AxisResolution::Final &&
+        bool shouldResolvePercentWidth =
+                                            std::holds_alternative<std::monostate>(constraints.parentOverride.width) &&
                                             node->shared.width.unit == Unit::Percent;
 
-        bool shouldResolvePercentHeight = !constraints.shrinkHeightToFit &&
-                                            constraints.heightResolution == AxisResolution::Final &&
+        bool shouldResolvePercentHeight = 
+                                            std::holds_alternative<std::monostate>(constraints.parentOverride.height) &&
                                             node->shared.height.unit == Unit::Percent;
                  
         // more sizing decisiosn
@@ -1036,7 +1036,7 @@ namespace tree {
         float usedWidth = layout.computedBox.width;
         float usedHeight = layout.computedBox.height;
 
-        if (constraints.widthResolution == AxisResolution::Final) {
+        if (std::holds_alternative<std::monostate>(constraints.parentOverride.width)) {
             if (node->shared.maxWidth.has_value()) {
                 const auto& requestedMaxWidth = *node->shared.maxWidth;
                 float maxWidth = requestedMaxWidth.isContentDependent() && widthIntrinsicSizes.has_value() ? layout::resolveIntrinsicSize(requestedMaxWidth, *widthIntrinsicSizes, constraints.availableWidth) : requestedMaxWidth.resolveOr(constraints.availableWidth, usedWidth);
@@ -1047,7 +1047,7 @@ namespace tree {
             usedWidth = std::max(usedWidth, minWidth);
         }
 
-        if (constraints.heightResolution == AxisResolution::Final) {
+        if (std::holds_alternative<std::monostate>(constraints.parentOverride.height)) {
             if (intrinsicHeightBounds) {
                 Measured intrinsicMeasured = measured;
                 intrinsicMeasured.explicitWidth = usedWidth;
@@ -1085,8 +1085,8 @@ namespace tree {
         // as a result usedWidth != layout.computedBox.width || !layout.resolvedSize.width
         // or usedHeight != layout.computedBox.height will drift as the computed box doesnt match the resolved size
         // but we only care about the computed box in these passes 
-        bool retryWidth = (usedWidth != layout.computedBox.width || !layout.resolvedSize.width) && constraints.widthResolution == AxisResolution::Final;
-        bool retryHeight = usedHeight != layout.computedBox.height && constraints.heightResolution == AxisResolution::Final;
+        bool retryWidth = (usedWidth != layout.computedBox.width || !layout.resolvedSize.width) && std::holds_alternative<std::monostate>(constraints.parentOverride.width);
+        bool retryHeight = usedHeight != layout.computedBox.height && std::holds_alternative<std::monostate>(constraints.parentOverride.height);
 
 
         if (retryWidth || retryHeight) {
@@ -1170,7 +1170,7 @@ namespace tree {
             } else if (!layout.resolvedSize.height) {
                 layout.computedBox.height = retryContentHeight;
 
-                if (constraints.heightResolution == AxisResolution::Final) {
+                if (std::holds_alternative<std::monostate>(constraints.parentOverride.height)) {
                     if (node->shared.maxHeight.has_value()) {
                         const auto& requestedMaxHeight = *node->shared.maxHeight;
                         float maxHeight = requestedMaxHeight.isContentDependent() && heightIntrinsicSizes.has_value() ? layout::resolveIntrinsicSize(requestedMaxHeight, *heightIntrinsicSizes, constraints.availableHeight) : requestedMaxHeight.resolveOr(constraints.availableHeight, layout.computedBox.height);

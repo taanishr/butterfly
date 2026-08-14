@@ -2,6 +2,7 @@
 #include "render_tree.hpp"
 #include "render_tree.hpp"
 #include <print>
+#include <optional>
 
 namespace layout {
     Alignment distributeSpace(float remainingSpace, size_t itemCount, DistributeMode mode) {
@@ -147,8 +148,7 @@ namespace layout {
                 case SizeError::Auto:
                     availableMain =
                         flex.axis.isRow &&
-                        flex.axis.mainResolution(parentConstraints) ==
-                            AxisResolution::Final &&
+                        std::holds_alternative<std::monostate>(flex.axis.mainOverride(parentConstraints)) &&
                         !parentConstraints.shrinkWidthToFit
                             ? (parentAvailableMain().isAuto() ? contentMainSize : parentAvailableMain().value)
                             : contentMainSize;
@@ -183,8 +183,7 @@ namespace layout {
         switch (crossSize.error()) {
             case SizeError::Auto:
                 if (!flex.axis.isRow &&
-                    flex.axis.crossResolution(parentConstraints) ==
-                        AxisResolution::Final &&
+                    std::holds_alternative<std::monostate>(flex.axis.crossOverride(parentConstraints)) &&
                     !parentConstraints.shrinkWidthToFit) {
                     return parentAvailableCross().isAuto() ? contentCrossSize : parentAvailableCross().value;
                 }
@@ -217,24 +216,6 @@ namespace layout {
             auto preparedChildConstraints = prepareChildConstraints(childAsPtr);
 
             Measured childMeasured = *childAsPtr->measured;
-            // we are currently resolving our intrinsic size
-            auto crossResolution = flex.axis.crossResolution(preparedChildConstraints);
-            bool resolvingIntrinsicCross = crossResolution == AxisResolution::MinContent || crossResolution == AxisResolution::MaxContent;
-
-            bool crossSizeCanDeferToStretch = !resolvedCrossSize &&
-                (resolvedCrossSize.error() == SizeError::Auto ||
-                resolvedCrossSize.error() == SizeError::IndefiniteBasis);
-
-            // // if we aren't currently resolving our intrinsic cross
-            // // and we can stretch (auto/indefintie sizing)
-            // // then we want to defer sizing to phase C
-            // // ok but we always are? Im confused
-            // if (!resolvingIntrinsicCross &&
-            //     effectiveAlign == AlignItems::Stretch &&
-            //     crossSizeCanDeferToStretch
-            // ) {
-            //     flex.axis.crossResolution(preparedChildConstraints) = AxisResolution::Deferred;
-            // }
 
             const auto& mainRequest = flex.axis.mainSize(childAsPtr->shared);
             const auto& minMainRequest = flex.axis.minMainSize(childAsPtr->shared);
@@ -319,18 +300,9 @@ namespace layout {
                 Measured childMeasured = *childNode->measured;
                 bool needsIntrinsicCross = parentRequestsIntrinsicCross || crossRequest.isContentDependent() || minCrossRequest.isContentDependent() || (maxCrossRequest.has_value() && maxCrossRequest->isContentDependent());
 
-                auto crossResolution = flex.axis.crossResolution(preparedChildConstraints);
-                bool resolvingIntrinsicCross = crossResolution == AxisResolution::MinContent || crossResolution == AxisResolution::MaxContent;
-                bool crossSizeCanDeferToStretch = !resolvedCrossSize &&
-                    (resolvedCrossSize.error() == SizeError::Auto ||
-                     resolvedCrossSize.error() == SizeError::IndefiniteBasis);
-
-                if (!resolvingIntrinsicCross && item.alignment == AlignItems::Stretch && crossSizeCanDeferToStretch)
-                    flex.axis.crossResolution(preparedChildConstraints) = AxisResolution::Deferred;
-
                 flex.axis.mainAvailable(preparedChildConstraints) = Size::px(item.usedMainSize);
-                flex.axis.mainResolution(preparedChildConstraints) = AxisResolution::Deferred;
                 // preparedChildConstraints.parentOverride = item.usedMainSize;
+                flex.axis.mainOverride(preparedChildConstraints) = item.usedMainSize;
                 flex.axis.mainExplicit(childMeasured) = item.usedMainSize;
                 if (childNode->shared.aspectRatio)
                     transferAspectRatio(
@@ -427,8 +399,8 @@ namespace layout {
             preparedChildConstraints.origin = childPosition;
             preparedChildConstraints.cursor = childPosition;
             flex.axis.mainAvailable(preparedChildConstraints) = Size::px(p.mainSize);
-            flex.axis.mainResolution(preparedChildConstraints) = AxisResolution::Deferred;
-            // preparedChildConstraints.parentOverride = p.mainSize;
+            flex.axis.mainOverride(preparedChildConstraints) = p.mainSize;
+
             flex.axis.mainExplicit(childMeasured) = p.mainSize;
 
             float finalCrossSize = p.crossSize;
@@ -436,9 +408,8 @@ namespace layout {
 
             flex.axis.crossAvailable(preparedChildConstraints) =
                 Size::px(finalCrossSize);
-            flex.axis.crossResolution(preparedChildConstraints) =
-                AxisResolution::Deferred;
             // preparedChildConstraints.parentOverride = finalCrossSize;
+            flex.axis.crossOverride(preparedChildConstraints) = finalCrossSize;
             flex.axis.crossExplicit(childMeasured) = finalCrossSize;
             flex.axis.crossShrinkToFit(preparedChildConstraints) =
                 p.needsCrossShrinkToFit;

@@ -483,8 +483,7 @@ namespace layout {
     enum class AxisResolution {
         Final,
         MinContent,
-        MaxContent,
-        Deferred
+        MaxContent
     };
 
     struct Constraints {
@@ -509,7 +508,7 @@ namespace layout {
         std::vector<ClipUniform> clipUniforms {};
         std::optional<TextOverflow> textOverflow{};
 
-        std::optional<SizePair> parentOverride;
+        SizePair parentOverride;
 
         bool shrinkWidthToFit{false};
         bool shrinkHeightToFit{false};

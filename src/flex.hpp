@@ -3,6 +3,7 @@
 
 #include "new_arch.hpp"
 #include "element.hpp"
+#include "sizing.hpp"
 
 namespace tree {
     struct RenderTree;
@@ -78,18 +79,31 @@ namespace layout {
         Size& mainAvailable(Constraints& c) {
             return isRow ? c.availableWidth : c.availableHeight;
         }
+
         Size& crossAvailable(Constraints& c) {
             return isRow ? c.availableHeight : c.availableWidth;
         }
+
         AxisResolution& mainResolution(Constraints& c) {
             return isRow ? c.widthResolution : c.heightResolution;
         }
+
         AxisResolution& crossResolution(Constraints& c) {
             return isRow ? c.heightResolution : c.widthResolution;
         }
+        
+        SizeState& mainOverride(Constraints& c) {
+            return isRow ? c.parentOverride.width : c.parentOverride.height;
+        }
+
+        SizeState& crossOverride(Constraints& c) {
+            return isRow ? c.parentOverride.height : c.parentOverride.width;
+        }
+
         bool& mainShrinkToFit(Constraints& c) {
             return isRow ? c.shrinkWidthToFit : c.shrinkHeightToFit;
         }
+
         bool& crossShrinkToFit(Constraints& c) {
             return isRow ? c.shrinkHeightToFit : c.shrinkWidthToFit;
         }

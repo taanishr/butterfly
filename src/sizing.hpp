@@ -87,7 +87,7 @@ namespace style {
     };
 }
 
-using SizeState = std::variant<style::Size, float, style::SizeError>;
+using SizeState = std::variant<std::monostate, style::Size, float, style::SizeError>;
 
 struct SizePair {
     SizeState width;
