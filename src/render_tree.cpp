@@ -1,6 +1,7 @@
 #include "render_tree.hpp"
 #include "hash_combine.hpp"
 #include "new_arch.hpp"
+#include "overloaded.hpp"
 #include <algorithm>
 #include <chrono>
 #include <print>
@@ -814,10 +815,17 @@ namespace tree {
         if (intrinsicPreferredHeight && heightIntrinsicSizes.has_value()) 
             measured.explicitHeight = layout::resolveIntrinsicSize(node->shared.height, *heightIntrinsicSizes, constraints.availableHeight);
 
-        // Re-resolve percent sizes from current constraints, but only in final layout
-        // passes that are not shrink-to-fit on the relevant axis.
-        // During intermediate measurements, percentage bases may be indefinite and
-        // maxWidth comes from an indefinite ancestor and would give wrong values.
+        // figure out how to make this not necessary
+        // // Re-resolve percent sizes from current constraints, but only in final layout
+        // // passes that are not shrink-to-fit on the relevant axis.
+        // // During intermediate measurements, percentage bases may be indefinite and
+        // // maxWidth comes from an indefinite ancestor and would give wrong values.
+
+        // i geniuenly do not know how to refactor this
+        // bc shrink to fit is so embedded in everything I am doing here
+        // ok first goal:
+        // centralize sizing decisions
+        // once they are in one place, i can figure out how to clean this up effectively
         bool shouldResolvePercentWidth = !constraints.shrinkWidthToFit &&
                                          std::holds_alternative<std::monostate>(constraints.parentOverride.width) &&
                                          node->shared.width.unit == Unit::Percent;

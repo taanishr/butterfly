@@ -6,6 +6,8 @@
 #include "sizing.hpp"
 #include <MacTypes.h>
 #include <optional>
+#include <print>
+#include <sys/kauth.h>
 #include <variant>
 
 
@@ -13,7 +15,59 @@
 // constraints -> determine request
 // but intrinsic SizeSpec measurement -> requires constraints that largely mirror existing ones?
 // so define a clear separation.
-// thats fine, bc both of them are separate constraints
+// thats fine, bc both of them are separate 
+
+auto calculateSize(const SizeState& size, const SizeState& available) -> SizeState {
+    return std::visit(Overloaded{
+        [&](const style::Size& size) -> SizeState {
+            switch (size.unit) {
+                case style::Unit::Px:
+                case style::Unit::Pt:
+                    return size.value;
+                case style::Unit::Auto:
+                    return style::SizeError::Auto;
+                case style::Unit::Fr:
+                    return style::SizeError::FractionRequiresContext;
+                case style::Unit::MinContent:
+                case style::Unit::MaxContent:
+                case style::Unit::FitContent:
+                    return style::SizeError::ContentDependent;
+                case style::Unit::Percent:
+                    return std::visit(Overloaded{
+                        [&](const style::Size& availableSize) -> SizeState {
+                            if (availableSize.unit == style::Unit::Px || availableSize.unit == style::Unit::Pt)
+                                return size.value * availableSize.value;
+
+                            return style::SizeError::IndefiniteBasis;
+                        },
+                        [&](float availableSize) -> SizeState {
+                            return size.value * availableSize;
+                        },
+                        [](std::monostate) -> SizeState {
+                            return style::SizeError::IndefiniteBasis;
+                        },
+                        [](style::SizeError error) -> SizeState {
+                            switch (error) {
+                                case style::SizeError::ContentDependent:
+                                case style::SizeError::FractionRequiresContext:
+                                    return error;
+                                case style::SizeError::Auto:
+                                case style::SizeError::IndefiniteBasis:
+                                    return style::SizeError::IndefiniteBasis;
+                            }
+
+                            return style::SizeError::IndefiniteBasis;
+                        }
+                    }, available);
+            }
+
+            return std::monostate{};
+        },
+        [](const auto& other) -> SizeState {
+            return SizeState{other};
+        }
+    }, size);
+}
 
 auto evaluateSize(
     tree::RenderTree& tree,
@@ -24,76 +78,63 @@ auto evaluateSize(
     SizeRequest req
 ) -> SizeResult
 {
-    SizeState size {};
-    SizeState minimum {};
-    SizeState maximum {};
+    const auto& requestedWidth = std::holds_alternative<std::monostate>(req.override.width)
+        ? req.specified.width
+        : req.override.width;
+    const auto& requestedHeight = std::holds_alternative<std::monostate>(req.override.height)
+        ? req.specified.height
+        : req.override.height;
 
-    // // resolve regular SizeSpecs
-    // // overide first: then specified width
-    // SizeState.width = req.override.width
-    //         .or_else([&](){ return req.specified.width; });
+    SizePair size {
+        .width = calculateSize(requestedWidth, req.available.width),
+        .height = calculateSize(requestedHeight, req.available.height),
+    };
 
-    // SizeState.height = req.override.height
-    //         .or_else([&](){ return req.specified.height; });
-    
+    // bool shouldResolvePercentWidth = !constraints.shrinkWidthToFit &&
+    //                                 std::holds_alternative<std::monostate>(constraints.parentOverride.width) &&
+    //                                 node->shared.width.unit == layout::Unit::Percent;
 
-    // resolve intrinsic sizes
+    // bool shouldResolvePercentHeight = !constraints.shrinkHeightToFit &&
+    //                                     std::holds_alternative<std::monostate>(constraints.parentOverride.height) &&
+    //                                     node->shared.height.unit == layout::Unit::Percent;
 
+    // if (shouldResolvePercentWidth || shouldResolvePercentWidth) {
+    //     layout::SizeResolutionContext sizeCtx {
+    //         .position = node->shared.position,
+    //         .parentConstraints = constraints,
+    //         .top = node->shared.top,
+    //         .right = node->shared.right,
+    //         .bottom = node->shared.bottom,
+    //         .left = node->shared.left,
+    //         .requestedWidth = node->shared.width,
+    //         .requestedHeight = node->shared.height,
+    //         .availableWidth = constraints.availableWidth,
+    //         .availableHeight = constraints.availableHeight
+    //     };
+
+    //     auto newSize = resolveSize(sizeCtx);
+
+    //     // std::println("new size x: {} new size y: {}, old size x: {}, old size y: {}", newSize.width, newSize.height, size.width, size.height);
+    // }
+
+    SizePair minimum {
+        .width = calculateSize(req.minimum.width, req.available.width),
+        .height = calculateSize(req.minimum.height, req.available.height),
+    };
+    SizePair maximum {
+        .width = calculateSize(req.maximum.width, req.available.width),
+        .height = calculateSize(req.maximum.height, req.available.height),
+    };
+
+    // handle intrinsic sizes
     // width intrinsic sizes
-    auto minWidthIntrinsicError = std::visit(Overloaded{
-        [&](style::Size& size) {
-            auto availableWidth = std::get_if<style::Size>(&req.available.width);
-            
-            if (!availableWidth)
-                return false;
+    auto minWidthError = std::get_if<SizeError>(&minimum.width);
+    auto maxWidthError = std::get_if<SizeError>(&maximum.width);
+    auto widthError = std::get_if<SizeError>(&size.width);
 
-            auto resolvedWidth = size.resolve(*availableWidth);
-            
-            return !resolvedWidth && resolvedWidth.error() == style::SizeError::ContentDependent;
-        },
-        [&](SizeError& err) {
-            return err == style::SizeError::ContentDependent;
-        },
-        [&](auto&) {
-            return false;
-        }
-    }, req.minimum.width);
-
-    auto maxWidthIntrinsicError = std::visit(Overloaded{
-        [&](style::Size& size) {
-            auto availableWidth = std::get_if<style::Size>(&req.available.width);
-
-            if (!availableWidth)
-                return false;
-
-            auto resolvedWidth = size.resolve(*availableWidth);
-            return availableWidth && !resolvedWidth && resolvedWidth.error() == style::SizeError::ContentDependent;
-        },
-        [&](SizeError& err) {
-            return err == style::SizeError::ContentDependent;
-        },
-        [&](auto&) {
-            return false;
-        }
-    }, req.maximum.width);
-
-    auto widthIntrinsicError = std::visit(Overloaded{
-        [&](style::Size& size) {
-            auto availableWidth = std::get_if<style::Size>(&req.available.width);
-
-            if (!availableWidth)
-                return false;
-
-            auto resolvedWidth = size.resolve(*availableWidth);
-            return availableWidth && !resolvedWidth && resolvedWidth.error() == style::SizeError::ContentDependent;
-        },
-        [&](SizeError& err) {
-            return err == style::SizeError::ContentDependent;
-        },
-        [&](auto&) {
-            return false;
-        }
-    }, req.specified.width);
+    auto minWidthIntrinsicError = minWidthError && *minWidthError == SizeError::ContentDependent;
+    auto maxWidthIntrinsicError = maxWidthError && *maxWidthError == SizeError::ContentDependent;
+    auto widthIntrinsicError = widthError && *widthError == SizeError::ContentDependent;
 
     std::optional<layout::IntrinsicSizes> widthIntrinsicSizes;
     if (constraints.intrinsicSizesAxis != layout::Axis::Width && (minWidthIntrinsicError || maxWidthIntrinsicError || widthIntrinsicError)) {
@@ -101,34 +142,24 @@ auto evaluateSize(
     }
     
     // height intrinsic sizes
-    auto heightIntrinsicError = std::visit(Overloaded{
-        [&](style::Size& size) {
-            auto availableHeight = std::get_if<style::Size>(&req.available.height);
+    auto minHeightError = std::get_if<SizeError>(&minimum.height);
+    auto maxHeightError = std::get_if<SizeError>(&maximum.height);
+    auto heightError = std::get_if<SizeError>(&size.height);
 
-            if (!availableHeight)
-                return false;
-
-            auto resolvedHeight = size.resolve(*availableHeight);
-            return availableHeight && !resolvedHeight && resolvedHeight.error() == style::SizeError::ContentDependent;
-        },
-        [&](SizeError& err) {
-            return err == style::SizeError::ContentDependent;
-        },
-        [&](auto&) {
-            return false;
-        }
-    }, req.specified.height);
+    auto minHeightIntrinsicError = minHeightError && *minHeightError == SizeError::ContentDependent;
+    auto maxHeightIntrinsicError = maxHeightError && *maxHeightError == SizeError::ContentDependent;
+    auto heightIntrinsicError = heightError && *heightError == SizeError::ContentDependent;
 
     std::optional<layout::IntrinsicSizes> heightIntrinsicSizes;
-    if (constraints.intrinsicSizesAxis != layout::Axis::Height && heightIntrinsicError) {
+    if (constraints.intrinsicSizesAxis != layout::Axis::Height && (minHeightIntrinsicError || maxHeightIntrinsicError || heightIntrinsicError)) {
         heightIntrinsicSizes = tree.measureIntrinsicSizes(node, frameInfo, constraints, measured, layout::Axis::Height);
     }
 
 
     return SizeResult {
-        // .wi = {},
-        // .minimum = {},
-        // .maximum = {},
+        .size = size,
+        .minimum = minimum,
+        .maximum = maximum,
         .widthIntrinsicSizes = widthIntrinsicSizes,
         .heightIntrinsicSizes = heightIntrinsicSizes,
     };

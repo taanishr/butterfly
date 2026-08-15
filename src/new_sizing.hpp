@@ -66,6 +66,8 @@ struct SizeResult {
     std::optional<layout::IntrinsicSizes> heightIntrinsicSizes; // intrinsic SizeSpecs if driven by height constraints
 };
 
+auto calculateSize(const SizeState& size, const SizeState& available) -> SizeState;
+
 auto evaluateSize(
     tree::RenderTree& tree,
     tree::TreeNode* node,
