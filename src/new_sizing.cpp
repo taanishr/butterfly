@@ -5,10 +5,65 @@
 #include "render_tree.hpp"
 #include "sizing.hpp"
 #include <MacTypes.h>
+#include <format>
 #include <optional>
 #include <print>
 #include <sys/kauth.h>
 #include <variant>
+
+template <>
+struct std::formatter<style::SizeError> : std::formatter<std::string_view> {
+    auto format(style::SizeError error, format_context& ctx) const {
+        std::string_view name;
+        switch (error) {
+            case style::SizeError::Auto: name = "Auto"; break;
+            case style::SizeError::IndefiniteBasis: name = "IndefiniteBasis"; break;
+            case style::SizeError::FractionRequiresContext: name = "FractionRequiresContext"; break;
+            case style::SizeError::ContentDependent: name = "ContentDependent"; break;
+        }
+        return std::formatter<std::string_view>::format(name, ctx);
+    }
+};
+
+template <>
+struct std::formatter<style::Size> : std::formatter<std::string_view> {
+    auto format(const style::Size& size, format_context& ctx) const {
+        std::string_view unit;
+        switch (size.unit) {
+            case style::Unit::Px: unit = "px"; break;
+            case style::Unit::Percent: unit = "%"; break;
+            case style::Unit::Auto: unit = "auto"; break;
+            case style::Unit::Pt: unit = "pt"; break;
+            case style::Unit::Fr: unit = "fr"; break;
+            case style::Unit::MinContent: unit = "min-content"; break;
+            case style::Unit::MaxContent: unit = "max-content"; break;
+            case style::Unit::FitContent: unit = "fit-content"; break;
+        }
+
+        if (size.unit == style::Unit::Auto || size.isContentDependent())
+            return std::format_to(ctx.out(), "{}", unit);
+        return std::format_to(ctx.out(), "{}{}", size.value, unit);
+    }
+};
+
+template <>
+struct std::formatter<SizeState> : std::formatter<std::string_view> {
+    auto format(const SizeState& size, format_context& ctx) const {
+        return std::visit(Overloaded{
+            [&](std::monostate) { return std::format_to(ctx.out(), "unset"); },
+            [&](const auto& value) { return std::format_to(ctx.out(), "{}", value); }
+        }, size);
+    }
+};
+
+template <>
+struct std::formatter<std::expected<float, style::SizeError>> : std::formatter<std::string_view> {
+    auto format(const std::expected<float, style::SizeError>& size, format_context& ctx) const {
+        if (size)
+            return std::format_to(ctx.out(), "{}", *size);
+        return std::format_to(ctx.out(), "{}", size.error());
+    }
+};
 
 
 // circular problem:
@@ -98,7 +153,7 @@ auto evaluateSize(
     //                                     std::holds_alternative<std::monostate>(constraints.parentOverride.height) &&
     //                                     node->shared.height.unit == layout::Unit::Percent;
 
-    // if (shouldResolvePercentWidth || shouldResolvePercentWidth) {
+    // if (shouldResolvePercentWidth || shouldResolvePercentHeight) {
     //     layout::SizeResolutionContext sizeCtx {
     //         .position = node->shared.position,
     //         .parentConstraints = constraints,
@@ -114,7 +169,7 @@ auto evaluateSize(
 
     //     auto newSize = resolveSize(sizeCtx);
 
-    //     // std::println("new size x: {} new size y: {}, old size x: {}, old size y: {}", newSize.width, newSize.height, size.width, size.height);
+    //     std::println("resolve width: {}, resolve height: {}, new size x: {} new size y: {}, old size x: {}, old size y: {}", shouldResolvePercentWidth, shouldResolvePercentHeight, newSize.width, newSize.height, size.width, size.height);
     // }
 
     SizePair minimum {

@@ -771,24 +771,10 @@ namespace tree {
         // it literally makes this refactor damn enar fucking impossible
         
         // // if we arent already resolving the width axis and we fit all the conditions, resolve width!
-        // bool intrinsicWidthBounds = constraints.intrinsicSizesAxis != Axis::Width && (node->shared.minWidth.isContentDependent() || (node->shared.maxWidth.has_value() && node->shared.maxWidth->isContentDependent()));
-        // // same here
         bool intrinsicHeightBounds = constraints.intrinsicSizesAxis != Axis::Height && (node->shared.minHeight.isContentDependent() || (node->shared.maxHeight.has_value() && node->shared.maxHeight->isContentDependent()));
         std::optional<IntrinsicSizes> widthIntrinsicSizes;
         std::optional<IntrinsicSizes> heightIntrinsicSizes;
 
-        // sizing decision 1 (lots of extraneous stuff here)
-        // how do I break this down?
-        // basically, we are generating intrinsic sizes if
-        // min/max-dim are content dependent or dim is content dependent
-        // the intrinsic height bounds are deferred - but why?
-        // if (auto availableWidth = constraints.availableWidth.resolve(Size::autoSize())) 
-        //     intrinsicAvailableWidth = Size::px(std::max(0.0f, *availableWidth - constraints.resolvedMargins.left - constraints.resolvedMargins.right));
-        // if (auto availableHeight = constraints.availableHeight.resolve(Size::autoSize())) 
-        //     intrinsicAvailableHeight = Size::px(std::max(0.0f, *availableHeight - constraints.resolvedMargins.top - constraints.resolvedMargins.bottom));
-
-
-        // if (intrinsicPreferredWidth || intrinsicWidthBounds) 
         SizeRequest sizeRequest {
             .specified = {.width = node->shared.width, .height = node->shared.height},
             .override = constraints.parentOverride,
@@ -801,68 +787,19 @@ namespace tree {
 
         auto sizeResult = evaluateSize(*this, node, frameInfo, constraints, measured, sizeRequest);
 
+        if (auto width = std::get_if<float>(&sizeResult.size.width))
+            measured.explicitWidth = *width;
+        if (auto height = std::get_if<float>(&sizeResult.size.height))
+            measured.explicitHeight = *height;
+
         widthIntrinsicSizes = sizeResult.widthIntrinsicSizes;
         heightIntrinsicSizes = sizeResult.heightIntrinsicSizes;
 
         if (intrinsicPreferredWidth && widthIntrinsicSizes.has_value()) 
             measured.explicitWidth = layout::resolveIntrinsicSize(node->shared.width, *widthIntrinsicSizes, constraints.availableWidth);;
 
-        // if (intrinsicPreferredHeight) 
-        //     heightIntrinsicSizes = measureIntrinsicSizes(node, frameInfo, constraints, measured, Axis::Height);
-        
-        // if (intrinsicPreferredWidth && widthIntrinsicSizes.has_value()) 
-        //     measured.explicitWidth = layout::resolveIntrinsicSize(node->shared.width, *widthIntrinsicSizes, constraints.availableWidth);
         if (intrinsicPreferredHeight && heightIntrinsicSizes.has_value()) 
             measured.explicitHeight = layout::resolveIntrinsicSize(node->shared.height, *heightIntrinsicSizes, constraints.availableHeight);
-
-        // figure out how to make this not necessary
-        // // Re-resolve percent sizes from current constraints, but only in final layout
-        // // passes that are not shrink-to-fit on the relevant axis.
-        // // During intermediate measurements, percentage bases may be indefinite and
-        // // maxWidth comes from an indefinite ancestor and would give wrong values.
-
-        // i geniuenly do not know how to refactor this
-        // bc shrink to fit is so embedded in everything I am doing here
-        // ok first goal:
-        // centralize sizing decisions
-        // once they are in one place, i can figure out how to clean this up effectively
-        bool shouldResolvePercentWidth = !constraints.shrinkWidthToFit &&
-                                         std::holds_alternative<std::monostate>(constraints.parentOverride.width) &&
-                                         node->shared.width.unit == Unit::Percent;
-
-        bool shouldResolvePercentHeight = !constraints.shrinkHeightToFit &&
-                                          std::holds_alternative<std::monostate>(constraints.parentOverride.height) &&
-                                          node->shared.height.unit == Unit::Percent;
-                 
-        // more sizing decisiosn
-        if (shouldResolvePercentWidth || shouldResolvePercentHeight) {
-            SizeResolutionContext sizeCtx {
-                .position = node->shared.position,
-                .parentConstraints = constraints,
-                .top = node->shared.top,
-                .right = node->shared.right,
-                .bottom = node->shared.bottom,
-                .left = node->shared.left,
-                .requestedWidth = node->shared.width,
-                .requestedHeight = node->shared.height,
-                .availableWidth = constraints.availableWidth,
-                .availableHeight = constraints.availableHeight
-            };
-
-            auto newSize = resolveSize(sizeCtx);
-            
-            if (shouldResolvePercentWidth) {
-                measured.explicitWidth = newSize.width;
-            }
-            if (shouldResolvePercentHeight) {
-                measured.explicitHeight = newSize.height;
-            }
-        }
-
-
-        // how should I phase this?
-        // I think first thing to do is get rid of the measured override
-
 
         // self-layout
         auto layout = node->element->layout(constraints, computedShared, measured, atomized);
