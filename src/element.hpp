@@ -3,6 +3,7 @@
 #include "sdf_helpers.hpp"
 #include "metal_imports.hpp"
 #include "new_arch.hpp"
+#include "new_sizing.hpp"
 #include <concepts>
 #include <any>
 #include <cstdint>
@@ -443,10 +444,10 @@ namespace tree {
     void precomputeMargins(TreeNode* node, Constraints& constraints, std::unordered_map<ChainID, CollapsedChain>& collapsedChainMap);
     
     // full blown inline context
-    std::shared_ptr<layout::InlineFormattingContext> buildInlineBoxes(TreeNode* node, Constraints& childConstraints);
+    std::shared_ptr<layout::InlineFormattingContext> buildInlineBoxes(TreeNode* node, const InlineSizingInput& sizing);
 
     // inline context calculated for a single child, independently of other siblings
-    layout::InlineFormattingInput buildIsolatedInlineBoxes(TreeNode* node, Size maxWidth, std::optional<layout::AxisResolution> widthResolution, bool calculateIntrinsicSizes = false);
+    layout::InlineFormattingInput buildIsolatedInlineBoxes(TreeNode* node, const InlineSizingInput& sizing);
 
 }
 

@@ -730,7 +730,7 @@ namespace tree {
         Constraints constraints,
         Measured measured,
         bool mutate,
-        std::optional<SizeRequest> requestedSize
+        std::optional<SizeRequest> intrinsicSizeRequest
     ) {
         // struct Constraints {
         //     simd_float2 origin{};
@@ -876,29 +876,81 @@ namespace tree {
 
         auto key = makeConstraintsKey(constraints);
 
-        SizeRequest generatedSizeRequest {
-            .specified = {.width = node->shared.width, .height = node->shared.height},
-            .override = constraints.parentOverride,
-            .content = {.width = std::monostate{}, .height = std::monostate{}},
-            .minimum = {.width = node->shared.minWidth, .height = node->shared.minHeight},
-            .maximum = {.width = node->shared.maxWidth.value_or(Size::autoSize()), .height = node->shared.maxHeight.value_or(Size::autoSize())},
-            .available = {.width = constraints.availableWidth, .height = constraints.availableHeight},
-            .margins = constraints.resolvedMargins,
-        };
+        auto& atomized = *node->atomized;
+        auto& prelayout = *node->preLayout;
 
-        SizeRequest sizeRequest = requestedSize.value_or(std::move(generatedSizeRequest));
+        SizeRequest sizeRequest = std::move(intrinsicSizeRequest).value_or(
+            SizeRequest {
+                .position = node->shared.position,
+                .specified = {.width = node->shared.width, .height = node->shared.height},
+                .override = constraints.parentOverride,
+                .content = {.width = std::monostate{}, .height = std::monostate{}},
+                .minimum = {.width = node->shared.minWidth, .height = node->shared.minHeight},
+                .maximum = {
+                    .width = node->shared.maxWidth ? SizeState{*node->shared.maxWidth} : SizeState{std::monostate{}},
+                    .height = node->shared.maxHeight ? SizeState{*node->shared.maxHeight} : SizeState{std::monostate{}},
+                },
+                .available = {.width = constraints.availableWidth, .height = constraints.availableHeight},
+                .top = node->shared.top,
+                .right = node->shared.right,
+                .bottom = node->shared.bottom,
+                .left = node->shared.left,
+                .paddingTop = node->shared.paddingTop.value_or(node->shared.padding),
+                .paddingRight = node->shared.paddingRight.value_or(node->shared.padding),
+                .paddingBottom = node->shared.paddingBottom.value_or(node->shared.padding),
+                .paddingLeft = node->shared.paddingLeft.value_or(node->shared.padding),
+                .borderWidth = node->shared.borderWidth,
+                .margins = prelayout.resolvedMargins,
+                .aspectRatio = node->shared.aspectRatio,
+                .automaticWidth = constraints.shrinkWidthToFit ? AutomaticSizing::UseContent : AutomaticSizing::UseAvailable,
+                .automaticHeight = AutomaticSizing::UseContent,
+                .automaticMinimumWidth = AutomaticMinimum::Zero,
+                .automaticMinimumHeight = AutomaticMinimum::Zero,
+            }
+        );
 
         auto sizeResult = evaluateSize(*this, node, frameInfo, constraints, measured, sizeRequest);
 
-        auto& atomized = *node->atomized;
-        auto& prelayout = *node->preLayout;
+        const auto* resolvedWidth = std::get_if<float>(&sizeResult.size.width);
+        if (resolvedWidth) {
+            measured.explicitWidth = *resolvedWidth;
+        }
+
+        const auto* resolvedHeight = std::get_if<float>(&sizeResult.size.height);
+        if (resolvedHeight) {
+            measured.explicitHeight = *resolvedHeight;
+        }
+
+        constraints.resolvedMargins = prelayout.resolvedMargins;
 
         // what i should do now:
         // make this take in a size result instead of doing the computation separately
         auto layout = node->element->layout(constraints, node->shared, measured, atomized);
-        
 
-        return {};
+        auto childConstraints = layout.childConstraints;
+        childConstraints.inheritedProperties = constraints.inheritedProperties;
+        childConstraints.textOverflow = constraints.textOverflow;
+
+        if (node->shared.overflow != Overflow::Visible) {
+            childConstraints.textOverflow = node->shared.textOverflow;
+        }
+
+        if (node->getPosition() != Position::Static) {
+            childConstraints.absoluteContainingBlock = {
+                .origin = {0.0f, 0.0f},
+                .width = layout.resolvedSize.width ? Size::px(layout.computedBox.width) : Size::autoSize(),
+                .height = layout.resolvedSize.height ? Size::px(layout.computedBox.height) : Size::autoSize(),
+            };
+        } else {
+            childConstraints.absoluteContainingBlock = constraints.absoluteContainingBlock;
+        }
+
+        float minX = childConstraints.origin.x;
+        float maxX = childConstraints.origin.x;
+        float minY = childConstraints.origin.y;
+        float maxY = childConstraints.origin.y;
+
+        return {.layout = std::move(layout)};
         // auto key = makeConstraintsKey(constraints);
 
         // if (mutate) {
