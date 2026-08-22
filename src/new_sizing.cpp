@@ -145,42 +145,21 @@ auto evaluateSize(
         .height = calculateSize(requestedHeight, req.available.height),
     };
 
-    // bool shouldResolvePercentWidth = !constraints.shrinkWidthToFit &&
-    //                                 std::holds_alternative<std::monostate>(constraints.parentOverride.width) &&
-    //                                 node->shared.width.unit == layout::Unit::Percent;
-
-    // bool shouldResolvePercentHeight = !constraints.shrinkHeightToFit &&
-    //                                     std::holds_alternative<std::monostate>(constraints.parentOverride.height) &&
-    //                                     node->shared.height.unit == layout::Unit::Percent;
-
-    // if (shouldResolvePercentWidth || shouldResolvePercentHeight) {
-    //     layout::SizeResolutionContext sizeCtx {
-    //         .position = node->shared.position,
-    //         .parentConstraints = constraints,
-    //         .top = node->shared.top,
-    //         .right = node->shared.right,
-    //         .bottom = node->shared.bottom,
-    //         .left = node->shared.left,
-    //         .requestedWidth = node->shared.width,
-    //         .requestedHeight = node->shared.height,
-    //         .availableWidth = constraints.availableWidth,
-    //         .availableHeight = constraints.availableHeight
-    //     };
-
-    //     auto newSize = resolveSize(sizeCtx);
-
-    //     std::println("resolve width: {}, resolve height: {}, new size x: {} new size y: {}, old size x: {}, old size y: {}", shouldResolvePercentWidth, shouldResolvePercentHeight, newSize.width, newSize.height, size.width, size.height);
-    // }
-
     SizePair minimum {
         .width = calculateSize(req.minimum.width, req.available.width),
         .height = calculateSize(req.minimum.height, req.available.height),
     };
+    
     SizePair maximum {
         .width = calculateSize(req.maximum.width, req.available.width),
         .height = calculateSize(req.maximum.height, req.available.height),
     };
 
+    SizePair content {
+        .width = calculateSize(req.content.width, req.available.width),
+        .height = calculateSize(req.content.height, req.content.width)
+    };
+    
     // handle intrinsic sizes
     // width intrinsic sizes
     auto minWidthError = std::get_if<SizeError>(&minimum.width);
