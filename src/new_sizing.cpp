@@ -9,7 +9,6 @@
 #include <format>
 #include <optional>
 #include <print>
-#include <sys/kauth.h>
 #include <variant>
 
 // debug only: to be removed, later on
@@ -752,68 +751,68 @@ auto evaluateSize(
     SizeRequest req
 ) -> SizeResult
 {
-    const auto& requestedWidth = std::holds_alternative<std::monostate>(req.override.width)
-        ? req.specified.width
-        : req.override.width;
-    const auto& requestedHeight = std::holds_alternative<std::monostate>(req.override.height)
-        ? req.specified.height
-        : req.override.height;
+    // const auto& requestedWidth = std::holds_alternative<std::monostate>(req.override.width)
+    //     ? req.specified.width
+    //     : req.override.width;
+    // const auto& requestedHeight = std::holds_alternative<std::monostate>(req.override.height)
+    //     ? req.specified.height
+    //     : req.override.height;
 
-    SizePair size {
-        .width = calculateSize(requestedWidth, req.available.width),
-        .height = calculateSize(requestedHeight, req.available.height),
-    };
+    // SizePair size {
+    //     .width = calculateSize(requestedWidth, req.available.width),
+    //     .height = calculateSize(requestedHeight, req.available.height),
+    // };
 
-    SizePair minimum {
-        .width = calculateSize(req.minimum.width, req.available.width),
-        .height = calculateSize(req.minimum.height, req.available.height),
-    };
+    // SizePair minimum {
+    //     .width = calculateSize(req.minimum.width, req.available.width),
+    //     .height = calculateSize(req.minimum.height, req.available.height),
+    // };
     
-    SizePair maximum {
-        .width = calculateSize(req.maximum.width, req.available.width),
-        .height = calculateSize(req.maximum.height, req.available.height),
-    };
+    // SizePair maximum {
+    //     .width = calculateSize(req.maximum.width, req.available.width),
+    //     .height = calculateSize(req.maximum.height, req.available.height),
+    // };
 
-    SizePair content {
-        .width = calculateSize(req.content.width, req.available.width),
-        .height = calculateSize(req.content.height, req.content.width)
-    };
+    // SizePair content {
+    //     .width = calculateSize(req.content.width, req.available.width),
+    //     .height = calculateSize(req.content.height, req.content.width)
+    // };
     
-    // handle intrinsic sizes
-    // width intrinsic sizes
-    auto minWidthError = std::get_if<SizeError>(&minimum.width);
-    auto maxWidthError = std::get_if<SizeError>(&maximum.width);
-    auto widthError = std::get_if<SizeError>(&size.width);
+    // // handle intrinsic sizes
+    // // width intrinsic sizes
+    // auto minWidthError = std::get_if<SizeError>(&minimum.width);
+    // auto maxWidthError = std::get_if<SizeError>(&maximum.width);
+    // auto widthError = std::get_if<SizeError>(&size.width);
 
-    auto minWidthIntrinsicError = minWidthError && *minWidthError == SizeError::ContentDependent;
-    auto maxWidthIntrinsicError = maxWidthError && *maxWidthError == SizeError::ContentDependent;
-    auto widthIntrinsicError = widthError && *widthError == SizeError::ContentDependent;
+    // auto minWidthIntrinsicError = minWidthError && *minWidthError == SizeError::ContentDependent;
+    // auto maxWidthIntrinsicError = maxWidthError && *maxWidthError == SizeError::ContentDependent;
+    // auto widthIntrinsicError = widthError && *widthError == SizeError::ContentDependent;
 
-    std::optional<layout::IntrinsicSizes> widthIntrinsicSizes;
-    if (constraints.intrinsicSizesAxis != layout::Axis::Width && (minWidthIntrinsicError || maxWidthIntrinsicError || widthIntrinsicError)) {
-        widthIntrinsicSizes = tree.measureIntrinsicSizes(node, frameInfo, constraints, measured, layout::Axis::Width);
-    }
+    // std::optional<layout::IntrinsicSizes> widthIntrinsicSizes;
+    // if (constraints.intrinsicSizesAxis != layout::Axis::Width && (minWidthIntrinsicError || maxWidthIntrinsicError || widthIntrinsicError)) {
+    //     widthIntrinsicSizes = tree.measureIntrinsicSizes(node, frameInfo, constraints, measured, layout::Axis::Width);
+    // }
     
-    // height intrinsic sizes
-    auto minHeightError = std::get_if<SizeError>(&minimum.height);
-    auto maxHeightError = std::get_if<SizeError>(&maximum.height);
-    auto heightError = std::get_if<SizeError>(&size.height);
+    // // height intrinsic sizes
+    // auto minHeightError = std::get_if<SizeError>(&minimum.height);
+    // auto maxHeightError = std::get_if<SizeError>(&maximum.height);
+    // auto heightError = std::get_if<SizeError>(&size.height);
 
-    auto minHeightIntrinsicError = minHeightError && *minHeightError == SizeError::ContentDependent;
-    auto maxHeightIntrinsicError = maxHeightError && *maxHeightError == SizeError::ContentDependent;
-    auto heightIntrinsicError = heightError && *heightError == SizeError::ContentDependent;
+    // auto minHeightIntrinsicError = minHeightError && *minHeightError == SizeError::ContentDependent;
+    // auto maxHeightIntrinsicError = maxHeightError && *maxHeightError == SizeError::ContentDependent;
+    // auto heightIntrinsicError = heightError && *heightError == SizeError::ContentDependent;
 
-    std::optional<layout::IntrinsicSizes> heightIntrinsicSizes;
-    if (constraints.intrinsicSizesAxis != layout::Axis::Height && (minHeightIntrinsicError || maxHeightIntrinsicError || heightIntrinsicError)) {
-        heightIntrinsicSizes = tree.measureIntrinsicSizes(node, frameInfo, constraints, measured, layout::Axis::Height);
-    }
+    // std::optional<layout::IntrinsicSizes> heightIntrinsicSizes;
+    // if (constraints.intrinsicSizesAxis != layout::Axis::Height && (minHeightIntrinsicError || maxHeightIntrinsicError || heightIntrinsicError)) {
+    //     heightIntrinsicSizes = tree.measureIntrinsicSizes(node, frameInfo, constraints, measured, layout::Axis::Height);
+    // }
 
 
-    return SizeResult {
-        .size = size,
-        .minimum = minimum,
-        .maximum = maximum,
-        .widthIntrinsicSizes = widthIntrinsicSizes,
-        .heightIntrinsicSizes = heightIntrinsicSizes,
-    };
+    // return SizeResult {
+    //     .size = size,
+    //     .minimum = minimum,
+    //     .maximum = maximum,
+    //     .widthIntrinsicSizes = widthIntrinsicSizes,
+    //     .heightIntrinsicSizes = heightIntrinsicSizes,
+    // };
 }
