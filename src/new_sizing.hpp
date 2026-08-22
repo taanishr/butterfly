@@ -42,6 +42,12 @@ enum class IntrinsicRequest {
     Maximum
 };
 
+struct InlineSizingInput {
+    SizeState availableWidth;
+    std::optional<IntrinsicRequest> widthRequest;
+    bool trackIntrinsicWidth;
+};
+
 
 // CHILDREN SHOULD MAKE THEIR OWN SIZING REQUEST based ON parent constraints
 // so parents do not provide the request, they provide the information to make a request
@@ -59,7 +65,7 @@ struct SizeRequest {
     style::Position position;
 
     SizePair specified; // specified h/w
-    SizePair override;  // parent override
+    SizePair override;  // externally imposed size for this evaluation
     SizePair content;   // content box
     SizePair minimum; // minimums
     SizePair maximum; // maximums
@@ -78,10 +84,6 @@ struct SizeRequest {
     SizeState borderWidth;
     ResolvedMargins margins; // margins (req for some sizing)
     
-    // these two fields are unnecessary
-    // std::optional<IntrinsicRequest> intrinsicWidthRequest {};
-    // std::optional<IntrinsicRequest> intrinsicHeightRequest {};
-
     AutomaticSizing automaticWidth;
     AutomaticSizing automaticHeight;
     AutomaticMinimum automaticMinimumWidth;
@@ -185,7 +187,15 @@ auto resolveMaxHeight(const SizeState& size, SizeRequest& req, const std::option
 // this should likely not return a size state, but probably a min and max size (intrinsic result type)
 // IntrinsicResult? (intrinsic sizes as is is not satisfactory and relies on old Size, which is more of a description than a proper intermediate)
 
-auto measureIntrinsicWidth(const SizeState& size, const SizeState& antiSize) -> IntrinsicResult;
+auto measureIntrinsicWidth(
+    tree::RenderTree& tree,
+    tree::TreeNode* node,
+    const FrameInfo& frameInfo,
+    layout::Constraints constraints,
+    layout::Measured measured,
+    const SizeState& antiSize,
+    SizeRequest req
+) -> IntrinsicResult;
 auto measureIntrinsicHeight(const SizeState& size, const SizeState& antiSize) -> IntrinsicResult;
 
 // determine based on min/max/fit content and provided sizes

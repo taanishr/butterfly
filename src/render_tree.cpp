@@ -719,20 +719,9 @@ namespace tree {
         return inserted->second;
     }
 
-    IntrinsicSizes RenderTree::measureIntrinsicSizes(TreeNode* node, const FrameInfo& frameInfo, Constraints constraints, Measured measured, Axis axis) {
-        constraints.intrinsicSizesAxis = axis;
-        if (axis == Axis::Width) {
-            constraints.widthResolution = AxisResolution::MaxContent;
-            measured.explicitWidth = std::unexpected(SizeError::Auto);
-        } else {
-            constraints.heightResolution = AxisResolution::MaxContent;
-            measured.explicitHeight = std::unexpected(SizeError::Auto);
-        }
-
-        const auto& output = speculateLayout(frameInfo, node, constraints, measured);
-        if (output.intrinsicSizes.has_value()) return *output.intrinsicSizes;
-        float size = axis == Axis::Width ? output.layout.computedBox.width : output.layout.computedBox.height;
-        return IntrinsicSizes{.minContent = Size::px(size), .maxContent = Size::px(size)};
+    std::optional<IntrinsicSizes> RenderTree::measureIntrinsicSizes(TreeNode* node, const FrameInfo& frameInfo, Constraints constraints, Measured measured, SizeRequest sizeRequest) {
+        LayoutOutput output = layoutRecursive(node, frameInfo, constraints, measured, false, std::move(sizeRequest));
+        return std::move(output.intrinsicSizes);
     }
 
     LayoutOutput RenderTree::layoutRecursive(
@@ -740,7 +729,8 @@ namespace tree {
         const FrameInfo& frameInfo,
         Constraints constraints,
         Measured measured,
-        bool mutate
+        bool mutate,
+        std::optional<SizeRequest> requestedSize
     ) {
         // struct Constraints {
         //     simd_float2 origin{};
@@ -886,7 +876,7 @@ namespace tree {
 
         auto key = makeConstraintsKey(constraints);
 
-        SizeRequest sizeRequest {
+        SizeRequest generatedSizeRequest {
             .specified = {.width = node->shared.width, .height = node->shared.height},
             .override = constraints.parentOverride,
             .content = {.width = std::monostate{}, .height = std::monostate{}},
@@ -895,6 +885,8 @@ namespace tree {
             .available = {.width = constraints.availableWidth, .height = constraints.availableHeight},
             .margins = constraints.resolvedMargins,
         };
+
+        SizeRequest sizeRequest = requestedSize.value_or(std::move(generatedSizeRequest));
 
         auto sizeResult = evaluateSize(*this, node, frameInfo, constraints, measured, sizeRequest);
 
