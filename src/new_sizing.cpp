@@ -374,17 +374,35 @@ auto resolveMinWidth(const SizeState& size, SizeRequest& req, const std::optiona
     return resolved;
 }
 
-auto resolveMaxWidth(const SizeState& size) -> SizeState {
+auto resolveMaxWidth(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic) -> SizeState {
     // run size through a calculate size pass (maybe avail too)
+    SizeState resolved = calculateSize(size, req.available.width);
 
     // if our resulting size is a float
-        // return specified right away
+    const auto* error = std::get_if<SizeError>(&resolved);
+
+    // return specified right away
+    if (!error) {
+        return resolved;
+    }
+
+    if (*error == SizeError::ContentDependent) {
+        if (!intrinsic) {
+            return resolved;
+        }
+
+        return resolveIntrinsicWidth(size, *intrinsic, req);
+    }
 
     // there is no automatic branch; i do not want to throw an error.
     //  maybe no-op this? Dont do anything?
+    if (*error == SizeError::Auto) {
+        return std::monostate{};
+    }
     
     // should we just early return, or mutate a starting size?
     // not clear to me that mutation is necessarily good
+    return resolved;
 }
 
 auto resolveMinHeight(const SizeState& size) -> SizeState {
