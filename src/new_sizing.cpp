@@ -140,30 +140,100 @@ auto calculateSize(const SizeState& size, const SizeState& available) -> SizeSta
 //   - automatic using available size
 //   - automatic using content size
 // needs to be imbued with ctx
-auto resolveWidth(const SizeState& size, const SizeRequest* req) -> SizeState {
+auto resolveWidth(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic) -> SizeState {
     // run size through a calculate size pass (maybe avail too)
+    SizeState resolved = calculateSize(size, req.available.width);
 
     // if our resulting size is a float
-        // return specified right away
+    const auto* error = std::get_if<SizeError>(&resolved);
+    
+    // return specified right away
+    if (!error) {
+        return resolved;
+    }
 
-    /* open question: at this point, should we figure out the intrinsic sizes? 
-        Should this method even resolve intrinsic sizes
-        That is unclear
-    */
+    if (*error == SizeError::ContentDependent) {
+        if (!intrinsic) {
+            return resolved;
+        }
+
+        return resolveIntrinsicWidth(size, *intrinsic, req);
+    }
 
     // if our resulting size is automatic
+    if (*error == SizeError::Auto) {
         // are we content sizing?
-            // should we resolve intrinsic sizes here? or before?
-            // figure out the necessary intrinsic sizes
-            // and content size accordingly (min, max, or fit)
-        // are we avail sizing:
-            // are we *out of flow* and do we have insets?
-                // then use that against the available
-            // else
-                // just stretch
+        if (req.automaticWidth == AutomaticSizing::UseContent) {
+            return calculateSize(req.content.width, req.available.width);
+        }
+        
+        // are we avail sizing?
+        // first, refine the available size
+        SizeState available = calculateSize(req.available.width, std::monostate{});
+        const auto* availableWidth = std::get_if<float>(&available);
+
+        if (!availableWidth) {
+            return available;
+        }
+
+        SizeState paddingLeft = calculateSize(req.paddingLeft, req.available.width);
+        const auto* resolvedPaddingLeft = std::get_if<float>(&paddingLeft);
+
+        if (!resolvedPaddingLeft) {
+            return paddingLeft;
+        }
+
+        SizeState paddingRight = calculateSize(req.paddingRight, req.available.width);
+        const auto* resolvedPaddingRight = std::get_if<float>(&paddingRight);
+
+        if (!resolvedPaddingRight) {
+            return paddingRight;
+        }
+
+        SizeState borderWidth = calculateSize(req.borderWidth, req.available.width);
+        const auto* resolvedBorderWidth = std::get_if<float>(&borderWidth);
+
+        if (!resolvedBorderWidth) {
+            return borderWidth;
+        }
+
+        float automaticWidth = *availableWidth
+            - req.margins.left
+            - req.margins.right
+            - *resolvedPaddingLeft
+            - *resolvedPaddingRight
+            - 2.0f * *resolvedBorderWidth;
+
+        // then, branch from here
+        // are we *out of flow* and do we have insets?
+        bool outOfFlow = req.position == style::Position::Absolute || req.position == style::Position::Fixed;
+        bool opposingInsets = req.left.has_value() && req.right.has_value();
+
+        if (outOfFlow && opposingInsets) {
+            SizeState left = calculateSize(*req.left, req.available.width);
+            const auto* resolvedLeft = std::get_if<float>(&left);
+
+            if (!resolvedLeft) {
+                return left;
+            }
+
+            SizeState right = calculateSize(*req.right, req.available.width);
+            const auto* resolvedRight = std::get_if<float>(&right);
+
+            if (!resolvedRight) {
+                return right;
+            }
+
+            return automaticWidth - *resolvedLeft - *resolvedRight;
+        }
+
+        // otherwise: just stretch
+        return automaticWidth;
+    }
 
     // should we just early return, or mutate a starting size?
     // not clear to me that mutation is necessarily good
+    return resolved;
 }
 
 auto resolveHeight(const SizeState& size, const SizeRequest* req) -> SizeState {
@@ -285,7 +355,7 @@ auto measureIntrinsicHeight(const SizeState& size, const SizeState& antiSize) ->
 }
 
 // determine based on min/max/fit content and provided sizes
-auto resolveIntrinsicWidth(const SizeState& min, const SizeState& max, const SizeRequest* req) -> SizeState {
+auto resolveIntrinsicWidth(const SizeState& size, const IntrinsicResult& intrinsic, SizeRequest& req) -> SizeState {
     // fairly simple
     // take the min and max, and according to the req:
         // req requires min

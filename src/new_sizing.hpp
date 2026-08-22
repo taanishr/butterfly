@@ -18,6 +18,10 @@ namespace tree {
     struct TreeNode;
 }
 
+namespace style {
+    enum class Position;
+}
+
 // existing problem with current Size
 // the current Size is a good descriptor of what the Size is
 // but internally, everything should be rerpesented in pixel space
@@ -47,13 +51,26 @@ enum class AutomaticSizing {
 };
 
 struct SizeRequest {
+    style::Position position;
+
     SizePair specified; // specified h/w
     SizePair override;  // parent override
     SizePair content;   // content box
     SizePair minimum; // minimums
     SizePair maximum; // maximums
     SizePair available;
-    
+
+    std::optional<SizeState> top;
+    std::optional<SizeState> right;
+    std::optional<SizeState> bottom;
+    std::optional<SizeState> left;
+
+    SizeState paddingTop;
+    SizeState paddingRight;
+    SizeState paddingBottom;
+    SizeState paddingLeft;
+
+    SizeState borderWidth;
     ResolvedMargins margins; // margins (req for some sizing)
     
     // these two fields are unnecessary
@@ -141,7 +158,7 @@ struct IntrinsicResult {
 //   - automatic using available size
 //   - automatic using content size
 // needs to be imbued with ctx
-auto resolveWidth(const SizeState& size, SizeRequest& req) -> SizeState;
+auto resolveWidth(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic) -> SizeState;
 auto resolveHeight(const SizeState& size, SizeRequest& req) -> SizeState;
 
 // these ONLY exist because of different auto behavior fo min/max widht and height
@@ -166,7 +183,7 @@ auto measureIntrinsicHeight(const SizeState& size, const SizeState& antiSize) ->
 
 // determine based on min/max/fit content and provided sizes
 // req may be overkill, I could move to a specific min/max/fit selector instead
-auto resolveIntrinsicWidth(const SizeState& min, const SizeState& max, SizeRequest& req) -> SizeState;
+auto resolveIntrinsicWidth(const SizeState& size, const IntrinsicResult& intrinsic, SizeRequest& req) -> SizeState;
 auto resolveIntrinsicHeight(const SizeState& min, const SizeState& max, SizeRequest& req) -> SizeState;
 
 
