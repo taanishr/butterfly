@@ -320,7 +320,7 @@ auto resolveIntrinsicHeight(const SizeState& min, const SizeState& max, const Si
 // i decided on a unified version, where you pass monostate if one does not exist
 // this will probably end up in a few nested variants
 // this may cause issues:
-// issue 1: what if min > max? max wins
+// issue 1: what if min > max? min wins
 // issue 2: does this create an implied fit content operation? basically, if neither is monostate
 auto clampSize(const SizeState& size, const SizeState& min, const SizeState& max) -> SizeState {
     // invariant: min/max have already been resolved
@@ -361,7 +361,7 @@ auto transferAspectRatio(const SizePair& pair, float ratio) -> SizePair {
         // transfer width onto height via ratio
     // case 3: no widht, height:
         // transfer height onto width via ratio
-    // case 4: width and height
+    // case 4: no width and no height
         // no op, return same size pair
 }
 
