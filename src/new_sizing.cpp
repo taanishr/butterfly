@@ -405,17 +405,43 @@ auto resolveMaxWidth(const SizeState& size, SizeRequest& req, const std::optiona
     return resolved;
 }
 
-auto resolveMinHeight(const SizeState& size) -> SizeState {
+auto resolveMinHeight(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic) -> SizeState {
     // run size through a calculate size pass (maybe avail too)
+    SizeState resolved = calculateSize(size, req.available.height);
 
     // if our resulting size is a float
-        // return specified right away
+    const auto* error = std::get_if<SizeError>(&resolved);
+
+    // return specified right away
+    if (!error) {
+        return resolved;
+    }
+
+    if (*error == SizeError::ContentDependent) {
+        if (!intrinsic) {
+            return resolved;
+        }
+
+        return resolveIntrinsicHeight(size, *intrinsic, req);
+    }
 
     // if our resulting size is automatic (differs from above):
+    if (*error == SizeError::Auto) {
         // usually, floor it to 0 (the automatic minimum)
+        if (req.automaticMinimumHeight == AutomaticMinimum::Zero) {
+            return 0.0f;
+        }
+
+        if (!intrinsic) {
+            return SizeError::ContentDependent;
+        }
+
+        return intrinsic->minimum;
+    }
 
     // should we just early return, or mutate a starting size?
     // not clear to me that mutation is necessarily good
+    return resolved;
 }
 
 auto resolveMaxHeight(const SizeState& size) -> SizeState  {
