@@ -950,6 +950,41 @@ namespace tree {
         float minY = childConstraints.origin.y;
         float maxY = childConstraints.origin.y;
 
+        InlineSizingInput inlineSizing {
+            .availableWidth = childConstraints.availableWidth,
+            .widthRequest = std::nullopt,
+            .trackIntrinsicWidth = sizeRequest.resolvingIntrinsicWidth,
+        };
+        auto inlineFormatting = buildInlineBoxes(node, inlineSizing);
+
+        auto normalPass = [&]() {
+            for (uint64_t i = 0; i < node->children.size(); ++i) {
+                auto child = node->children[i].get();
+
+                childConstraints.inlineFormatting = {
+                    .context = inlineFormatting,
+                    .fragments = inlineFormatting->childFragments[i],
+                };
+
+                auto childOutput = layoutRecursive(child, frameInfo, childConstraints, *child->measured, mutate);
+                auto& childLayout = childOutput.layout;
+
+                if (!childLayout.outOfFlow) {
+                    childConstraints.cursor = childLayout.siblingCursor;
+                    childConstraints.edgeIntent = childLayout.edgeIntent;
+                    childConstraints.prevInlineHeight = childLayout.prevInlineHeight;
+
+                    maxX = std::max(maxX, childLayout.computedBox.x + childLayout.computedBox.width);
+                    maxY = std::max(maxY, childLayout.computedBox.y + childLayout.consumedHeight);
+                }
+            }
+        };
+
+        auto display = node->getDisplay();
+        if (display != Display::Flex && display != Display::Grid) {
+            normalPass();
+        }
+
         return {.layout = std::move(layout)};
         // auto key = makeConstraintsKey(constraints);
 
