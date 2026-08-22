@@ -751,68 +751,127 @@ auto evaluateSize(
     SizeRequest req
 ) -> SizeResult
 {
-    // const auto& requestedWidth = std::holds_alternative<std::monostate>(req.override.width)
-    //     ? req.specified.width
-    //     : req.override.width;
-    // const auto& requestedHeight = std::holds_alternative<std::monostate>(req.override.height)
-    //     ? req.specified.height
-    //     : req.override.height;
+    /*
+        flow of func:
+        
+        resolve preferred width and height
+        resolve width/height minimums and maximums
 
-    // SizePair size {
-    //     .width = calculateSize(requestedWidth, req.available.width),
-    //     .height = calculateSize(requestedHeight, req.available.height),
-    // };
+        if width was requested as auto, remains unresolved, and height is numeric:
+            transfer height into width
 
-    // SizePair minimum {
-    //     .width = calculateSize(req.minimum.width, req.available.width),
-    //     .height = calculateSize(req.minimum.height, req.available.height),
-    // };
-    
-    // SizePair maximum {
-    //     .width = calculateSize(req.maximum.width, req.available.width),
-    //     .height = calculateSize(req.maximum.height, req.available.height),
-    // };
+        if preferred/minimum/maximum width needs intrinsic facts:
+            measure intrinsic width
+            rerun only the width operations that needed those facts
 
-    // SizePair content {
-    //     .width = calculateSize(req.content.width, req.available.width),
-    //     .height = calculateSize(req.content.height, req.content.width)
-    // };
-    
-    // // handle intrinsic sizes
-    // // width intrinsic sizes
-    // auto minWidthError = std::get_if<SizeError>(&minimum.width);
-    // auto maxWidthError = std::get_if<SizeError>(&maximum.width);
-    // auto widthError = std::get_if<SizeError>(&size.width);
+        clamp width
 
-    // auto minWidthIntrinsicError = minWidthError && *minWidthError == SizeError::ContentDependent;
-    // auto maxWidthIntrinsicError = maxWidthError && *maxWidthError == SizeError::ContentDependent;
-    // auto widthIntrinsicError = widthError && *widthError == SizeError::ContentDependent;
+        if height was requested as auto, remains unresolved, and width is numeric:
+            transfer width into height
 
-    // std::optional<layout::IntrinsicSizes> widthIntrinsicSizes;
-    // if (constraints.intrinsicSizesAxis != layout::Axis::Width && (minWidthIntrinsicError || maxWidthIntrinsicError || widthIntrinsicError)) {
-    //     widthIntrinsicSizes = tree.measureIntrinsicSizes(node, frameInfo, constraints, measured, layout::Axis::Width);
-    // }
-    
-    // // height intrinsic sizes
-    // auto minHeightError = std::get_if<SizeError>(&minimum.height);
-    // auto maxHeightError = std::get_if<SizeError>(&maximum.height);
-    // auto heightError = std::get_if<SizeError>(&size.height);
+        if preferred/minimum/maximum height needs intrinsic facts:
+            measure intrinsic height using the clamped width
+            rerun only the height operations that needed those facts
 
-    // auto minHeightIntrinsicError = minHeightError && *minHeightError == SizeError::ContentDependent;
-    // auto maxHeightIntrinsicError = maxHeightError && *maxHeightError == SizeError::ContentDependent;
-    // auto heightIntrinsicError = heightError && *heightError == SizeError::ContentDependent;
+        clamp height
+        return the partial or complete result  
+    */
 
-    // std::optional<layout::IntrinsicSizes> heightIntrinsicSizes;
-    // if (constraints.intrinsicSizesAxis != layout::Axis::Height && (minHeightIntrinsicError || maxHeightIntrinsicError || heightIntrinsicError)) {
-    //     heightIntrinsicSizes = tree.measureIntrinsicSizes(node, frameInfo, constraints, measured, layout::Axis::Height);
-    // }
+    const auto& requestedWidth = std::holds_alternative<std::monostate>(req.override.width)
+        ? req.specified.width
+        : req.override.width;
+    const auto& requestedHeight = std::holds_alternative<std::monostate>(req.override.height)
+        ? req.specified.height
+        : req.override.height;
 
+    const auto* requestedWidthSize = std::get_if<style::Size>(&requestedWidth);
+    const auto* requestedHeightSize = std::get_if<style::Size>(&requestedHeight);
+    const auto* requestedWidthError = std::get_if<SizeError>(&requestedWidth);
+    const auto* requestedHeightError = std::get_if<SizeError>(&requestedHeight);
 
-    // return SizeResult {
-    //     .size = size,
-    //     .minimum = minimum,
-    //     .maximum = maximum,
-    //     .widthIntrinsicSizes = widthIntrinsicSizes,
-    //     .heightIntrinsicSizes = heightIntrinsicSizes,
-    // };
+    bool automaticWidth = (requestedWidthSize && requestedWidthSize->isAuto()) || (requestedWidthError && *requestedWidthError == SizeError::Auto);
+    bool automaticHeight = (requestedHeightSize && requestedHeightSize->isAuto()) || (requestedHeightError && *requestedHeightError == SizeError::Auto);
+
+    SizePair size {
+        .width = resolveWidth(requestedWidth, req, std::nullopt),
+        .height = resolveHeight(requestedHeight, req, std::nullopt),
+    };
+
+    SizePair minimum {
+        .width = resolveMinWidth(req.minimum.width, req, std::nullopt),
+        .height = resolveMinHeight(req.minimum.height, req, std::nullopt),
+    };
+
+    SizePair maximum {
+        .width = resolveMaxWidth(req.maximum.width, req, std::nullopt),
+        .height = resolveMaxHeight(req.maximum.height, req, std::nullopt),
+    };
+
+    const auto* widthError = std::get_if<SizeError>(&size.width);
+    const auto* minWidthError = std::get_if<SizeError>(&minimum.width);
+    const auto* maxWidthError = std::get_if<SizeError>(&maximum.width);
+    const auto* heightError = std::get_if<SizeError>(&size.height);
+    const auto* minHeightError = std::get_if<SizeError>(&minimum.height);
+    const auto* maxHeightError = std::get_if<SizeError>(&maximum.height);
+
+    bool widthIntrinsicError = widthError && *widthError == SizeError::ContentDependent;
+    bool minWidthIntrinsicError = minWidthError && *minWidthError == SizeError::ContentDependent;
+    bool maxWidthIntrinsicError = maxWidthError && *maxWidthError == SizeError::ContentDependent;
+    bool heightIntrinsicError = heightError && *heightError == SizeError::ContentDependent;
+    bool minHeightIntrinsicError = minHeightError && *minHeightError == SizeError::ContentDependent;
+    bool maxHeightIntrinsicError = maxHeightError && *maxHeightError == SizeError::ContentDependent;
+
+    if (req.aspectRatio && automaticWidth && !std::holds_alternative<float>(size.width) && std::holds_alternative<float>(size.height)) {
+        SizePair transferred = transferAspectRatio(size, *req.aspectRatio);
+        size.width = transferred.width;
+    }
+
+    std::optional<IntrinsicResult> widthIntrinsic;
+
+    if (widthIntrinsicError || minWidthIntrinsicError || maxWidthIntrinsicError) {
+        widthIntrinsic = measureIntrinsicWidth(tree, node, frameInfo, constraints, measured, size.height, req);
+
+        if (widthIntrinsicError) {
+            size.width = resolveWidth(requestedWidth, req, widthIntrinsic);
+        }
+        if (minWidthIntrinsicError) {
+            minimum.width = resolveMinWidth(req.minimum.width, req, widthIntrinsic);
+        }
+        if (maxWidthIntrinsicError) {
+            maximum.width = resolveMaxWidth(req.maximum.width, req, widthIntrinsic);
+        }
+    }
+
+    size.width = clampSize(size.width, minimum.width, maximum.width);
+
+    if (req.aspectRatio && automaticHeight && !std::holds_alternative<float>(size.height) && std::holds_alternative<float>(size.width)) {
+        SizePair transferred = transferAspectRatio(size, *req.aspectRatio);
+        size.height = transferred.height;
+    }
+
+    std::optional<IntrinsicResult> heightIntrinsic;
+
+    if (heightIntrinsicError || minHeightIntrinsicError || maxHeightIntrinsicError) {
+        heightIntrinsic = measureIntrinsicHeight(tree, node, frameInfo, constraints, measured, size.width, req);
+
+        if (heightIntrinsicError) {
+            size.height = resolveHeight(requestedHeight, req, heightIntrinsic);
+        }
+        if (minHeightIntrinsicError) {
+            minimum.height = resolveMinHeight(req.minimum.height, req, heightIntrinsic);
+        }
+        if (maxHeightIntrinsicError) {
+            maximum.height = resolveMaxHeight(req.maximum.height, req, heightIntrinsic);
+        }
+    }
+
+    size.height = clampSize(size.height, minimum.height, maximum.height);
+
+    return {
+        .size = size,
+        .minimum = minimum,
+        .maximum = maximum,
+        .widthIntrinsicSizes = widthIntrinsic,
+        .heightIntrinsicSizes = heightIntrinsic,
+    };
 }

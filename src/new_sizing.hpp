@@ -83,6 +83,8 @@ struct SizeRequest {
 
     SizeState borderWidth;
     ResolvedMargins margins; // margins (req for some sizing)
+
+    std::optional<float> aspectRatio;
     
     AutomaticSizing automaticWidth;
     AutomaticSizing automaticHeight;
@@ -93,6 +95,11 @@ struct SizeRequest {
     bool resolvingIntrinsicHeight{false};
 };  
 
+struct IntrinsicResult {
+    SizeState minimum;
+    SizeState maximum;
+};
+
 // central evaluator gives back a coherently shaped SizeSpec resolution
 // SizeSpec *may or may not* be fully resolved; that is fine
 struct SizeResult {
@@ -100,13 +107,8 @@ struct SizeResult {
     SizePair minimum;   // min dim constraints evaluated against content box
     SizePair maximum; // max dim constraints evaluated against content box
     
-    std::optional<layout::IntrinsicSizes> widthIntrinsicSizes; // intrinsicSizeSpecs if driven by width constraints
-    std::optional<layout::IntrinsicSizes> heightIntrinsicSizes; // intrinsic SizeSpecs if driven by height constraints
-};
-
-struct IntrinsicResult {
-    SizeState minimum;
-    SizeState maximum;
+    std::optional<IntrinsicResult> widthIntrinsicSizes;
+    std::optional<IntrinsicResult> heightIntrinsicSizes;
 };
 
 // resolve preferred width and height
