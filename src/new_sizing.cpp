@@ -5,6 +5,7 @@
 #include "render_tree.hpp"
 #include "sizing.hpp"
 #include <MacTypes.h>
+#include <algorithm>
 #include <format>
 #include <optional>
 #include <print>
@@ -328,8 +329,8 @@ auto clampSize(const SizeState& size, const SizeState& min, const SizeState& max
     // I lean towards the later
 
     // case 1: min and max defined
-        // apply min
-        // then apply max
+        // apply max
+        // then apply min
         // return new size
     // case 2: min defined:
         // apply against min
@@ -342,6 +343,26 @@ auto clampSize(const SizeState& size, const SizeState& min, const SizeState& max
         // just no op and return exactly the asme thing
         // albeit i dont really like this because its wasted memory
         // allocating a new object
+
+    const auto* resolvedSize = std::get_if<float>(&size);
+    
+    if (!resolvedSize) {
+        return size;
+    }
+
+    float clamped = *resolvedSize;
+
+    const auto* resolvedMax = std::get_if<float>(&max);
+    if (resolvedMax) {
+        clamped = std::min(clamped, *resolvedMax);
+    }
+
+    const auto* resolvedMin = std::get_if<float>(&min);
+    if (resolvedMin) {
+        clamped = std::max(clamped, *resolvedMin);
+    }
+
+    return clamped;
 }   
 
 // this will also probably end up as a massive function switching between possibilites
@@ -351,9 +372,11 @@ auto clampSize(const SizeState& size, const SizeState& min, const SizeState& max
 // height, width
 auto transferAspectRatio(const SizePair& pair, float ratio) -> SizePair {
     // first: check ratio
-    // if less than 0.0 or more than 1.0, return the existing size pair
+    // if less than or equal to 0.0, return the existing size pair
     // that being said, this is overly defensive and just should not happen
-    
+    if (ratio <= 0.0f) {
+        return pair;
+    }
 
     // case 1: width and height
         // return same size pair
@@ -363,6 +386,19 @@ auto transferAspectRatio(const SizePair& pair, float ratio) -> SizePair {
         // transfer height onto width via ratio
     // case 4: no width and no height
         // no op, return same size pair
+
+    const auto* width = std::get_if<float>(&pair.width);
+    const auto* height = std::get_if<float>(&pair.height);
+
+    SizePair result = pair;
+
+    if (width && !height) {
+        result.height = *width / ratio;
+    } else if (height && !width) {
+        result.width = *height * ratio;
+    }
+
+    return result;
 }
 
 
