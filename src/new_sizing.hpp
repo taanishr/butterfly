@@ -41,6 +41,11 @@ enum class IntrinsicRequest {
 
 // CHILDREN SHOULD MAKE THEIR OWN SIZING REQUEST based ON parent constraints
 // so parents do not provide the request, they provide the information to make a request
+enum class AutomaticSizing {
+    UseAvailable,
+    UseContent,
+};
+
 struct SizeRequest {
     SizePair specified; // specified h/w
     SizePair override;  // parent override
@@ -51,10 +56,15 @@ struct SizeRequest {
     
     ResolvedMargins margins; // margins (req for some sizing)
     
+    // these two fields are unnecessary
     // std::optional<IntrinsicRequest> intrinsicWidthRequest {};
     // std::optional<IntrinsicRequest> intrinsicHeightRequest {};
-    bool activeIntrinsicWidthRequest{false};
-    bool activeIntrinsicHeightRequest{false};
+
+    AutomaticSizing automaticWidth;
+    AutomaticSizing automaticHeight;
+
+    bool resolvingIntrinsicWidth{false};
+    bool resolvingIntrinsicHeight{false};
 };  
 
 // central evaluator gives back a coherently shaped SizeSpec resolution
@@ -66,6 +76,11 @@ struct SizeResult {
     
     std::optional<layout::IntrinsicSizes> widthIntrinsicSizes; // intrinsicSizeSpecs if driven by width constraints
     std::optional<layout::IntrinsicSizes> heightIntrinsicSizes; // intrinsic SizeSpecs if driven by height constraints
+};
+
+struct IntrinsicResult {
+    SizeState minimum;
+    SizeState maximum;
 };
 
 // resolve preferred width and height
@@ -126,8 +141,8 @@ struct SizeResult {
 //   - automatic using available size
 //   - automatic using content size
 // needs to be imbued with ctx
-auto resolveWidth(const SizeState& size) -> SizeState;
-auto resolveHeight(const SizeState& size) -> SizeState;
+auto resolveWidth(const SizeState& size, SizeRequest& req) -> SizeState;
+auto resolveHeight(const SizeState& size, SizeRequest& req) -> SizeState;
 
 // these ONLY exist because of different auto behavior fo min/max widht and height
 auto resolveMinWidth(const SizeState& size) -> SizeState;
@@ -143,10 +158,16 @@ auto resolveMaxHeight(const SizeState& size) -> SizeState;
 // intrinsic height given set width (previously resolved)
 // unknown/skip: intrinsic width based on resolved height: unlikely / nonexistent
 // to start, the anti wil be ignored for resolveIntrinsicWidth
-// this should likely not return a size state, but probably a min and max width and corresponding heights at this intrinsic size?
+// this should likely not return a size state, but probably a min and max size (intrinsic result type)
 // IntrinsicResult? (intrinsic sizes as is is not satisfactory and relies on old Size, which is more of a description than a proper intermediate)
-auto resolveIntrinsicWidth(const SizeState& size, const SizeState& antiSize) -> SizeState;
-auto resolveIntrinsicHeight(const SizeState& size, const SizeState& antiSize) -> SizeState;
+
+auto measureIntrinsicWidth(const SizeState& size, const SizeState& antiSize) -> IntrinsicResult;
+auto measureIntrinsicHeight(const SizeState& size, const SizeState& antiSize) -> IntrinsicResult;
+
+// determine based on min/max/fit content and provided sizes
+// req may be overkill, I could move to a specific min/max/fit selector instead
+auto resolveIntrinsicWidth(const SizeState& min, const SizeState& max, SizeRequest& req) -> SizeState;
+auto resolveIntrinsicHeight(const SizeState& min, const SizeState& max, SizeRequest& req) -> SizeState;
 
 
 // clamp a size
@@ -155,7 +176,7 @@ auto resolveIntrinsicHeight(const SizeState& size, const SizeState& antiSize) ->
 // i decided on a unified version, where you pass monostate if one does not exist
 // this will probably end up in a few nested variants
 // this may cause issues:
-// issue 1: what if min > max? not a coherent size, so im not to oconcerned
+// issue 1: what if min > max? max wins
 // issue 2: does this create an implied fit content operation? basically, if neither is monostate
 auto clampSize(const SizeState& size, const SizeState& min, const SizeState& max) -> SizeState;
 
@@ -164,15 +185,14 @@ auto clampSize(const SizeState& size, const SizeState& min, const SizeState& max
 // height, no width
 // width, no height
 // height, width
-auto transferAspectRatio(const SizePair& pair) -> SizePair;
+auto transferAspectRatio(const SizePair& pair, float ratio) -> SizePair;
 
 // todos:
-// some structs for inline text methdos to consume (invariably, they will need some size bounds + content sizing guidelines)
-// active marker; how do I want to shape this?
+// some structs for inline text methdos to consume (invariably, they will need some size bounds + content sizing guidelines) 
+// active marker; how do I want to shape this? (done)
 
 // resolve what can be resolved from size + available (this is essentially the lowest level primitive of sizing)
 auto calculateSize(const SizeState& size, const SizeState& available) -> SizeState;
-
 
 
 auto evaluateSize(

@@ -124,6 +124,248 @@ auto calculateSize(const SizeState& size, const SizeState& available) -> SizeSta
     }, size);
 }
 
+// IMPL
+
+// given a set of rules, resolve the width and height
+// specified
+// resolve width
+//   - specified or intrinsic
+//   - automatic from opposing insets
+//   - automatic using available size
+//   - automatic using content size
+// resolve height
+//   - specified or intrinsic
+//   - automatic from opposing insets
+//   - automatic using available size
+//   - automatic using content size
+// needs to be imbued with ctx
+auto resolveWidth(const SizeState& size, const SizeRequest* req) -> SizeState {
+    // run size through a calculate size pass (maybe avail too)
+
+    // if our resulting size is a float
+        // return specified right away
+
+    /* open question: at this point, should we figure out the intrinsic sizes? 
+        Should this method even resolve intrinsic sizes
+        That is unclear
+    */
+
+    // if our resulting size is automatic
+        // are we content sizing?
+            // should we resolve intrinsic sizes here? or before?
+            // figure out the necessary intrinsic sizes
+            // and content size accordingly (min, max, or fit)
+        // are we avail sizing:
+            // are we *out of flow* and do we have insets?
+                // then use that against the available
+            // else
+                // just stretch
+
+    // should we just early return, or mutate a starting size?
+    // not clear to me that mutation is necessarily good
+}
+
+auto resolveHeight(const SizeState& size, const SizeRequest* req) -> SizeState {
+    // run size through a calculate size pass (maybe avail too)
+
+    // if our resulting size is a float
+        // return specified right away
+
+    /* open question: at this point, should we figure out the intrinsic sizes? 
+        Should this method even resolve intrinsic sizes
+        That is unclear
+    */
+
+    // if our resulting size is automatic
+        // are we content sizing?
+            // should we resolve intrinsic sizes here? or before?
+            // figure out the necessary intrinsic sizes
+            // and content size accordingly (min, max, or fit)
+        // are we avail sizing:
+            // are we *out of flow* and do we have insets?
+                // then use that against the available
+            // else
+                // just stretch
+
+    // should we just early return, or mutate a starting size?
+    // not clear to me that mutation is necessarily good
+}
+
+// these ONLY exist because of different auto behavior fo min/max width and height
+auto resolveMinWidth(const SizeState& size) -> SizeState {
+    // run size through a calculate size pass (maybe avail too)
+
+    // if our resulting size is a float
+        // return specified right away
+
+    // if our resulting size is automatic (differs from above):
+        // usually, floor it to 0 (the automatic minimum)
+
+    // should we just early return, or mutate a starting size?
+    // not clear to me that mutation is necessarily good
+}
+
+auto resolveMaxWidth(const SizeState& size) -> SizeState {
+    // run size through a calculate size pass (maybe avail too)
+
+    // if our resulting size is a float
+        // return specified right away
+
+    // there is no automatic branch; i do not want to throw an error.
+    //  maybe no-op this? Dont do anything?
+    
+    // should we just early return, or mutate a starting size?
+    // not clear to me that mutation is necessarily good
+}
+
+auto resolveMinHeight(const SizeState& size) -> SizeState {
+    // run size through a calculate size pass (maybe avail too)
+
+    // if our resulting size is a float
+        // return specified right away
+
+    // if our resulting size is automatic (differs from above):
+        // usually, floor it to 0 (the automatic minimum)
+
+    // should we just early return, or mutate a starting size?
+    // not clear to me that mutation is necessarily good
+}
+
+auto resolveMaxHeight(const SizeState& size) -> SizeState  {
+    // run size through a calculate size pass (maybe avail too)
+
+    // if our resulting size is a float
+        // return specified right away
+
+    // there is no automatic branch; i do not want to throw an error.
+    //  maybe no-op this? Dont do anything?
+    
+    // should we just early return, or mutate a starting size?
+    // not clear to me that mutation is necessarily good
+}
+
+// handles intrinsic cases
+// intrinsic width (min, max, fit content)
+// intrinsic height (min, max, fit content)
+
+// the anti revolves around these two ops
+// intrinsic height given set width (previously resolved)
+// unknown/skip: intrinsic width based on resolved height: unlikely / nonexistent
+// to start, the anti wil be ignored for resolveIntrinsicWidth
+// this should likely not return a size state, but probably a min and max size (intrinsic result type)
+// IntrinsicResult? (intrinsic sizes as is is not satisfactory and relies on old Size, which is more of a description than a proper intermediate)
+
+auto measureIntrinsicWidth(const SizeState& size, const SizeState& antiSize) -> IntrinsicResult {
+    // antiSize: not used here
+
+    // first; create a new request (or have the recursive tree func do this)
+    // this new request should set resolvingIntrinsicWidth = true
+    // afterwards, establish the recursive call
+    /*
+        BIG TODO: (not yet done, and kind of only semi-related to this function)
+        create an abstraction to make the inline text breaking algorithm less dependent
+        on the leakiness of size; maybe we should create a separate
+        InlineContext? that the buildInlineBoxes take in
+        and that is generated by a function here
+    */
+    // return both the min and max intrinsic size
+}
+
+auto measureIntrinsicHeight(const SizeState& size, const SizeState& antiSize) -> IntrinsicResult {
+    // antisize: USED HERE
+
+    // first; create a new request (or have the recursive tree func do this)
+    // this new request should set resolvingIntrinsicHeight = true
+    
+    // if an antiSize has been resolved and provided via antisize, the request SHOULD note this
+    // establish the recursive call; make sure it establishes the specified antiSize correcttly
+
+    // return both the min and max intrinsic size
+}
+
+// determine based on min/max/fit content and provided sizes
+auto resolveIntrinsicWidth(const SizeState& min, const SizeState& max, const SizeRequest* req) -> SizeState {
+    // fairly simple
+    // take the min and max, and according to the req:
+        // req requires min
+            // return min
+        // req requires max
+            // return max
+        // req requires fit content
+            // clampSize with min and max set
+
+    /*
+        Open question: should we return a monostate if neither min, max or fit? Or default to fit?
+    */
+}
+auto resolveIntrinsicHeight(const SizeState& min, const SizeState& max, const SizeRequest* req) -> SizeState {
+    // fairly simple
+    // take the min and max, and according to the req:
+        // req requires min
+            // return min
+        // req requires max
+            // return max
+        // req requires fit content
+            // clampSize with min and max set
+
+    /*
+        Open question: should we return a monostate if neither min, max or fit? Or default to fit?
+    */
+}
+
+
+// clamp a size
+// i went through two design ideas:
+// clampSizeAgainstMin & clampSizeAgainstMax separation 
+// i decided on a unified version, where you pass monostate if one does not exist
+// this will probably end up in a few nested variants
+// this may cause issues:
+// issue 1: what if min > max? max wins
+// issue 2: does this create an implied fit content operation? basically, if neither is monostate
+auto clampSize(const SizeState& size, const SizeState& min, const SizeState& max) -> SizeState {
+    // invariant: min/max have already been resolved
+    // should we check that they have? Or is that a waste of time?
+    // I lean towards the later
+
+    // case 1: min and max defined
+        // apply min
+        // then apply max
+        // return new size
+    // case 2: min defined:
+        // apply against min
+        // return
+    // case 3: max defined:
+        // apply against max
+        // return max
+    // case 4: neither defined
+        // to ensure case coverage
+        // just no op and return exactly the asme thing
+        // albeit i dont really like this because its wasted memory
+        // allocating a new object
+}   
+
+// this will also probably end up as a massive function switching between possibilites
+// no height, no width
+// height, no width
+// width, no height
+// height, width
+auto transferAspectRatio(const SizePair& pair, float ratio) -> SizePair {
+    // first: check ratio
+    // if less than 0.0 or more than 1.0, return the existing size pair
+    // that being said, this is overly defensive and just should not happen
+    
+
+    // case 1: width and height
+        // return same size pair
+    // case 2: width, no height
+        // transfer width onto height via ratio
+    // case 3: no widht, height:
+        // transfer height onto width via ratio
+    // case 4: width and height
+        // no op, return same size pair
+}
+
+
 auto evaluateSize(
     tree::RenderTree& tree,
     tree::TreeNode* node,
