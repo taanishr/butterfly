@@ -88,14 +88,10 @@ auto calculateSize(const SizeState& size, const SizeState& available) -> SizeSta
                 case style::Unit::MaxContent:
                 case style::Unit::FitContent:
                     return style::SizeError::ContentDependent;
-                case style::Unit::Percent:
-                    return std::visit(Overloaded{
-                        [&](const style::Size& availableSize) -> SizeState {
-                            if (availableSize.unit == style::Unit::Px || availableSize.unit == style::Unit::Pt)
-                                return size.value * availableSize.value;
+                case style::Unit::Percent: {
+                    SizeState calculatedAvailable = calculateSize(available, std::monostate{});
 
-                            return style::SizeError::IndefiniteBasis;
-                        },
+                    return std::visit(Overloaded{
                         [&](float availableSize) -> SizeState {
                             return size.value * availableSize;
                         },
@@ -113,8 +109,12 @@ auto calculateSize(const SizeState& size, const SizeState& available) -> SizeSta
                             }
 
                             return style::SizeError::IndefiniteBasis;
+                        },
+                        [](const style::Size&) -> SizeState {
+                            return style::SizeError::IndefiniteBasis;
                         }
-                    }, available);
+                    }, calculatedAvailable);
+                }
             }
 
             return std::monostate{};
