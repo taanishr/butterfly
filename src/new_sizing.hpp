@@ -159,7 +159,7 @@ struct IntrinsicResult {
 //   - automatic using content size
 // needs to be imbued with ctx
 auto resolveWidth(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic) -> SizeState;
-auto resolveHeight(const SizeState& size, SizeRequest& req) -> SizeState;
+auto resolveHeight(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic) -> SizeState;
 
 // these ONLY exist because of different auto behavior fo min/max widht and height
 auto resolveMinWidth(const SizeState& size) -> SizeState;
@@ -184,7 +184,7 @@ auto measureIntrinsicHeight(const SizeState& size, const SizeState& antiSize) ->
 // determine based on min/max/fit content and provided sizes
 // req may be overkill, I could move to a specific min/max/fit selector instead
 auto resolveIntrinsicWidth(const SizeState& size, const IntrinsicResult& intrinsic, SizeRequest& req) -> SizeState;
-auto resolveIntrinsicHeight(const SizeState& min, const SizeState& max, SizeRequest& req) -> SizeState;
+auto resolveIntrinsicHeight(const SizeState& size, const IntrinsicResult& intrinsic, SizeRequest& req) -> SizeState;
 
 
 // clamp a size
