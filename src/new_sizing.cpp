@@ -590,31 +590,69 @@ auto measureIntrinsicHeight(
 // determine based on min/max/fit content and provided sizes
 auto resolveIntrinsicWidth(const SizeState& size, const IntrinsicResult& intrinsic, SizeRequest& req) -> SizeState {
     // fairly simple
-    // take the min and max, and according to the req:
-        // req requires min
+    // take the min and max, and according to the requested size:
+        // request requires min
             // return min
-        // req requires max
+        // request requires max
             // return max
-        // req requires fit content
+        // request requires fit content
             // clampSize with min and max set
 
     /*
-        Open question: should we return a monostate if neither min, max or fit? Or default to fit?
+        Non-intrinsic values fall back to ordinary size calculation.
     */
+
+    const auto* request = std::get_if<style::Size>(&size);
+
+    if (!request) {
+        return size;
+    }
+
+    switch (request->unit) {
+        case style::Unit::MinContent:
+            return intrinsic.minimum;
+        case style::Unit::MaxContent:
+            return intrinsic.maximum;
+        case style::Unit::FitContent: {
+            SizeState available = calculateSize(req.available.width, std::monostate{});
+            return clampSize(available, intrinsic.minimum, intrinsic.maximum);
+        }
+        default:
+            return calculateSize(size, req.available.width);
+    }
 }
 auto resolveIntrinsicHeight(const SizeState& size, const IntrinsicResult& intrinsic, SizeRequest& req) -> SizeState {
     // fairly simple
-    // take the min and max, and according to the req:
-        // req requires min
+    // take the min and max, and according to the requested size:
+        // request requires min
             // return min
-        // req requires max
+        // request requires max
             // return max
-        // req requires fit content
+        // request requires fit content
             // clampSize with min and max set
 
     /*
-        Open question: should we return a monostate if neither min, max or fit? Or default to fit?
+        Non-intrinsic values fall back to ordinary size calculation.
     */
+
+    const auto* request = std::get_if<style::Size>(&size);
+
+    if (!request) {
+        return size;
+    }
+
+    switch (request->unit) {
+        case style::Unit::MinContent:
+            return intrinsic.minimum;
+        case style::Unit::MaxContent:
+            return intrinsic.maximum;
+        case style::Unit::FitContent: {
+            SizeState available = calculateSize(req.available.height, std::monostate{});
+            return clampSize(available, intrinsic.minimum, intrinsic.maximum);
+        }
+        default:
+            return calculateSize(size, req.available.height);
+    }
 }
 
 
