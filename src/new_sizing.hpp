@@ -172,7 +172,7 @@ auto resolveHeight(const SizeState& size, SizeRequest& req, const std::optional<
 auto resolveMinWidth(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic) -> SizeState;
 auto resolveMaxWidth(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic) -> SizeState;
 auto resolveMinHeight(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic) -> SizeState;
-auto resolveMaxHeight(const SizeState& size) -> SizeState;
+auto resolveMaxHeight(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic) -> SizeState;
 
 // handles intrinsic cases
 // intrinsic width (min, max, fit content)
