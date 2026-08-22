@@ -50,6 +50,11 @@ enum class AutomaticSizing {
     UseContent,
 };
 
+enum class AutomaticMinimum {
+    Zero,
+    ContentBased,
+};
+
 struct SizeRequest {
     style::Position position;
 
@@ -79,6 +84,8 @@ struct SizeRequest {
 
     AutomaticSizing automaticWidth;
     AutomaticSizing automaticHeight;
+    AutomaticMinimum automaticMinimumWidth;
+    AutomaticMinimum automaticMinimumHeight;
 
     bool resolvingIntrinsicWidth{false};
     bool resolvingIntrinsicHeight{false};
@@ -162,7 +169,7 @@ auto resolveWidth(const SizeState& size, SizeRequest& req, const std::optional<I
 auto resolveHeight(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic) -> SizeState;
 
 // these ONLY exist because of different auto behavior fo min/max widht and height
-auto resolveMinWidth(const SizeState& size) -> SizeState;
+auto resolveMinWidth(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic) -> SizeState;
 auto resolveMaxWidth(const SizeState& size) -> SizeState;
 auto resolveMinHeight(const SizeState& size) -> SizeState;
 auto resolveMaxHeight(const SizeState& size) -> SizeState;

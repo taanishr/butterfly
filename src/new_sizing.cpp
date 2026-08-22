@@ -12,6 +12,7 @@
 #include <sys/kauth.h>
 #include <variant>
 
+// debug only: to be removed, later on
 template <>
 struct std::formatter<style::SizeError> : std::formatter<std::string_view> {
     auto format(style::SizeError error, format_context& ctx) const {
@@ -334,17 +335,43 @@ auto resolveHeight(const SizeState& size, SizeRequest& req, const std::optional<
 }
 
 // these ONLY exist because of different auto behavior fo min/max width and height
-auto resolveMinWidth(const SizeState& size) -> SizeState {
+auto resolveMinWidth(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic) -> SizeState {
     // run size through a calculate size pass (maybe avail too)
+    SizeState resolved = calculateSize(size, req.available.width);
 
     // if our resulting size is a float
-        // return specified right away
+    const auto* error = std::get_if<SizeError>(&resolved);
+
+    // return specified right away
+    if (!error) {
+        return resolved;
+    }
+
+    if (*error == SizeError::ContentDependent) {
+        if (!intrinsic) {
+            return resolved;
+        }
+
+        return resolveIntrinsicWidth(size, *intrinsic, req);
+    }
 
     // if our resulting size is automatic (differs from above):
+    if (*error == SizeError::Auto) {
         // usually, floor it to 0 (the automatic minimum)
+        if (req.automaticMinimumWidth == AutomaticMinimum::Zero) {
+            return 0.0f;
+        }
+
+        if (!intrinsic) {
+            return SizeError::ContentDependent;
+        }
+
+        return intrinsic->minimum;
+    }
 
     // should we just early return, or mutate a starting size?
     // not clear to me that mutation is necessarily good
+    return resolved;
 }
 
 auto resolveMaxWidth(const SizeState& size) -> SizeState {
