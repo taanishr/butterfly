@@ -196,7 +196,15 @@ auto measureIntrinsicWidth(
     const SizeState& antiSize,
     SizeRequest req
 ) -> IntrinsicResult;
-auto measureIntrinsicHeight(const SizeState& size, const SizeState& antiSize) -> IntrinsicResult;
+auto measureIntrinsicHeight(
+    tree::RenderTree& tree,
+    tree::TreeNode* node,
+    const FrameInfo& frameInfo,
+    layout::Constraints constraints,
+    layout::Measured measured,
+    const SizeState& antiSize,
+    SizeRequest req
+) -> IntrinsicResult;
 
 // determine based on min/max/fit content and provided sizes
 // req may be overkill, I could move to a specific min/max/fit selector instead

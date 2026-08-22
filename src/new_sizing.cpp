@@ -532,16 +532,59 @@ auto measureIntrinsicWidth(
     };
 }
 
-auto measureIntrinsicHeight(const SizeState& size, const SizeState& antiSize) -> IntrinsicResult {
+auto measureIntrinsicHeight(
+    tree::RenderTree& tree,
+    tree::TreeNode* node,
+    const FrameInfo& frameInfo,
+    layout::Constraints constraints,
+    layout::Measured measured,
+    const SizeState& antiSize,
+    SizeRequest req
+) -> IntrinsicResult {
     // antisize: USED HERE
+
+    if (req.resolvingIntrinsicHeight) {
+        return {
+            .minimum = SizeError::ContentDependent,
+            .maximum = SizeError::ContentDependent,
+        };
+    }
 
     // first; create a new request (or have the recursive tree func do this)
     // this new request should set resolvingIntrinsicHeight = true
+    req.resolvingIntrinsicHeight = true;
     
     // if an antiSize has been resolved and provided via antisize, the request SHOULD note this
+    SizeState resolvedAntiSize = calculateSize(antiSize, req.available.width);
+    const auto* resolvedWidth = std::get_if<float>(&resolvedAntiSize);
+
+    if (resolvedWidth) {
+        req.override.width = *resolvedWidth;
+    }
+
+    const auto* antiSizeError = std::get_if<SizeError>(&resolvedAntiSize);
+    if (antiSizeError) {
+        return {
+            .minimum = *antiSizeError,
+            .maximum = *antiSizeError,
+        };
+    }
+
     // establish the recursive call; make sure it establishes the specified antiSize correcttly
+    std::optional<layout::IntrinsicSizes> intrinsic = tree.measureIntrinsicSizes(node, frameInfo, constraints, measured, std::move(req));
 
     // return both the min and max intrinsic size
+    if (!intrinsic) {
+        return {
+            .minimum = SizeError::ContentDependent,
+            .maximum = SizeError::ContentDependent,
+        };
+    }
+
+    return {
+        .minimum = calculateSize(intrinsic->minContent, std::monostate{}),
+        .maximum = calculateSize(intrinsic->maxContent, std::monostate{}),
+    };
 }
 
 // determine based on min/max/fit content and provided sizes
