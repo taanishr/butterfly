@@ -75,6 +75,15 @@ namespace layout {
             constraints,
             measured
         );
+
+
+        std::println(
+            "intrinsic: {} {}, computed height: {}",
+            output.intrinsicSizes->minimum,
+            output.intrinsicSizes->maximum,
+            output.layout.computedBox.height
+        );
+
         if (output.intrinsicSizes.has_value()) {
             return *output.intrinsicSizes;
         }

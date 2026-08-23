@@ -1057,6 +1057,16 @@ namespace tree {
             }
         }
 
+        // correct intrinsic sizes if no children
+        if (node->children.empty()) {
+            float extent = 0.0;
+            if (intrinsicSizeRequest->resolvingIntrinsicWidth || intrinsicSizeRequest->resolvingIntrinsicHeight) {
+                extent = sizeRequest.resolvingIntrinsicWidth ? layout.computedBox.width : layout.computedBox.height;
+            }
+            minimumContent = extent;
+            maximumContent = extent;
+        }
+
         // create new req, with contentWidth/Height set
         float contentWidth = maxX - minX;
         float contentHeight = maxY - minY;
