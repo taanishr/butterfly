@@ -83,8 +83,8 @@ namespace layout {
     };
 
     inline float resolveIntrinsicSize(const style::Size& request, const IntrinsicSizes& intrinsicSizes, style::Size availableSize) {
-        float minContent = intrinsicSizes.minContent.resolveOr(style::Size::autoSize());
-        float maxContent = intrinsicSizes.maxContent.resolveOr(style::Size::autoSize());
+        float minContent = intrinsicSizes.minimum;
+        float maxContent = intrinsicSizes.maximum;
         if (request.unit == style::Unit::MinContent) return minContent;
         if (request.unit == style::Unit::MaxContent) return maxContent;
         float stretch = availableSize.resolve(style::Size::autoSize()).value_or(maxContent);

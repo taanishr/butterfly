@@ -526,8 +526,8 @@ auto measureIntrinsicWidth(
     }
 
     return {
-        .minimum = calculateSize(intrinsic->minContent, std::monostate{}),
-        .maximum = calculateSize(intrinsic->maxContent, std::monostate{}),
+        .minimum = intrinsic->minimum,
+        .maximum = intrinsic->maximum,
     };
 }
 
@@ -581,8 +581,8 @@ auto measureIntrinsicHeight(
     }
 
     return {
-        .minimum = calculateSize(intrinsic->minContent, std::monostate{}),
-        .maximum = calculateSize(intrinsic->maxContent, std::monostate{}),
+        .minimum = intrinsic->minimum,
+        .maximum = intrinsic->maximum,
     };
 }
 

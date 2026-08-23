@@ -63,7 +63,11 @@ namespace layout {
         axis.mainExplicit(measured) = std::unexpected(SizeError::Auto);
         constraints.intrinsicSizesAxis = axis.isRow ? Axis::Width : Axis::Height;
 
-        constraints.inlineFormatting = buildIsolatedInlineBoxes(child, constraints.availableWidth, constraints.widthResolution, constraints.intrinsicSizesAxis == Axis::Width);
+        constraints.inlineFormatting = buildIsolatedInlineBoxes(child, {
+            .availableWidth = constraints.availableWidth,
+            .widthRequest = constraints.widthResolution ? std::optional{*constraints.widthResolution == AxisResolution::MinContent ? IntrinsicRequest::Minimum : IntrinsicRequest::Maximum} : std::nullopt,
+            .trackIntrinsicWidth = constraints.intrinsicSizesAxis == Axis::Width,
+        });
 
         const auto& output = tree.speculateLayout(
             frameInfo,
@@ -77,8 +81,8 @@ namespace layout {
 
         float size = axis.mainSize(output.layout);
         return {
-            .minContent = Size::px(size),
-            .maxContent = Size::px(size)
+            .minimum = size,
+            .maximum = size,
         };
     }
 
@@ -88,8 +92,11 @@ namespace layout {
 
         newChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(
             child,
-            childAvailableWidth,
-            newChildConstraints.widthResolution
+            {
+                .availableWidth = childAvailableWidth,
+                .widthRequest = newChildConstraints.widthResolution ? std::optional{*newChildConstraints.widthResolution == AxisResolution::MinContent ? IntrinsicRequest::Minimum : IntrinsicRequest::Maximum} : std::nullopt,
+                .trackIntrinsicWidth = false,
+            }
         );
         newChildConstraints.availableWidth = childAvailableWidth;
         newChildConstraints.inheritedProperties = parentConstraints.inheritedProperties;
@@ -99,7 +106,7 @@ namespace layout {
 
     float FlexResolver::determineFlexBaseSize(std::expected<float, SizeError>& mainSize, const std::optional<IntrinsicSizes>& intrinsicSizes) {
         if (mainSize) return *mainSize;
-        return intrinsicSizes->maxContent.resolveOr(Size::autoSize());
+        return intrinsicSizes->maximum;
     }
 
     float FlexResolver::determineMinMainSize(TreeNode* child, std::expected<float, SizeError>& mainSize, const std::optional<IntrinsicSizes>& intrinsicSizes) {
@@ -119,7 +126,7 @@ namespace layout {
 
         if (child->shared.overflow != Overflow::Visible) return 0.0f;
 
-        float minMainSize = intrinsicSizes->minContent.resolveOr(Size::autoSize());
+        float minMainSize = intrinsicSizes->minimum;
         if (mainSize) {
             minMainSize = std::min(minMainSize, *mainSize);
         }
@@ -274,7 +281,8 @@ namespace layout {
                 minContent = std::max(minContent, line.totalMinimumWithGap(resolvedGap));
                 maxContent = std::max(maxContent, line.totalWithGap(resolvedGap));
             }
-            intrinsicSizes = IntrinsicSizes{.minContent = Size::px(minContent), .maxContent = Size::px(maxContent)};
+
+            intrinsicSizes = IntrinsicSizes{.minimum = minContent, .maximum = maxContent};
         }
 
         availableMain = determineAvailableMain(totalSizeFallback);
@@ -312,7 +320,11 @@ namespace layout {
                     );
                     
                 if (needsIntrinsicCross) preparedChildConstraints.intrinsicSizesAxis = crossAxis;
-                preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childNode, preparedChildConstraints.availableWidth, preparedChildConstraints.widthResolution, preparedChildConstraints.intrinsicSizesAxis == Axis::Width);
+                preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childNode, {
+                    .availableWidth = preparedChildConstraints.availableWidth,
+                    .widthRequest = preparedChildConstraints.widthResolution ? std::optional{*preparedChildConstraints.widthResolution == AxisResolution::MinContent ? IntrinsicRequest::Minimum : IntrinsicRequest::Maximum} : std::nullopt,
+                    .trackIntrinsicWidth = preparedChildConstraints.intrinsicSizesAxis == Axis::Width,
+                });
 
                 const auto& childOutput = tree.speculateLayout(
                     frameInfo,
@@ -340,8 +352,8 @@ namespace layout {
 
                 line.maxCrossSize = std::max(line.maxCrossSize, item.hypotheticalCrossSize);
                 if (parentRequestsIntrinsicCross && childOutput.intrinsicSizes.has_value()) {
-                    float childMinCross = childOutput.intrinsicSizes->minContent.resolveOr(Size::autoSize());
-                    float childMaxCross = childOutput.intrinsicSizes->maxContent.resolveOr(Size::autoSize());
+                    float childMinCross = childOutput.intrinsicSizes->minimum;
+                    float childMaxCross = childOutput.intrinsicSizes->maximum;
                     childMinCross = std::max(childMinCross, item.minCrossSize);
                     childMaxCross = std::max(childMaxCross, item.minCrossSize);
                     if (item.maxCrossSize.has_value()) {
@@ -373,7 +385,7 @@ namespace layout {
                 minContent += totalGap;
                 maxContent += totalGap;
             }
-            intrinsicSizes = IntrinsicSizes{.minContent = Size::px(minContent), .maxContent = Size::px(maxContent)};
+            intrinsicSizes = IntrinsicSizes{.minimum = minContent, .maximum = maxContent};
         }
         float availableCross = determineAvailableCross(naturalCross);
 
@@ -416,8 +428,11 @@ namespace layout {
 
             preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(
                 childNode,
-                preparedChildConstraints.availableWidth,
-                preparedChildConstraints.widthResolution
+                {
+                    .availableWidth = preparedChildConstraints.availableWidth,
+                    .widthRequest = preparedChildConstraints.widthResolution ? std::optional{*preparedChildConstraints.widthResolution == AxisResolution::MinContent ? IntrinsicRequest::Minimum : IntrinsicRequest::Maximum} : std::nullopt,
+                    .trackIntrinsicWidth = false,
+                }
             );
 
             std::optional<LayoutOutput> finalChildOutput;

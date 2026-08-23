@@ -794,7 +794,7 @@ namespace tree {
         //             mutate
         //         );
         //         auto& childLayout = childOutput.layout;
-                
+
         //         if (!childLayout.outOfFlow) {
         //             if (constraints.intrinsicSizesAxis == Axis::Width && intrinsicSizes.has_value() && childAsPtr->getDisplay() != Display::Inline && childOutput.intrinsicSizes.has_value()) {
         //                 float leadingMargin = constraints.inheritedProperties.direction == layout::Direction::ltr ? childAsPtr->preLayout->resolvedMargins.left : childAsPtr->preLayout->resolvedMargins.right;
@@ -949,6 +949,8 @@ namespace tree {
         float maxX = childConstraints.origin.x;
         float minY = childConstraints.origin.y;
         float maxY = childConstraints.origin.y;
+        float minimumContent = 0.0f;
+        float maximumContent = 0.0f;
 
         InlineSizingInput inlineSizing {
             .availableWidth = childConstraints.availableWidth,
@@ -956,6 +958,54 @@ namespace tree {
             .trackIntrinsicWidth = sizeRequest.resolvingIntrinsicWidth,
         };
         auto inlineFormatting = buildInlineBoxes(node, inlineSizing);
+
+        auto flexPass = [&]() {
+            auto flexDirection = node->getFlexDirection();
+            auto justifyContent = node->getJustifyContent();
+            auto alignItems = node->getAlignItems();
+            auto alignContentVal = node->getAlignContent();
+            auto flexWrap = node->getFlexWrap();
+
+            FlexLayout flexContext {flexDirection, justifyContent, alignItems, alignContentVal, flexWrap};
+            flexContext.axis.applyDirection(constraints.inheritedProperties.direction);
+
+            FlexResolver fr {
+                *this, node, constraints, childConstraints, flexContext, frameInfo, measured,
+                mutate, childConstraints.availableWidth, childConstraints.availableHeight,
+                minX, minY, maxX, maxY
+            };
+
+            fr.phaseB();
+            auto bounds = fr.phaseC();
+
+            maxX = bounds.maxX;
+            maxY = bounds.maxY;
+
+            if (fr.intrinsicSizes) {
+                minimumContent = std::max(minimumContent, fr.intrinsicSizes->minimum);
+                maximumContent = std::max(maximumContent, fr.intrinsicSizes->maximum);
+            }
+        };
+
+
+        auto gridPass = [&]() {
+            GridResolver gr {
+                *this, node, constraints, childConstraints, frameInfo, measured,
+                mutate, childConstraints.availableWidth, childConstraints.availableHeight,
+                minX, minY, maxX, maxY
+            };
+
+            gr.phaseB();
+
+            auto bounds = gr.phaseC();
+
+            maxX = bounds.maxX;
+            maxY = bounds.maxY;
+            if (gr.intrinsicSizes) {
+                minimumContent = std::max(minimumContent, gr.intrinsicSizes->minimum);
+                maximumContent = std::max(maximumContent, gr.intrinsicSizes->maximum);
+            }
+        };
 
         auto normalPass = [&]() {
             for (uint64_t i = 0; i < node->children.size(); ++i) {
@@ -968,8 +1018,18 @@ namespace tree {
 
                 auto childOutput = layoutRecursive(child, frameInfo, childConstraints, *child->measured, mutate);
                 auto& childLayout = childOutput.layout;
+                
+                // track:
+                // childOutput.intrinsicSizes-> min and max as min/max content
+                // simultaneously, track the computed box content size
+                // so we will get three things. not very hard.
 
                 if (!childLayout.outOfFlow) {
+                    if (childOutput.intrinsicSizes) {
+                        minimumContent = std::max(minimumContent, childOutput.intrinsicSizes->minimum);
+                        maximumContent = std::max(maximumContent, childOutput.intrinsicSizes->maximum);
+                    }
+
                     childConstraints.cursor = childLayout.siblingCursor;
                     childConstraints.edgeIntent = childLayout.edgeIntent;
                     childConstraints.prevInlineHeight = childLayout.prevInlineHeight;
@@ -981,11 +1041,43 @@ namespace tree {
         };
 
         auto display = node->getDisplay();
-        if (display != Display::Flex && display != Display::Grid) {
-            normalPass();
+        
+        switch (display) {
+            case style::Display::Flex: {
+                flexPass();
+                std::println("min content: {}", minimumContent);
+                break;
+            }
+            case style::Display::Grid: {
+                gridPass();
+                break;
+            }
+            default: {
+                normalPass();
+                break;
+            }
         }
 
-        return {.layout = std::move(layout)};
+        layout.localComputedBox = layout.computedBox;
+        layout.localAtomOffsets = layout.atomOffsets;
+
+        LayoutOutput output {
+            .layout = layout,
+            .intrinsicSizes = IntrinsicSizes {
+                .minimum = minimumContent,
+                .maximum = maximumContent
+            }
+        };
+
+
+        if (mutate) {
+            node->layout = output.layout;
+            node->constraintsKey = key;
+            node->dirtySelf |= DirtyBits::PostLayout | DirtyBits::Place | DirtyBits::Finalize;
+        }
+
+
+        return output;
         // auto key = makeConstraintsKey(constraints);
 
         // if (mutate) {

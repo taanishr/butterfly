@@ -280,8 +280,8 @@ namespace layout {
             }
         }
         if (intrinsicSizes) {
-            intrinsicSizes->minContent = Size::px(intrinsicMin);
-            intrinsicSizes->maxContent = Size::px(intrinsicMax);
+            intrinsicSizes->minimum = intrinsicMin;
+            intrinsicSizes->maximum = intrinsicMax;
         }
 
         std::vector<float> sizes(n, 0.0f);
@@ -295,7 +295,7 @@ namespace layout {
             } else if (defs[i].unit == style::Unit::MaxContent) {
                 sizes[i] = maxContents[i];
             } else if (defs[i].unit == style::Unit::FitContent) {
-                IntrinsicSizes contributions{.minContent = Size::px(minContents[i]), .maxContent = Size::px(maxContents[i])};
+                IntrinsicSizes contributions{.minimum = minContents[i], .maximum = maxContents[i]};
                 sizes[i] = resolveIntrinsicSize(defs[i], contributions, basis);
             } else if (defs[i].isFr() && axisDefinite) {
                 sizes[i] = minimums[i];
@@ -388,8 +388,11 @@ namespace layout {
 
         preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(
             child,
-            childAvailableWidth,
-            preparedChildConstraints.widthResolution
+            {
+                .availableWidth = childAvailableWidth,
+                .widthRequest = preparedChildConstraints.widthResolution ? std::optional{*preparedChildConstraints.widthResolution == AxisResolution::MinContent ? IntrinsicRequest::Minimum : IntrinsicRequest::Maximum} : std::nullopt,
+                .trackIntrinsicWidth = false,
+            }
         );
         preparedChildConstraints.availableWidth = childAvailableWidth;
         preparedChildConstraints.inheritedProperties =
@@ -434,7 +437,11 @@ namespace layout {
                     childMeasured.explicitHeight,
                     *childAsPtr->shared.aspectRatio
                 );
-            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childAsPtr, preparedChildConstraints.availableWidth, preparedChildConstraints.widthResolution, true);
+            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childAsPtr, {
+                .availableWidth = preparedChildConstraints.availableWidth,
+                .widthRequest = preparedChildConstraints.widthResolution ? std::optional{*preparedChildConstraints.widthResolution == AxisResolution::MinContent ? IntrinsicRequest::Minimum : IntrinsicRequest::Maximum} : std::nullopt,
+                .trackIntrinsicWidth = true,
+            });
 
             const auto& childOutput = tree.speculateLayout(
                 frameInfo,
@@ -447,11 +454,11 @@ namespace layout {
                 continue;
 
             IntrinsicSizes intrinsicWidths = childOutput.intrinsicSizes.value_or(IntrinsicSizes{
-                .minContent = Size::px(childLayout.computedBox.width),
-                .maxContent = Size::px(childLayout.computedBox.width)
+                .minimum = childLayout.computedBox.width,
+                .maximum = childLayout.computedBox.width,
             });
-            float minContent = intrinsicWidths.minContent.resolveOr(Size::autoSize());
-            float maxContent = intrinsicWidths.maxContent.resolveOr(Size::autoSize());
+            float minContent = intrinsicWidths.minimum;
+            float maxContent = intrinsicWidths.maximum;
 
             std::optional<float> preferredWidth;
             if (childLayout.resolvedSize.width) {
@@ -535,7 +542,11 @@ namespace layout {
             float itemW = applyMinMax(cellW, childAsPtr->shared.minWidth, childAsPtr->shared.maxWidth, cellW);
             Measured childMeasured = *childAsPtr->measured;
             auto preparedChildConstraints = prepareChildConstraints(childAsPtr);
-            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childAsPtr, Size::px(itemW), preparedChildConstraints.widthResolution);
+            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childAsPtr, {
+                .availableWidth = itemW,
+                .widthRequest = preparedChildConstraints.widthResolution ? std::optional{*preparedChildConstraints.widthResolution == AxisResolution::MinContent ? IntrinsicRequest::Minimum : IntrinsicRequest::Maximum} : std::nullopt,
+                .trackIntrinsicWidth = false,
+            });
             preparedChildConstraints.availableWidth = Size::px(itemW);
             preparedChildConstraints.availableHeight = Size::autoSize();
             preparedChildConstraints.shrinkWidthToFit = false;
@@ -573,11 +584,11 @@ namespace layout {
 
             const auto& childOutput = tree.speculateLayout(frameInfo, childAsPtr, preparedChildConstraints, childMeasured);
             IntrinsicSizes intrinsicHeights = childOutput.intrinsicSizes.value_or(IntrinsicSizes{
-                .minContent = Size::px(childOutput.layout.consumedHeight),
-                .maxContent = Size::px(childOutput.layout.consumedHeight)
+                .minimum = childOutput.layout.consumedHeight,
+                .maximum = childOutput.layout.consumedHeight,
             });
-            float minContent = intrinsicHeights.minContent.resolveOr(Size::autoSize());
-            float maxContent = intrinsicHeights.maxContent.resolveOr(Size::autoSize());
+            float minContent = intrinsicHeights.minimum;
+            float maxContent = intrinsicHeights.maximum;
 
             std::optional<float> preferredHeight;
             if (childOutput.layout.resolvedSize.height) {
@@ -660,8 +671,11 @@ namespace layout {
 
             preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(
                 childAsPtr,
-                Size::px(itemW),
-                preparedChildConstraints.widthResolution
+                {
+                    .availableWidth = itemW,
+                    .widthRequest = preparedChildConstraints.widthResolution ? std::optional{*preparedChildConstraints.widthResolution == AxisResolution::MinContent ? IntrinsicRequest::Minimum : IntrinsicRequest::Maximum} : std::nullopt,
+                    .trackIntrinsicWidth = false,
+                }
             );
             preparedChildConstraints.availableWidth = Size::px(itemW);
             preparedChildConstraints.availableHeight = Size::px(itemH);

@@ -96,7 +96,7 @@ struct SizePair {
 
 namespace layout {
     struct IntrinsicSizes {
-        style::Size minContent;
-        style::Size maxContent;
+        float minimum{};
+        float maximum{};
     };
 }

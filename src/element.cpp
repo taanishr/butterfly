@@ -712,7 +712,7 @@ namespace tree {
             }
             float maxContent = 0.0f;
             for (float width : maxLineWidths) maxContent = std::max(maxContent, width);
-            context->intrinsicSizes = layout::IntrinsicSizes{.minContent = Size::px(minContent), .maxContent = Size::px(maxContent)};
+            context->intrinsicSizes = layout::IntrinsicSizes{.minimum = minContent, .maximum = maxContent};
         }
 
         const size_t fragmentCount = fragments.size();
@@ -823,7 +823,7 @@ namespace tree {
             for (const auto& lineBox : minContext->lineBoxes) minContent = std::max(minContent, lineBox.width);
             float maxContent = 0.0f;
             for (const auto& lineBox : maxContext->lineBoxes) maxContent = std::max(maxContent, lineBox.width);
-            context->intrinsicSizes = layout::IntrinsicSizes{.minContent = Size::px(minContent), .maxContent = Size::px(maxContent)};
+            context->intrinsicSizes = layout::IntrinsicSizes{.minimum = minContent, .maximum = maxContent};
         }
 
         return context;
