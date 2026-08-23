@@ -1041,11 +1041,10 @@ namespace tree {
         };
 
         auto display = node->getDisplay();
-        
+
         switch (display) {
             case style::Display::Flex: {
                 flexPass();
-                std::println("min content: {}", minimumContent);
                 break;
             }
             case style::Display::Grid: {
@@ -1055,6 +1054,82 @@ namespace tree {
             default: {
                 normalPass();
                 break;
+            }
+        }
+
+        // create new req, with contentWidth/Height set
+        float contentWidth = maxX - minX;
+        float contentHeight = maxY - minY;
+
+        SizeRequest resizeRequest = sizeRequest;
+        resizeRequest.content = {
+            .width = contentWidth,
+            .height = contentHeight,
+        };
+        
+        auto resizeResult = evaluateSize(*this, node, frameInfo, constraints, measured, resizeRequest);
+
+        // check if size results MATCH with og one;
+        const auto* initialWidth = std::get_if<float>(&sizeResult.size.width);
+        const auto* initialHeight = std::get_if<float>(&sizeResult.size.height);
+        const auto* resizedWidth = std::get_if<float>(&resizeResult.size.width);
+        const auto* resizedHeight = std::get_if<float>(&resizeResult.size.height);
+
+        bool widthChanged = resizedWidth && (!initialWidth || *resizedWidth != *initialWidth);
+        bool heightChanged = resizedHeight && (!initialHeight || *resizedHeight != *initialHeight);
+
+        // if there is deviation, rerun layout
+        if (widthChanged || heightChanged) {
+            if (widthChanged) {
+                measured.explicitWidth = *resizedWidth;
+            }
+            if (heightChanged) {
+                measured.explicitHeight = *resizedHeight;
+            }
+
+            layout = node->element->layout(constraints, node->shared, measured, atomized);
+
+            childConstraints = layout.childConstraints;
+            childConstraints.inheritedProperties = constraints.inheritedProperties;
+            childConstraints.textOverflow = constraints.textOverflow;
+
+            if (node->shared.overflow != Overflow::Visible) {
+                childConstraints.textOverflow = node->shared.textOverflow;
+            }
+
+            if (node->getPosition() != Position::Static) {
+                childConstraints.absoluteContainingBlock = {
+                    .origin = {0.0f, 0.0f},
+                    .width = layout.resolvedSize.width ? Size::px(layout.computedBox.width) : Size::autoSize(),
+                    .height = layout.resolvedSize.height ? Size::px(layout.computedBox.height) : Size::autoSize(),
+                };
+            } else {
+                childConstraints.absoluteContainingBlock = constraints.absoluteContainingBlock;
+            }
+
+            minX = childConstraints.origin.x;
+            maxX = childConstraints.origin.x;
+            minY = childConstraints.origin.y;
+            maxY = childConstraints.origin.y;
+            minimumContent = 0.0f;
+            maximumContent = 0.0f;
+
+            inlineSizing.availableWidth = childConstraints.availableWidth;
+            inlineFormatting = buildInlineBoxes(node, inlineSizing);
+
+            switch (display) {
+                case style::Display::Flex: {
+                    flexPass();
+                    break;
+                }
+                case style::Display::Grid: {
+                    gridPass();
+                    break;
+                }
+                default: {
+                    normalPass();
+                    break;
+                }
             }
         }
 
@@ -1075,7 +1150,6 @@ namespace tree {
             node->constraintsKey = key;
             node->dirtySelf |= DirtyBits::PostLayout | DirtyBits::Place | DirtyBits::Finalize;
         }
-
 
         return output;
         // auto key = makeConstraintsKey(constraints);
