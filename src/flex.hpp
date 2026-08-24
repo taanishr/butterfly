@@ -51,6 +51,12 @@ namespace layout {
         const SizeState& crossSize(const SizePair& size) {
             return isRow ? size.height : size.width;
         }
+        SizeState& mainSize(SizePair& size) {
+            return isRow ? size.width : size.height;
+        }
+        SizeState& crossSize(SizePair& size) {
+            return isRow ? size.height : size.width;
+        }
         const Size& mainSize(const SharedDescriptor& shared) {
             return isRow ? shared.width : shared.height;
         }
@@ -125,9 +131,6 @@ namespace layout {
         float flexGrow;
         float scaledFlexShrink;
         AlignItems alignment;
-        Size crossSizeRequest;
-        float minCrossSize;
-        std::optional<float> maxCrossSize;
         float usedMainSize;
         float hypotheticalCrossSize;
     };
@@ -263,9 +266,8 @@ namespace layout {
             float mainOffset;
             float crossOffset;
             float mainSize;
-            float crossSize;
-            std::optional<float> crossSizeOverride; 
-            bool needsCrossShrinkToFit{false};
+            float lineCrossSize;
+            AlignItems alignment;
         };
 
         FlexLayout() {}
@@ -320,9 +322,6 @@ namespace layout {
                 .flexGrow = grow > 0.0f ? grow : 0.0f,
                 .scaledFlexShrink = shrink > 0.0f ? flexBaseSize * shrink : 0.0f,
                 .alignment = alignment,
-                .crossSizeRequest = axis.crossSize(child->shared),
-                .minCrossSize = 0.0f,
-                .maxCrossSize = std::nullopt,
                 .usedMainSize = flexBaseSize,
                 .hypotheticalCrossSize = 0.0f
             });
@@ -414,39 +413,23 @@ namespace layout {
                     p.childIndex = item.childIndex;
                     p.mainOffset = accumulated;
                     p.mainSize = item.usedMainSize;
+                    p.lineCrossSize = lineCross;
+                    p.alignment = item.alignment;
 
-                    float childCross = item.hypotheticalCrossSize;
-                    auto resolvedCrossSize = item.crossSizeRequest.resolve(
-                        Size::px(lineCross)
-                    );
-
-                    if (resolvedCrossSize) {
-                        childCross = *resolvedCrossSize;
-                    }
-
-                    p.crossSize = childCross;
+                    float childCrossSize = item.hypotheticalCrossSize;
 
                     switch (item.alignment) {
                         case AlignItems::Stretch:
                             p.crossOffset = lineCrossBase;
-                            if (item.crossSizeRequest.isAuto()) {
-                                float stretchedCrossSize = std::max(lineCross, item.minCrossSize);
-                                if (item.maxCrossSize.has_value()) stretchedCrossSize = std::min(stretchedCrossSize, *item.maxCrossSize);
-                                p.crossSize = stretchedCrossSize;
-                                p.crossSizeOverride = stretchedCrossSize;
-                            }
                             break;
                         case AlignItems::FlexStart:
                             p.crossOffset = lineCrossBase;
-                            p.needsCrossShrinkToFit = axis.isRow;
                             break;
                         case AlignItems::Center:
-                            p.crossOffset = lineCrossBase + (lineCross - childCross) / 2.0f;
-                            p.needsCrossShrinkToFit = axis.isRow;
+                            p.crossOffset = lineCrossBase + (lineCross - childCrossSize) / 2.0f;
                             break;
                         case AlignItems::FlexEnd:
-                            p.crossOffset = lineCrossBase + lineCross - childCross;
-                            p.needsCrossShrinkToFit = axis.isRow;
+                            p.crossOffset = lineCrossBase + lineCross - childCrossSize;
                             break;
                     }
 
@@ -576,7 +559,6 @@ namespace layout {
         }
 
         float determineAvailableMain(float contentMainSize);
-        float determineAvailableCross(float contentCrossSize);
 
         Constraints prepareChildConstraints(TreeNode* child);
         void phaseB();

@@ -60,15 +60,6 @@ namespace layout {
     Constraints FlexResolver::prepareChildConstraints(TreeNode* child) {
         auto newChildConstraints = childConstraints;
         newChildConstraints.intrinsicSizesAxis.reset();
-
-        newChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(
-            child,
-            {
-                .availableWidth = childAvailableWidth,
-                .widthRequest = newChildConstraints.widthResolution ? std::optional{*newChildConstraints.widthResolution == AxisResolution::MinContent ? IntrinsicRequest::Minimum : IntrinsicRequest::Maximum} : std::nullopt,
-                .trackIntrinsicWidth = false,
-            }
-        );
         newChildConstraints.availableWidth = childAvailableWidth;
         newChildConstraints.inheritedProperties = parentConstraints.inheritedProperties;
 
@@ -108,32 +99,6 @@ namespace layout {
         }
 
         return availableMain;
-    }
-
-    float FlexResolver::determineAvailableCross(
-        float contentCrossSize
-    ) {
-        auto& crossSize = flex.axis.crossExplicit(measured);
-
-        if (crossSize) {
-            return parentAvailableCross().isAuto() ? contentCrossSize : parentAvailableCross().value;
-        }
-
-        switch (crossSize.error()) {
-            case SizeError::Auto:
-                if (!flex.axis.isRow &&
-                    std::holds_alternative<std::monostate>(flex.axis.crossOverride(parentConstraints)) &&
-                    !parentConstraints.shrinkWidthToFit) {
-                    return parentAvailableCross().isAuto() ? contentCrossSize : parentAvailableCross().value;
-                }
-                return contentCrossSize;
-            case SizeError::IndefiniteBasis:
-            case SizeError::ContentDependent:
-                return contentCrossSize;
-            case SizeError::FractionRequiresContext:
-                // fr does not make sense as a flex container cross size.
-                return contentCrossSize;
-        }
     }
 
     void FlexResolver::phaseB() {
@@ -241,104 +206,73 @@ namespace layout {
     }
 
     FlexResolver::Bounds FlexResolver::phaseC() {
-        Axis crossAxis = flex.axis.isRow ? Axis::Height : Axis::Width;
-        bool parentRequestsIntrinsicCross = parentConstraints.intrinsicSizesAxis == crossAxis;
-
         for (auto& line : flex.lines) {
             line.maxCrossSize = 0.0f;
-            line.intrinsicMinCrossSize = 0.0f;
-            line.intrinsicMaxCrossSize = 0.0f;
 
             for (auto& item : line.items) {
                 auto childNode = node->children[item.childIndex].get();
-                const auto& crossRequest = flex.axis.crossSize(childNode->shared);
-                const auto& minCrossRequest = flex.axis.minCrossSize(childNode->shared);
-                const auto& maxCrossRequest = flex.axis.maxCrossSize(childNode->shared);
-                auto resolvedCrossSize = resolveCrossSize(childNode);
                 auto preparedChildConstraints = prepareChildConstraints(childNode);
                 Measured childMeasured = *childNode->measured;
-                bool needsIntrinsicCross = parentRequestsIntrinsicCross || crossRequest.isContentDependent() || minCrossRequest.isContentDependent() || (maxCrossRequest.has_value() && maxCrossRequest->isContentDependent());
 
                 flex.axis.mainAvailable(preparedChildConstraints) = Size::px(item.usedMainSize);
-                // preparedChildConstraints.parentOverride = item.usedMainSize;
-                flex.axis.mainOverride(preparedChildConstraints) = item.usedMainSize;
-                flex.axis.mainExplicit(childMeasured) = item.usedMainSize;
-                if (childNode->shared.aspectRatio)
-                    transferAspectRatio(
-                        childMeasured.explicitWidth,
-                        childMeasured.explicitHeight,
-                        *childNode->shared.aspectRatio
-                    );
-                    
-                if (needsIntrinsicCross) preparedChildConstraints.intrinsicSizesAxis = crossAxis;
                 preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childNode, {
                     .availableWidth = preparedChildConstraints.availableWidth,
-                    .widthRequest = preparedChildConstraints.widthResolution ? std::optional{*preparedChildConstraints.widthResolution == AxisResolution::MinContent ? IntrinsicRequest::Minimum : IntrinsicRequest::Maximum} : std::nullopt,
-                    .trackIntrinsicWidth = preparedChildConstraints.intrinsicSizesAxis == Axis::Width,
+                    .widthRequest = std::nullopt,
+                    .trackIntrinsicWidth = false,
                 });
 
-                const auto& childOutput = tree.speculateLayout(
-                    frameInfo,
-                    childNode,
-                    preparedChildConstraints,
-                    childMeasured
-                );
+                SizeRequest childRequest {
+                    .position = childNode->shared.position,
+                    .specified = {.width = childNode->shared.width, .height = childNode->shared.height},
+                    .override = preparedChildConstraints.parentOverride,
+                    .content = {.width = std::monostate{}, .height = std::monostate{}},
+                    .minimum = {.width = childNode->shared.minWidth, .height = childNode->shared.minHeight},
+                    .maximum = {
+                        .width = childNode->shared.maxWidth ? SizeState{*childNode->shared.maxWidth} : SizeState{std::monostate{}},
+                        .height = childNode->shared.maxHeight ? SizeState{*childNode->shared.maxHeight} : SizeState{std::monostate{}},
+                    },
+                    .available = {.width = preparedChildConstraints.availableWidth, .height = preparedChildConstraints.availableHeight},
+                    .top = childNode->shared.top,
+                    .right = childNode->shared.right,
+                    .bottom = childNode->shared.bottom,
+                    .left = childNode->shared.left,
+                    .paddingTop = childNode->shared.paddingTop.value_or(childNode->shared.padding),
+                    .paddingRight = childNode->shared.paddingRight.value_or(childNode->shared.padding),
+                    .paddingBottom = childNode->shared.paddingBottom.value_or(childNode->shared.padding),
+                    .paddingLeft = childNode->shared.paddingLeft.value_or(childNode->shared.padding),
+                    .borderWidth = childNode->shared.borderWidth,
+                    .margins = childNode->preLayout->resolvedMargins,
+                    .aspectRatio = childNode->shared.aspectRatio,
+                    .automaticWidth = preparedChildConstraints.shrinkWidthToFit ? AutomaticSizing::UseContent : AutomaticSizing::UseAvailable,
+                    .automaticHeight = AutomaticSizing::UseContent,
+                    .automaticMinimumWidth = AutomaticMinimum::Zero,
+                    .automaticMinimumHeight = AutomaticMinimum::Zero,
+                };
 
-                if (crossRequest.isContentDependent()) 
-                    resolvedCrossSize = resolveIntrinsicSize(crossRequest, *childOutput.intrinsicSizes, parentAvailableCross());
-
-                item.minCrossSize = minCrossRequest.isContentDependent() ? resolveIntrinsicSize(minCrossRequest, *childOutput.intrinsicSizes, parentAvailableCross()) : minCrossRequest.resolveOr(parentAvailableCross(), 0.0f);
-                if (maxCrossRequest.has_value() && maxCrossRequest->isContentDependent()) {
-                    item.maxCrossSize = resolveIntrinsicSize(*maxCrossRequest, *childOutput.intrinsicSizes, parentAvailableCross());
-                } else if (maxCrossRequest.has_value()) {
-                    auto resolvedMaxCross = maxCrossRequest->resolve(parentAvailableCross());
-                    if (resolvedMaxCross) 
-                        item.maxCrossSize = *resolvedMaxCross;
+                if (flex.axis.isRow) {
+                    childRequest.automaticHeight = AutomaticSizing::UseContent;
+                } else {
+                    childRequest.automaticWidth = AutomaticSizing::UseContent;
                 }
+                flex.axis.mainSize(childRequest.override) = item.usedMainSize;
 
-                item.hypotheticalCrossSize = resolvedCrossSize ? *resolvedCrossSize : flex.axis.crossSize(childOutput.layout);
-                item.hypotheticalCrossSize = std::max(item.hypotheticalCrossSize, item.minCrossSize);
-                if (item.maxCrossSize.has_value()) 
-                    item.hypotheticalCrossSize = std::min(item.hypotheticalCrossSize, *item.maxCrossSize);
+                LayoutOutput childOutput = tree.layoutRecursive(childNode, frameInfo, preparedChildConstraints, childMeasured, false, std::move(childRequest));
+                const SizeResult& sizeResult = childOutput.sizeResult;
+
+                const float* preferredCrossSize = std::get_if<float>(&flex.axis.crossSize(sizeResult.size));
+                item.hypotheticalCrossSize = preferredCrossSize ? *preferredCrossSize : flex.axis.crossSize(childOutput.layout);
 
                 line.maxCrossSize = std::max(line.maxCrossSize, item.hypotheticalCrossSize);
-                if (parentRequestsIntrinsicCross && childOutput.intrinsicSizes.has_value()) {
-                    float childMinCross = childOutput.intrinsicSizes->minimum;
-                    float childMaxCross = childOutput.intrinsicSizes->maximum;
-                    childMinCross = std::max(childMinCross, item.minCrossSize);
-                    childMaxCross = std::max(childMaxCross, item.minCrossSize);
-                    if (item.maxCrossSize.has_value()) {
-                        childMinCross = std::min(childMinCross, *item.maxCrossSize);
-                        childMaxCross = std::min(childMaxCross, *item.maxCrossSize);
-                    }
-                    line.intrinsicMinCrossSize = std::max(line.intrinsicMinCrossSize, childMinCross);
-                    line.intrinsicMaxCrossSize = std::max(line.intrinsicMaxCrossSize, childMaxCross);
-                }
             }
         }
 
-        float naturalCross = 0;
+        float contentCrossSize = 0;
 
         for (auto& line : flex.lines) 
-            naturalCross += line.maxCrossSize;
+            contentCrossSize += line.maxCrossSize;
         if (flex.lines.size() > 1) 
-            naturalCross += resolvedGap * (flex.lines.size() - 1);
-        
-        if (parentRequestsIntrinsicCross) {
-            float minContent = 0.0f;
-            float maxContent = 0.0f;
-            for (auto& line : flex.lines) {
-                minContent += line.intrinsicMinCrossSize;
-                maxContent += line.intrinsicMaxCrossSize;
-            }
-            if (flex.lines.size() > 1) {
-                float totalGap = resolvedGap * (flex.lines.size() - 1);
-                minContent += totalGap;
-                maxContent += totalGap;
-            }
-            intrinsicSizes = IntrinsicSizes{.minimum = minContent, .maximum = maxContent};
-        }
-        float availableCross = determineAvailableCross(naturalCross);
+            contentCrossSize += resolvedGap * (flex.lines.size() - 1);
+        float availableCross = contentCrossSize;
 
         auto placements = flex.computePlacements(
             resolvedMainSizes,
@@ -362,49 +296,50 @@ namespace layout {
             preparedChildConstraints.origin = childPosition;
             preparedChildConstraints.cursor = childPosition;
             flex.axis.mainAvailable(preparedChildConstraints) = Size::px(p.mainSize);
-            flex.axis.mainOverride(preparedChildConstraints) = p.mainSize;
+            flex.axis.crossAvailable(preparedChildConstraints) = Size::px(p.lineCrossSize);
+            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childNode, {
+                .availableWidth = preparedChildConstraints.availableWidth,
+                .widthRequest = std::nullopt,
+                .trackIntrinsicWidth = false,
+            });
 
-            flex.axis.mainExplicit(childMeasured) = p.mainSize;
+            SizeRequest childRequest {
+                .position = childNode->shared.position,
+                .specified = {.width = childNode->shared.width, .height = childNode->shared.height},
+                .override = preparedChildConstraints.parentOverride,
+                .content = {.width = std::monostate{}, .height = std::monostate{}},
+                .minimum = {.width = childNode->shared.minWidth, .height = childNode->shared.minHeight},
+                .maximum = {
+                    .width = childNode->shared.maxWidth ? SizeState{*childNode->shared.maxWidth} : SizeState{std::monostate{}},
+                    .height = childNode->shared.maxHeight ? SizeState{*childNode->shared.maxHeight} : SizeState{std::monostate{}},
+                },
+                .available = {.width = preparedChildConstraints.availableWidth, .height = preparedChildConstraints.availableHeight},
+                .top = childNode->shared.top,
+                .right = childNode->shared.right,
+                .bottom = childNode->shared.bottom,
+                .left = childNode->shared.left,
+                .paddingTop = childNode->shared.paddingTop.value_or(childNode->shared.padding),
+                .paddingRight = childNode->shared.paddingRight.value_or(childNode->shared.padding),
+                .paddingBottom = childNode->shared.paddingBottom.value_or(childNode->shared.padding),
+                .paddingLeft = childNode->shared.paddingLeft.value_or(childNode->shared.padding),
+                .borderWidth = childNode->shared.borderWidth,
+                .margins = childNode->preLayout->resolvedMargins,
+                .aspectRatio = childNode->shared.aspectRatio,
+                .automaticWidth = preparedChildConstraints.shrinkWidthToFit ? AutomaticSizing::UseContent : AutomaticSizing::UseAvailable,
+                .automaticHeight = AutomaticSizing::UseContent,
+                .automaticMinimumWidth = AutomaticMinimum::Zero,
+                .automaticMinimumHeight = AutomaticMinimum::Zero,
+            };
 
-            float finalCrossSize = p.crossSize;
-            if (p.crossSizeOverride.has_value()) finalCrossSize = *p.crossSizeOverride;
-
-            flex.axis.crossAvailable(preparedChildConstraints) =
-                Size::px(finalCrossSize);
-            // preparedChildConstraints.parentOverride = finalCrossSize;
-            flex.axis.crossOverride(preparedChildConstraints) = finalCrossSize;
-            flex.axis.crossExplicit(childMeasured) = finalCrossSize;
-            flex.axis.crossShrinkToFit(preparedChildConstraints) =
-                p.needsCrossShrinkToFit;
-
-            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(
-                childNode,
-                {
-                    .availableWidth = preparedChildConstraints.availableWidth,
-                    .widthRequest = preparedChildConstraints.widthResolution ? std::optional{*preparedChildConstraints.widthResolution == AxisResolution::MinContent ? IntrinsicRequest::Minimum : IntrinsicRequest::Maximum} : std::nullopt,
-                    .trackIntrinsicWidth = false,
-                }
-            );
-
-            std::optional<LayoutOutput> finalChildOutput;
-            const LayoutOutput* childOutput;
-            if (mutate) {
-                finalChildOutput = tree.layoutPhase(
-                    childNode,
-                    frameInfo,
-                    preparedChildConstraints,
-                    childMeasured
-                );
-                childOutput = &*finalChildOutput;
+            flex.axis.mainSize(childRequest.override) = p.mainSize;
+            if (flex.axis.isRow) {
+                childRequest.automaticHeight = p.alignment == AlignItems::Stretch ? AutomaticSizing::UseAvailable : AutomaticSizing::UseContent;
             } else {
-                childOutput = &tree.speculateLayout(
-                    frameInfo,
-                    childNode,
-                    preparedChildConstraints,
-                    childMeasured
-                );
+                childRequest.automaticWidth = p.alignment == AlignItems::Stretch ? AutomaticSizing::UseAvailable : AutomaticSizing::UseContent;
             }
-            const auto& childLayout = childOutput->layout;
+
+            LayoutOutput childOutput = tree.layoutRecursive(childNode, frameInfo, preparedChildConstraints, childMeasured, mutate, std::move(childRequest));
+            const auto& childLayout = childOutput.layout;
 
             maxX = std::max(maxX, childLayout.computedBox.x + childLayout.computedBox.width);
             maxY = std::max(maxY, childLayout.computedBox.y + childLayout.consumedHeight);
