@@ -1,4 +1,5 @@
 #include "flex.hpp"
+#include "overloaded.hpp"
 #include "render_tree.hpp"
 #include "render_tree.hpp"
 #include <print>
@@ -64,41 +65,6 @@ namespace layout {
         newChildConstraints.inheritedProperties = parentConstraints.inheritedProperties;
 
         return newChildConstraints;
-    }
-
-    float FlexResolver::determineAvailableMain(float contentMainSize)
-    {
-        const auto& mainSize = flex.axis.mainExplicit(measured);
-
-        float availableMain;
-        if (mainSize) {
-            availableMain = parentAvailableMain().isAuto() ? contentMainSize : parentAvailableMain().value;
-        } else {
-            switch (mainSize.error()) {
-                case SizeError::Auto:
-                    availableMain =
-                        flex.axis.isRow &&
-                        std::holds_alternative<std::monostate>(flex.axis.mainOverride(parentConstraints)) &&
-                        !parentConstraints.shrinkWidthToFit
-                            ? (parentAvailableMain().isAuto() ? contentMainSize : parentAvailableMain().value)
-                            : contentMainSize;
-                    break;
-                case SizeError::IndefiniteBasis:
-                case SizeError::ContentDependent:
-                    availableMain = contentMainSize;
-                    break;
-                case SizeError::FractionRequiresContext:
-                    // fr does not make sense as a flex container main size.
-                    availableMain = contentMainSize;
-                    break;
-            }
-        }
-
-        if (node->shared.overflow == Overflow::Scroll) {
-            availableMain = std::max(availableMain, contentMainSize);
-        }
-
-        return availableMain;
     }
 
     void FlexResolver::phaseB() {
@@ -229,7 +195,15 @@ namespace layout {
             intrinsicSizes = IntrinsicSizes{.minimum = minContent, .maximum = maxContent};
         }
 
-        availableMain = determineAvailableMain(totalSizeFallback);
+        availableMain = std::visit(Overloaded {
+            [](float value) { return value; },
+            [&](const auto&) { return totalSizeFallback; },
+        }, calculateSize(parentAvailableMain(), std::monostate{}));
+        
+        if (node->shared.overflow == Overflow::Scroll) {
+            availableMain = std::max(availableMain, totalSizeFallback);
+        }
+
         resolvedMainSizes = flex.resolveSizes(availableMain, resolvedGap);
     }
 

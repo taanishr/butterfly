@@ -558,8 +558,6 @@ namespace layout {
             return request.resolve(basis);
         }
 
-        float determineAvailableMain(float contentMainSize);
-
         Constraints prepareChildConstraints(TreeNode* child);
         void phaseB();
         Bounds phaseC();
