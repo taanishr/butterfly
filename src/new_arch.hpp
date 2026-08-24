@@ -666,6 +666,7 @@ namespace layout {
 
     struct LayoutOutput {
         LayoutResult layout;
+        SizeResult sizeResult;
         std::optional<IntrinsicSizes> intrinsicSizes;
     };
 

@@ -763,117 +763,6 @@ namespace tree {
         //     std::optional<Axis> intrinsicSizesAxis;
         // };
 
-     
-
-        // auto normalPass = [&](){
-        //     if (constraints.intrinsicSizesAxis == Axis::Width) {
-        //         auto intrinsicContext = node->element->isInline() ? constraints.inlineFormatting.context : inlineFormatting;
-        //         bool isolatedContext = intrinsicContext && constraints.inlineFormatting.fragments.start == 0 && constraints.inlineFormatting.fragments.count == intrinsicContext->fragments.size();
-        //         intrinsicSizes = intrinsicContext && intrinsicContext->intrinsicSizes.has_value() && (!node->element->isInline() || isolatedContext) ? intrinsicContext->intrinsicSizes : std::nullopt;
-        //         if (intrinsicSizes.has_value() && !isInline) {
-        //             float horizontalPadding = layout.resolvedPadding.left + layout.resolvedPadding.right;
-        //             intrinsicSizes->minContent = Size::px(intrinsicSizes->minContent.resolveOr(Size::autoSize()) + horizontalPadding);
-        //             intrinsicSizes->maxContent = Size::px(intrinsicSizes->maxContent.resolveOr(Size::autoSize()) + horizontalPadding);
-        //         }
-        //     }
-
-        //     for (uint64_t i = 0; i < node->children.size(); ++i) {
-        //         auto& child = node->children[i];
-        //         auto childAsPtr = child.get();
-
-        //         childConstraints.inlineFormatting = {
-        //             .context = inlineFormatting,
-        //             .fragments = inlineFormatting->childFragments[i]
-        //         };
-        //         childConstraints.inheritedProperties = constraints.inheritedProperties;
-        //         auto childOutput = layoutRecursive(
-        //             childAsPtr,
-        //             frameInfo,
-        //             childConstraints,
-        //             *childAsPtr->measured,
-        //             mutate
-        //         );
-        //         auto& childLayout = childOutput.layout;
-
-        //         if (!childLayout.outOfFlow) {
-        //             if (constraints.intrinsicSizesAxis == Axis::Width && intrinsicSizes.has_value() && childAsPtr->getDisplay() != Display::Inline && childOutput.intrinsicSizes.has_value()) {
-        //                 float leadingMargin = constraints.inheritedProperties.direction == layout::Direction::ltr ? childAsPtr->preLayout->resolvedMargins.left : childAsPtr->preLayout->resolvedMargins.right;
-        //                 float childMinContent = childOutput.intrinsicSizes->minContent.resolveOr(Size::autoSize());
-        //                 float childMaxContent = childOutput.intrinsicSizes->maxContent.resolveOr(Size::autoSize());
-        //                 intrinsicSizes->minContent = Size::px(std::max(intrinsicSizes->minContent.resolveOr(Size::autoSize()), leadingMargin + childMinContent));
-        //                 intrinsicSizes->maxContent = Size::px(std::max(intrinsicSizes->maxContent.resolveOr(Size::autoSize()), leadingMargin + childMaxContent));
-        //             }
-
-
-        //             childConstraints.cursor = childLayout.siblingCursor;
-        //             childConstraints.edgeIntent = childLayout.edgeIntent;
-        //             childConstraints.prevInlineHeight = childLayout.prevInlineHeight;
-                
-        //             maxX = std::max(maxX, childLayout.computedBox.x + childLayout.computedBox.width);
-        //             maxY = std::max(maxY, childLayout.computedBox.y + childLayout.consumedHeight);
-        //         }
-        //     }
-        // };
-
-        // auto flexPass = [&]() {
-        //     auto flexDirection = node->getFlexDirection();
-        //     auto justifyContent = node->getJustifyContent();
-        //     auto alignItems = node->getAlignItems();
-        //     auto alignContentVal = node->getAlignContent();
-        //     auto flexWrap = node->getFlexWrap();
-
-        //     FlexLayout flexContext {flexDirection, justifyContent, alignItems, alignContentVal, flexWrap};
-        //     flexContext.axis.applyDirection(constraints.inheritedProperties.direction);
-
-        //     FlexResolver fr {
-        //         *this, node, constraints, childConstraints, flexContext, frameInfo, measured,
-        //         mutate,
-        //         parentAvailableWidth, parentAvailableHeight, minX, minY, maxX, maxY
-        //     };
-
-        //     fr.phaseB();
-        //     auto bounds = fr.phaseC();
-
-        //     maxX = bounds.maxX;
-        //     maxY = bounds.maxY;
-        //     intrinsicSizes = fr.intrinsicSizes;
-        //     if (intrinsicSizes.has_value()) {
-        //         float padding = constraints.intrinsicSizesAxis == Axis::Width ? layout.resolvedPadding.left + layout.resolvedPadding.right : layout.resolvedPadding.top + layout.resolvedPadding.bottom;
-        //         intrinsicSizes->minContent = Size::px(intrinsicSizes->minContent.resolveOr(Size::autoSize()) + padding);
-        //         intrinsicSizes->maxContent = Size::px(intrinsicSizes->maxContent.resolveOr(Size::autoSize()) + padding);
-        //     }
-        // };
-
-        // auto gridPass = [&]() {
-        //     GridResolver gr {
-        //         *this, node, constraints, childConstraints, frameInfo, measured,
-        //         mutate,
-        //         parentAvailableWidth, parentAvailableHeight, minX, minY, maxX, maxY
-        //     };
-
-        //     gr.phaseB();
-
-        //     auto bounds = gr.phaseC();
-
-
-        //     maxX = bounds.maxX;
-        //     maxY = bounds.maxY;
-        //     intrinsicSizes = gr.intrinsicSizes;
-        //     if (intrinsicSizes.has_value()) {
-        //         float padding = constraints.intrinsicSizesAxis == Axis::Width ? layout.resolvedPadding.left + layout.resolvedPadding.right : layout.resolvedPadding.top + layout.resolvedPadding.bottom;
-        //         intrinsicSizes->minContent = Size::px(intrinsicSizes->minContent.resolveOr(Size::autoSize()) + padding);
-        //         intrinsicSizes->maxContent = Size::px(intrinsicSizes->maxContent.resolveOr(Size::autoSize()) + padding);
-        //     }
-        // };
-
-        // if (display == Display::Flex) {
-        //     flexPass();
-        // } else if (display == Display::Grid) {
-        //     gridPass();
-        // } else if (isNormalFlow) {
-        //     normalPass();
-        // }
-
         auto key = makeConstraintsKey(constraints);
 
         auto& atomized = *node->atomized;
@@ -1148,6 +1037,7 @@ namespace tree {
 
         LayoutOutput output {
             .layout = layout,
+            .sizeResult = resizeResult,
             .intrinsicSizes = IntrinsicSizes {
                 .minimum = minimumContent,
                 .maximum = maximumContent
