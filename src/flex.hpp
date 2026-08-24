@@ -45,6 +45,12 @@ namespace layout {
         float crossSize(const LayoutResult& lr) {
             return isRow ? lr.computedBox.height : lr.computedBox.width;
         }
+        const SizeState& mainSize(const SizePair& size) {
+            return isRow ? size.width : size.height;
+        }
+        const SizeState& crossSize(const SizePair& size) {
+            return isRow ? size.height : size.width;
+        }
         const Size& mainSize(const SharedDescriptor& shared) {
             return isRow ? shared.width : shared.height;
         }
@@ -569,9 +575,6 @@ namespace layout {
             return request.resolve(basis);
         }
 
-        float determineFlexBaseSize(std::expected<float, SizeError>& mainSize, const std::optional<IntrinsicSizes>& intrinsicSizes);
-        float determineMinMainSize(TreeNode* child, std::expected<float, SizeError>& mainSize, const std::optional<IntrinsicSizes>& intrinsicSizes);
-        std::optional<float> determineMaxMainSize(TreeNode* child, const std::optional<IntrinsicSizes>& intrinsicSizes);
         float determineAvailableMain(float contentMainSize);
         float determineAvailableCross(float contentCrossSize);
 

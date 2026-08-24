@@ -57,44 +57,6 @@ namespace layout {
         }
     }
 
-    IntrinsicSizes layoutIntrinsicMain(RenderTree& tree, TreeNode* child, const FrameInfo& frameInfo, Constraints constraints, Measured measured, AxisHelper& axis) {
-        axis.mainShrinkToFit(constraints) = true;
-        axis.mainResolution(constraints) = AxisResolution::MaxContent;
-        axis.mainExplicit(measured) = std::unexpected(SizeError::Auto);
-        constraints.intrinsicSizesAxis = axis.isRow ? Axis::Width : Axis::Height;
-
-        constraints.inlineFormatting = buildIsolatedInlineBoxes(child, {
-            .availableWidth = constraints.availableWidth,
-            .widthRequest = constraints.widthResolution ? std::optional{*constraints.widthResolution == AxisResolution::MinContent ? IntrinsicRequest::Minimum : IntrinsicRequest::Maximum} : std::nullopt,
-            .trackIntrinsicWidth = constraints.intrinsicSizesAxis == Axis::Width,
-        });
-
-        const auto& output = tree.speculateLayout(
-            frameInfo,
-            child,
-            constraints,
-            measured
-        );
-
-
-        std::println(
-            "intrinsic: {} {}, computed height: {}",
-            output.intrinsicSizes->minimum,
-            output.intrinsicSizes->maximum,
-            output.layout.computedBox.height
-        );
-
-        if (output.intrinsicSizes.has_value()) {
-            return *output.intrinsicSizes;
-        }
-
-        float size = axis.mainSize(output.layout);
-        return {
-            .minimum = size,
-            .maximum = size,
-        };
-    }
-
     Constraints FlexResolver::prepareChildConstraints(TreeNode* child) {
         auto newChildConstraints = childConstraints;
         newChildConstraints.intrinsicSizesAxis.reset();
@@ -111,45 +73,6 @@ namespace layout {
         newChildConstraints.inheritedProperties = parentConstraints.inheritedProperties;
 
         return newChildConstraints;
-    }
-
-    float FlexResolver::determineFlexBaseSize(std::expected<float, SizeError>& mainSize, const std::optional<IntrinsicSizes>& intrinsicSizes) {
-        if (mainSize) return *mainSize;
-        return intrinsicSizes->maximum;
-    }
-
-    float FlexResolver::determineMinMainSize(TreeNode* child, std::expected<float, SizeError>& mainSize, const std::optional<IntrinsicSizes>& intrinsicSizes) {
-        const auto& request = flex.axis.minMainSize(child->shared);
-        if (request.isContentDependent()) 
-            return resolveIntrinsicSize(request, *intrinsicSizes, parentAvailableMain());
-
-        auto resolvedMinMain = resolveMainSize(request);
-        if (resolvedMinMain) 
-            return *resolvedMinMain;
-
-        if (resolvedMinMain.error() ==
-            SizeError::FractionRequiresContext) {
-            // fr does not make sense as a flex min-size.
-            return 0.0f;
-        }
-
-        if (child->shared.overflow != Overflow::Visible) return 0.0f;
-
-        float minMainSize = intrinsicSizes->minimum;
-        if (mainSize) {
-            minMainSize = std::min(minMainSize, *mainSize);
-        }
-        return minMainSize;
-    }
-
-    std::optional<float> FlexResolver::determineMaxMainSize(TreeNode* child, const std::optional<IntrinsicSizes>& intrinsicSizes) {
-        const auto& request = flex.axis.maxMainSize(child->shared);
-        if (!request.has_value()) return std::nullopt;
-        if (request->isContentDependent()) return resolveIntrinsicSize(*request, *intrinsicSizes, parentAvailableMain());
-
-        auto resolved = resolveMainSize(*request);
-        if (!resolved) return std::nullopt;
-        return *resolved;
     }
 
     float FlexResolver::determineAvailableMain(float contentMainSize)
@@ -225,36 +148,55 @@ namespace layout {
                 continue;
 
             auto selfAlign = childAsPtr->getAlignSelf();
-            auto mainSize = resolveMainSize(flex.axis.mainSize(childAsPtr->shared));
-            auto resolvedCrossSize = resolveCrossSize(childAsPtr);
-            AlignItems effectiveAlign = flex.effectiveAlign(selfAlign);
-
             auto preparedChildConstraints = prepareChildConstraints(childAsPtr);
-
             Measured childMeasured = *childAsPtr->measured;
 
-            const auto& mainRequest = flex.axis.mainSize(childAsPtr->shared);
-            const auto& minMainRequest = flex.axis.minMainSize(childAsPtr->shared);
-            const auto& maxMainRequest = flex.axis.maxMainSize(childAsPtr->shared);
-            auto resolvedMinMain = resolveMainSize(minMainRequest);
-            bool needsIntrinsicMinimum = !resolvedMinMain && resolvedMinMain.error() != SizeError::FractionRequiresContext && childAsPtr->shared.overflow == Overflow::Visible;
+            SizeRequest childRequest {
+                .position = childAsPtr->shared.position,
+                .specified = {.width = childAsPtr->shared.width, .height = childAsPtr->shared.height},
+                .override = preparedChildConstraints.parentOverride,
+                .content = {.width = std::monostate{}, .height = std::monostate{}},
+                .minimum = {.width = childAsPtr->shared.minWidth, .height = childAsPtr->shared.minHeight},
+                .maximum = {
+                    .width = childAsPtr->shared.maxWidth ? SizeState{*childAsPtr->shared.maxWidth} : SizeState{std::monostate{}},
+                    .height = childAsPtr->shared.maxHeight ? SizeState{*childAsPtr->shared.maxHeight} : SizeState{std::monostate{}},
+                },
+                .available = {.width = preparedChildConstraints.availableWidth, .height = preparedChildConstraints.availableHeight},
+                .top = childAsPtr->shared.top,
+                .right = childAsPtr->shared.right,
+                .bottom = childAsPtr->shared.bottom,
+                .left = childAsPtr->shared.left,
+                .paddingTop = childAsPtr->shared.paddingTop.value_or(childAsPtr->shared.padding),
+                .paddingRight = childAsPtr->shared.paddingRight.value_or(childAsPtr->shared.padding),
+                .paddingBottom = childAsPtr->shared.paddingBottom.value_or(childAsPtr->shared.padding),
+                .paddingLeft = childAsPtr->shared.paddingLeft.value_or(childAsPtr->shared.padding),
+                .borderWidth = childAsPtr->shared.borderWidth,
+                .margins = childAsPtr->preLayout->resolvedMargins,
+                .aspectRatio = childAsPtr->shared.aspectRatio,
+                .automaticWidth = preparedChildConstraints.shrinkWidthToFit ? AutomaticSizing::UseContent : AutomaticSizing::UseAvailable,
+                .automaticHeight = AutomaticSizing::UseContent,
+                .automaticMinimumWidth = AutomaticMinimum::Zero,
+                .automaticMinimumHeight = AutomaticMinimum::Zero,
+                .intrinsicWidthRequest = flex.axis.isRow ? std::optional{IntrinsicRequest::Maximum} : std::nullopt,
+                .intrinsicHeightRequest = flex.axis.isRow ? std::nullopt : std::optional{IntrinsicRequest::Maximum},
+            };
 
-            if (childAsPtr->shared.aspectRatio) {
-                if (flex.axis.isRow) {
-                    transferAspectRatio(mainSize, resolvedCrossSize, *childAsPtr->shared.aspectRatio);
-                } else {
-                    transferAspectRatio(resolvedCrossSize, mainSize, *childAsPtr->shared.aspectRatio);
-                }
+            SizeResult childSizing = evaluateSize(tree, childAsPtr, frameInfo, preparedChildConstraints, childMeasured, childRequest);
+
+            const float* preferredMainSize = std::get_if<float>(&flex.axis.mainSize(childSizing.size));
+            const auto& intrinsicMainSizes = flex.axis.isRow ? childSizing.widthIntrinsicSizes : childSizing.heightIntrinsicSizes;
+            AlignItems effectiveAlign = flex.effectiveAlign(selfAlign);
+            
+            float flexBaseSize = preferredMainSize ? *preferredMainSize : std::get<float>(intrinsicMainSizes->maximum);
+            float minMainSize = std::get<float>(flex.axis.mainSize(childSizing.minimum));
+            std::optional<float> maxMainSize;
+            
+            // these guys took a two fucking week lecture on haskell
+            // then didnt bother implementing the rest
+            // omg there is a so much better language 3 steps away from here
+            if (std::holds_alternative<float>(flex.axis.mainSize(childSizing.maximum))) {
+                maxMainSize = std::get<float>(flex.axis.mainSize(childSizing.maximum));
             }
-
-            bool needsIntrinsicMain = !mainSize || needsIntrinsicMinimum || minMainRequest.isContentDependent() || (maxMainRequest.has_value() && maxMainRequest->isContentDependent());
-            std::optional<IntrinsicSizes> intrinsicMainSizes;
-            if (needsIntrinsicMain) intrinsicMainSizes = layoutIntrinsicMain(tree, childAsPtr, frameInfo, preparedChildConstraints, childMeasured, flex.axis);
-            if (mainRequest.isContentDependent()) mainSize = resolveIntrinsicSize(mainRequest, *intrinsicMainSizes, parentAvailableMain());
-
-            float flexBaseSize = determineFlexBaseSize(mainSize, intrinsicMainSizes);
-            float minMainSize = determineMinMainSize(childAsPtr, mainSize, intrinsicMainSizes);
-            auto maxMainSize = determineMaxMainSize(childAsPtr, intrinsicMainSizes);
 
             flex.addItem(
                 i,

@@ -949,7 +949,7 @@ namespace tree {
         // correct intrinsic sizes if no children
         if (node->children.empty()) {
             float extent = 0.0;
-            if (intrinsicSizeRequest->resolvingIntrinsicWidth || intrinsicSizeRequest->resolvingIntrinsicHeight) {
+            if (intrinsicSizeRequest && intrinsicSizeRequest->resolvingIntrinsicWidth || intrinsicSizeRequest->resolvingIntrinsicHeight) {
                 extent = sizeRequest.resolvingIntrinsicWidth ? layout.computedBox.width : layout.computedBox.height;
             }
             minimumContent = extent;

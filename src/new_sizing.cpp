@@ -561,14 +561,6 @@ auto measureIntrinsicHeight(
         req.override.width = *resolvedWidth;
     }
 
-    const auto* antiSizeError = std::get_if<SizeError>(&resolvedAntiSize);
-    if (antiSizeError) {
-        return {
-            .minimum = *antiSizeError,
-            .maximum = *antiSizeError,
-        };
-    }
-
     // establish the recursive call; make sure it establishes the specified antiSize correcttly
     std::optional<layout::IntrinsicSizes> intrinsic = tree.measureIntrinsicSizes(node, frameInfo, constraints, measured, std::move(req));
 
@@ -815,11 +807,16 @@ auto evaluateSize(
     const auto* maxHeightError = std::get_if<SizeError>(&maximum.height);
 
     bool widthIntrinsicError = widthError && *widthError == SizeError::ContentDependent;
-    bool minWidthIntrinsicError = minWidthError && *minWidthError == SizeError::ContentDependent;
-    bool maxWidthIntrinsicError = maxWidthError && *maxWidthError == SizeError::ContentDependent;
+    bool minWidthIntrinsicError = (minWidthError && *minWidthError == SizeError::ContentDependent) 
+                                || req.intrinsicWidthRequest == IntrinsicRequest::Minimum;
+    bool maxWidthIntrinsicError = (maxWidthError && *maxWidthError == SizeError::ContentDependent)
+                                || req.intrinsicWidthRequest == IntrinsicRequest::Maximum;
+                                
     bool heightIntrinsicError = heightError && *heightError == SizeError::ContentDependent;
-    bool minHeightIntrinsicError = minHeightError && *minHeightError == SizeError::ContentDependent;
-    bool maxHeightIntrinsicError = maxHeightError && *maxHeightError == SizeError::ContentDependent;
+    bool minHeightIntrinsicError = (minHeightError && *minHeightError == SizeError::ContentDependent)
+                                    || req.intrinsicHeightRequest == IntrinsicRequest::Minimum;
+    bool maxHeightIntrinsicError = (maxHeightError && *maxHeightError == SizeError::ContentDependent)
+                                    || req.intrinsicHeightRequest == IntrinsicRequest::Maximum;
 
     if (req.aspectRatio && automaticWidth && !std::holds_alternative<float>(size.width) && std::holds_alternative<float>(size.height)) {
         SizePair transferred = transferAspectRatio(size, *req.aspectRatio);

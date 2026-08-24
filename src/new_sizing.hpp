@@ -91,6 +91,10 @@ struct SizeRequest {
     AutomaticMinimum automaticMinimumWidth;
     AutomaticMinimum automaticMinimumHeight;
 
+    // overrides if a consumer specifically wants them (i.e. flex)
+    std::optional<IntrinsicRequest> intrinsicWidthRequest;
+    std::optional<IntrinsicRequest> intrinsicHeightRequest;
+
     bool resolvingIntrinsicWidth{false};
     bool resolvingIntrinsicHeight{false};
 };  
