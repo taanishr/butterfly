@@ -496,7 +496,15 @@ auto measureIntrinsicWidth(
 ) -> IntrinsicResult {
     // antiSize: not used here
 
+    auto debugText = tree::getText(node);
+    if (debugText) {
+        std::println("[measure width:start] '{}' resolving={} request={} anti-alternative={}", *debugText, req.resolvingIntrinsicWidth, req.intrinsicWidthRequest.has_value(), antiSize.index());
+    }
+
     if (req.resolvingIntrinsicWidth) {
+        if (debugText) {
+            std::println("[measure width:guard] '{}'", *debugText);
+        }
         return {
             .minimum = SizeError::ContentDependent,
             .maximum = SizeError::ContentDependent,
@@ -509,6 +517,14 @@ auto measureIntrinsicWidth(
 
     // afterwards, establish the recursive call
     std::optional<layout::IntrinsicSizes> intrinsic = tree.measureIntrinsicSizes(node, frameInfo, constraints, measured, std::move(req));
+
+    if (debugText) {
+        if (intrinsic) {
+            std::println("[measure width:return] '{}' minimum={} maximum={}", *debugText, intrinsic->minimum, intrinsic->maximum);
+        } else {
+            std::println("[measure width:return] '{}' no intrinsic result", *debugText);
+        }
+    }
 
     /*
         BIG TODO: (not yet done, and kind of only semi-related to this function)
@@ -542,7 +558,23 @@ auto measureIntrinsicHeight(
 ) -> IntrinsicResult {
     // antisize: USED HERE
 
+    auto debugText = tree::getText(node);
+    if (debugText) {
+        std::println(
+            "[measure height:start] '{}' resolving={} request={} anti-alternative={} fragments={} lines={}",
+            *debugText,
+            req.resolvingIntrinsicHeight,
+            req.intrinsicHeightRequest.has_value(),
+            antiSize.index(),
+            constraints.inlineFormatting.lineFragments().size(),
+            constraints.inlineFormatting.lineBoxes().size()
+        );
+    }
+
     if (req.resolvingIntrinsicHeight) {
+        if (debugText) {
+            std::println("[measure height:guard] '{}'", *debugText);
+        }
         return {
             .minimum = SizeError::ContentDependent,
             .maximum = SizeError::ContentDependent,
@@ -561,8 +593,20 @@ auto measureIntrinsicHeight(
         req.override.width = *resolvedWidth;
     }
 
+    if (debugText) {
+        std::println("[measure height:width] '{}' resolved={} alternative={}", *debugText, resolvedWidth != nullptr, resolvedAntiSize.index());
+    }
+
     // establish the recursive call; make sure it establishes the specified antiSize correcttly
     std::optional<layout::IntrinsicSizes> intrinsic = tree.measureIntrinsicSizes(node, frameInfo, constraints, measured, std::move(req));
+
+    if (debugText) {
+        if (intrinsic) {
+            std::println("[measure height:return] '{}' minimum={} maximum={}", *debugText, intrinsic->minimum, intrinsic->maximum);
+        } else {
+            std::println("[measure height:return] '{}' no intrinsic result", *debugText);
+        }
+    }
 
     // return both the min and max intrinsic size
     if (!intrinsic) {

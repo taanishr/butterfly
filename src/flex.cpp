@@ -138,13 +138,31 @@ namespace layout {
                 .borderWidth = childAsPtr->shared.borderWidth,
                 .margins = childAsPtr->preLayout->resolvedMargins,
                 .aspectRatio = childAsPtr->shared.aspectRatio,
-                .automaticWidth = preparedChildConstraints.shrinkWidthToFit ? AutomaticSizing::UseContent : AutomaticSizing::UseAvailable,
+                .automaticWidth = AutomaticSizing::UseContent,
                 .automaticHeight = AutomaticSizing::UseContent,
-                .automaticMinimumWidth = AutomaticMinimum::Zero,
-                .automaticMinimumHeight = AutomaticMinimum::Zero,
+                // why this ternary?
+                // https://www.w3.org/TR/css-flexbox-1/#min-size-auto
+                .automaticMinimumWidth = flex.axis.isRow ? AutomaticMinimum::ContentBased : AutomaticMinimum::Zero,
+                .automaticMinimumHeight = flex.axis.isRow ? AutomaticMinimum::Zero : AutomaticMinimum::ContentBased,
                 .intrinsicWidthRequest = flex.axis.isRow ? std::optional{IntrinsicRequest::Maximum} : std::nullopt,
                 .intrinsicHeightRequest = flex.axis.isRow ? std::nullopt : std::optional{IntrinsicRequest::Maximum},
             };
+
+            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childAsPtr, {
+                .availableWidth = preparedChildConstraints.availableWidth,
+                .widthRequest = childRequest.intrinsicWidthRequest,
+                .trackIntrinsicWidth = false,
+            });
+
+            auto debugText = tree::getText(childAsPtr);
+            if (debugText) {
+                std::println(
+                    "[flex phase B:evaluate input] '{}' fragments={} lines={}",
+                    *debugText,
+                    preparedChildConstraints.inlineFormatting.lineFragments().size(),
+                    preparedChildConstraints.inlineFormatting.lineBoxes().size()
+                );
+            }
 
             SizeResult childSizing = evaluateSize(tree, childAsPtr, frameInfo, preparedChildConstraints, childMeasured, childRequest);
 
@@ -153,6 +171,16 @@ namespace layout {
             AlignItems effectiveAlign = flex.effectiveAlign(selfAlign);
             
             float flexBaseSize = preferredMainSize ? *preferredMainSize : std::get<float>(intrinsicMainSizes->maximum);
+            if (debugText) {
+                std::println(
+                    "[flex phase B:size result] '{}' preferred-main-alt={} intrinsic-min-alt={} intrinsic-max-alt={} flex-base={}",
+                    *debugText,
+                    flex.axis.mainSize(childSizing.size).index(),
+                    intrinsicMainSizes->minimum.index(),
+                    intrinsicMainSizes->maximum.index(),
+                    flexBaseSize
+                );
+            }
             float minMainSize = std::get<float>(flex.axis.mainSize(childSizing.minimum));
             std::optional<float> maxMainSize;
             
@@ -243,7 +271,7 @@ namespace layout {
                     .borderWidth = childNode->shared.borderWidth,
                     .margins = childNode->preLayout->resolvedMargins,
                     .aspectRatio = childNode->shared.aspectRatio,
-                    .automaticWidth = preparedChildConstraints.shrinkWidthToFit ? AutomaticSizing::UseContent : AutomaticSizing::UseAvailable,
+                    .automaticWidth = AutomaticSizing::UseContent,
                     .automaticHeight = AutomaticSizing::UseContent,
                     .automaticMinimumWidth = AutomaticMinimum::Zero,
                     .automaticMinimumHeight = AutomaticMinimum::Zero,
@@ -325,7 +353,7 @@ namespace layout {
                 .borderWidth = childNode->shared.borderWidth,
                 .margins = childNode->preLayout->resolvedMargins,
                 .aspectRatio = childNode->shared.aspectRatio,
-                .automaticWidth = preparedChildConstraints.shrinkWidthToFit ? AutomaticSizing::UseContent : AutomaticSizing::UseAvailable,
+                .automaticWidth = AutomaticSizing::UseContent,
                 .automaticHeight = AutomaticSizing::UseContent,
                 .automaticMinimumWidth = AutomaticMinimum::Zero,
                 .automaticMinimumHeight = AutomaticMinimum::Zero,
@@ -338,8 +366,31 @@ namespace layout {
                 childRequest.automaticWidth = p.alignment == AlignItems::Stretch ? AutomaticSizing::UseAvailable : AutomaticSizing::UseContent;
             }
 
+            auto debugText = tree::getText(childNode);
+            if (debugText) {
+                std::println(
+                    "[flex phase C:input] '{}' main-offset={} main-size={} fragments={} lines={}",
+                    *debugText,
+                    p.mainOffset,
+                    p.mainSize,
+                    preparedChildConstraints.inlineFormatting.lineFragments().size(),
+                    preparedChildConstraints.inlineFormatting.lineBoxes().size()
+                );
+            }
+
             LayoutOutput childOutput = tree.layoutRecursive(childNode, frameInfo, preparedChildConstraints, childMeasured, mutate, std::move(childRequest));
             const auto& childLayout = childOutput.layout;
+
+            if (debugText) {
+                std::println(
+                    "[flex phase C:output] '{}' width={} height={} consumed-height={} main-extent={}",
+                    *debugText,
+                    childLayout.computedBox.width,
+                    childLayout.computedBox.height,
+                    childLayout.consumedHeight,
+                    flex.axis.mainSize(childLayout)
+                );
+            }
 
             maxX = std::max(maxX, childLayout.computedBox.x + childLayout.computedBox.width);
             maxY = std::max(maxY, childLayout.computedBox.y + childLayout.consumedHeight);

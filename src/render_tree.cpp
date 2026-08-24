@@ -720,7 +720,28 @@ namespace tree {
     }
 
     std::optional<IntrinsicSizes> RenderTree::measureIntrinsicSizes(TreeNode* node, const FrameInfo& frameInfo, Constraints constraints, Measured measured, SizeRequest sizeRequest) {
+        auto debugText = getText(node);
+        if (debugText) {
+            std::println(
+                "[intrinsic recursive:start] '{}' width={} height={} fragments={} lines={}",
+                *debugText,
+                sizeRequest.resolvingIntrinsicWidth,
+                sizeRequest.resolvingIntrinsicHeight,
+                constraints.inlineFormatting.lineFragments().size(),
+                constraints.inlineFormatting.lineBoxes().size()
+            );
+        }
+
         LayoutOutput output = layoutRecursive(node, frameInfo, constraints, measured, false, std::move(sizeRequest));
+
+        if (debugText) {
+            if (output.intrinsicSizes) {
+                std::println("[intrinsic recursive:return] '{}' box={}x{} minimum={} maximum={}", *debugText, output.layout.computedBox.width, output.layout.computedBox.height, output.intrinsicSizes->minimum, output.intrinsicSizes->maximum);
+            } else {
+                std::println("[intrinsic recursive:return] '{}' box={}x{} no intrinsic result", *debugText, output.layout.computedBox.width, output.layout.computedBox.height);
+            }
+        }
+
         return std::move(output.intrinsicSizes);
     }
 
@@ -812,9 +833,26 @@ namespace tree {
 
         constraints.resolvedMargins = prelayout.resolvedMargins;
 
+        auto debugLayoutText = getText(node);
+        if (debugLayoutText && (sizeRequest.resolvingIntrinsicWidth || sizeRequest.resolvingIntrinsicHeight)) {
+            std::println(
+                "[intrinsic leaf:layout input] '{}' atoms={} fragments={} lines={} available-width-auto={} available-width={}",
+                *debugLayoutText,
+                atomized.atoms.size(),
+                constraints.inlineFormatting.lineFragments().size(),
+                constraints.inlineFormatting.lineBoxes().size(),
+                constraints.availableWidth.isAuto(),
+                constraints.availableWidth.value
+            );
+        }
+
         // what i should do now:
         // make this take in a size result instead of doing the computation separately
         auto layout = node->element->layout(constraints, node->shared, measured, atomized);
+
+        if (debugLayoutText && (sizeRequest.resolvingIntrinsicWidth || sizeRequest.resolvingIntrinsicHeight)) {
+            std::println("[intrinsic leaf:initial layout] '{}' width={} height={} consumed-height={}", *debugLayoutText, layout.computedBox.width, layout.computedBox.height, layout.consumedHeight);
+        }
 
         auto childConstraints = layout.childConstraints;
         childConstraints.inheritedProperties = constraints.inheritedProperties;
@@ -946,19 +984,28 @@ namespace tree {
             }
         }
 
-        // correct intrinsic sizes if no children
+        // create new req, with contentWidth/Height set
+        float contentWidth = maxX - minX;
+        float contentHeight = maxY - minY;
+
+        // correct intrinsic sizes and content sizes \if no children
         if (node->children.empty()) {
             float extent = 0.0;
             if (intrinsicSizeRequest && intrinsicSizeRequest->resolvingIntrinsicWidth || intrinsicSizeRequest->resolvingIntrinsicHeight) {
                 extent = sizeRequest.resolvingIntrinsicWidth ? layout.computedBox.width : layout.computedBox.height;
             }
+
             minimumContent = extent;
             maximumContent = extent;
-        }
 
-        // create new req, with contentWidth/Height set
-        float contentWidth = maxX - minX;
-        float contentHeight = maxY - minY;
+            contentWidth = layout.computedBox.width;
+            contentHeight = layout.computedBox.height;
+
+            auto debugText = getText(node);
+            if (debugText && (sizeRequest.resolvingIntrinsicWidth || sizeRequest.resolvingIntrinsicHeight)) {
+                std::println("[intrinsic leaf:before retry] '{}' width={} height={} reported={}", *debugText, layout.computedBox.width, layout.computedBox.height, extent);
+            }
+        }
 
         SizeRequest resizeRequest = sizeRequest;
         resizeRequest.content = {
@@ -977,8 +1024,28 @@ namespace tree {
         bool widthChanged = resizedWidth && (!initialWidth || *resizedWidth != *initialWidth);
         bool heightChanged = resizedHeight && (!initialHeight || *resizedHeight != *initialHeight);
 
+        auto debugText = getText(node);
+        if (debugText && (sizeRequest.resolvingIntrinsicWidth || sizeRequest.resolvingIntrinsicHeight)) {
+            std::println(
+                "[intrinsic leaf:retry] '{}' content={}x{} initial-width-alt={} initial-height-alt={} resized-width-alt={} resized-height-alt={} width-changed={} height-changed={} collected-minimum={} collected-maximum={}",
+                *debugText,
+                contentWidth,
+                contentHeight,
+                sizeResult.size.width.index(),
+                sizeResult.size.height.index(),
+                resizeResult.size.width.index(),
+                resizeResult.size.height.index(),
+                widthChanged,
+                heightChanged,
+                minimumContent,
+                maximumContent
+            );
+        }
+
         // if there is deviation, rerun layout
         if (widthChanged || heightChanged) {
+
+            // these measurement changes are largely temporary 
             if (widthChanged) {
                 measured.explicitWidth = *resizedWidth;
             }
@@ -1030,6 +1097,24 @@ namespace tree {
                     break;
                 }
             }
+
+            if (node->children.empty()) {
+                float extent = 0.0;
+                if (intrinsicSizeRequest && intrinsicSizeRequest->resolvingIntrinsicWidth || intrinsicSizeRequest->resolvingIntrinsicHeight) {
+                    extent = sizeRequest.resolvingIntrinsicWidth ? layout.computedBox.width : layout.computedBox.height;
+                }
+
+                minimumContent = extent;
+                maximumContent = extent;
+
+                contentWidth = layout.computedBox.width;
+                contentHeight = layout.computedBox.height;
+
+                auto debugText = getText(node);
+                if (debugText && (sizeRequest.resolvingIntrinsicWidth || sizeRequest.resolvingIntrinsicHeight)) {
+                    std::println("[intrinsic leaf:before retry] '{}' width={} height={} reported={}", *debugText, layout.computedBox.width, layout.computedBox.height, extent);
+                }
+            }
         }
 
         layout.localComputedBox = layout.computedBox;
@@ -1043,6 +1128,10 @@ namespace tree {
                 .maximum = maximumContent
             }
         };
+
+        if (debugText && (sizeRequest.resolvingIntrinsicWidth || sizeRequest.resolvingIntrinsicHeight)) {
+            std::println("[intrinsic leaf:output] '{}' width={} height={} minimum={} maximum={}", *debugText, layout.computedBox.width, layout.computedBox.height, minimumContent, maximumContent);
+        }
 
 
         if (mutate) {
