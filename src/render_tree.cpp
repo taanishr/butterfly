@@ -897,9 +897,8 @@ namespace tree {
             flexContext.axis.applyDirection(constraints.inheritedProperties.direction);
 
             FlexResolver fr {
-                *this, node, constraints, childConstraints, flexContext, frameInfo, measured,
-                mutate, childConstraints.availableWidth, childConstraints.availableHeight,
-                minX, minY, maxX, maxY
+                *this, node, constraints, childConstraints, flexContext, frameInfo, sizeResult.size,
+                measured, mutate, minX, minY, maxX, maxY
             };
 
             fr.phaseB();

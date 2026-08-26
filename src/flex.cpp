@@ -61,16 +61,17 @@ namespace layout {
     Constraints FlexResolver::prepareChildConstraints(TreeNode* child) {
         auto newChildConstraints = childConstraints;
         newChildConstraints.intrinsicSizesAxis.reset();
-        newChildConstraints.availableWidth = childAvailableWidth;
         newChildConstraints.inheritedProperties = parentConstraints.inheritedProperties;
 
         return newChildConstraints;
     }
 
     void FlexResolver::phaseB() {
-        resolvedGap = node->getFlexGap()
-            .resolve(parentAvailableMain())
-            .value_or(0.0f);
+        // FIXME: this is extremely ugly and terribly handled
+        resolvedGap = std::visit(Overloaded {
+            [&](float availableMain) { return node->getFlexGap().resolve(Size::px(availableMain)).value_or(0.0f); },
+            [&](const auto&) { return node->getFlexGap().resolve(Size::autoSize()).value_or(0.0f); },
+        }, flex.axis.mainSize(availableSize));
 
         for (uint64_t i = 0; i < node->children.size(); ++i) {
             auto childAsPtr = node->children[i].get();
@@ -164,7 +165,7 @@ namespace layout {
                 minMainSize,
                 maxMainSize,
                 effectiveAlign,
-                parentAvailableMain(),
+                flex.axis.mainSize(availableSize),
                 resolvedGap
             );
         }
@@ -198,7 +199,7 @@ namespace layout {
         availableMain = std::visit(Overloaded {
             [](float value) { return value; },
             [&](const auto&) { return totalSizeFallback; },
-        }, calculateSize(parentAvailableMain(), std::monostate{}));
+        }, flex.axis.mainSize(availableSize));
         
         if (node->shared.overflow == Overflow::Scroll) {
             availableMain = std::max(availableMain, totalSizeFallback);
@@ -208,6 +209,15 @@ namespace layout {
     }
 
     FlexResolver::Bounds FlexResolver::phaseC() {
+        bool traceAlbumDetails = false;
+        for (const auto& child : node->children) {
+            auto childText = tree::getText(child.get());
+            if (childText == "ALBUM") {
+                traceAlbumDetails = true;
+                break;
+            }
+        }
+
         for (auto& line : flex.lines) {
             line.maxCrossSize = 0.0f;
 
@@ -354,6 +364,28 @@ namespace layout {
 
             LayoutOutput childOutput = tree.layoutRecursive(childNode, frameInfo, preparedChildConstraints, childMeasured, mutate, std::move(childRequest));
             const auto& childLayout = childOutput.layout;
+
+            if (mutate && traceAlbumDetails) {
+                std::println(
+                    "[album details] parent={} child={} row={} index={} authored={}({})x{}({}) placement=({}, {}) allocated={}x{} box=({}, {}) {}x{}",
+                    node->id,
+                    childNode->id,
+                    flex.axis.isRow,
+                    i,
+                    childNode->shared.width.value,
+                    static_cast<int>(childNode->shared.width.unit),
+                    childNode->shared.height.value,
+                    static_cast<int>(childNode->shared.height.unit),
+                    p.mainOffset,
+                    p.crossOffset,
+                    p.mainSize,
+                    p.lineCrossSize,
+                    childLayout.computedBox.x,
+                    childLayout.computedBox.y,
+                    childLayout.computedBox.width,
+                    childLayout.computedBox.height
+                );
+            }
 
             if (debugText) {
                 std::println(
