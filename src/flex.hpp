@@ -57,11 +57,6 @@ namespace layout {
         SizeState& crossSize(SizePair& size) {
             return isRow ? size.height : size.width;
         }
-        std::optional<AxisResolution>& mainResolution(Constraints& c) {
-            return isRow ? c.widthResolution : c.heightResolution;
-        }
-        
-
         simd_float2 toPhysical(float main, float cross) {
             return isRow
                 ? simd_float2{main, cross}
@@ -80,10 +75,11 @@ namespace layout {
 
     struct FlexItem {
         size_t childIndex;
-        float flexBaseSize;
+        SizeState flexBaseSize;
         float hypotheticalMainSize;
-        float minMainSize;
-        std::optional<float> maxMainSize;
+        SizeState minimumMainSize;
+        SizeState maximumMainSize;
+        IntrinsicResult mainIntrinsicSizes;
         float flexGrow;
         float scaledFlexShrink;
         AlignItems alignment;
@@ -103,7 +99,7 @@ namespace layout {
 
         float totalWithGap(float gap) {
             float total = 0.0f;
-            for (const auto& item : items) total += item.flexBaseSize;
+            for (const auto& item : items) total += std::get<float>(item.flexBaseSize);
             return total + (count() > 1 ? gap * (count() - 1) : 0.0f);
         }
 
@@ -113,9 +109,15 @@ namespace layout {
             return total + (count() > 1 ? gap * (count() - 1) : 0.0f);
         }
 
-        float totalMinimumWithGap(float gap) {
+        float totalMinimumContributionWithGap(float gap) {
             float total = 0.0f;
-            for (const auto& item : items) total += item.minMainSize;
+            for (const auto& item : items) total += std::get<float>(item.mainIntrinsicSizes.minimum);
+            return total + (count() > 1 ? gap * (count() - 1) : 0.0f);
+        }
+
+        float totalMaximumContributionWithGap(float gap) {
+            float total = 0.0f;
+            for (const auto& item : items) total += std::get<float>(item.mainIntrinsicSizes.maximum);
             return total + (count() > 1 ? gap * (count() - 1) : 0.0f);
         }
 
@@ -127,7 +129,7 @@ namespace layout {
         ResolveResult resolve(float availableMain) {
             ResolveResult result;
             std::vector<bool> frozen(items.size(), false);
-            for (auto& item : items) item.usedMainSize = item.flexBaseSize;
+            for (auto& item : items) item.usedMainSize = std::get<float>(item.flexBaseSize);
 
             while (true) {
                 float frozenTotal = 0.0f;
@@ -140,7 +142,7 @@ namespace layout {
                     if (frozen[i]) {
                         frozenTotal += item.usedMainSize;
                     } else {
-                        unfrozenBaseTotal += item.flexBaseSize;
+                        unfrozenBaseTotal += std::get<float>(item.flexBaseSize);
                         unfrozenGrowthTotal += item.flexGrow;
                         unfrozenShrinkTotal += item.scaledFlexShrink;
                     }
@@ -153,11 +155,11 @@ namespace layout {
                     auto& item = items[i];
 
                     if (space > 0.0f && item.flexGrow > 0.0f && unfrozenGrowthTotal > 0.0f) {
-                        item.usedMainSize = item.flexBaseSize + (item.flexGrow / unfrozenGrowthTotal) * space;
+                        item.usedMainSize = std::get<float>(item.flexBaseSize) + (item.flexGrow / unfrozenGrowthTotal) * space;
                     } else if (space < 0.0f && item.scaledFlexShrink > 0.0f && unfrozenShrinkTotal > 0.0f) {
-                        item.usedMainSize = item.flexBaseSize + (item.scaledFlexShrink / unfrozenShrinkTotal) * space;
+                        item.usedMainSize = std::get<float>(item.flexBaseSize) + (item.scaledFlexShrink / unfrozenShrinkTotal) * space;
                     } else {
-                        item.usedMainSize = item.flexBaseSize;
+                        item.usedMainSize = std::get<float>(item.flexBaseSize);
                     }
                 }
 
@@ -168,10 +170,10 @@ namespace layout {
                     auto& item = items[i];
 
                     float clamped = item.usedMainSize;
-                    if (item.maxMainSize.has_value()) {
-                        clamped = std::min(clamped, *item.maxMainSize);
+                    if (std::holds_alternative<float>(item.maximumMainSize)) {
+                        clamped = std::min(clamped, std::get<float>(item.maximumMainSize));
                     }
-                    clamped = std::max(clamped, item.minMainSize);
+                    clamped = std::max(clamped, std::get<float>(item.minimumMainSize));
 
                     if (clamped != item.usedMainSize) {
                         item.usedMainSize = clamped;
@@ -245,18 +247,19 @@ namespace layout {
         void addItem(
             size_t childIndex,
             TreeNode* child,
-            float flexBaseSize,
-            float minMainSize,
-            std::optional<float> maxMainSize,
+            SizeState flexBaseSize,
+            SizeState minimumMainSize,
+            SizeState maximumMainSize,
+            IntrinsicResult mainIntrinsicSizes,
             AlignItems alignment,
             const SizeState& availableMain,
             float gap
         ) {
-            float hypotheticalMainSize = flexBaseSize;
-            if (maxMainSize.has_value()) {
-                hypotheticalMainSize = std::min(hypotheticalMainSize, *maxMainSize);
+            float hypotheticalMainSize = std::get<float>(flexBaseSize);
+            if (std::holds_alternative<float>(maximumMainSize)) {
+                hypotheticalMainSize = std::min(hypotheticalMainSize, std::get<float>(maximumMainSize));
             }
-            hypotheticalMainSize = std::max(hypotheticalMainSize, minMainSize);
+            hypotheticalMainSize = std::max(hypotheticalMainSize, std::get<float>(minimumMainSize));
 
             const float* availableMainSize = std::get_if<float>(&availableMain);
             if (flexWrap != FlexWrap::NoWrap && currentLine.count() > 0 && availableMainSize) {
@@ -268,16 +271,19 @@ namespace layout {
 
             float grow = child->getFlexGrow().resolveOr(Size::px(0.0f), 0.0f);
             float shrink = child->getFlexShrink().resolveOr(Size::px(0.0f), 1.0f);
+            float scaledFlexShrink = shrink > 0.0f ? std::get<float>(flexBaseSize) * shrink : 0.0f;
+            float usedMainSize = std::get<float>(flexBaseSize);
             currentLine.addItem({
                 .childIndex = childIndex,
-                .flexBaseSize = flexBaseSize,
+                .flexBaseSize = std::move(flexBaseSize),
                 .hypotheticalMainSize = hypotheticalMainSize,
-                .minMainSize = minMainSize,
-                .maxMainSize = maxMainSize,
+                .minimumMainSize = std::move(minimumMainSize),
+                .maximumMainSize = std::move(maximumMainSize),
+                .mainIntrinsicSizes = std::move(mainIntrinsicSizes),
                 .flexGrow = grow > 0.0f ? grow : 0.0f,
-                .scaledFlexShrink = shrink > 0.0f ? flexBaseSize * shrink : 0.0f,
+                .scaledFlexShrink = scaledFlexShrink,
                 .alignment = alignment,
-                .usedMainSize = flexBaseSize,
+                .usedMainSize = usedMainSize,
                 .hypotheticalCrossSize = 0.0f
             });
         }
@@ -418,11 +424,16 @@ namespace layout {
         float resolvedGap{};
         float availableMain{};
         FlexLayout::ResolveResult resolvedMainSizes;
-        std::optional<IntrinsicSizes> intrinsicSizes;
 
         struct Bounds {
             float maxX;
             float maxY;
+        };
+
+        struct FlexResult {
+            Bounds bounds;
+            IntrinsicResult mainIntrinsicSizes;
+            IntrinsicResult crossIntrinsicSizes;
         };
 
         FlexResolver(RenderTree& tree, TreeNode* node, const Constraints& parentConstraints,
@@ -437,6 +448,6 @@ namespace layout {
 
         Constraints prepareChildConstraints();
         void phaseB();
-        Bounds phaseC();
+        FlexResult phaseC();
     };
 }

@@ -902,14 +902,17 @@ namespace tree {
             };
 
             fr.phaseB();
-            auto bounds = fr.phaseC();
+            auto result = fr.phaseC();
 
-            maxX = bounds.maxX;
-            maxY = bounds.maxY;
+            maxX = result.bounds.maxX;
+            maxY = result.bounds.maxY;
 
-            if (fr.intrinsicSizes) {
-                minimumContent = std::max(minimumContent, fr.intrinsicSizes->minimum);
-                maximumContent = std::max(maximumContent, fr.intrinsicSizes->maximum);
+            if (sizeRequest.resolvingIntrinsicWidth || sizeRequest.resolvingIntrinsicHeight) {
+                const IntrinsicResult& intrinsicSizes = sizeRequest.resolvingIntrinsicWidth
+                    ? (flexContext.axis.isRow ? result.mainIntrinsicSizes : result.crossIntrinsicSizes)
+                    : (flexContext.axis.isRow ? result.crossIntrinsicSizes : result.mainIntrinsicSizes);
+                minimumContent = std::max(minimumContent, std::get<float>(intrinsicSizes.minimum));
+                maximumContent = std::max(maximumContent, std::get<float>(intrinsicSizes.maximum));
             }
         };
 

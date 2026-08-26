@@ -60,7 +60,6 @@ namespace layout {
 
     Constraints FlexResolver::prepareChildConstraints() {
         auto newChildConstraints = childConstraints;
-        newChildConstraints.intrinsicSizesAxis.reset();
         newChildConstraints.inheritedProperties = parentConstraints.inheritedProperties;
 
         return newChildConstraints;
@@ -133,37 +132,35 @@ namespace layout {
 
             SizeResult childSizing = evaluateSize(tree, childAsPtr, frameInfo, preparedChildConstraints, childMeasured, childRequest);
 
-            const float* preferredMainSize = std::get_if<float>(&flex.axis.mainSize(childSizing.size));
-            const auto& intrinsicMainSizes = flex.axis.isRow ? childSizing.widthIntrinsicSizes : childSizing.heightIntrinsicSizes;
+            const SizeState& preferredMainSize = flex.axis.mainSize(childSizing.size);
+            const auto& measuredMainIntrinsicSizes = flex.axis.isRow ? childSizing.widthIntrinsicSizes : childSizing.heightIntrinsicSizes;
+            IntrinsicResult mainIntrinsicSizes {
+                .minimum = measuredMainIntrinsicSizes ? measuredMainIntrinsicSizes->minimum : preferredMainSize,
+                .maximum = measuredMainIntrinsicSizes ? measuredMainIntrinsicSizes->maximum : preferredMainSize,
+            };
             AlignItems effectiveAlign = flex.effectiveAlign(selfAlign);
-            
-            float flexBaseSize = preferredMainSize ? *preferredMainSize : std::get<float>(intrinsicMainSizes->maximum);
+
+            const SizeState& flexBaseSize = std::holds_alternative<float>(preferredMainSize) ? preferredMainSize : mainIntrinsicSizes.maximum;
             if (debugText) {
                 std::println(
-                    "[flex phase B:size result] '{}' preferred-main-alt={} intrinsic-min-alt={} intrinsic-max-alt={} flex-base={}",
+                    "[flex phase B:size result] '{}' preferred-main-alt={} intrinsic-min-alt={} intrinsic-max-alt={} flex-base-alt={}",
                     *debugText,
-                    flex.axis.mainSize(childSizing.size).index(),
-                    intrinsicMainSizes->minimum.index(),
-                    intrinsicMainSizes->maximum.index(),
-                    flexBaseSize
+                    preferredMainSize.index(),
+                    mainIntrinsicSizes.minimum.index(),
+                    mainIntrinsicSizes.maximum.index(),
+                    flexBaseSize.index()
                 );
             }
-            float minMainSize = std::get<float>(flex.axis.mainSize(childSizing.minimum));
-            std::optional<float> maxMainSize;
-            
-            // these guys took a two fucking week lecture on haskell
-            // then didnt bother implementing the rest
-            // omg there is a so much better language 3 steps away from here
-            if (std::holds_alternative<float>(flex.axis.mainSize(childSizing.maximum))) {
-                maxMainSize = std::get<float>(flex.axis.mainSize(childSizing.maximum));
-            }
+            const SizeState& minimumMainSize = flex.axis.mainSize(childSizing.minimum);
+            const SizeState& maximumMainSize = flex.axis.mainSize(childSizing.maximum);
 
             flex.addItem(
                 i,
                 childAsPtr,
                 flexBaseSize,
-                minMainSize,
-                maxMainSize,
+                minimumMainSize,
+                maximumMainSize,
+                std::move(mainIntrinsicSizes),
                 effectiveAlign,
                 flex.axis.mainSize(availableSize),
                 resolvedGap
@@ -175,40 +172,24 @@ namespace layout {
             flex.currentLine = FlexLine{};
         }
 
-        float totalSizeFallback = 0;
-        bool resolvingMinContent = flex.axis.mainResolution(parentConstraints) == AxisResolution::MinContent;
-
+        float totalFlexBaseSize = 0;
         for (auto& line : flex.lines) {
-            totalSizeFallback += resolvingMinContent
-                ? line.totalMinimumWithGap(resolvedGap)
-                : line.totalWithGap(resolvedGap);
+            totalFlexBaseSize += line.totalWithGap(resolvedGap);
         }
-
-        Axis mainAxis = flex.axis.isRow ? Axis::Width : Axis::Height;
-        if (parentConstraints.intrinsicSizesAxis == mainAxis) {
-            float minContent = 0.0f;
-            float maxContent = 0.0f;
-            for (auto& line : flex.lines) {
-                minContent = std::max(minContent, line.totalMinimumWithGap(resolvedGap));
-                maxContent = std::max(maxContent, line.totalWithGap(resolvedGap));
-            }
-
-            intrinsicSizes = IntrinsicSizes{.minimum = minContent, .maximum = maxContent};
-        }
-
+        
         availableMain = std::visit(Overloaded {
             [](float value) { return value; },
-            [&](const auto&) { return totalSizeFallback; },
+            [&](const auto&) { return totalFlexBaseSize; },
         }, flex.axis.mainSize(availableSize));
         
         if (node->shared.overflow == Overflow::Scroll) {
-            availableMain = std::max(availableMain, totalSizeFallback);
+            availableMain = std::max(availableMain, totalFlexBaseSize);
         }
 
         resolvedMainSizes = flex.resolveSizes(availableMain, resolvedGap);
     }
 
-    FlexResolver::Bounds FlexResolver::phaseC() {
+    FlexResolver::FlexResult FlexResolver::phaseC() {
         bool traceAlbumDetails = false;
         for (const auto& child : node->children) {
             auto childText = tree::getText(child.get());
@@ -218,8 +199,13 @@ namespace layout {
             }
         }
 
+        float minimumCrossContribution = 0.0f;
+        float maximumCrossContribution = 0.0f;
+
         for (auto& line : flex.lines) {
             line.maxCrossSize = 0.0f;
+            float lineMinimumCrossContribution = 0.0f;
+            float lineMaximumCrossContribution = 0.0f;
 
             for (auto& item : line.items) {
                 auto childNode = node->children[item.childIndex].get();
@@ -274,8 +260,17 @@ namespace layout {
                 const float* preferredCrossSize = std::get_if<float>(&flex.axis.crossSize(sizeResult.size));
                 item.hypotheticalCrossSize = preferredCrossSize ? *preferredCrossSize : flex.axis.crossSize(childOutput.layout);
 
+                const auto& measuredCrossIntrinsicSizes = flex.axis.isRow ? sizeResult.heightIntrinsicSizes : sizeResult.widthIntrinsicSizes;
+                float childMinimumCrossContribution = measuredCrossIntrinsicSizes ? std::get<float>(measuredCrossIntrinsicSizes->minimum) : item.hypotheticalCrossSize;
+                float childMaximumCrossContribution = measuredCrossIntrinsicSizes ? std::get<float>(measuredCrossIntrinsicSizes->maximum) : item.hypotheticalCrossSize;
+
+                lineMinimumCrossContribution = std::max(lineMinimumCrossContribution, childMinimumCrossContribution);
+                lineMaximumCrossContribution = std::max(lineMaximumCrossContribution, childMaximumCrossContribution);
                 line.maxCrossSize = std::max(line.maxCrossSize, item.hypotheticalCrossSize);
             }
+
+            minimumCrossContribution += lineMinimumCrossContribution;
+            maximumCrossContribution += lineMaximumCrossContribution;
         }
 
         float contentCrossSize = 0;
@@ -284,6 +279,13 @@ namespace layout {
             contentCrossSize += line.maxCrossSize;
         if (flex.lines.size() > 1) 
             contentCrossSize += resolvedGap * (flex.lines.size() - 1);
+
+        if (flex.lines.size() > 1) {
+            float crossGap = resolvedGap * (flex.lines.size() - 1);
+            minimumCrossContribution += crossGap;
+            maximumCrossContribution += crossGap;
+        }
+
         float availableCross = contentCrossSize;
 
         auto placements = flex.computePlacements(
@@ -402,7 +404,19 @@ namespace layout {
             maxY = std::max(maxY, childLayout.computedBox.y + childLayout.consumedHeight);
         }
 
-        return {maxX, maxY};
+        float minimumMainContribution = 0.0f;
+        float maximumMainContribution = 0.0f;
+
+        for (auto& line : flex.lines) {
+            minimumMainContribution = std::max(minimumMainContribution, line.totalMinimumContributionWithGap(resolvedGap));
+            maximumMainContribution = std::max(maximumMainContribution, line.totalMaximumContributionWithGap(resolvedGap));
+        }
+
+        return {
+            .bounds = {.maxX = maxX, .maxY = maxY},
+            .mainIntrinsicSizes = {.minimum = minimumMainContribution, .maximum = maximumMainContribution},
+            .crossIntrinsicSizes = {.minimum = minimumCrossContribution, .maximum = maximumCrossContribution},
+        };
     }
 
 }
