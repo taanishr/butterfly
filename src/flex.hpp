@@ -63,13 +63,6 @@ namespace layout {
                 : simd_float2{cross, main};
         }
 
-        Size& mainAvailable(Constraints& c) {
-            return isRow ? c.availableWidth : c.availableHeight;
-        }
-
-        Size& crossAvailable(Constraints& c) {
-            return isRow ? c.availableHeight : c.availableWidth;
-        }
     };
 
 

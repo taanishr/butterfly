@@ -182,9 +182,13 @@ namespace layout {
                 auto preparedChildConstraints = prepareChildConstraints();
                 Measured childMeasured = *childNode->measured;
 
-                flex.axis.mainAvailable(preparedChildConstraints) = Size::px(item.usedMainSize);
+                SizePair childAvailableSize {
+                    .width = preparedChildConstraints.availableWidth,
+                    .height = preparedChildConstraints.availableHeight,
+                };
+                flex.axis.mainSize(childAvailableSize) = item.usedMainSize;
                 preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childNode, {
-                    .availableWidth = preparedChildConstraints.availableWidth,
+                    .availableWidth = childAvailableSize.width,
                     .widthRequest = std::nullopt,
                     .trackIntrinsicWidth = false,
                 });
@@ -199,7 +203,7 @@ namespace layout {
                         .width = childNode->shared.maxWidth ? SizeState{*childNode->shared.maxWidth} : SizeState{std::monostate{}},
                         .height = childNode->shared.maxHeight ? SizeState{*childNode->shared.maxHeight} : SizeState{std::monostate{}},
                     },
-                    .available = {.width = preparedChildConstraints.availableWidth, .height = preparedChildConstraints.availableHeight},
+                    .available = childAvailableSize,
                     .top = childNode->shared.top,
                     .right = childNode->shared.right,
                     .bottom = childNode->shared.bottom,
@@ -279,10 +283,14 @@ namespace layout {
 
             preparedChildConstraints.origin = childPosition;
             preparedChildConstraints.cursor = childPosition;
-            flex.axis.mainAvailable(preparedChildConstraints) = Size::px(p.mainSize);
-            flex.axis.crossAvailable(preparedChildConstraints) = Size::px(p.lineCrossSize);
+            SizePair childAvailableSize {
+                .width = preparedChildConstraints.availableWidth,
+                .height = preparedChildConstraints.availableHeight,
+            };
+            flex.axis.mainSize(childAvailableSize) = p.mainSize;
+            flex.axis.crossSize(childAvailableSize) = p.lineCrossSize;
             preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childNode, {
-                .availableWidth = preparedChildConstraints.availableWidth,
+                .availableWidth = childAvailableSize.width,
                 .widthRequest = std::nullopt,
                 .trackIntrinsicWidth = false,
             });
@@ -297,7 +305,7 @@ namespace layout {
                     .width = childNode->shared.maxWidth ? SizeState{*childNode->shared.maxWidth} : SizeState{std::monostate{}},
                     .height = childNode->shared.maxHeight ? SizeState{*childNode->shared.maxHeight} : SizeState{std::monostate{}},
                 },
-                .available = {.width = preparedChildConstraints.availableWidth, .height = preparedChildConstraints.availableHeight},
+                .available = childAvailableSize,
                 .top = childNode->shared.top,
                 .right = childNode->shared.right,
                 .bottom = childNode->shared.bottom,
