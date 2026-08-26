@@ -57,31 +57,8 @@ namespace layout {
         SizeState& crossSize(SizePair& size) {
             return isRow ? size.height : size.width;
         }
-        const Size& mainSize(const SharedDescriptor& shared) {
-            return isRow ? shared.width : shared.height;
-        }
-        const Size& crossSize(const SharedDescriptor& shared) {
-            return isRow ? shared.height : shared.width;
-        }
-        const Size& minMainSize(const SharedDescriptor& shared) {
-            return isRow ? shared.minWidth : shared.minHeight;
-        }
-        const std::optional<Size>& maxMainSize(const SharedDescriptor& shared) {
-            return isRow ? shared.maxWidth : shared.maxHeight;
-        }
-        const Size& minCrossSize(const SharedDescriptor& shared) {
-            return isRow ? shared.minHeight : shared.minWidth;
-        }
-        const std::optional<Size>& maxCrossSize(const SharedDescriptor& shared) {
-            return isRow ? shared.maxHeight : shared.maxWidth;
-        }
-
-    std::optional<AxisResolution>& mainResolution(Constraints& c) {
+        std::optional<AxisResolution>& mainResolution(Constraints& c) {
             return isRow ? c.widthResolution : c.heightResolution;
-        }
-
-        std::optional<AxisResolution>& crossResolution(Constraints& c) {
-            return isRow ? c.heightResolution : c.widthResolution;
         }
         
 
@@ -117,8 +94,6 @@ namespace layout {
     struct FlexLine {
         std::vector<FlexItem> items;
         float maxCrossSize{};
-        float intrinsicMinCrossSize{};
-        float intrinsicMaxCrossSize{};
 
         void addItem(FlexItem item) {
             items.push_back(std::move(item));
@@ -434,7 +409,6 @@ namespace layout {
         FlexLayout flex;
         const FrameInfo& frameInfo;
         const SizePair& availableSize;
-        Measured measured;
         bool mutate;
 
         float minX;
@@ -453,15 +427,15 @@ namespace layout {
 
         FlexResolver(RenderTree& tree, TreeNode* node, const Constraints& parentConstraints,
                         const Constraints& childConstraints, FlexLayout flex, const FrameInfo& frameInfo,
-                        const SizePair& availableSize, Measured measured, bool mutate,
+                        const SizePair& availableSize, bool mutate,
                         float minX, float minY, float maxX, float maxY)
             : tree{tree}, node{node}, parentConstraints{parentConstraints},
                 childConstraints{childConstraints}, flex{std::move(flex)},
-                frameInfo{frameInfo}, availableSize{availableSize}, measured{measured}, mutate{mutate},
+                frameInfo{frameInfo}, availableSize{availableSize}, mutate{mutate},
                 minX{minX}, minY{minY}, maxX{maxX}, maxY{maxY}
         {        }
 
-        Constraints prepareChildConstraints(TreeNode* child);
+        Constraints prepareChildConstraints();
         void phaseB();
         Bounds phaseC();
     };

@@ -58,7 +58,7 @@ namespace layout {
         }
     }
 
-    Constraints FlexResolver::prepareChildConstraints(TreeNode* child) {
+    Constraints FlexResolver::prepareChildConstraints() {
         auto newChildConstraints = childConstraints;
         newChildConstraints.intrinsicSizesAxis.reset();
         newChildConstraints.inheritedProperties = parentConstraints.inheritedProperties;
@@ -80,7 +80,7 @@ namespace layout {
                 continue;
 
             auto selfAlign = childAsPtr->getAlignSelf();
-            auto preparedChildConstraints = prepareChildConstraints(childAsPtr);
+            auto preparedChildConstraints = prepareChildConstraints();
             Measured childMeasured = *childAsPtr->measured;
 
             SizeRequest childRequest {
@@ -223,7 +223,7 @@ namespace layout {
 
             for (auto& item : line.items) {
                 auto childNode = node->children[item.childIndex].get();
-                auto preparedChildConstraints = prepareChildConstraints(childNode);
+                auto preparedChildConstraints = prepareChildConstraints();
                 Measured childMeasured = *childNode->measured;
 
                 flex.axis.mainAvailable(preparedChildConstraints) = Size::px(item.usedMainSize);
@@ -298,7 +298,7 @@ namespace layout {
             auto childNode = node->children[i].get();
             Measured childMeasured = *childNode->measured;
 
-            auto preparedChildConstraints = prepareChildConstraints(childNode);
+            auto preparedChildConstraints = prepareChildConstraints();
 
             auto childPosition = flex.axis.toPhysical(
                 p.mainOffset,

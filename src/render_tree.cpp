@@ -898,7 +898,7 @@ namespace tree {
 
             FlexResolver fr {
                 *this, node, constraints, childConstraints, flexContext, frameInfo, sizeResult.size,
-                measured, mutate, minX, minY, maxX, maxY
+                mutate, minX, minY, maxX, maxY
             };
 
             fr.phaseB();
