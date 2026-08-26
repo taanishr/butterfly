@@ -260,7 +260,10 @@ namespace layout {
             maximumCrossContribution += crossGap;
         }
 
-        float availableCross = contentCrossSize;
+        float availableCross = std::visit(Overloaded {
+            [](float value) { return value; },
+            [&](const auto&) { return contentCrossSize; },
+        }, flex.axis.crossSize(availableSize));
 
         auto placements = flex.computePlacements(
             resolvedMainSizes,
