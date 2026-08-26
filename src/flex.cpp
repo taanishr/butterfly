@@ -2,7 +2,6 @@
 #include "overloaded.hpp"
 #include "render_tree.hpp"
 #include "render_tree.hpp"
-#include <print>
 #include <optional>
 
 namespace layout {
@@ -85,7 +84,7 @@ namespace layout {
             SizeRequest childRequest {
                 .position = childAsPtr->shared.position,
                 .specified = {.width = childAsPtr->shared.width, .height = childAsPtr->shared.height},
-                .override = preparedChildConstraints.parentOverride,
+                .override = {.width = std::monostate{}, .height = std::monostate{}},
                 .content = {.width = std::monostate{}, .height = std::monostate{}},
                 .minimum = {.width = childAsPtr->shared.minWidth, .height = childAsPtr->shared.minHeight},
                 .maximum = {
@@ -120,16 +119,6 @@ namespace layout {
                 .trackIntrinsicWidth = false,
             });
 
-            auto debugText = tree::getText(childAsPtr);
-            if (debugText) {
-                std::println(
-                    "[flex phase B:evaluate input] '{}' fragments={} lines={}",
-                    *debugText,
-                    preparedChildConstraints.inlineFormatting.lineFragments().size(),
-                    preparedChildConstraints.inlineFormatting.lineBoxes().size()
-                );
-            }
-
             SizeResult childSizing = evaluateSize(tree, childAsPtr, frameInfo, preparedChildConstraints, childMeasured, childRequest);
 
             const SizeState& preferredMainSize = flex.axis.mainSize(childSizing.size);
@@ -141,16 +130,6 @@ namespace layout {
             AlignItems effectiveAlign = flex.effectiveAlign(selfAlign);
 
             const SizeState& flexBaseSize = std::holds_alternative<float>(preferredMainSize) ? preferredMainSize : mainIntrinsicSizes.maximum;
-            if (debugText) {
-                std::println(
-                    "[flex phase B:size result] '{}' preferred-main-alt={} intrinsic-min-alt={} intrinsic-max-alt={} flex-base-alt={}",
-                    *debugText,
-                    preferredMainSize.index(),
-                    mainIntrinsicSizes.minimum.index(),
-                    mainIntrinsicSizes.maximum.index(),
-                    flexBaseSize.index()
-                );
-            }
             const SizeState& minimumMainSize = flex.axis.mainSize(childSizing.minimum);
             const SizeState& maximumMainSize = flex.axis.mainSize(childSizing.maximum);
 
@@ -190,15 +169,6 @@ namespace layout {
     }
 
     FlexResolver::FlexResult FlexResolver::phaseC() {
-        bool traceAlbumDetails = false;
-        for (const auto& child : node->children) {
-            auto childText = tree::getText(child.get());
-            if (childText == "ALBUM") {
-                traceAlbumDetails = true;
-                break;
-            }
-        }
-
         float minimumCrossContribution = 0.0f;
         float maximumCrossContribution = 0.0f;
 
@@ -222,7 +192,7 @@ namespace layout {
                 SizeRequest childRequest {
                     .position = childNode->shared.position,
                     .specified = {.width = childNode->shared.width, .height = childNode->shared.height},
-                    .override = preparedChildConstraints.parentOverride,
+                    .override = {.width = std::monostate{}, .height = std::monostate{}},
                     .content = {.width = std::monostate{}, .height = std::monostate{}},
                     .minimum = {.width = childNode->shared.minWidth, .height = childNode->shared.minHeight},
                     .maximum = {
@@ -320,7 +290,7 @@ namespace layout {
             SizeRequest childRequest {
                 .position = childNode->shared.position,
                 .specified = {.width = childNode->shared.width, .height = childNode->shared.height},
-                .override = preparedChildConstraints.parentOverride,
+                .override = {.width = std::monostate{}, .height = std::monostate{}},
                 .content = {.width = std::monostate{}, .height = std::monostate{}},
                 .minimum = {.width = childNode->shared.minWidth, .height = childNode->shared.minHeight},
                 .maximum = {
@@ -352,53 +322,8 @@ namespace layout {
                 childRequest.automaticWidth = p.alignment == AlignItems::Stretch ? AutomaticSizing::UseAvailable : AutomaticSizing::UseContent;
             }
 
-            auto debugText = tree::getText(childNode);
-            if (debugText) {
-                std::println(
-                    "[flex phase C:input] '{}' main-offset={} main-size={} fragments={} lines={}",
-                    *debugText,
-                    p.mainOffset,
-                    p.mainSize,
-                    preparedChildConstraints.inlineFormatting.lineFragments().size(),
-                    preparedChildConstraints.inlineFormatting.lineBoxes().size()
-                );
-            }
-
             LayoutOutput childOutput = tree.layoutRecursive(childNode, frameInfo, preparedChildConstraints, childMeasured, mutate, std::move(childRequest));
             const auto& childLayout = childOutput.layout;
-
-            if (mutate && traceAlbumDetails) {
-                std::println(
-                    "[album details] parent={} child={} row={} index={} authored={}({})x{}({}) placement=({}, {}) allocated={}x{} box=({}, {}) {}x{}",
-                    node->id,
-                    childNode->id,
-                    flex.axis.isRow,
-                    i,
-                    childNode->shared.width.value,
-                    static_cast<int>(childNode->shared.width.unit),
-                    childNode->shared.height.value,
-                    static_cast<int>(childNode->shared.height.unit),
-                    p.mainOffset,
-                    p.crossOffset,
-                    p.mainSize,
-                    p.lineCrossSize,
-                    childLayout.computedBox.x,
-                    childLayout.computedBox.y,
-                    childLayout.computedBox.width,
-                    childLayout.computedBox.height
-                );
-            }
-
-            if (debugText) {
-                std::println(
-                    "[flex phase C:output] '{}' width={} height={} consumed-height={} main-extent={}",
-                    *debugText,
-                    childLayout.computedBox.width,
-                    childLayout.computedBox.height,
-                    childLayout.consumedHeight,
-                    flex.axis.mainSize(childLayout)
-                );
-            }
 
             maxX = std::max(maxX, childLayout.computedBox.x + childLayout.computedBox.width);
             maxY = std::max(maxY, childLayout.computedBox.y + childLayout.consumedHeight);
