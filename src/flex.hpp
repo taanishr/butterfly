@@ -3,6 +3,7 @@
 
 #include "new_arch.hpp"
 #include "element.hpp"
+#include "new_sizing.hpp"
 #include "sizing.hpp"
 #include <print>
 #include <variant>
@@ -454,11 +455,17 @@ namespace layout {
         const FrameInfo& frameInfo;
         const SizePair& availableSize;
         bool mutate;
+        std::unordered_map<size_t, SizeResult>& sizeCache;
+
 
         float minX;
         float minY;
         float maxX;
         float maxY;
+
+        std::optional<IntrinsicRequest> intrinsicWidthRequest;
+        std::optional<IntrinsicRequest> intrinsicHeightRequest;
+
         float resolvedGap{};
         float availableMain{};
         FlexLayout::ResolveResult resolvedMainSizes;
@@ -476,13 +483,14 @@ namespace layout {
 
         FlexResolver(RenderTree& tree, TreeNode* node, const Constraints& parentConstraints,
                         const Constraints& childConstraints, FlexLayout flex, const FrameInfo& frameInfo,
-                        const SizePair& availableSize, bool mutate,
+                        const SizePair& availableSize, bool mutate, std::unordered_map<size_t, SizeResult>& sizeCache,
                         float minX, float minY, float maxX, float maxY,
-                        bool resolvingIntrinsicWidth, bool resolvingIntrinsicHeight)
+                        std::optional<IntrinsicRequest> intrinsicWidthRequest, std::optional<IntrinsicRequest> intrinsicHeightRequest)
             : tree{tree}, node{node}, parentConstraints{parentConstraints},
                 childConstraints{childConstraints}, flex{flex},
-                frameInfo{frameInfo}, availableSize{availableSize}, mutate{mutate},
-                minX{minX}, minY{minY}, maxX{maxX}, maxY{maxY}
+                frameInfo{frameInfo}, availableSize{availableSize}, mutate{mutate}, sizeCache{sizeCache},
+                minX{minX}, minY{minY}, maxX{maxX}, maxY{maxY},
+                intrinsicWidthRequest{intrinsicWidthRequest}, intrinsicHeightRequest{intrinsicHeightRequest}
         {}
 
         Constraints prepareChildConstraints();

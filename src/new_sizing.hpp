@@ -7,6 +7,7 @@
 #include <format>
 #include <optional>
 #include <string>
+#include <unordered_map>
 
 inline std::string describeSize(const style::Size& size) {
     switch (size.unit) {
@@ -72,7 +73,8 @@ using style::SizeError;
 
 enum class IntrinsicRequest {
     Minimum,
-    Maximum
+    Maximum,
+    Both
 };
 
 struct InlineSizingInput {
@@ -286,5 +288,6 @@ auto evaluateSize(
     const FrameInfo& frameInfo,
     layout::Constraints constraints,
     layout::Measured measured,
-    SizeRequest req
+    SizeRequest req,
+    std::optional<std::unordered_map<size_t, SizeResult>&> sizeCache = std::nullopt
 ) -> SizeResult;

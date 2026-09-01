@@ -437,6 +437,7 @@ namespace tree {
         // initial layout pass
         if (needsLayoutPass) {
             speculativeLayoutCache.clear();
+            sizeCache.clear();
             instrumentation::PhaseTimer timer{instrumentation::Phase::Layout};
             layoutPhase(root, frameInfo, rootConstraints, *root->measured);
             root->calculateGlobalZIndex(0);
@@ -716,7 +717,14 @@ namespace tree {
         return inserted->second;
     }
 
-    std::optional<IntrinsicSizes> RenderTree::measureIntrinsicSizes(TreeNode* node, const FrameInfo& frameInfo, Constraints constraints, Measured measured, SizeRequest sizeRequest) {
+    std::optional<IntrinsicSizes> RenderTree::measureIntrinsicSizes(
+        TreeNode* node, 
+        const FrameInfo& frameInfo, 
+        Constraints constraints,
+        Measured measured, 
+        SizeRequest sizeRequest
+    )
+    {
         LayoutOutput output = layoutRecursive(node, frameInfo, constraints, measured, false, sizeRequest);
 
         return output.intrinsicSizes;
@@ -728,7 +736,9 @@ namespace tree {
         Constraints constraints,
         Measured measured,
         bool mutate,
-        std::optional<SizeRequest> sizeRequestOverride
+        std::optional<SizeRequest> sizeRequestOverride, // not a fan of these two sources of truth existing
+        std::optional<IntrinsicRequest> intrinsicWidthRequestOverride,
+        std::optional<IntrinsicRequest> intrinsicHeightRequestOverride
     ) {
         // struct Constraints {
         //     simd_float2 origin{};
@@ -804,7 +814,15 @@ namespace tree {
             }
         );
 
-        auto sizeResult = evaluateSize(*this, node, frameInfo, constraints, measured, sizeRequest);
+        if (intrinsicWidthRequestOverride) {
+            sizeRequest.intrinsicWidthRequest = intrinsicWidthRequestOverride;
+        }
+
+        if (intrinsicHeightRequestOverride) {
+            sizeRequest.intrinsicHeightRequest = intrinsicHeightRequestOverride;
+        }
+
+        auto sizeResult = evaluateSize(*this, node, frameInfo, constraints, measured, sizeRequest, sizeCache);
 
         const auto* resolvedOuterWidth = std::get_if<float>(&sizeResult.outerSize.width);
         // utimately the fucked up path is that sizeResult.size.width is becocming too large
@@ -861,6 +879,12 @@ namespace tree {
             .trackIntrinsicWidth = sizeRequest.resolvingIntrinsicWidth,
         };
 
+        if (node->id == 104) {
+            if (sizeRequest.intrinsicWidthRequest) {
+                std::println("sizing mode exists: {}", sizeRequest.intrinsicWidthRequest == IntrinsicRequest::Maximum ? "Max" : "Min");
+            }
+        }
+
         auto inlineFormatting = buildInlineBoxes(node, inlineSizing);
 
 
@@ -874,18 +898,18 @@ namespace tree {
             FlexLayout flexContext {flexDirection, justifyContent, alignItems, alignContentVal, flexWrap};
             flexContext.axis.applyDirection(constraints.inheritedProperties.direction);
 
-            if (node->id == 104 && std::holds_alternative<float>(sr.outerSize.width)) {
-                std::println("running as flex container with this size: {}", *std::get_if<float>(&sr.outerSize.width));
-            }
+            // if (node->id == 104 && std::holds_alternative<float>(sr.outerSize.width)) {
+            //     std::println("running as flex container with this size: {}", *std::get_if<float>(&sr.outerSize.width));
+            // }
 
             // temp variable for padding included available size
             auto availableSize = sr.innerSize;
 
             FlexResolver fr {
                 *this, node, constraints, childConstraints, flexContext, frameInfo, availableSize, 
-                mutate, minX, minY, maxX, maxY,
-                sizeRequest.resolvingIntrinsicWidth,
-                sizeRequest.resolvingIntrinsicHeight
+                mutate, sizeCache, minX, minY, maxX, maxY,
+                sizeRequest.intrinsicWidthRequest,
+                sizeRequest.intrinsicHeightRequest
             };
 
             fr.phaseB();
@@ -939,7 +963,7 @@ namespace tree {
                     .fragments = inlineFormatting->childFragments[i],
                 };
 
-                auto childOutput = layoutRecursive(child, frameInfo, childConstraints, *child->measured, mutate);
+                auto childOutput = layoutRecursive(child, frameInfo, childConstraints, *child->measured, mutate, std::nullopt, sizeRequest.intrinsicWidthRequest, sizeRequest.intrinsicHeightRequest);
                 auto& childLayout = childOutput.layout;
                 
                 // track:
@@ -1006,7 +1030,7 @@ namespace tree {
             .height = contentHeight,
         };
         
-        auto resizeResult = evaluateSize(*this, node, frameInfo, constraints, measured, resizeRequest);
+        auto resizeResult = evaluateSize(*this, node, frameInfo, constraints, measured, resizeRequest, sizeCache);
 
         // check if size results MATCH with og one;
         const auto* initialWidth = std::get_if<float>(&sizeResult.outerSize.width);

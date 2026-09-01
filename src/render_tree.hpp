@@ -68,7 +68,13 @@ namespace tree {
         void placePhase(TreeNode* node, const FrameInfo& frameInfo, Constraints& constraints);
         void finalizePhase(TreeNode* node, Constraints& constraints);
 
-        std::optional<layout::IntrinsicSizes> measureIntrinsicSizes(TreeNode* node, const FrameInfo& frameInfo, Constraints constraints, layout::Measured measured, SizeRequest sizeRequest);
+        std::optional<layout::IntrinsicSizes> measureIntrinsicSizes(
+            TreeNode* node, 
+            const FrameInfo& frameInfo, 
+            Constraints constraints, 
+            layout::Measured measured, 
+            SizeRequest sizeRequest
+        );
 
 
         layout::LayoutOutput layoutRecursive(
@@ -77,7 +83,9 @@ namespace tree {
             Constraints constraints,
             layout::Measured measured,
             bool mutate,
-            std::optional<SizeRequest> sizeRequestOverride = std::nullopt
+            std::optional<SizeRequest> sizeRequestOverride = std::nullopt,
+            std::optional<IntrinsicRequest> intrinsicWidthRequestOverride = std::nullopt,
+            std::optional<IntrinsicRequest> intrinsicHeightRequestOverride = std::nullopt
         );
     private:
         bool isFrameInfoChanged(const FrameInfo& frameInfo) const;
@@ -118,5 +126,6 @@ namespace tree {
         LayoutEngine layoutEngine;
 
         std::unordered_map<ConstraintsKey, layout::LayoutOutput> speculativeLayoutCache;
+        std::unordered_map<size_t, SizeResult> sizeCache;
     };
 }
