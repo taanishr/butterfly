@@ -77,7 +77,7 @@ namespace tree {
             Constraints constraints,
             layout::Measured measured,
             bool mutate,
-            std::optional<SizeRequest> intrinsicSizeRequest = std::nullopt
+            std::optional<SizeRequest> sizeRequestOverride = std::nullopt
         );
     private:
         bool isFrameInfoChanged(const FrameInfo& frameInfo) const;

@@ -4,67 +4,9 @@
 #include "overloaded.hpp"
 #include "render_tree.hpp"
 #include "sizing.hpp"
-#include <MacTypes.h>
 #include <algorithm>
-#include <format>
 #include <optional>
-#include <print>
 #include <variant>
-
-// debug only: to be removed, later on
-template <>
-struct std::formatter<style::SizeError> : std::formatter<std::string_view> {
-    auto format(style::SizeError error, format_context& ctx) const {
-        std::string_view name;
-        switch (error) {
-            case style::SizeError::Auto: name = "Auto"; break;
-            case style::SizeError::IndefiniteBasis: name = "IndefiniteBasis"; break;
-            case style::SizeError::FractionRequiresContext: name = "FractionRequiresContext"; break;
-            case style::SizeError::ContentDependent: name = "ContentDependent"; break;
-        }
-        return std::formatter<std::string_view>::format(name, ctx);
-    }
-};
-
-template <>
-struct std::formatter<style::Size> : std::formatter<std::string_view> {
-    auto format(const style::Size& size, format_context& ctx) const {
-        std::string_view unit;
-        switch (size.unit) {
-            case style::Unit::Px: unit = "px"; break;
-            case style::Unit::Percent: unit = "%"; break;
-            case style::Unit::Auto: unit = "auto"; break;
-            case style::Unit::Pt: unit = "pt"; break;
-            case style::Unit::Fr: unit = "fr"; break;
-            case style::Unit::MinContent: unit = "min-content"; break;
-            case style::Unit::MaxContent: unit = "max-content"; break;
-            case style::Unit::FitContent: unit = "fit-content"; break;
-        }
-
-        if (size.unit == style::Unit::Auto || size.isContentDependent())
-            return std::format_to(ctx.out(), "{}", unit);
-        return std::format_to(ctx.out(), "{}{}", size.value, unit);
-    }
-};
-
-template <>
-struct std::formatter<SizeState> : std::formatter<std::string_view> {
-    auto format(const SizeState& size, format_context& ctx) const {
-        return std::visit(Overloaded{
-            [&](std::monostate) { return std::format_to(ctx.out(), "unset"); },
-            [&](const auto& value) { return std::format_to(ctx.out(), "{}", value); }
-        }, size);
-    }
-};
-
-template <>
-struct std::formatter<std::expected<float, style::SizeError>> : std::formatter<std::string_view> {
-    auto format(const std::expected<float, style::SizeError>& size, format_context& ctx) const {
-        if (size)
-            return std::format_to(ctx.out(), "{}", *size);
-        return std::format_to(ctx.out(), "{}", size.error());
-    }
-};
 
 
 // circular problem:
@@ -133,12 +75,12 @@ auto calculateSize(const SizeState& size, const SizeState& available) -> SizeSta
 //   - specified or intrinsic
 //   - automatic from opposing insets
 //   - automatic using available size
-//   - automatic using content size
+//   - automatic using outer size
 // resolve height
 //   - specified or intrinsic
 //   - automatic from opposing insets
 //   - automatic using available size
-//   - automatic using content size
+//   - automatic using outer size
 // needs to be imbued with ctx
 auto resolveWidth(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic) -> SizeState {
     // run size through a calculate size pass (maybe avail too)
@@ -176,33 +118,34 @@ auto resolveWidth(const SizeState& size, SizeRequest& req, const std::optional<I
             return available;
         }
 
-        SizeState paddingLeft = calculateSize(req.paddingLeft, req.available.width);
-        const auto* resolvedPaddingLeft = std::get_if<float>(&paddingLeft);
+        // this is all inner box nonsense....
+        // SizeState paddingLeft = calculateSize(req.paddingLeft, req.available.width);
+        // const auto* resolvedPaddingLeft = std::get_if<float>(&paddingLeft);
 
-        if (!resolvedPaddingLeft) {
-            return paddingLeft;
-        }
+        // if (!resolvedPaddingLeft) {
+        //     return paddingLeft;
+        // }
 
-        SizeState paddingRight = calculateSize(req.paddingRight, req.available.width);
-        const auto* resolvedPaddingRight = std::get_if<float>(&paddingRight);
+        // SizeState paddingRight = calculateSize(req.paddingRight, req.available.width);
+        // const auto* resolvedPaddingRight = std::get_if<float>(&paddingRight);
 
-        if (!resolvedPaddingRight) {
-            return paddingRight;
-        }
+        // if (!resolvedPaddingRight) {
+        //     return paddingRight;
+        // }
 
-        SizeState borderWidth = calculateSize(req.borderWidth, req.available.width);
-        const auto* resolvedBorderWidth = std::get_if<float>(&borderWidth);
+        // SizeState borderWidth = calculateSize(req.borderWidth, req.available.width);
+        // const auto* resolvedBorderWidth = std::get_if<float>(&borderWidth);
 
-        if (!resolvedBorderWidth) {
-            return borderWidth;
-        }
+        // if (!resolvedBorderWidth) {
+        //     return borderWidth;
+        // }
 
         float automaticWidth = *availableWidth
             - req.margins.left
-            - req.margins.right
-            - *resolvedPaddingLeft
-            - *resolvedPaddingRight
-            - 2.0f * *resolvedBorderWidth;
+            - req.margins.right;
+            // - *resolvedPaddingLeft
+            // - *resolvedPaddingRight
+            // - 2.0f * *resolvedBorderWidth;
 
         // then, branch from here
         // are we *out of flow* and do we have insets?
@@ -234,6 +177,40 @@ auto resolveWidth(const SizeState& size, SizeRequest& req, const std::optional<I
     // should we just early return, or mutate a starting size?
     // not clear to me that mutation is necessarily good
     return resolved;
+}
+
+auto resolveInnerWidth(const SizeState& size, SizeRequest& req) -> SizeState {
+    // first; calculate modifiers
+    SizeState paddingLeft = calculateSize(req.paddingLeft, req.available.width);
+    const auto* resolvedPaddingLeft = std::get_if<float>(&paddingLeft);
+
+    SizeState paddingRight = calculateSize(req.paddingRight, req.available.width);
+    const auto* resolvedPaddingRight = std::get_if<float>(&paddingRight);
+
+    SizeState borderWidth = calculateSize(req.borderWidth, req.available.width);
+    const auto* resolvedBorderWidth = std::get_if<float>(&borderWidth);
+
+    // copy inner size & modify
+    return std::visit(Overloaded{
+        [&](float innerSize) -> SizeState {        
+            if (resolvedPaddingLeft) {
+                innerSize -= *resolvedPaddingLeft;
+            }
+
+            if (resolvedPaddingRight) {
+                innerSize -= *resolvedPaddingRight;
+            }
+    
+            if (resolvedBorderWidth) {
+                innerSize -= 2 * *resolvedBorderWidth;
+            }
+
+            return innerSize;
+        },
+        [&](auto& other) -> SizeState {
+            return other;
+        }
+    }, size);
 }
 
 auto resolveHeight(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic) -> SizeState {
@@ -272,34 +249,34 @@ auto resolveHeight(const SizeState& size, SizeRequest& req, const std::optional<
             return available;
         }
 
-        // req.padding* against width is not a bug; that is geniuenly just the spec
-        SizeState paddingTop = calculateSize(req.paddingTop, req.available.width);
-        const auto* resolvedPaddingTop = std::get_if<float>(&paddingTop);
+        // // req.padding* against width is not a bug; that is geniuenly just the spec
+        // SizeState paddingTop = calculateSize(req.paddingTop, req.available.width);
+        // const auto* resolvedPaddingTop = std::get_if<float>(&paddingTop);
 
-        if (!resolvedPaddingTop) {
-            return paddingTop;
-        }
+        // if (!resolvedPaddingTop) {
+        //     return paddingTop;
+        // }
 
-        SizeState paddingBottom = calculateSize(req.paddingBottom, req.available.width);
-        const auto* resolvedPaddingBottom = std::get_if<float>(&paddingBottom);
+        // SizeState paddingBottom = calculateSize(req.paddingBottom, req.available.width);
+        // const auto* resolvedPaddingBottom = std::get_if<float>(&paddingBottom);
 
-        if (!resolvedPaddingBottom) {
-            return paddingBottom;
-        }
+        // if (!resolvedPaddingBottom) {
+        //     return paddingBottom;
+        // }
 
-        SizeState borderWidth = calculateSize(req.borderWidth, req.available.width);
-        const auto* resolvedBorderWidth = std::get_if<float>(&borderWidth);
+        // SizeState borderWidth = calculateSize(req.borderWidth, req.available.width);
+        // const auto* resolvedBorderWidth = std::get_if<float>(&borderWidth);
 
-        if (!resolvedBorderWidth) {
-            return borderWidth;
-        }
+        // if (!resolvedBorderWidth) {
+        //     return borderWidth;
+        // }
 
         float automaticHeight = *availableHeight
             - req.margins.top
-            - req.margins.bottom
-            - *resolvedPaddingTop
-            - *resolvedPaddingBottom
-            - 2.0f * *resolvedBorderWidth;
+            - req.margins.bottom;
+            // - *resolvedPaddingTop
+            // - *resolvedPaddingBottom
+            // - 2.0f * *resolvedBorderWidth;
 
         // then, branch from here
         // are we *out of flow* and do we have insets?
@@ -331,6 +308,41 @@ auto resolveHeight(const SizeState& size, SizeRequest& req, const std::optional<
     // should we just early return, or mutate a starting size?
     // not clear to me that mutation is necessarily good
     return resolved;
+}
+
+auto resolveInnerHeight(const SizeState& size, SizeRequest& req) {
+    // first; calculate modifiers
+    // req.padding* against width is not a bug; that is geniuenly just the spec
+    SizeState paddingTop = calculateSize(req.paddingTop, req.available.width);
+    const auto* resolvedPaddingTop = std::get_if<float>(&paddingTop);
+
+    SizeState paddingBottom = calculateSize(req.paddingBottom, req.available.width);
+    const auto* resolvedPaddingBottom = std::get_if<float>(&paddingBottom);
+
+    SizeState borderWidth = calculateSize(req.borderWidth, req.available.width);
+    const auto* resolvedBorderWidth = std::get_if<float>(&borderWidth);
+
+    // copy inner size & modify
+    return std::visit(Overloaded{
+        [&](float innerSize) -> SizeState {        
+            if (resolvedPaddingTop) {
+                innerSize -= *resolvedPaddingTop;
+            }
+
+            if (resolvedPaddingBottom) {
+                innerSize -= *resolvedPaddingBottom;
+            }
+    
+            if (resolvedBorderWidth) {
+                innerSize -= 2 * *resolvedBorderWidth;
+            }
+
+            return innerSize;
+        },
+        [&](auto& other) -> SizeState {
+            return other;
+        }
+    }, size);
 }
 
 // these ONLY exist because of different auto behavior fo min/max width and height
@@ -496,15 +508,7 @@ auto measureIntrinsicWidth(
 ) -> IntrinsicResult {
     // antiSize: not used here
 
-    auto debugText = tree::getText(node);
-    if (debugText) {
-        std::println("[measure width:start] '{}' resolving={} request={} anti-alternative={}", *debugText, req.resolvingIntrinsicWidth, req.intrinsicWidthRequest.has_value(), antiSize.index());
-    }
-
     if (req.resolvingIntrinsicWidth) {
-        if (debugText) {
-            std::println("[measure width:guard] '{}'", *debugText);
-        }
         return {
             .minimum = SizeError::ContentDependent,
             .maximum = SizeError::ContentDependent,
@@ -516,24 +520,8 @@ auto measureIntrinsicWidth(
     req.resolvingIntrinsicWidth = true;
 
     // afterwards, establish the recursive call
-    std::optional<layout::IntrinsicSizes> intrinsic = tree.measureIntrinsicSizes(node, frameInfo, constraints, measured, std::move(req));
+    std::optional<layout::IntrinsicSizes> intrinsic = tree.measureIntrinsicSizes(node, frameInfo, constraints, measured, req);
 
-    if (debugText) {
-        if (intrinsic) {
-            std::println("[measure width:return] '{}' minimum={} maximum={}", *debugText, intrinsic->minimum, intrinsic->maximum);
-        } else {
-            std::println("[measure width:return] '{}' no intrinsic result", *debugText);
-        }
-    }
-
-    /*
-        BIG TODO: (not yet done, and kind of only semi-related to this function)
-        create an abstraction to make the inline text breaking algorithm less dependent
-        on the leakiness of size; maybe we should create a separate
-        InlineContext? that the buildInlineBoxes take in
-        and that is generated by a function here
-    */
-    // return both the min and max intrinsic size
     if (!intrinsic) {
         return {
             .minimum = SizeError::ContentDependent,
@@ -545,6 +533,26 @@ auto measureIntrinsicWidth(
         .minimum = intrinsic->minimum,
         .maximum = intrinsic->maximum,
     };
+
+    /*
+        BIG TODO: (not yet done, and kind of only semi-related to this function)
+        create an abstraction to make the inline text breaking algorithm less dependent
+        on the leakiness of size; maybe we should create a separate
+        InlineContext? that the buildInlineBoxes take in
+        and that is generated by a function here
+    */
+    // return both the min and max intrinsic size
+    // if (!intrinsic) {
+    //     return {
+    //         .minimum = SizeError::ContentDependent,
+    //         .maximum = SizeError::ContentDependent,
+    //     };
+    // }
+
+    // return {
+    //     .minimum = intrinsic->minimum,
+    //     .maximum = intrinsic->maximum,
+    // };
 }
 
 auto measureIntrinsicHeight(
@@ -558,23 +566,7 @@ auto measureIntrinsicHeight(
 ) -> IntrinsicResult {
     // antisize: USED HERE
 
-    auto debugText = tree::getText(node);
-    if (debugText) {
-        std::println(
-            "[measure height:start] '{}' resolving={} request={} anti-alternative={} fragments={} lines={}",
-            *debugText,
-            req.resolvingIntrinsicHeight,
-            req.intrinsicHeightRequest.has_value(),
-            antiSize.index(),
-            constraints.inlineFormatting.lineFragments().size(),
-            constraints.inlineFormatting.lineBoxes().size()
-        );
-    }
-
     if (req.resolvingIntrinsicHeight) {
-        if (debugText) {
-            std::println("[measure height:guard] '{}'", *debugText);
-        }
         return {
             .minimum = SizeError::ContentDependent,
             .maximum = SizeError::ContentDependent,
@@ -584,7 +576,7 @@ auto measureIntrinsicHeight(
     // first; create a new request (or have the recursive tree func do this)
     // this new request should set resolvingIntrinsicHeight = true
     req.resolvingIntrinsicHeight = true;
-    
+
     // if an antiSize has been resolved and provided via antisize, the request SHOULD note this
     SizeState resolvedAntiSize = calculateSize(antiSize, req.available.width);
     const auto* resolvedWidth = std::get_if<float>(&resolvedAntiSize);
@@ -593,20 +585,8 @@ auto measureIntrinsicHeight(
         req.override.width = *resolvedWidth;
     }
 
-    if (debugText) {
-        std::println("[measure height:width] '{}' resolved={} alternative={}", *debugText, resolvedWidth != nullptr, resolvedAntiSize.index());
-    }
-
     // establish the recursive call; make sure it establishes the specified antiSize correcttly
-    std::optional<layout::IntrinsicSizes> intrinsic = tree.measureIntrinsicSizes(node, frameInfo, constraints, measured, std::move(req));
-
-    if (debugText) {
-        if (intrinsic) {
-            std::println("[measure height:return] '{}' minimum={} maximum={}", *debugText, intrinsic->minimum, intrinsic->maximum);
-        } else {
-            std::println("[measure height:return] '{}' no intrinsic result", *debugText);
-        }
-    }
+    std::optional<layout::IntrinsicSizes> intrinsic = tree.measureIntrinsicSizes(node, frameInfo, constraints, measured, req);
 
     // return both the min and max intrinsic size
     if (!intrinsic) {
@@ -813,6 +793,27 @@ auto evaluateSize(
         return the partial or complete result  
     */
 
+    //if (node->id == 106) {
+    //    if (std::holds_alternative<float>(req.specified.width)) {
+    //        std::println("specified: {}", *std::get_if<float>(&req.specified.width));
+    //    }else if (std::holds_alternative<style::Size>(req.specified.width)) {
+    //        std::println("Size sizing path");
+    //        auto sz = *std::get_if<style::Size>(&req.specified.width);
+    //        if (sz.unit == layout::Unit::Percent) {
+    //            if (std::holds_alternative<float>(req.available.width)) {
+    //                float avail = *std::get_if<float>(&req.available.width);
+    //                float pval = sz.value;
+    //                std::println("percent sized {}, avail determined {}", pval, avail); 
+    //            }else {
+    //                std::println("percent sized, avail undetermined");
+
+    //            }
+    //        }
+    //    }else {
+    //        std::println("entirely diff path");
+    //    }
+    //}
+
     const auto& requestedWidth = std::holds_alternative<std::monostate>(req.override.width)
         ? req.specified.width
         : req.override.width;
@@ -851,7 +852,7 @@ auto evaluateSize(
     const auto* maxHeightError = std::get_if<SizeError>(&maximum.height);
 
     bool widthIntrinsicError = widthError && *widthError == SizeError::ContentDependent;
-    bool minWidthIntrinsicError = (minWidthError && *minWidthError == SizeError::ContentDependent) 
+    bool minWidthIntrinsicError = (minWidthError && *minWidthError == SizeError::ContentDependent)
                                 || req.intrinsicWidthRequest == IntrinsicRequest::Minimum;
     bool maxWidthIntrinsicError = (maxWidthError && *maxWidthError == SizeError::ContentDependent)
                                 || req.intrinsicWidthRequest == IntrinsicRequest::Maximum;
@@ -908,8 +909,21 @@ auto evaluateSize(
 
     size.height = clampSize(size.height, minimum.height, maximum.height);
 
+    // inner sizes 
+    SizePair innerSize {
+        .width = resolveInnerWidth(size.width, req),
+        .height = resolveInnerHeight(size.height, req)
+    };
+
+    if (node->id == 104) {
+        if (widthIntrinsic) {
+            std::println("in new_sizing, min.width: {}, max.width: {}", describeSizeState(widthIntrinsic->minimum), describeSizeState(widthIntrinsic->maximum));
+        }
+    }
+
     return {
-        .size = size,
+        .outerSize = size,
+        .innerSize = innerSize,
         .minimum = minimum,
         .maximum = maximum,
         .widthIntrinsicSizes = widthIntrinsic,

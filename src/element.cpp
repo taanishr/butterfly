@@ -89,7 +89,7 @@ namespace tree {
             }
 
             auto resolvedContext = bidi::TextBidiContext::create(
-                std::move(paragraph),
+                paragraph,
                 baseDirection == layout::Direction::rtl
                     ? bidi::BidiBaseDirection::Rtl
                     : bidi::BidiBaseDirection::Ltr
@@ -119,7 +119,7 @@ namespace tree {
                     .context = context,
                     .paragraphByteStart = childStart,
                     .byteLength = childLength,
-                    .runs = std::move(childRuns)
+                    .runs = childRuns
                 };
             }
             sequenceStart = sequenceEnd;
@@ -717,7 +717,7 @@ namespace tree {
 
         const size_t fragmentCount = fragments.size();
         return {
-            .context = std::move(context),
+            .context = context,
             .fragments = {.start = 0, .count = fragmentCount}
         };
     }

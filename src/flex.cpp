@@ -1,8 +1,15 @@
 #include "flex.hpp"
+#include "new_arch.hpp"
+#include "new_sizing.hpp"
 #include "overloaded.hpp"
 #include "render_tree.hpp"
 #include "render_tree.hpp"
+#include <algorithm>
+#include <format>
 #include <optional>
+#include <print>
+#include <string>
+#include <variant>
 
 namespace layout {
     Alignment distributeSpace(float remainingSpace, size_t itemCount, DistributeMode mode) {
@@ -71,6 +78,9 @@ namespace layout {
             [&](const auto&) { return node->getFlexGap().resolve(Size::autoSize()).value_or(0.0f); },
         }, flex.axis.mainSize(availableSize));
 
+       // if (node->id == 106)
+       //     std::println("initial w: {}", node->measured->explicitWidth.value_or(-1.0f));
+
         for (uint64_t i = 0; i < node->children.size(); ++i) {
             auto childAsPtr = node->children[i].get();
             auto position = childAsPtr->getPosition();
@@ -107,10 +117,26 @@ namespace layout {
                 .automaticHeight = AutomaticSizing::UseContent,
                 // why this ternary?
                 // https://www.w3.org/TR/css-flexbox-1/#min-size-auto
-                .automaticMinimumWidth = flex.axis.isRow ? AutomaticMinimum::ContentBased : AutomaticMinimum::Zero,
-                .automaticMinimumHeight = flex.axis.isRow ? AutomaticMinimum::Zero : AutomaticMinimum::ContentBased,
+                /*
+                    1) only the main axis is content based
+                    2) if overflow: scroll is enabled, the main axis is zero-based (4.5)
+                */
+                .automaticMinimumWidth = flex.axis.isRow
+                                        ? (childAsPtr->shared.overflow == style::Overflow::Scroll
+                                            ? AutomaticMinimum::Zero
+                                            : AutomaticMinimum::ContentBased
+                                          )
+                                        : AutomaticMinimum::Zero,
+                .automaticMinimumHeight = flex.axis.isRow
+                                        ? AutomaticMinimum::Zero
+                                        : (childAsPtr->shared.overflow == style::Overflow::Scroll
+                                            ? AutomaticMinimum::Zero
+                                            : AutomaticMinimum::ContentBased
+                                          ),
                 .intrinsicWidthRequest = flex.axis.isRow ? std::optional{IntrinsicRequest::Maximum} : std::nullopt,
                 .intrinsicHeightRequest = flex.axis.isRow ? std::nullopt : std::optional{IntrinsicRequest::Maximum},
+
+                .tag = "flex phase B, main size"
             };
 
             preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childAsPtr, {
@@ -121,17 +147,22 @@ namespace layout {
 
             SizeResult childSizing = evaluateSize(tree, childAsPtr, frameInfo, preparedChildConstraints, childMeasured, childRequest);
 
-            const SizeState& preferredMainSize = flex.axis.mainSize(childSizing.size);
+            const SizeState& preferredMainSize = flex.axis.mainSize(childSizing.outerSize);
             const auto& measuredMainIntrinsicSizes = flex.axis.isRow ? childSizing.widthIntrinsicSizes : childSizing.heightIntrinsicSizes;
             IntrinsicResult mainIntrinsicSizes {
                 .minimum = measuredMainIntrinsicSizes ? measuredMainIntrinsicSizes->minimum : preferredMainSize,
                 .maximum = measuredMainIntrinsicSizes ? measuredMainIntrinsicSizes->maximum : preferredMainSize,
             };
+
             AlignItems effectiveAlign = flex.effectiveAlign(selfAlign);
 
             const SizeState& flexBaseSize = std::holds_alternative<float>(preferredMainSize) ? preferredMainSize : mainIntrinsicSizes.maximum;
             const SizeState& minimumMainSize = flex.axis.mainSize(childSizing.minimum);
             const SizeState& maximumMainSize = flex.axis.mainSize(childSizing.maximum);
+
+            if (childAsPtr->id == 104) {
+                std::println(" minimum main size: {}, pref main size: {} intrinsic main min {}, intrinsic main max {}, flex base size: {}", describeSizeState(minimumMainSize), describeSizeState(preferredMainSize), describeSizeState(mainIntrinsicSizes.minimum), describeSizeState(mainIntrinsicSizes.maximum), describeSizeState(flexBaseSize));
+            }
 
             flex.addItem(
                 i,
@@ -139,7 +170,7 @@ namespace layout {
                 flexBaseSize,
                 minimumMainSize,
                 maximumMainSize,
-                std::move(mainIntrinsicSizes),
+                mainIntrinsicSizes,
                 effectiveAlign,
                 flex.axis.mainSize(availableSize),
                 resolvedGap
@@ -147,7 +178,7 @@ namespace layout {
         }
 
         if (flex.currentLine.count() > 0) {
-            flex.lines.push_back(std::move(flex.currentLine));
+            flex.lines.push_back(flex.currentLine);
             flex.currentLine = FlexLine{};
         }
 
@@ -165,6 +196,7 @@ namespace layout {
             availableMain = std::max(availableMain, totalFlexBaseSize);
         }
 
+
         resolvedMainSizes = flex.resolveSizes(availableMain, resolvedGap);
     }
 
@@ -177,6 +209,16 @@ namespace layout {
             float lineMinimumCrossContribution = 0.0f;
             float lineMaximumCrossContribution = 0.0f;
 
+            const bool containsNode104 = std::ranges::any_of(
+                line.items,
+                [](const FlexItem& item) { return item.childId == 104; }
+            );
+
+            // if (containsNode104) {
+            //     lineMinimumCrossContribution = 0.0f;
+            //     lineMaximumCrossContribution = 100.0f;
+            //     line.maxCrossSize = 100.0f;
+            // }else {
             for (auto& item : line.items) {
                 auto childNode = node->children[item.childIndex].get();
                 auto preparedChildConstraints = prepareChildConstraints();
@@ -219,6 +261,8 @@ namespace layout {
                     .automaticHeight = AutomaticSizing::UseContent,
                     .automaticMinimumWidth = AutomaticMinimum::Zero,
                     .automaticMinimumHeight = AutomaticMinimum::Zero,
+                    .intrinsicWidthRequest = containsNode104 ? std::optional(IntrinsicRequest::Minimum) : std::nullopt,
+                    .tag = "flex phase C, cross Size req"
                 };
 
                 if (flex.axis.isRow) {
@@ -226,22 +270,47 @@ namespace layout {
                 } else {
                     childRequest.automaticWidth = AutomaticSizing::UseContent;
                 }
+
                 flex.axis.mainSize(childRequest.override) = item.usedMainSize;
 
-                LayoutOutput childOutput = tree.layoutRecursive(childNode, frameInfo, preparedChildConstraints, childMeasured, false, std::move(childRequest));
+                // seems to only correlate with the situation that causes the cross size to reduce
+                // if (childNode->id == 104) {
+                //     childRequest.override.width = 100.0f;
+                // }
+
+
+                LayoutOutput childOutput = tree.layoutRecursive(childNode, frameInfo, preparedChildConstraints, childMeasured, false, childRequest);
                 const SizeResult& sizeResult = childOutput.sizeResult;
 
-                const float* preferredCrossSize = std::get_if<float>(&flex.axis.crossSize(sizeResult.size));
+                const float* preferredCrossSize = std::get_if<float>(&flex.axis.crossSize(sizeResult.outerSize));
+                if (childNode->id == 104) {
+                    std::println("preferred crossSize: {}, fallback cross size: {}", preferredCrossSize ? *preferredCrossSize : -1.0f, flex.axis.crossSize(childOutput.layout));
+                }
                 item.hypotheticalCrossSize = preferredCrossSize ? *preferredCrossSize : flex.axis.crossSize(childOutput.layout);
 
                 const auto& measuredCrossIntrinsicSizes = flex.axis.isRow ? sizeResult.heightIntrinsicSizes : sizeResult.widthIntrinsicSizes;
+
+                // question whether this fallback is appropriate
+            
+                if (childNode->id == 104) {
+                    std::println("hypothetical cross size: {}", item.hypotheticalCrossSize);
+                }
+
+                // right now, we aren't collecting intrinsic sizes... so this turns out to be mostly useless
+
+                // ok; so this cannot willy nilly change cross sizes, but CAN expand them
+                //
                 float childMinimumCrossContribution = measuredCrossIntrinsicSizes ? std::get<float>(measuredCrossIntrinsicSizes->minimum) : item.hypotheticalCrossSize;
                 float childMaximumCrossContribution = measuredCrossIntrinsicSizes ? std::get<float>(measuredCrossIntrinsicSizes->maximum) : item.hypotheticalCrossSize;
 
+                // the offending line is thus... the minimum
                 lineMinimumCrossContribution = std::max(lineMinimumCrossContribution, childMinimumCrossContribution);
                 lineMaximumCrossContribution = std::max(lineMaximumCrossContribution, childMaximumCrossContribution);
                 line.maxCrossSize = std::max(line.maxCrossSize, item.hypotheticalCrossSize);
             }
+    
+
+
 
             minimumCrossContribution += lineMinimumCrossContribution;
             maximumCrossContribution += lineMaximumCrossContribution;
@@ -262,7 +331,15 @@ namespace layout {
 
         float availableCross = std::visit(Overloaded {
             [](float value) { return value; },
-            [&](const auto&) { return contentCrossSize; },
+            [&](const auto&) { 
+                // if (containsNode104) {
+                //     return 100.0f;
+                // }else {
+                //     return contentCrossSize;
+                // }
+
+                return contentCrossSize;
+             },
         }, flex.axis.crossSize(availableSize));
 
         auto placements = flex.computePlacements(
@@ -272,16 +349,16 @@ namespace layout {
             resolvedGap
         );
 
-        for (auto& p : placements) {
-            size_t i = p.childIndex;
+        for (auto& placement : placements) {
+            size_t i = placement.childIndex;
             auto childNode = node->children[i].get();
             Measured childMeasured = *childNode->measured;
 
             auto preparedChildConstraints = prepareChildConstraints();
 
             auto childPosition = flex.axis.toPhysical(
-                p.mainOffset,
-                p.crossOffset
+                placement.mainOffset,
+                placement.crossOffset
             );
 
             preparedChildConstraints.origin = childPosition;
@@ -290,14 +367,29 @@ namespace layout {
                 .width = preparedChildConstraints.availableWidth,
                 .height = preparedChildConstraints.availableHeight,
             };
-            flex.axis.mainSize(childAvailableSize) = p.mainSize;
-            flex.axis.crossSize(childAvailableSize) = p.lineCrossSize;
+
+            flex.axis.mainSize(childAvailableSize) = placement.mainSize;
+            flex.axis.crossSize(childAvailableSize) = placement.lineCrossSize;
+      
+            // also wrong, but overriding this doesnt fix anything...?
+            //if (node->id == 106)
+            //    std::println("cross size: {}", placement.lineCrossSize);
+
             preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childNode, {
                 .availableWidth = childAvailableSize.width,
                 .widthRequest = std::nullopt,
                 .trackIntrinsicWidth = false,
             });
+  
+            //if (node->id == 106) {
+            //    float maxLineboxSize = 0.0f;
+            //    for (auto& linebox : preparedChildConstraints.inlineFormatting.lineBoxes()) {
+            //        maxLineboxSize = std::max(maxLineboxSize, linebox.width);
+            //    }
+            //    std::println("max linebox width: {}", maxLineboxSize);
+            //}
 
+            // is the cross size request being encoded properly? why is the cross size being recording as 676
             SizeRequest childRequest {
                 .position = childNode->shared.position,
                 .specified = {.width = childNode->shared.width, .height = childNode->shared.height},
@@ -324,16 +416,39 @@ namespace layout {
                 .automaticHeight = AutomaticSizing::UseContent,
                 .automaticMinimumWidth = AutomaticMinimum::Zero,
                 .automaticMinimumHeight = AutomaticMinimum::Zero,
+
+                .tag = "flex phase C, final req"
             };
 
-            flex.axis.mainSize(childRequest.override) = p.mainSize;
+            // // this is the actual change site where you can alter things
+            // if (childNode->id == 104) {
+            //     childRequest.available.width = 100.0f;
+            // }
+
+
+            // this main size is getting miscomputed... somehow
+            flex.axis.mainSize(childRequest.override) = placement.mainSize;
+            // why does an override not impact the actual size?
+
             if (flex.axis.isRow) {
-                childRequest.automaticHeight = p.alignment == AlignItems::Stretch ? AutomaticSizing::UseAvailable : AutomaticSizing::UseContent;
+                childRequest.automaticHeight = placement.alignment == AlignItems::Stretch ? AutomaticSizing::UseAvailable : AutomaticSizing::UseContent;
             } else {
-                childRequest.automaticWidth = p.alignment == AlignItems::Stretch ? AutomaticSizing::UseAvailable : AutomaticSizing::UseContent;
+                childRequest.automaticWidth = placement.alignment == AlignItems::Stretch ? AutomaticSizing::UseAvailable : AutomaticSizing::UseContent;
             }
 
-            LayoutOutput childOutput = tree.layoutRecursive(childNode, frameInfo, preparedChildConstraints, childMeasured, mutate, std::move(childRequest));
+
+
+            // if (childNode->id == 106) {
+            //     // childRequest.specified.width = 10.0f;
+            //     // childRequest.available.width = 10.0f;
+            //     if (std::holds_alternative<float>(childRequest.available.width)) {
+            //         std::println("main size: {}", placement.mainSize);
+            //         std::println("cross size: {}", placement.lineCrossSize);
+            //         std::println("avail width: {}", *std::get_if<float>(&childRequest.available.width));
+            //     }
+            // }
+            
+            LayoutOutput childOutput = tree.layoutRecursive(childNode, frameInfo, preparedChildConstraints, childMeasured, mutate, childRequest);
             const auto& childLayout = childOutput.layout;
 
             maxX = std::max(maxX, childLayout.computedBox.x + childLayout.computedBox.width);
@@ -347,6 +462,7 @@ namespace layout {
             minimumMainContribution = std::max(minimumMainContribution, line.totalMinimumContributionWithGap(resolvedGap));
             maximumMainContribution = std::max(maximumMainContribution, line.totalMaximumContributionWithGap(resolvedGap));
         }
+
 
         return {
             .bounds = {.maxX = maxX, .maxY = maxY},

@@ -360,7 +360,7 @@ namespace style {
         }
 
         static TextOverflow custom(std::string ending) {
-            return {.mode = Mode::Custom, .ending = std::move(ending)};
+            return {.mode = Mode::Custom, .ending = ending};
         }
 
         bool drawsEnding() const {

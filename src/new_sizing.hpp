@@ -2,8 +2,41 @@
 
 // #include "element.hpp"
 #include "margins.hpp"
+#include "overloaded.hpp"
 #include "sizing.hpp"
+#include <format>
 #include <optional>
+#include <string>
+
+inline std::string describeSize(const style::Size& size) {
+    switch (size.unit) {
+        case style::Unit::Px:         return std::format("{}px", size.value);
+        case style::Unit::Percent:    return std::format("{}%", size.value * 100.0f);
+        case style::Unit::Auto:       return "auto";
+        case style::Unit::Pt:         return std::format("{}pt", size.value);
+        case style::Unit::Fr:         return std::format("{}fr", size.value);
+        case style::Unit::MinContent: return "min-content";
+        case style::Unit::MaxContent: return "max-content";
+        case style::Unit::FitContent: return "fit-content";
+    }
+}
+
+inline std::string describeSizeState(const SizeState& size) {
+    return std::visit(Overloaded {
+        [](std::monostate) { return std::string{"monostate"}; },
+        [](float value) { return std::format("{}px", value); },
+        [](const style::Size& value) { return describeSize(value); },
+        [](style::SizeError error) {
+            switch (error) {
+                case style::SizeError::Auto:                    return std::string{"error:auto"};
+                case style::SizeError::IndefiniteBasis:         return std::string{"error:indefinite-basis"};
+                case style::SizeError::FractionRequiresContext: return std::string{"error:fraction-requires-context"};
+                case style::SizeError::ContentDependent:        return std::string{"error:content-dependent"};
+            }
+        },
+    }, size);
+}
+
 
 struct FrameInfo;
 
@@ -97,6 +130,9 @@ struct SizeRequest {
 
     bool resolvingIntrinsicWidth{false};
     bool resolvingIntrinsicHeight{false};
+
+    // debug tag
+    std::optional<std::string> tag {std::nullopt};
 };  
 
 struct IntrinsicResult {
@@ -107,7 +143,8 @@ struct IntrinsicResult {
 // central evaluator gives back a coherently shaped SizeSpec resolution
 // SizeSpec *may or may not* be fully resolved; that is fine
 struct SizeResult {
-    SizePair size;      // preferred SizeSpec recieved back
+    SizePair outerSize;      // preferred SizeSpec recieved back
+    SizePair innerSize;      // inner size
     SizePair minimum;   // min dim constraints evaluated against content box
     SizePair maximum; // max dim constraints evaluated against content box
     

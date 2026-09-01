@@ -325,7 +325,7 @@ namespace elements {
                 const size_t atomBase = atoms.size();
                 for (auto cluster : sourceRun.clusters) {
                     cluster.glyphStart += atomBase;
-                    shapedRun.clusters.push_back(std::move(cluster));
+                    shapedRun.clusters.push_back(cluster);
                 }
 
                 shapedRun.runs.push_back({
