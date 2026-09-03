@@ -102,19 +102,26 @@ namespace layout {
 
         float totalHypotheticalWithGap(float gap) {
             float total = 0.0f;
-            for (const auto& item : items) total += item.hypotheticalMainSize;
+            for (const auto& item : items)  {
+                total += item.hypotheticalMainSize;
+            }
             return total + (count() > 1 ? gap * (count() - 1) : 0.0f);
         }
 
+        // bad name; this is not about the min contribution; but ill fix this later
+        // (see flex spec for this)
         float totalMinimumContributionWithGap(float gap) {
             float total = 0.0f;
-            for (const auto& item : items) total += std::get<float>(item.mainIntrinsicSizes.minimum);
+            for (const auto& item : items) 
+                total += std::get<float>(item.minimumMainSize);
             return total + (count() > 1 ? gap * (count() - 1) : 0.0f);
         }
 
         float totalMaximumContributionWithGap(float gap) {
             float total = 0.0f;
-            for (const auto& item : items) total += std::get<float>(item.mainIntrinsicSizes.maximum);
+            for (const auto& item : items) {
+                total += std::get<float>(item.mainIntrinsicSizes.maximum);
+            }
             return total + (count() > 1 ? gap * (count() - 1) : 0.0f);
         }
 

@@ -828,13 +828,12 @@ namespace tree {
             //}
             measured.explicitWidth = *resolvedOuterWidth;
         }
-        
 
         const auto* resolvedOuterHeight = std::get_if<float>(&sizeResult.outerSize.height);
         if (resolvedOuterHeight) {
             measured.explicitHeight = *resolvedOuterHeight;
         }
-
+        
         // if (node->id == 104 && sizeRequest.intrinsicWidthRequest.has_value()) {
         //     if (measured.explicitWidth.has_value()) {
         //         std::println("resolved width: {}", *measured.explicitWidth);

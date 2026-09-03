@@ -934,6 +934,23 @@ auto evaluateSize(
     hash_combine(sizeKey, node);
     hashSizeRequest(req, sizeKey);
 
+    const bool traceBodyHeight = node->id == 21 && req.intrinsicHeightRequest.has_value();
+    if (traceBodyHeight) {
+        SizeState measuredHeight = measured.explicitHeight
+            ? SizeState{*measured.explicitHeight}
+            : SizeState{measured.explicitHeight.error()};
+        std::println(
+            "[Body height sizing input] resolving={} available-height={} constraint-height={} measured-height={} specified-height={} override-height={} content-height={}",
+            req.resolvingIntrinsicHeight,
+            describeSizeState(req.available.height),
+            describeSize(constraints.availableHeight),
+            describeSizeState(measuredHeight),
+            describeSizeState(req.specified.height),
+            describeSizeState(req.override.height),
+            describeSizeState(req.content.height)
+        );
+    }
+
     // const bool traceNode100Intrinsic = node->id == 100 && req.intrinsicWidthRequest.has_value();
     // if (traceNode100Intrinsic) {
     //     SizeState measuredWidth = measured.explicitWidth
@@ -953,6 +970,20 @@ auto evaluateSize(
     if (sizeCache) {
         auto it = sizeCache->find(sizeKey);
         if (it != sizeCache->end()) {
+            if (traceBodyHeight) {
+                std::println(
+                    "[Body height sizing cache] hit outer-height={} minimum-height={}",
+                    describeSizeState(it->second.outerSize.height),
+                    describeSizeState(it->second.minimum.height)
+                );
+                if (it->second.heightIntrinsicSizes) {
+                    std::println(
+                        "[Body height sizing cache] intrinsic-min-height={} intrinsic-max-height={}",
+                        describeSizeState(it->second.heightIntrinsicSizes->minimum),
+                        describeSizeState(it->second.heightIntrinsicSizes->maximum)
+                    );
+                }
+            }
             // if (traceNode100Intrinsic) {
             //     std::println(
             //         "[child 100 intrinsic cache] hit outer-width={}",
@@ -970,6 +1001,10 @@ auto evaluateSize(
             // }
             return it->second;
         }
+    }
+
+    if (traceBodyHeight) {
+        std::println("[Body height sizing cache] miss");
     }
 
     // if (traceNode100Intrinsic) {
@@ -1074,7 +1109,24 @@ auto evaluateSize(
         }
     }
 
+    SizeState preferredHeightBeforeClamp = size.height;
     size.height = clampSize(size.height, minimum.height, maximum.height);
+
+    if (traceBodyHeight) {
+        std::println(
+            "[Body height sizing result] preferred-before-clamp={} minimum-height={} final-outer-height={}",
+            describeSizeState(preferredHeightBeforeClamp),
+            describeSizeState(minimum.height),
+            describeSizeState(size.height)
+        );
+        if (heightIntrinsic) {
+            std::println(
+                "[Body height sizing result] intrinsic-min-height={} intrinsic-max-height={}",
+                describeSizeState(heightIntrinsic->minimum),
+                describeSizeState(heightIntrinsic->maximum)
+            );
+        }
+    }
 
     // inner sizes 
     SizePair innerSize {

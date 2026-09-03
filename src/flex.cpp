@@ -204,16 +204,13 @@ namespace layout {
 
         resolvedMainSizes = flex.resolveSizes(availableMain, resolvedGap);
 
-        if (!flex.axis.isRow) {
+        if (!flex.axis.isRow && mutate) {
             bool containsBodyFlex = false;
             for (const auto& line : flex.lines) {
                 for (const auto& item : line.items) {
-                    const auto* child = node->children[item.childIndex].get();
-                    for (const auto& grandchild : child->children) {
-                        if (grandchild->id == 86) {
-                            containsBodyFlex = true;
-                            break;
-                        }
+                    if (item.childId == 21) {
+                        containsBodyFlex = true;
+                        break;
                     }
                 }
             }
@@ -230,14 +227,7 @@ namespace layout {
 
                 for (const auto& line : flex.lines) {
                     for (const auto& item : line.items) {
-                        const auto* child = node->children[item.childIndex].get();
-                        bool isBodyFlex = false;
-                        for (const auto& grandchild : child->children) {
-                            if (grandchild->id == 86) {
-                                isBodyFlex = true;
-                                break;
-                            }
-                        }
+                        bool isBodyFlex = item.childId == 21;
 
                         std::println(
                             "[Root height item] child={} body={} base-height={} intrinsic-min-height={} intrinsic-max-height={} minimum-height={} used-height={}",
@@ -254,7 +244,7 @@ namespace layout {
             }
         }
 
-        if (!flex.axis.isRow) {
+        if (!flex.axis.isRow && mutate) {
             for (const auto& line : flex.lines) {
                 for (const auto& item : line.items) {
                     if (item.childId == 104) {
@@ -407,6 +397,17 @@ namespace layout {
                 float childMinimumCrossContribution = std::get<float>(measuredCrossIntrinsicSizes->minimum);
                 float childMaximumCrossContribution = std::get<float>(measuredCrossIntrinsicSizes->maximum);
 
+                if (node->id == 21 && flex.axis.isRow && intrinsicHeightRequest) {
+                    std::println(
+                        "[Body intrinsic height child] child={} available-height={} hypothetical-height={} intrinsic-min-height={} intrinsic-max-height={}",
+                        item.childId,
+                        describeSizeState(childRequest.available.height),
+                        item.hypotheticalCrossSize,
+                        childMinimumCrossContribution,
+                        childMaximumCrossContribution
+                    );
+                }
+
                 // if (containsNode104 && intrinsicWidthRequest) {
                 //     std::println(
                 //         "[RightPaneFlex intrinsic width] container={} child={} available-width={} hypothetical-width={} intrinsic-min-width={} intrinsic-max-width={}",
@@ -433,6 +434,15 @@ namespace layout {
             //         line.maxCrossSize
             //     );
             // }
+
+            if (node->id == 21 && flex.axis.isRow && intrinsicHeightRequest) {
+                std::println(
+                    "[Body intrinsic height collected] minimum-height={} maximum-height={} natural-line-height={}",
+                    lineMinimumCrossContribution,
+                    lineMaximumCrossContribution,
+                    line.maxCrossSize
+                );
+            }
     
 
 
@@ -559,7 +569,7 @@ namespace layout {
                 childRequest.automaticWidth = placement.alignment == AlignItems::Stretch ? AutomaticSizing::UseAvailable : AutomaticSizing::UseContent;
             }
 
-            if (flex.axis.isRow && childNode->id == 86) {
+            if (mutate && flex.axis.isRow && childNode->id == 86) {
                 std::println(
                     "[Body to RightPane height handoff] container={} body-available-height={} line-height={} request-available-height={} specified-height={} mutate={} intrinsic-height-request={}",
                     node->id,
@@ -572,7 +582,7 @@ namespace layout {
                 );
             }
 
-            if (!flex.axis.isRow && childNode->id == 104) {
+            if (mutate && !flex.axis.isRow && childNode->id == 104) {
                 std::println(
                     "[node 104 final height request] container={} placement-height={} available-height={} override-height={} specified-height={} mutate={} intrinsic-height-request={}",
                     node->id,
@@ -589,7 +599,7 @@ namespace layout {
             LayoutOutput childOutput = tree.layoutRecursive(childNode, frameInfo, preparedChildConstraints, childMeasured, mutate, childRequest);
             const auto& childLayout = childOutput.layout;
 
-            if (flex.axis.isRow && childNode->id == 86) {
+            if (mutate && flex.axis.isRow && childNode->id == 86) {
                 std::println(
                     "[Body to RightPane height result] container={} line-height={} result-outer-height={} computed-box-height={} consumed-height={} mutate={}",
                     node->id,
@@ -601,7 +611,7 @@ namespace layout {
                 );
             }
 
-            if (!flex.axis.isRow && childNode->id == 104) {
+            if (mutate && !flex.axis.isRow && childNode->id == 104) {
                 std::println(
                     "[node 104 final height result] container={} requested-placement-height={} result-outer-height={} computed-box-height={} consumed-height={} mutate={}",
                     node->id,
