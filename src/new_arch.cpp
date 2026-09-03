@@ -10,7 +10,6 @@
 #include "sizing.hpp"
 #include <algorithm>
 #include <optional>
-#include <print>
 #include <simd/vector_types.h>
 
 namespace layout {

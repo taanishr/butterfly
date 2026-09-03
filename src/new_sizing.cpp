@@ -6,7 +6,6 @@
 #include "render_tree.hpp"
 #include "sizing.hpp"
 #include <algorithm>
-#include <cstddef>
 #include <optional>
 #include <variant>
 
@@ -330,34 +329,9 @@ auto resolveHeight(const SizeState& size, SizeRequest& req, const std::optional<
             return available;
         }
 
-        // // req.padding* against width is not a bug; that is geniuenly just the spec
-        // SizeState paddingTop = calculateSize(req.paddingTop, req.available.width);
-        // const auto* resolvedPaddingTop = std::get_if<float>(&paddingTop);
-
-        // if (!resolvedPaddingTop) {
-        //     return paddingTop;
-        // }
-
-        // SizeState paddingBottom = calculateSize(req.paddingBottom, req.available.width);
-        // const auto* resolvedPaddingBottom = std::get_if<float>(&paddingBottom);
-
-        // if (!resolvedPaddingBottom) {
-        //     return paddingBottom;
-        // }
-
-        // SizeState borderWidth = calculateSize(req.borderWidth, req.available.width);
-        // const auto* resolvedBorderWidth = std::get_if<float>(&borderWidth);
-
-        // if (!resolvedBorderWidth) {
-        //     return borderWidth;
-        // }
-
         float automaticHeight = *availableHeight
             - req.margins.top
             - req.margins.bottom;
-            // - *resolvedPaddingTop
-            // - *resolvedPaddingBottom
-            // - 2.0f * *resolvedBorderWidth;
 
         // then, branch from here
         // are we *out of flow* and do we have insets?
@@ -1013,3 +987,8 @@ auto evaluateSize(
 
     return result;
 }
+
+// next targets
+// SPEED (probably last; memoize better?)
+// normal flow (fairly easy?)
+// grid (fairly easy i think now that we have a good flex base and can model grid's refactor after it)

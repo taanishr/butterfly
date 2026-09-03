@@ -40,6 +40,9 @@ namespace layout {
         return a;
     }
 
+    // why not just make these the same underlying type? feels like mid design
+    // i feel like making these constexprs lol
+    // and just putting them in a namespace
     DistributeMode toDistributeMode(JustifyContent jc) {
         switch (jc) {
             case JustifyContent::FlexStart:    return DistributeMode::FlexStart;
@@ -63,14 +66,15 @@ namespace layout {
         }
     }
 
-    Constraints FlexResolver::prepareChildConstraints() {
+    // do we want this as a method still? feels fairly doa
+    auto FlexResolver::prepareChildConstraints() -> Constraints {
         auto newChildConstraints = childConstraints;
         newChildConstraints.inheritedProperties = parentConstraints.inheritedProperties;
 
         return newChildConstraints;
     }
 
-    void FlexResolver::phaseB() {
+    auto FlexResolver::phaseB() -> void {
         // FIXME: this is extremely ugly and terribly handled
         resolvedGap = std::visit(Overloaded {
             [&](float availableMain) { return node->getFlexGap().resolve(Size::px(availableMain)).value_or(0.0f); },
@@ -135,17 +139,6 @@ namespace layout {
 
                 .tag = "flex phase B, main size"
             };
-            
-
-            // overrides
-            if (intrinsicWidthRequest) {
-                childRequest.intrinsicWidthRequest = intrinsicWidthRequest;
-            }
-
-            if (intrinsicHeightRequest) {
-                childRequest.intrinsicHeightRequest = intrinsicHeightRequest;
-            }
-
 
             preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childAsPtr, {
                 .availableWidth = preparedChildConstraints.availableWidth,
@@ -205,7 +198,7 @@ namespace layout {
 
     }
 
-    FlexResolver::FlexResult FlexResolver::phaseC() {
+    auto FlexResolver::phaseC() -> FlexResolver::FlexResult {
         float minimumCrossContribution = 0.0f;
         float maximumCrossContribution = 0.0f;
 
@@ -253,23 +246,11 @@ namespace layout {
                     .tag = "flex phase C, cross Size req"
                 };
 
-
-                // overrides for intrinsic reqs
-                if (intrinsicWidthRequest) {
-                    childRequest.intrinsicWidthRequest = intrinsicWidthRequest;
-                }
-
-                if (intrinsicHeightRequest) {
-                    childRequest.intrinsicHeightRequest = intrinsicHeightRequest;
-                }
-
                 preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childNode, {
                     .availableWidth = childAvailableSize.width,
                     .widthRequest = childRequest.intrinsicWidthRequest,
                     .trackIntrinsicWidth = false,
                 });
-                
-
 
                 if (flex.axis.isRow) {
                     childRequest.automaticHeight = AutomaticSizing::UseContent;
@@ -375,15 +356,6 @@ namespace layout {
 
                 .tag = "flex phase C, final req"
             };
-
-            // overrides for intrinsic width/h
-            if (intrinsicWidthRequest) {
-                childRequest.intrinsicWidthRequest = intrinsicWidthRequest;
-            }
-
-            if (intrinsicHeightRequest) {
-                childRequest.intrinsicHeightRequest = intrinsicHeightRequest;
-            }
 
             preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childNode, {
                 .availableWidth = childAvailableSize.width,
