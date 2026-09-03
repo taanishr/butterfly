@@ -692,26 +692,37 @@ namespace tree {
                 .widthRequest = IntrinsicRequest::Minimum,
                 .trackIntrinsicWidth = false,
             };
+
             InlineSizingInput maximumSizing {
                 .availableWidth = std::monostate{},
                 .widthRequest = IntrinsicRequest::Maximum,
                 .trackIntrinsicWidth = false,
             };
+
             auto minInput = sizing.widthRequest == IntrinsicRequest::Minimum ? currentInput : buildIsolatedInlineBoxes(node, minimumSizing);
             auto maxInput = sizing.widthRequest == IntrinsicRequest::Maximum ? currentInput : buildIsolatedInlineBoxes(node, maximumSizing);
+            
             std::vector<float> minLineWidths(minInput.lineBoxes().size(), 0.0f);
             for (const auto& fragment : minInput.lineFragments()) {
-                for (size_t i = 0; i < fragment.atomCount; ++i) minLineWidths[fragment.lineBoxIndex] += node->atomized->atoms[fragment.atomStart + i].width;
+                for (size_t i = 0; i < fragment.atomCount; ++i) {
+                    minLineWidths[fragment.lineBoxIndex] += node->atomized->atoms[fragment.atomStart + i].width;
+                }
             }
             float minContent = 0.0f;
-            for (float width : minLineWidths) minContent = std::max(minContent, width);
+            for (float width : minLineWidths) {
+                minContent = std::max(minContent, width);
+            }
 
             std::vector<float> maxLineWidths(maxInput.lineBoxes().size(), 0.0f);
             for (const auto& fragment : maxInput.lineFragments()) {
-                for (size_t i = 0; i < fragment.atomCount; ++i) maxLineWidths[fragment.lineBoxIndex] += node->atomized->atoms[fragment.atomStart + i].width;
+                for (size_t i = 0; i < fragment.atomCount; ++i) {
+                    maxLineWidths[fragment.lineBoxIndex] += node->atomized->atoms[fragment.atomStart + i].width;
+                }
             }
             float maxContent = 0.0f;
-            for (float width : maxLineWidths) maxContent = std::max(maxContent, width);
+            for (float width : maxLineWidths) {
+                maxContent = std::max(maxContent, width);
+            }
             context->intrinsicSizes = layout::IntrinsicSizes{.minimum = minContent, .maximum = maxContent};
         }
 

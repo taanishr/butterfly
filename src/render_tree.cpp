@@ -976,13 +976,15 @@ namespace tree {
 
         // correct intrinsic sizes and content sizes if no children
         if (node->children.empty()) {
-            float extent = 0.0;
-            if (sizeRequestOverride && (sizeRequestOverride->resolvingIntrinsicWidth || sizeRequestOverride->resolvingIntrinsicHeight)) {
-                extent = sizeRequest.resolvingIntrinsicWidth ? layout.computedBox.width : layout.computedBox.height;
-            }
+            // float extent = 0.0;
+            // if (sizeRequestOverride && (sizeRequestOverride->resolvingIntrinsicWidth || sizeRequestOverride->resolvingIntrinsicHeight)) {
+            //     extent = sizeRequest.resolvingIntrinsicWidth ? layout.computedBox.width : layout.computedBox.height;
+            // }
 
-            minimumContent = extent;
-            maximumContent = extent;
+            // minimumContent = extent;
+            // maximumContent = extent;
+            minimumContent = inlineFormatting->intrinsicSizes->minimum;
+            maximumContent = inlineFormatting->intrinsicSizes->maximum;
 
             // if (sizeRequest.resolvingIntrinsicWidth) {
             //     sizeResult.widthIntrinsicSizes = {
