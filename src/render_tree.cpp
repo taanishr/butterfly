@@ -776,14 +776,6 @@ namespace tree {
         auto& atomized = *node->atomized;
         auto& prelayout = *node->preLayout;
 
-        
-        // if (intrinsicSizeRequest && node->id == 106) {
-        //     if (std::holds_alternative<float>(intrinsicSizeRequest->available.width) && intrinsicSizeRequest->tag) {
-        //         std::println("parent is overriding with avail: {}, intrinsic? {}, tag?: {}", *std::get_if<float>(&intrinsicSizeRequest->available.width), intrinsicSizeRequest->resolvingIntrinsicWidth, intrinsicSizeRequest->tag ? *intrinsicSizeRequest->tag : "None");
-        //     }
-        // }
-    
-
         SizeRequest sizeRequest = sizeRequestOverride.value_or(
             SizeRequest {
                 .position = node->shared.position,
@@ -836,18 +828,27 @@ namespace tree {
             //}
             measured.explicitWidth = *resolvedOuterWidth;
         }
+        
 
         const auto* resolvedOuterHeight = std::get_if<float>(&sizeResult.outerSize.height);
         if (resolvedOuterHeight) {
             measured.explicitHeight = *resolvedOuterHeight;
         }
 
+        // if (node->id == 104 && sizeRequest.intrinsicWidthRequest.has_value()) {
+        //     if (measured.explicitWidth.has_value()) {
+        //         std::println("resolved width: {}", *measured.explicitWidth);
+        //     }else {
+        //         std::println("no resolved width");
+        //     }
+        // }
+
         constraints.resolvedMargins = prelayout.resolvedMargins;
 
         // what i should do now:
         // make this take in a size result instead of doing the computation separately
         auto layout = node->element->layout(constraints, node->shared, measured, atomized);
-        
+
         auto childConstraints = layout.childConstraints;
         childConstraints.inheritedProperties = constraints.inheritedProperties;
         childConstraints.textOverflow = constraints.textOverflow;
@@ -879,16 +880,12 @@ namespace tree {
             .trackIntrinsicWidth = sizeRequest.resolvingIntrinsicWidth,
         };
 
-        if (node->id == 104) {
-            if (sizeRequest.intrinsicWidthRequest) {
-                std::println("sizing mode exists: {}", sizeRequest.intrinsicWidthRequest == IntrinsicRequest::Maximum ? "Max" : "Min");
-            }
-        }
-
         auto inlineFormatting = buildInlineBoxes(node, inlineSizing);
 
 
+        // size_t flexPassInvocation = 0;
         auto flexPass = [&](const SizeResult& sr) {
+            // ++flexPassInvocation;
             auto flexDirection = node->getFlexDirection();
             auto justifyContent = node->getJustifyContent();
             auto alignItems = node->getAlignItems();
@@ -898,15 +895,28 @@ namespace tree {
             FlexLayout flexContext {flexDirection, justifyContent, alignItems, alignContentVal, flexWrap};
             flexContext.axis.applyDirection(constraints.inheritedProperties.direction);
 
-            // if (node->id == 104 && std::holds_alternative<float>(sr.outerSize.width)) {
-            //     std::println("running as flex container with this size: {}", *std::get_if<float>(&sr.outerSize.width));
+            // bool directlyContainsNode104 = false;
+            // for (const auto& child : node->children) {
+            //     if (child->id == 104) {
+            //         directlyContainsNode104 = true;
+            //         break;
+            //     }
+            // }
+            //
+            // if (directlyContainsNode104 && sizeRequest.resolvingIntrinsicWidth) {
+            //     std::println(
+            //         "[RightPaneFlex intrinsic width] container={} pass={} inner-width={} content-width={}",
+            //         node->id,
+            //         flexPassInvocation,
+            //         describeSizeState(sr.innerSize.width),
+            //         describeSizeState(sizeRequest.content.width)
+            //     );
             // }
 
             // temp variable for padding included available size
-            auto availableSize = sr.innerSize;
 
             FlexResolver fr {
-                *this, node, constraints, childConstraints, flexContext, frameInfo, availableSize, 
+                *this, node, constraints, childConstraints, flexContext, frameInfo, sr.innerSize, 
                 mutate, sizeCache, minX, minY, maxX, maxY,
                 sizeRequest.intrinsicWidthRequest,
                 sizeRequest.intrinsicHeightRequest
@@ -917,13 +927,6 @@ namespace tree {
 
             maxX = result.bounds.maxX;
             maxY = result.bounds.maxY;
-
-//            if (node->id == 106) {
-//                std::println("aw: {} fw: {}", 
-//                    std::holds_alternative<float>(sr.size.width) ? *std::get_if<float>(&sr.size.width) : -1.0f, 
-//                    maxX - minX); 
-//            }   
-            
 
             if (sizeRequest.resolvingIntrinsicWidth || sizeRequest.resolvingIntrinsicHeight) {
                 const IntrinsicResult& intrinsicSizes = sizeRequest.resolvingIntrinsicWidth
@@ -1009,7 +1012,7 @@ namespace tree {
         float contentWidth = maxX - minX;
         float contentHeight = maxY - minY;
 
-        // correct intrinsic sizes and content sizes \if no children
+        // correct intrinsic sizes and content sizes if no children
         if (node->children.empty()) {
             float extent = 0.0;
             if (sizeRequestOverride && (sizeRequestOverride->resolvingIntrinsicWidth || sizeRequestOverride->resolvingIntrinsicHeight)) {
@@ -1019,10 +1022,26 @@ namespace tree {
             minimumContent = extent;
             maximumContent = extent;
 
+            // if (sizeRequest.resolvingIntrinsicWidth) {
+            //     sizeResult.widthIntrinsicSizes = {
+            //         extent,
+            //         extent
+            //     };
+            // }else {
+            //     sizeResult.heightIntrinsicSizes = {
+            //         extent,
+            //         extent
+            //     };
+            // }
+
+
             contentWidth = layout.computedBox.width;
             contentHeight = layout.computedBox.height;
-
         }
+
+        // if (node->id == 104) {
+        //     std::println("computed box witdh: {} maxX - miNX: {}", layout.computedBox.width, maxX - minX);
+        // }
 
         SizeRequest resizeRequest = sizeRequest;
         resizeRequest.content = {
@@ -1096,14 +1115,27 @@ namespace tree {
                 }
             }
 
+            // synchronize resize result intrinsic sizes? 
             if (node->children.empty()) {
                 float extent = 0.0;
                 if (sizeRequestOverride && (sizeRequestOverride->resolvingIntrinsicWidth || sizeRequestOverride->resolvingIntrinsicHeight)) {
-                    extent = sizeRequest.resolvingIntrinsicWidth ? layout.computedBox.width : layout.computedBox.height;
+                    extent = resizeRequest.resolvingIntrinsicWidth ? layout.computedBox.width : layout.computedBox.height;
                 }
 
                 minimumContent = extent;
                 maximumContent = extent;
+
+                // if (resizeRequest.resolvingIntrinsicWidth) {
+                //     resizeResult.widthIntrinsicSizes = {
+                //         extent,
+                //         extent
+                //     };
+                // }else {
+                //     resizeResult.heightIntrinsicSizes = {
+                //         extent,
+                //         extent
+                //     };
+                // }
 
                 contentWidth = layout.computedBox.width;
                 contentHeight = layout.computedBox.height;

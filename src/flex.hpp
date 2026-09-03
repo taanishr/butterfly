@@ -179,15 +179,7 @@ namespace layout {
                         clamped = std::min(clamped, std::get<float>(item.maximumMainSize));
                     }
 
-                    // WHY IS THIS WRONG
                     float minMainSize = std::get<float>(item.minimumMainSize);
-                    // if (clamped < std::get<float>(item.minimumMainSize)) {
-                    //     std::println("violatsed clamp, min: {}, clamped: {}", std::get<float>(item.minimumMainSize), clamped);
-                    // }
-
-                    if (item.childId == 104) {
-                        std::println("min: {}, clamped: {}", std::get<float>(item.minimumMainSize), clamped);
-                    }
 
                     clamped = std::max(clamped, std::get<float>(item.minimumMainSize));
                     

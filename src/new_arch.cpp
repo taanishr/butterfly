@@ -371,8 +371,6 @@ namespace layout {
         lr.siblingCursor = currentCursor;
         lr.consumedHeight = 0;
 
-        // std::println("resolvedWidth: {}", resolvedWidth - layoutInput.paddingLeft - layoutInput.paddingRight);
-
         float paddingLeft = layoutInput.paddingLeft.resolveOr(constraints.availableWidth);
         float paddingTop = layoutInput.paddingTop.resolveOr(constraints.availableHeight);
         float paddingRight = layoutInput.paddingRight.resolveOr(constraints.availableWidth);
@@ -446,14 +444,6 @@ namespace layout {
 
         lr.resolvedSize.width = layoutInput.width;
         lr.resolvedSize.height = layoutInput.height;
-
-        if (!lr.resolvedSize.width &&
-            lr.resolvedSize.width.error() == style::SizeError::Auto &&
-            std::holds_alternative<std::monostate>(constraints.parentOverride.width) &&
-            !constraints.shrinkWidthToFit &&
-            !constraints.availableWidth.isAuto()) {
-            lr.resolvedSize.width = constraints.availableWidth.value;
-        }
 
         float resolvedWidth = lr.resolvedSize.width.value_or(0.0f);
         float resolvedHeight = lr.resolvedSize.height.value_or(0.0f);

@@ -1403,6 +1403,7 @@ auto index() -> void {
             .display(gui::Display::Flex)
             .flexGrow(S::px(1))
         (
+            // sidebar start
             // Left: scrollable playlist
             div(S::px(260), S::percent(1.0), simd_float4{0.11,0.11,0.14,1.0})
                 .borderColor(simd_float4{0.20,0.20,0.24,1.0})
@@ -1571,6 +1572,8 @@ auto index() -> void {
                     text("4:49").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
                 )
             ),
+            // sidebar end
+            
             // Right: album info + scrollable lyrics
             div(S::percent(1.0), S::percent(1.0), simd_float4{0.10,0.10,0.12,1.0})
                 .flexGrow(S::px(1))
