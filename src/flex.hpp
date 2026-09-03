@@ -5,7 +5,6 @@
 #include "element.hpp"
 #include "new_sizing.hpp"
 #include "sizing.hpp"
-#include <print>
 #include <variant>
 
 namespace tree {
@@ -77,6 +76,7 @@ namespace layout {
         SizeState minimumMainSize;
         SizeState maximumMainSize;
         IntrinsicResult mainIntrinsicSizes;
+        float maximumMainContribution;
         float flexGrow;
         float scaledFlexShrink;
         AlignItems alignment;
@@ -120,7 +120,7 @@ namespace layout {
         float totalMaximumContributionWithGap(float gap) {
             float total = 0.0f;
             for (const auto& item : items) {
-                total += std::get<float>(item.mainIntrinsicSizes.maximum);
+                total += item.maximumMainContribution;
             }
             return total + (count() > 1 ? gap * (count() - 1) : 0.0f);
         }
@@ -306,6 +306,14 @@ namespace layout {
             float shrink = child->getFlexShrink().resolveOr(Size::px(0.0f), 1.0f);
             float scaledFlexShrink = shrink > 0.0f ? std::get<float>(flexBaseSize) * shrink : 0.0f;
             float usedMainSize = std::get<float>(flexBaseSize);
+
+            float maximumMainContribution = std::get<float>(mainIntrinsicSizes.maximum);
+            maximumMainContribution = std::max(maximumMainContribution, std::get<float>(flexBaseSize));
+            if (std::holds_alternative<float>(maximumMainSize)) {
+                maximumMainContribution = std::min(maximumMainContribution, std::get<float>(maximumMainSize));
+            }
+            maximumMainContribution = std::max(maximumMainContribution, std::get<float>(minimumMainSize));
+
             currentLine.addItem({
                 .childIndex = childIndex,
                 .childId = child->id,
@@ -314,6 +322,7 @@ namespace layout {
                 .minimumMainSize = minimumMainSize,
                 .maximumMainSize = maximumMainSize,
                 .mainIntrinsicSizes = mainIntrinsicSizes,
+                .maximumMainContribution = maximumMainContribution,
                 .flexGrow = grow > 0.0f ? grow : 0.0f,
                 .scaledFlexShrink = scaledFlexShrink,
                 .alignment = alignment,
@@ -410,10 +419,6 @@ namespace layout {
                     placement.mainSize = item.usedMainSize;
                     placement.lineCrossSize = lineCross;
                     placement.alignment = item.alignment;
-
-                    // if (item.childId == 104) {
-                    //     placement.lineCrossSize = 100.0;
-                    // }
 
                     float childCrossSize = item.hypotheticalCrossSize;
 

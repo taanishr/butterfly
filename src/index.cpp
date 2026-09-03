@@ -5,7 +5,6 @@
 #include "sizing.hpp"
 #include "layout_test_scenes.hpp"
 #include <MacTypes.h>
-#include <print>
 #include <simd/vector_types.h>
 
 static int count = 0;
@@ -26,8 +25,6 @@ auto index() -> void {
         }else {
             node.color(simd_float4{0.0,0.0,1.0,1.0});
         }
-
-        std::println("hello world {}", count);
     };
 
     // div(gui::Size::percent(1.0), gui::Size::percent(1.0), simd_float4{1.0,1.0,1.0,1.0})

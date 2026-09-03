@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <chrono>
 #include <optional>
-#include <print>
 #include <variant>
 
 namespace tree {
@@ -817,15 +816,7 @@ namespace tree {
         auto sizeResult = evaluateSize(*this, node, frameInfo, constraints, measured, sizeRequest, sizeCache);
 
         const auto* resolvedOuterWidth = std::get_if<float>(&sizeResult.outerSize.width);
-        // utimately the fucked up path is that sizeResult.size.width is becocming too large
-        // the available size is too large
-        // why is this?
         if (resolvedOuterWidth) {
-            //if (node->id == 106) {
-            //    measured.explicitWidth = 106.0f;
-            //}else {
-            //    measured.explicitWidth = *resolvedWidth;
-            //}
             measured.explicitWidth = *resolvedOuterWidth;
         }
 
@@ -834,14 +825,6 @@ namespace tree {
             measured.explicitHeight = *resolvedOuterHeight;
         }
         
-        // if (node->id == 104 && sizeRequest.intrinsicWidthRequest.has_value()) {
-        //     if (measured.explicitWidth.has_value()) {
-        //         std::println("resolved width: {}", *measured.explicitWidth);
-        //     }else {
-        //         std::println("no resolved width");
-        //     }
-        // }
-
         constraints.resolvedMargins = prelayout.resolvedMargins;
 
         // what i should do now:
@@ -882,9 +865,7 @@ namespace tree {
         auto inlineFormatting = buildInlineBoxes(node, inlineSizing);
 
 
-        // size_t flexPassInvocation = 0;
         auto flexPass = [&](const SizeResult& sr) {
-            // ++flexPassInvocation;
             auto flexDirection = node->getFlexDirection();
             auto justifyContent = node->getJustifyContent();
             auto alignItems = node->getAlignItems();
@@ -893,24 +874,6 @@ namespace tree {
 
             FlexLayout flexContext {flexDirection, justifyContent, alignItems, alignContentVal, flexWrap};
             flexContext.axis.applyDirection(constraints.inheritedProperties.direction);
-
-            // bool directlyContainsNode104 = false;
-            // for (const auto& child : node->children) {
-            //     if (child->id == 104) {
-            //         directlyContainsNode104 = true;
-            //         break;
-            //     }
-            // }
-            //
-            // if (directlyContainsNode104 && sizeRequest.resolvingIntrinsicWidth) {
-            //     std::println(
-            //         "[RightPaneFlex intrinsic width] container={} pass={} inner-width={} content-width={}",
-            //         node->id,
-            //         flexPassInvocation,
-            //         describeSizeState(sr.innerSize.width),
-            //         describeSizeState(sizeRequest.content.width)
-            //     );
-            // }
 
             // temp variable for padding included available size
 
@@ -1037,10 +1000,6 @@ namespace tree {
             contentWidth = layout.computedBox.width;
             contentHeight = layout.computedBox.height;
         }
-
-        // if (node->id == 104) {
-        //     std::println("computed box witdh: {} maxX - miNX: {}", layout.computedBox.width, maxX - minX);
-        // }
 
         SizeRequest resizeRequest = sizeRequest;
         resizeRequest.content = {

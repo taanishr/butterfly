@@ -635,10 +635,6 @@ auto measureIntrinsicWidth(
         maxReq.intrinsicWidthRequest = IntrinsicRequest::Maximum;
         std::optional<layout::IntrinsicSizes> maxIntrinsic = tree.measureIntrinsicSizes(node, frameInfo, constraints, measured, maxReq);
 
-        // if (node->id == 104) {
-        //     std::println("avail: {} specified: {} min intrinsic: {}, max intrinsic: {}", describeSizeState(req.available.width), describeSizeState(req.specified.width), describeSizeState(minIntrinsic->minimum), describeSizeState(maxIntrinsic->maximum));
-        // }
-
         result = {
             .minimum = minIntrinsic->minimum,
             .maximum = maxIntrinsic->maximum
@@ -934,82 +930,12 @@ auto evaluateSize(
     hash_combine(sizeKey, node);
     hashSizeRequest(req, sizeKey);
 
-    const bool traceBodyHeight = node->id == 21 && req.intrinsicHeightRequest.has_value();
-    if (traceBodyHeight) {
-        SizeState measuredHeight = measured.explicitHeight
-            ? SizeState{*measured.explicitHeight}
-            : SizeState{measured.explicitHeight.error()};
-        std::println(
-            "[Body height sizing input] resolving={} available-height={} constraint-height={} measured-height={} specified-height={} override-height={} content-height={}",
-            req.resolvingIntrinsicHeight,
-            describeSizeState(req.available.height),
-            describeSize(constraints.availableHeight),
-            describeSizeState(measuredHeight),
-            describeSizeState(req.specified.height),
-            describeSizeState(req.override.height),
-            describeSizeState(req.content.height)
-        );
-    }
-
-    // const bool traceNode100Intrinsic = node->id == 100 && req.intrinsicWidthRequest.has_value();
-    // if (traceNode100Intrinsic) {
-    //     SizeState measuredWidth = measured.explicitWidth
-    //         ? SizeState{*measured.explicitWidth}
-    //         : SizeState{measured.explicitWidth.error()};
-    //     std::println(
-    //         "[child 100 intrinsic input] resolving={} request-available-width={} constraint-available-width={} measured-width={} override-width={} content-width={}",
-    //         req.resolvingIntrinsicWidth,
-    //         describeSizeState(req.available.width),
-    //         describeSize(constraints.availableWidth),
-    //         describeSizeState(measuredWidth),
-    //         describeSizeState(req.override.width),
-    //         describeSizeState(req.content.width)
-    //     );
-    // }
-
     if (sizeCache) {
         auto it = sizeCache->find(sizeKey);
         if (it != sizeCache->end()) {
-            if (traceBodyHeight) {
-                std::println(
-                    "[Body height sizing cache] hit outer-height={} minimum-height={}",
-                    describeSizeState(it->second.outerSize.height),
-                    describeSizeState(it->second.minimum.height)
-                );
-                if (it->second.heightIntrinsicSizes) {
-                    std::println(
-                        "[Body height sizing cache] intrinsic-min-height={} intrinsic-max-height={}",
-                        describeSizeState(it->second.heightIntrinsicSizes->minimum),
-                        describeSizeState(it->second.heightIntrinsicSizes->maximum)
-                    );
-                }
-            }
-            // if (traceNode100Intrinsic) {
-            //     std::println(
-            //         "[child 100 intrinsic cache] hit outer-width={}",
-            //         describeSizeState(it->second.outerSize.width)
-            //     );
-            //     if (it->second.widthIntrinsicSizes) {
-            //         std::println(
-            //             "[child 100 intrinsic cache] returned-min-width={} returned-max-width={}",
-            //             describeSizeState(it->second.widthIntrinsicSizes->minimum),
-            //             describeSizeState(it->second.widthIntrinsicSizes->maximum)
-            //         );
-            //     } else {
-            //         std::println("[child 100 intrinsic cache] returned intrinsic width: none");
-            //     }
-            // }
             return it->second;
         }
     }
-
-    if (traceBodyHeight) {
-        std::println("[Body height sizing cache] miss");
-    }
-
-    // if (traceNode100Intrinsic) {
-    //     std::println("[child 100 intrinsic cache] miss");
-    // }
 
     const auto& requestedWidth = std::holds_alternative<std::monostate>(req.override.width)
         ? req.specified.width
@@ -1109,24 +1035,7 @@ auto evaluateSize(
         }
     }
 
-    SizeState preferredHeightBeforeClamp = size.height;
     size.height = clampSize(size.height, minimum.height, maximum.height);
-
-    if (traceBodyHeight) {
-        std::println(
-            "[Body height sizing result] preferred-before-clamp={} minimum-height={} final-outer-height={}",
-            describeSizeState(preferredHeightBeforeClamp),
-            describeSizeState(minimum.height),
-            describeSizeState(size.height)
-        );
-        if (heightIntrinsic) {
-            std::println(
-                "[Body height sizing result] intrinsic-min-height={} intrinsic-max-height={}",
-                describeSizeState(heightIntrinsic->minimum),
-                describeSizeState(heightIntrinsic->maximum)
-            );
-        }
-    }
 
     // inner sizes 
     SizePair innerSize {
@@ -1142,23 +1051,6 @@ auto evaluateSize(
         .widthIntrinsicSizes = widthIntrinsic,
         .heightIntrinsicSizes = heightIntrinsic,
     };
-
-    // if (traceNode100Intrinsic) {
-    //     std::println(
-    //         "[child 100 intrinsic result] outer-width={} inner-width={}",
-    //         describeSizeState(result.outerSize.width),
-    //         describeSizeState(result.innerSize.width)
-    //     );
-    //     if (result.widthIntrinsicSizes) {
-    //         std::println(
-    //             "[child 100 intrinsic result] returned-min-width={} returned-max-width={}",
-    //             describeSizeState(result.widthIntrinsicSizes->minimum),
-    //             describeSizeState(result.widthIntrinsicSizes->maximum)
-    //         );
-    //     } else {
-    //         std::println("[child 100 intrinsic result] returned intrinsic width: none");
-    //     }
-    // }
 
     if (sizeCache) {
         sizeCache->insert({sizeKey, result});
