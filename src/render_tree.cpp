@@ -876,10 +876,10 @@ namespace tree {
         };
 
 
-        auto gridPass = [&]() {
+        auto gridPass = [&](const SizeResult& sr) {
             GridResolver gr {
-                *this, node, constraints, childConstraints, frameInfo, measured,
-                mutate, childConstraints.availableWidth, childConstraints.availableHeight,
+                *this, node, constraints, childConstraints, frameInfo, sr.innerSize,
+                mutate, sizeCache,
                 minX, minY, maxX, maxY
             };
 
@@ -889,9 +889,12 @@ namespace tree {
 
             maxX = bounds.maxX;
             maxY = bounds.maxY;
-            if (gr.intrinsicSizes) {
-                minimumContent = std::max(minimumContent, gr.intrinsicSizes->minimum);
-                maximumContent = std::max(maximumContent, gr.intrinsicSizes->maximum);
+            if (sizeRequest.resolvingIntrinsicWidth || sizeRequest.resolvingIntrinsicHeight) {
+                const IntrinsicSizes& intrinsicSizes = sizeRequest.resolvingIntrinsicWidth
+                    ? gr.gridLayout.columnIntrinsicSizes
+                    : gr.gridLayout.rowIntrinsicSizes;
+                minimumContent = std::max(minimumContent, intrinsicSizes.minimum);
+                maximumContent = std::max(maximumContent, intrinsicSizes.maximum);
             }
         };
 
@@ -937,7 +940,7 @@ namespace tree {
                 break;
             }
             case style::Display::Grid: {
-                gridPass();
+                gridPass(sizeResult);
                 break;
             }
             default: {
@@ -1032,7 +1035,7 @@ namespace tree {
                     break;
                 }
                 case style::Display::Grid: {
-                    gridPass();
+                    gridPass(resizeResult);
                     break;
                 }
                 default: {
