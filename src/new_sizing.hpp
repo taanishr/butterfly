@@ -221,8 +221,8 @@ struct SizeResult {
 //   - automatic using available size
 //   - automatic using content size
 // needs to be imbued with ctx
-auto resolveWidth(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic) -> SizeState;
-auto resolveHeight(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic) -> SizeState;
+auto resolveWidth(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic, const PaddingResult& padding, const SizeState& borderWidth) -> SizeState;
+auto resolveHeight(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic, const PaddingResult& padding, const SizeState& borderWidth) -> SizeState;
 
 // these ONLY exist because of different auto behavior fo min/max widht and height
 auto resolveMinWidth(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic) -> SizeState;

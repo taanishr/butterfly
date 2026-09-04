@@ -7,7 +7,6 @@
 #include <array>
 #include <fstream>
 #include <limits>
-#include <memory>
 #include <print>
 #include <string>
 #include <vector>
@@ -1050,7 +1049,6 @@ namespace layout_test::scenes {
             .color(simd_float4{1.0, 1.0, 1.0, 1.0});
         auto label = div()
             .position(gui::Position::Fixed)
-            .right(S::px(8))
             .top(S::px(8))
             .padding(S::px(6))
             .zIndex(std::numeric_limits<uint64_t>::max())

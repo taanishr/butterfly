@@ -3652,22 +3652,13 @@ div()
 
     layout_test::scenes::buildBrowser();
 
+    // using S = gui::Size;
+
     // div()
-    //     .display(style::Display::Flex)
-    //     .width(S::percent(1.0))
-    //     .height(S::percent(1.0))
+    //     // .width(S::px(50))
+    //     .color(simd_float4{0.678, 0.847, 0.902, 1.0})
+    //     .marginTop(S::px(32))
     // (
-    //     div()
-    //         .width(S::px(260))
-    //         .height(S::percent(1.0))
-    //         .color(simd_float4{0.0,0.5,0.0,1.0}),
-    //     div()
-    //         .width(S::percent(1.0))
-    //         .height(S::percent(1.0))
-    //         .color(simd_float4{0.0,0.0,0.5,1.0})
-    //         .overflow(style::Overflow::Scroll)
-    //     (
-    //         text("hello world")
-    //     )
+    //     text("hello world").width(S::px(50))
     // );
 }

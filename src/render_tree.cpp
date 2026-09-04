@@ -16,13 +16,8 @@ namespace tree {
     using layout::LayoutResult;
     using layout::MarginMetadata;
     using layout::Measured;
-    using layout::SizeResolutionContext;
-    using layout::Axis;
-    using layout::AxisResolution;
     using layout::IntrinsicSizes;
     using style::ClipUniform;
-    using style::SizeError;
-    using style::Unit;
 
     void RenderTree::markDirty(std::source_location source) {
         needsUpdate = true;

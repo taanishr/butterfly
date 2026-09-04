@@ -356,18 +356,20 @@ namespace layout {
 
         simd_float2 position = resolvePosition(pctx);
 
-        lr.resolvedSize.width = layoutInput.width;
-        lr.resolvedSize.height = layoutInput.height;
+        float computedWidth = std::visit(Overloaded{
+            [&](float resolved){ return resolved; },
+            [&](auto&) { return 0.0f; }
+        }, sizeResult.outerSize.width);
 
-        float resolvedWidth = lr.resolvedSize.width.value_or(0.0f);
-        float resolvedHeight = lr.resolvedSize.height.value_or(0.0f);
-
-
+        float computedHeight = std::visit(Overloaded{
+            [&](float resolved){ return resolved; },
+            [&](auto&) { return 0.0f; }
+        }, sizeResult.outerSize.height);
         lr.computedBox = {
             .x = position.x,
             .y = position.y,
-            .width = resolvedWidth,
-            .height = resolvedHeight
+            .width = computedWidth,
+            .height = computedHeight
         };
 
         lr.atomOffsets = {
@@ -375,16 +377,17 @@ namespace layout {
         };
         lr.siblingCursor = currentCursor;
 
-        float paddingLeft = layoutInput.paddingLeft.resolveOr(constraints.availableWidth);
-        float paddingTop = layoutInput.paddingTop.resolveOr(constraints.availableHeight);
-        float paddingRight = layoutInput.paddingRight.resolveOr(constraints.availableWidth);
-        float paddingBottom = layoutInput.paddingBottom.resolveOr(constraints.availableHeight);
-
         lr.childConstraints = {
             .origin = {0, 0},
             .cursor = {0, 0},
-            .availableWidth = layoutInput.width.has_value() ? Size::px(lr.computedBox.width - paddingLeft - paddingRight) : Size::autoSize(),
-            .availableHeight = layoutInput.height.has_value() ? Size::px(lr.computedBox.height - paddingTop - paddingBottom) : Size::autoSize(),
+            .availableWidth = std::visit(Overloaded{
+                [&](float resolved){ return Size::px(resolved); },
+                [&](auto&) { return Size::autoSize(); }
+            }, sizeResult.innerSize.width),
+            .availableHeight = std::visit(Overloaded{
+                [&](float resolved){ return Size::px(resolved); },
+                [&](auto&) { return Size::autoSize(); }
+            }, sizeResult.innerSize.height),
             .frameInfo = constraints.frameInfo
         };
 
@@ -534,7 +537,7 @@ namespace layout {
 
         simd_float2 newCursor = resolvePosition(pctx);
 
-        lr.childConstraints.origin = {0.0f, 0.0f};
+        // lr.childConstraints.origin = {0.0f, 0.0f};
         float lineHeight = 0;
         float totalHeight = 0;
         float totalWidth = 0;
@@ -545,6 +548,14 @@ namespace layout {
         bool isLtr = constraints.inheritedProperties.direction == Direction::ltr;
         size_t prevLineBoxIndex = -1;
 
+        /*
+            unfortunately: inline still needs to collect *this sizing info*
+            this breaks the necessary split I wanted
+            but kind of derives an interesting split
+            that carries with flex
+            direct content sizing -> handled by layout
+            finalizing the actual size of an object -> handled by evaluate size
+        */
         auto lineFragments = constraints.inlineFormatting.lineFragments();
         auto lineBoxes = constraints.inlineFormatting.lineBoxes();
         size_t fragmentIdx = 0;
@@ -632,8 +643,9 @@ namespace layout {
         totalHeight += lineHeight;
         totalWidth = std::max(currentTotalWidth, totalWidth);
 
-        lr.resolvedSize.width = totalWidth;
-        lr.resolvedSize.height = totalHeight;
+        // dead field
+        // lr.resolvedSize.width = totalWidth;
+        // lr.resolvedSize.height = totalHeight;
 
         lr.computedBox = {
             minX,
@@ -642,15 +654,16 @@ namespace layout {
             totalHeight
         };
 
-        float paddingLeft = layoutInput.paddingLeft.resolveOr(constraints.availableWidth);
-        float paddingTop = layoutInput.paddingTop.resolveOr(constraints.availableHeight);
-        float paddingRight = layoutInput.paddingRight.resolveOr(constraints.availableWidth);
-        float paddingBottom = layoutInput.paddingBottom.resolveOr(constraints.availableHeight);
+        // padding / nor child available space is really relevant or correct for inline contaienrs
+        // float paddingLeft = layoutInput.paddingLeft.resolveOr(constraints.availableWidth);
+        // float paddingTop = layoutInput.paddingTop.resolveOr(constraints.availableHeight);
+        // float paddingRight = layoutInput.paddingRight.resolveOr(constraints.availableWidth);
+        // float paddingBottom = layoutInput.paddingBottom.resolveOr(constraints.availableHeight);
 
-        lr.childConstraints.cursor = {0, 0};
-        lr.childConstraints.availableWidth = Size::px(totalWidth - paddingLeft - paddingRight);
-        lr.childConstraints.availableHeight = Size::px(totalHeight - paddingTop - paddingBottom);
-        lr.childConstraints.frameInfo = constraints.frameInfo;
+        // lr.childConstraints.cursor = {0, 0};
+        // lr.childConstraints.availableWidth = Size::px(totalWidth - paddingLeft - paddingRight);
+        // lr.childConstraints.availableHeight = Size::px(totalHeight - paddingTop - paddingBottom);
+        // lr.childConstraints.frameInfo = constraints.frameInfo;
 
         lr.atomOffsets = atomOffsets;
         lr.prevInlineHeight = lineHeight;
@@ -685,7 +698,8 @@ namespace layout {
         simd_float2 newCursor = resolvePosition(pctx);
         float originX = newCursor.x;
 
-        lr.childConstraints.origin = {0.0f, 0.0f};
+        // lr.childConstraints.origin = {0.0f, 0.0f};
+
         float lineHeight = 0;
         float totalHeight = 0;
         float totalWidth = 0;
@@ -767,15 +781,18 @@ namespace layout {
             totalHeight
         };
 
-        float paddingLeft = layoutInput.paddingLeft.resolveOr(constraints.availableWidth);
-        float paddingTop = layoutInput.paddingTop.resolveOr(constraints.availableHeight);
-        float paddingRight = layoutInput.paddingRight.resolveOr(constraints.availableWidth);
-        float paddingBottom = layoutInput.paddingBottom.resolveOr(constraints.availableHeight);
+        // i dont think any of these are really relevant for inline containers
+        // children get lifted up; so these dont need to be set whatsoever
+        // float paddingLeft = layoutInput.paddingLeft.resolveOr(constraints.availableWidth);
+        // float paddingTop = layoutInput.paddingTop.resolveOr(constraints.availableHeight);
+        // float paddingRight = layoutInput.paddingRight.resolveOr(constraints.availableWidth);
+        // float paddingBottom = layoutInput.paddingBottom.resolveOr(constraints.availableHeight);
 
-        lr.childConstraints.cursor = {0, 0};
-        lr.childConstraints.availableWidth = Size::px(totalWidth - paddingLeft - paddingRight);
-        lr.childConstraints.availableHeight = Size::px(totalHeight - paddingTop - paddingBottom);
-        lr.childConstraints.frameInfo = constraints.frameInfo;
+        // lr.childConstraints.cursor = {0, 0};
+        // dont set available widths?
+        // lr.childConstraints.availableWidth = Size::px(totalWidth - paddingLeft - paddingRight);
+        // lr.childConstraints.availableHeight = Size::px(totalHeight - paddingTop - paddingBottom);
+        // lr.childConstraints.frameInfo = constraints.frameInfo;
 
         lr.atomOffsets = atomOffsets;
 

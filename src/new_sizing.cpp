@@ -162,7 +162,7 @@ auto calculateSize(const SizeState& size, const SizeState& available) -> SizeSta
 //   - automatic using available size
 //   - automatic using outer size
 // needs to be imbued with ctx
-auto resolveWidth(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic) -> SizeState {
+auto resolveWidth(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic, const PaddingResult& padding, const SizeState& borderWidth) -> SizeState {
     // run size through a calculate size pass (maybe avail too)
     SizeState resolved = calculateSize(size, req.available.width);
 
@@ -186,7 +186,32 @@ auto resolveWidth(const SizeState& size, SizeRequest& req, const std::optional<I
     if (*error == SizeError::Auto) {
         // are we content sizing?
         if (req.automaticWidth == AutomaticSizing::UseContent) {
-            return calculateSize(req.content.width, req.available.width);
+            auto content = calculateSize(req.content.width, req.available.width);
+            auto contentWidth = std::get_if<float>(&content);
+
+            if (!contentWidth) {
+                return content;
+            }
+
+            const auto* resolvedPaddingLeft = std::get_if<float>(&padding.left);
+            const auto* resolvedPaddingRight = std::get_if<float>(&padding.right);
+            const auto* resolvedBorderWidth = std::get_if<float>(&borderWidth);
+         
+            if (resolvedPaddingLeft) {
+                *contentWidth += *resolvedPaddingLeft;
+            }
+
+            if (resolvedPaddingRight) {
+                *contentWidth += *resolvedPaddingRight;
+            }
+    
+            if (resolvedBorderWidth) {
+                *contentWidth += 2 * *resolvedBorderWidth;
+            }
+
+            return *contentWidth;
+
+            
         }
         
         // are we avail sizing?
@@ -297,7 +322,7 @@ auto resolveInnerWidth(const SizeState& size, const PaddingResult& padding, cons
     }, size);
 }
 
-auto resolveHeight(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic) -> SizeState {
+auto resolveHeight(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic, const PaddingResult& padding, const SizeState& borderWidth) -> SizeState {
     // run size through a calculate size pass (maybe avail too)
     SizeState resolved = calculateSize(size, req.available.height);
 
@@ -321,7 +346,30 @@ auto resolveHeight(const SizeState& size, SizeRequest& req, const std::optional<
     if (*error == SizeError::Auto) {
         // are we content sizing?
         if (req.automaticHeight == AutomaticSizing::UseContent) {
-            return calculateSize(req.content.height, req.available.height);
+            auto content = calculateSize(req.content.height, req.available.height);
+            auto contentHeight = std::get_if<float>(&content);
+
+            if (!contentHeight) {
+                return content;
+            }
+
+            const auto* resolvedPaddingTop = std::get_if<float>(&padding.top);
+            const auto* resolvedPaddingBottom = std::get_if<float>(&padding.bottom);
+            const auto* resolvedBorderWidth = std::get_if<float>(&borderWidth);
+         
+            if (resolvedPaddingTop) {
+                *contentHeight += *resolvedPaddingTop;
+            }
+
+            if (resolvedPaddingBottom) {
+                *contentHeight += *resolvedPaddingBottom;
+            }
+    
+            if (resolvedBorderWidth) {
+                *contentHeight += 2 * *resolvedBorderWidth;
+            }
+
+            return *contentHeight;
         }
 
         // are we avail sizing?
@@ -878,9 +926,12 @@ auto evaluateSize(
     bool automaticWidth = (requestedWidthSize && requestedWidthSize->isAuto()) || (requestedWidthError && *requestedWidthError == SizeError::Auto);
     bool automaticHeight = (requestedHeightSize && requestedHeightSize->isAuto()) || (requestedHeightError && *requestedHeightError == SizeError::Auto);
 
+    PaddingResult padding = resolvePadding(req);
+    SizeState borderWidth = resolveBorderWidth(req);
+
     SizePair size {
-        .width = resolveWidth(requestedWidth, req, std::nullopt),
-        .height = resolveHeight(requestedHeight, req, std::nullopt),
+        .width = resolveWidth(requestedWidth, req, std::nullopt, padding, borderWidth),
+        .height = resolveHeight(requestedHeight, req, std::nullopt, padding, borderWidth),
     };
 
     SizePair minimum {
@@ -928,7 +979,7 @@ auto evaluateSize(
         widthIntrinsic = measureIntrinsicWidth(tree, node, frameInfo, constraints, measured, size.height, req);
 
         if (widthIntrinsicError) {
-            size.width = resolveWidth(requestedWidth, req, widthIntrinsic);
+            size.width = resolveWidth(requestedWidth, req, widthIntrinsic, padding, borderWidth);
         }
         if (minWidthIntrinsicError) {
             minimum.width = resolveMinWidth(req.minimum.width, req, widthIntrinsic);
@@ -951,7 +1002,7 @@ auto evaluateSize(
         heightIntrinsic = measureIntrinsicHeight(tree, node, frameInfo, constraints, measured, size.width, req);
 
         if (heightIntrinsicError) {
-            size.height = resolveHeight(requestedHeight, req, heightIntrinsic);
+            size.height = resolveHeight(requestedHeight, req, heightIntrinsic, padding, borderWidth);
         }
         if (minHeightIntrinsicError) {
             minimum.height = resolveMinHeight(req.minimum.height, req, heightIntrinsic);
@@ -962,9 +1013,6 @@ auto evaluateSize(
     }
 
     size.height = clampSize(size.height, minimum.height, maximum.height);
-
-    PaddingResult padding = resolvePadding(req);
-    SizeState borderWidth = resolveBorderWidth(req);
 
     // inner sizes 
     SizePair innerSize {

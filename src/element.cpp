@@ -360,14 +360,9 @@ namespace tree {
         size_t& currentLineBoxIndex,
         bool& lastFragmentHasBreakOpportunity
     ) {
-        const bool preserveLineFeeds =
-            whiteSpace == WhiteSpace::Pre ||
-            whiteSpace == WhiteSpace::PreWrap;
-        const bool allowSoftWrap =
-            whiteSpace == WhiteSpace::Normal ||
-            whiteSpace == WhiteSpace::PreWrap;
-        const bool breakInsideWords =
-            allowSoftWrap && wordBreak == WordBreak::BreakAll;
+        const bool preserveLineFeeds = whiteSpace == WhiteSpace::Pre ||  whiteSpace == WhiteSpace::PreWrap;
+        const bool allowSoftWrap = whiteSpace == WhiteSpace::Normal || whiteSpace == WhiteSpace::PreWrap;
+        const bool breakInsideWords = allowSoftWrap && wordBreak == WordBreak::BreakAll;
 
         float runningWidth = margins.left;
         size_t runningAtomCount = 0;
