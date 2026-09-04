@@ -584,8 +584,8 @@ namespace layout {
 
             const auto& childOutput = tree.speculateLayout(frameInfo, childAsPtr, preparedChildConstraints, childMeasured);
             IntrinsicSizes intrinsicHeights = childOutput.intrinsicSizes.value_or(IntrinsicSizes{
-                .minimum = childOutput.layout.consumedHeight,
-                .maximum = childOutput.layout.consumedHeight,
+                .minimum = childOutput.layout.computedBox.height,
+                .maximum = childOutput.layout.computedBox.height,
             });
             float minContent = intrinsicHeights.minimum;
             float maxContent = intrinsicHeights.maximum;
@@ -730,20 +730,20 @@ namespace layout {
                     *childAsPtr->shared.aspectRatio
                 );
 
-            const LayoutOutput* childOutput = &tree.speculateLayout(frameInfo, childAsPtr, preparedChildConstraints, childMeasured);
+            LayoutResult childOutput = tree.speculateLayout(frameInfo, childAsPtr, preparedChildConstraints, childMeasured);
 
             float dx = 0.0f;
             if (effectiveJustify == JustifyItems::Center) {
-                dx = (cellW - childOutput->layout.computedBox.width) / 2.0f;
+                dx = (cellW - childOutput.layout.computedBox.width) / 2.0f;
             } else if (effectiveJustify == JustifyItems::End) {
-                dx = cellW - childOutput->layout.computedBox.width;
+                dx = cellW - childOutput.layout.computedBox.width;
             }
 
             float dy = 0.0f;
             if (effectiveAlign == AlignItems::Center) {
-                dy = (cellH - childOutput->layout.computedBox.height) / 2.0f;
+                dy = (cellH - childOutput.layout.computedBox.height) / 2.0f;
             } else if (effectiveAlign == AlignItems::FlexEnd) {
-                dy = cellH - childOutput->layout.computedBox.height;
+                dy = cellH - childOutput.layout.computedBox.height;
             }
 
             preparedChildConstraints.origin.x += dx;
@@ -751,17 +751,28 @@ namespace layout {
             preparedChildConstraints.cursor.x += dx;
             preparedChildConstraints.cursor.y += dy;
 
-            std::optional<LayoutOutput> finalChildOutput;
+            // std::optional<LayoutResult> finalChildOutput; // ???
+            
             if (mutate) {
-                finalChildOutput = tree.layoutPhase(
-                    childAsPtr,
-                    frameInfo,
-                    preparedChildConstraints,
-                    childMeasured
+                // uh wtf lol?
+                // this is beyond fucking stupid lol
+                // finalChildOutput = tree.layoutPhase(
+                //     childAsPtr,
+                //     frameInfo,
+                //     preparedChildConstraints,
+                //     childMeasured
+                // );
+
+                childOutput = tree.layoutRecursive(
+                    childAsPtr, 
+                    frameInfo, 
+                    preparedChildConstraints, 
+                    measured, 
+                    true
                 );
-                childOutput = &*finalChildOutput;
+                
             } else if (dx != 0.0f || dy != 0.0f) {
-                childOutput = &tree.speculateLayout(
+                childOutput = tree.speculateLayout(
                     frameInfo,
                     childAsPtr,
                     preparedChildConstraints,
@@ -769,10 +780,10 @@ namespace layout {
                 );
             }
 
-            const auto& childLayout = childOutput->layout;
+            const auto& childLayout = childOutput.layout;
 
             maxX = std::max(maxX, childLayout.computedBox.x + childLayout.computedBox.width);
-            maxY = std::max(maxY, childLayout.computedBox.y + childLayout.consumedHeight);
+            maxY = std::max(maxY, childLayout.computedBox.y + childLayout.computedBox.height);
         }
 
         return {maxX, maxY};

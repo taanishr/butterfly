@@ -393,14 +393,14 @@ namespace Inspector {
             htNodeDisplay = displayName(htNode->shared.display);
             htNodePosition = positionName(htNode->shared.position);
             htNodeOverflow = overflowName(htNode->shared.overflow);
-            htNodeX = htNode->layout->computedBox.x;
-            htNodeY = htNode->layout->computedBox.y;
-            htNodeW = htNode->layout->computedBox.width;
-            htNodeH = htNode->layout->computedBox.height;
-            htNodeLocalX = htNode->layout->localComputedBox.x;
-            htNodeLocalY = htNode->layout->localComputedBox.y;
-            htNodeLocalW = htNode->layout->localComputedBox.width;
-            htNodeLocalH = htNode->layout->localComputedBox.height;
+            htNodeX = htNode->layout->layout.computedBox.x;
+            htNodeY = htNode->layout->layout.computedBox.y;
+            htNodeW = htNode->layout->layout.computedBox.width;
+            htNodeH = htNode->layout->layout.computedBox.height;
+            htNodeLocalX = htNode->layout->layout.localComputedBox.x;
+            htNodeLocalY = htNode->layout->layout.localComputedBox.y;
+            htNodeLocalW = htNode->layout->layout.localComputedBox.width;
+            htNodeLocalH = htNode->layout->layout.localComputedBox.height;
             htNodeScrollX = float(htNode->scrollOffset.x);
             htNodeScrollY = float(htNode->scrollOffset.y);
             htNodeZIndex = htNode->globalZIndex;
@@ -633,7 +633,8 @@ namespace Inspector {
             return;
         }
 
-        const auto& layout = *node->layout;
+        const auto& result = *node->layout;
+        const auto& layout = result.layout;
         const auto& box = layout.computedBox;
         auto margins = node->preLayout.has_value()
             ? node->preLayout->resolvedMargins
@@ -651,12 +652,16 @@ namespace Inspector {
             .width(style::Size::px(box.width))
             .height(style::Size::px(box.height));
 
-        const auto& padding = layout.resolvedPadding;
+        const auto& padding = result.sizeResult.padding;
+        float paddingTop = std::holds_alternative<float>(padding.top) ? std::get<float>(padding.top) : 0.0f;
+        float paddingRight = std::holds_alternative<float>(padding.right) ? std::get<float>(padding.right) : 0.0f;
+        float paddingBottom = std::holds_alternative<float>(padding.bottom) ? std::get<float>(padding.bottom) : 0.0f;
+        float paddingLeft = std::holds_alternative<float>(padding.left) ? std::get<float>(padding.left) : 0.0f;
         contentOverlayState
-            .left(style::Size::px(box.x + padding.left))
-            .top(style::Size::px(box.y + padding.top))
-            .width(style::Size::px(std::max(0.0f, box.width - padding.left - padding.right)))
-            .height(style::Size::px(std::max(0.0f, box.height - padding.top - padding.bottom)));
+            .left(style::Size::px(box.x + paddingLeft))
+            .top(style::Size::px(box.y + paddingTop))
+            .width(style::Size::px(std::max(0.0f, box.width - paddingLeft - paddingRight)))
+            .height(style::Size::px(std::max(0.0f, box.height - paddingTop - paddingBottom)));
 
         selectionLabelText.text(std::format(
             "{}#{}  {:.0f}×{:.0f}",

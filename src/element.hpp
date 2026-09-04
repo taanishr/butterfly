@@ -24,7 +24,7 @@ namespace elements {
     using layout::Atomized;
     using layout::Constraints;
     using layout::Finalized;
-    using layout::LayoutResult;
+    using layout::LayoutState;
     using layout::Measured;
     using layout::Placed;
     using runtime::HitTestContext;
@@ -63,14 +63,15 @@ namespace elements {
         D& desc,
         Measured& measured,
         Atomized& atomized,
+        const SizeResult& sizeResult,
         Placed& placed,
         Finalized<U>& finalized,
-        LayoutResult layout,
+        LayoutState layout,
         MTL::RenderCommandEncoder* encoder
     ) {
         { proc.measure(fragment, constraints, shared, desc) } -> std::same_as<Measured>;
         { proc.atomize(fragment, constraints, shared, desc, measured) } -> std::same_as<Atomized>;
-        { proc.layout(fragment, constraints, shared, desc, measured, atomized) } -> std::same_as<LayoutResult>;
+        { proc.layout(fragment, constraints, shared, desc, measured, atomized, sizeResult) } -> std::same_as<LayoutState>;
 
         { proc.postLayout(fragment, constraints, shared, desc, measured, atomized, layout) } -> std::same_as<Atomized>;
 
@@ -84,10 +85,10 @@ namespace elements {
     struct ElementBase {
         virtual Measured measure(Constraints& constraints, SharedDescriptor& shared) = 0;
         virtual Atomized atomize(Constraints& constraints, SharedDescriptor& shared, Measured& measured) = 0;
-        virtual LayoutResult layout(Constraints& constraints, SharedDescriptor& shared, Measured& measured, Atomized& atomized) = 0;
-        virtual Atomized postLayout(Constraints& constraints, SharedDescriptor& shared, Measured& measured, Atomized& atomized, LayoutResult& layout) = 0;
-        virtual Placed place(Constraints& constraints, SharedDescriptor& shared, Measured& measured, Atomized& atomized, LayoutResult& layout) = 0;
-        virtual std::any finalize(Constraints& constraints, SharedDescriptor& shared, Measured& measured, Atomized& atomized, LayoutResult& layout, Placed& placed) = 0;
+        virtual LayoutState layout(Constraints& constraints, SharedDescriptor& shared, Measured& measured, Atomized& atomized, const SizeResult& sizeResult) = 0;
+        virtual Atomized postLayout(Constraints& constraints, SharedDescriptor& shared, Measured& measured, Atomized& atomized, LayoutState& layout) = 0;
+        virtual Placed place(Constraints& constraints, SharedDescriptor& shared, Measured& measured, Atomized& atomized, LayoutState& layout) = 0;
+        virtual std::any finalize(Constraints& constraints, SharedDescriptor& shared, Measured& measured, Atomized& atomized, LayoutState& layout, Placed& placed) = 0;
         virtual std::any request(RequestTarget target, std::any& payload) = 0;
         virtual void encode(MTL::RenderCommandEncoder* encoder, std::any& finalized) = 0;
         virtual std::string_view elementTypeName() const = 0;
@@ -97,7 +98,7 @@ namespace elements {
         virtual bool isReplaced() const {
             return false;
         }
-        virtual bool preciseHitTest(simd_float2 point, const LayoutResult& layout, const std::any& finalized) {
+        virtual bool preciseHitTest(simd_float2 point, const LayoutState& layout, const std::any& finalized) {
             return true;
         }
 
@@ -121,19 +122,19 @@ namespace elements {
             return processor.atomize(element.getFragment(), constraints, shared, element.getDescriptor(), measured);
         }
 
-        LayoutResult layout(Constraints& constraints, SharedDescriptor& shared, Measured& measured, Atomized& atomized) override {
-            return processor.layout(element.getFragment(), constraints, shared, element.getDescriptor(), measured, atomized);
+        LayoutState layout(Constraints& constraints, SharedDescriptor& shared, Measured& measured, Atomized& atomized, const SizeResult& sizeResult) override {
+            return processor.layout(element.getFragment(), constraints, shared, element.getDescriptor(), measured, atomized, sizeResult);
         }
 
-        Atomized postLayout(Constraints& constraints, SharedDescriptor& shared, Measured& measured, Atomized& atomized, LayoutResult& layout) override {
+        Atomized postLayout(Constraints& constraints, SharedDescriptor& shared, Measured& measured, Atomized& atomized, LayoutState& layout) override {
             return processor.postLayout(element.getFragment(), constraints, shared, element.getDescriptor(), measured, atomized, layout);
         }
 
-        Placed place(Constraints& constraints, SharedDescriptor& shared, Measured& measured, Atomized& atomized, LayoutResult& layout) override {
+        Placed place(Constraints& constraints, SharedDescriptor& shared, Measured& measured, Atomized& atomized, LayoutState& layout) override {
             return processor.place(element.getFragment(), constraints, shared, element.getDescriptor(), measured, atomized, layout);
         }
 
-        std::any finalize(Constraints& constraints, SharedDescriptor& shared, Measured& measured, Atomized& atomized, LayoutResult& layout, Placed& placed) override {
+        std::any finalize(Constraints& constraints, SharedDescriptor& shared, Measured& measured, Atomized& atomized, LayoutState& layout, Placed& placed) override {
             auto finalized = processor.finalize(element.getFragment(), constraints, shared, element.getDescriptor(), measured, atomized, layout, placed);
             auto finalizedErased = finalized;
             return finalizedErased;
@@ -170,7 +171,7 @@ namespace elements {
             return false;
         }
 
-        bool preciseHitTest(simd_float2 point, const LayoutResult& layout, const std::any& finalized) override {
+        bool preciseHitTest(simd_float2 point, const LayoutState& layout, const std::any& finalized) override {
             if (hitTestFunction) {
                 HitTestContext<U> ctx {
                     .finalized = std::any_cast<Finalized<U>>(finalized),
@@ -358,20 +359,20 @@ namespace tree {
             if (shared.pointerEvents == PointerEvents::None) return false;
             if (!layout.has_value()) return false;
             
-            auto& box = layout->computedBox;
+            auto& box = layout->layout.computedBox;
 
             if (point.x < box.x || point.x > box.x + box.width ||
                 point.y < box.y || point.y > box.y + box.height) {
                 return false;
             }
 
-            for (auto& clip : layout->clipUniforms) {
+            for (auto& clip : layout->layout.clipUniforms) {
                 if (rounded_rect_sdf(point - clip.rectCenter, clip.halfExtent, clip.cornerRadius) > 0.0f) {
                     return false;
                 }
             }
 
-            return element->preciseHitTest(point, layout.value(), finalized);
+            return element->preciseHitTest(point, layout->layout, finalized);
         }
 
         Position getPosition() const { return shared.position; }

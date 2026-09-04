@@ -13,7 +13,7 @@ namespace tree {
     using layout::FlexLayout;
     using layout::FlexResolver;
     using layout::GridResolver;
-    using layout::LayoutOutput;
+    using layout::LayoutResult;
     using layout::MarginMetadata;
     using layout::Measured;
     using layout::SizeResolutionContext;
@@ -687,16 +687,19 @@ namespace tree {
         precomputeMargins(node, constraints, collapsedChainMap);
     }
 
-    LayoutOutput RenderTree::layoutPhase(
+    // this should exist for entry pt reasons; makes sense
+    void RenderTree::layoutPhase(
         TreeNode* node,
         const FrameInfo& frameInfo,
         Constraints constraints,
         Measured measured
     ) {
-        return layoutRecursive(node, frameInfo, constraints, measured, true);
+        layoutRecursive(node, frameInfo, constraints, measured, true);
     }
 
-    const LayoutOutput& RenderTree::speculateLayout(
+    // below are two things that should just be deleted this is extremely funny I hate llm code
+    // this geniuenly probably shouldnt even... exist?
+    const LayoutResult& RenderTree::speculateLayout(
         const FrameInfo& frameInfo,
         TreeNode* node,
         Constraints constraints,
@@ -716,6 +719,7 @@ namespace tree {
         return inserted->second;
     }
 
+    // should this even exist lol?
     std::optional<IntrinsicSizes> RenderTree::measureIntrinsicSizes(
         TreeNode* node, 
         const FrameInfo& frameInfo, 
@@ -724,12 +728,12 @@ namespace tree {
         SizeRequest sizeRequest
     )
     {
-        LayoutOutput output = layoutRecursive(node, frameInfo, constraints, measured, false, sizeRequest);
+        LayoutResult output = layoutRecursive(node, frameInfo, constraints, measured, false, sizeRequest);
 
         return output.intrinsicSizes;
     }
 
-    LayoutOutput RenderTree::layoutRecursive(
+    LayoutResult RenderTree::layoutRecursive(
         TreeNode* node,
         const FrameInfo& frameInfo,
         Constraints constraints,
@@ -739,37 +743,6 @@ namespace tree {
         std::optional<IntrinsicRequest> intrinsicWidthRequestOverride,
         std::optional<IntrinsicRequest> intrinsicHeightRequestOverride
     ) {
-        // struct Constraints {
-        //     simd_float2 origin{};
-        //     simd_float2 cursor{};
-        //     Size availableWidth{Size::autoSize()};
-        //     Size availableHeight{Size::autoSize()};
-
-        //     InheritedProperties inheritedProperties{};
-
-        //     FrameInfo frameInfo{}; // viewport size (for fixed)
-        //     ContainingBlock absoluteContainingBlock{}; // for absolute: nearest positioned ancestor
-
-        //     EdgeIntent edgeIntent{};
-
-        //     InlineFormattingInput inlineFormatting {};
-        //     std::optional<bidi::TextBidiInput> textBidiInput;
-
-        //     ReplacedAttributes replacedAttributes {};
-        //     ResolvedMargins resolvedMargins {};
-        //     float prevInlineHeight{};
-        //     std::vector<ClipUniform> clipUniforms {};
-        //     std::optional<TextOverflow> textOverflow{};
-
-        //     SizePair parentOverride;
-
-        //     bool shrinkWidthToFit{false};
-        //     bool shrinkHeightToFit{false};
-        //     std::optional<AxisResolution> widthResolution;
-        //     std::optional<AxisResolution> heightResolution;
-        //     std::optional<Axis> intrinsicSizesAxis;
-        // };
-
         auto key = makeConstraintsKey(constraints);
 
         auto& atomized = *node->atomized;
@@ -829,7 +802,7 @@ namespace tree {
 
         // what i should do now:
         // make this take in a size result instead of doing the computation separately
-        auto layout = node->element->layout(constraints, node->shared, measured, atomized);
+        auto layout = node->element->layout(constraints, node->shared, measured, atomized, sizeResult);
 
         auto childConstraints = layout.childConstraints;
         childConstraints.inheritedProperties = constraints.inheritedProperties;
@@ -842,8 +815,8 @@ namespace tree {
         if (node->getPosition() != Position::Static) {
             childConstraints.absoluteContainingBlock = {
                 .origin = {0.0f, 0.0f},
-                .width = layout.resolvedSize.width ? Size::px(layout.computedBox.width) : Size::autoSize(),
-                .height = layout.resolvedSize.height ? Size::px(layout.computedBox.height) : Size::autoSize(),
+                .width = std::holds_alternative<float>(sizeResult.outerSize.width) ? Size::px(std::get<float>(sizeResult.outerSize.width)) : Size::autoSize(),
+                .height = std::holds_alternative<float>(sizeResult.outerSize.height) ? Size::px(std::get<float>(sizeResult.outerSize.height)) : Size::autoSize(),
             };
         } else {
             childConstraints.absoluteContainingBlock = constraints.absoluteContainingBlock;
@@ -862,8 +835,11 @@ namespace tree {
             .trackIntrinsicWidth = sizeRequest.resolvingIntrinsicWidth,
         };
 
+        // right now, minimum & maximum content dont really get set?
+        // it only changes for flex/grid/etc...
+        // which provide different contributions not based on intrinsic size collection but
+        // min and max bounds; this needs to be fixed
         auto inlineFormatting = buildInlineBoxes(node, inlineSizing);
-
 
         auto flexPass = [&](const SizeResult& sr) {
             auto flexDirection = node->getFlexDirection();
@@ -947,7 +923,7 @@ namespace tree {
                     childConstraints.prevInlineHeight = childLayout.prevInlineHeight;
 
                     maxX = std::max(maxX, childLayout.computedBox.x + childLayout.computedBox.width);
-                    maxY = std::max(maxY, childLayout.computedBox.y + childLayout.consumedHeight);
+                    maxY = std::max(maxY, childLayout.computedBox.y + childLayout.computedBox.height);
                 }
             }
         };
@@ -976,28 +952,13 @@ namespace tree {
 
         // correct intrinsic sizes and content sizes if no children
         if (node->children.empty()) {
-            // float extent = 0.0;
-            // if (sizeRequestOverride && (sizeRequestOverride->resolvingIntrinsicWidth || sizeRequestOverride->resolvingIntrinsicHeight)) {
-            //     extent = sizeRequest.resolvingIntrinsicWidth ? layout.computedBox.width : layout.computedBox.height;
-            // }
+            float extent = 0.0;
+            if (sizeRequestOverride && (sizeRequestOverride->resolvingIntrinsicWidth || sizeRequestOverride->resolvingIntrinsicHeight)) {
+                extent = sizeRequest.resolvingIntrinsicWidth ? layout.computedBox.width : layout.computedBox.height;
+            }
 
-            // minimumContent = extent;
-            // maximumContent = extent;
-            minimumContent = inlineFormatting->intrinsicSizes->minimum;
-            maximumContent = inlineFormatting->intrinsicSizes->maximum;
-
-            // if (sizeRequest.resolvingIntrinsicWidth) {
-            //     sizeResult.widthIntrinsicSizes = {
-            //         extent,
-            //         extent
-            //     };
-            // }else {
-            //     sizeResult.heightIntrinsicSizes = {
-            //         extent,
-            //         extent
-            //     };
-            // }
-
+            minimumContent = extent;
+            maximumContent = extent;
 
             contentWidth = layout.computedBox.width;
             contentHeight = layout.computedBox.height;
@@ -1030,7 +991,7 @@ namespace tree {
                 measured.explicitHeight = *resizedHeight;
             }
 
-            layout = node->element->layout(constraints, node->shared, measured, atomized);
+            layout = node->element->layout(constraints, node->shared, measured, atomized, resizeResult);
 
             childConstraints = layout.childConstraints;
             childConstraints.inheritedProperties = constraints.inheritedProperties;
@@ -1043,8 +1004,8 @@ namespace tree {
             if (node->getPosition() != Position::Static) {
                 childConstraints.absoluteContainingBlock = {
                     .origin = {0.0f, 0.0f},
-                    .width = layout.resolvedSize.width ? Size::px(layout.computedBox.width) : Size::autoSize(),
-                    .height = layout.resolvedSize.height ? Size::px(layout.computedBox.height) : Size::autoSize(),
+                    .width = std::holds_alternative<float>(resizeResult.outerSize.width) ? Size::px(std::get<float>(resizeResult.outerSize.width)) : Size::autoSize(),
+                    .height = std::holds_alternative<float>(resizeResult.outerSize.height) ? Size::px(std::get<float>(resizeResult.outerSize.height)) : Size::autoSize(),
                 };
             } else {
                 childConstraints.absoluteContainingBlock = constraints.absoluteContainingBlock;
@@ -1075,7 +1036,6 @@ namespace tree {
                 }
             }
 
-            // synchronize resize result intrinsic sizes? 
             if (node->children.empty()) {
                 float extent = 0.0;
                 if (sizeRequestOverride && (sizeRequestOverride->resolvingIntrinsicWidth || sizeRequestOverride->resolvingIntrinsicHeight)) {
@@ -1085,28 +1045,16 @@ namespace tree {
                 minimumContent = extent;
                 maximumContent = extent;
 
-                // if (resizeRequest.resolvingIntrinsicWidth) {
-                //     resizeResult.widthIntrinsicSizes = {
-                //         extent,
-                //         extent
-                //     };
-                // }else {
-                //     resizeResult.heightIntrinsicSizes = {
-                //         extent,
-                //         extent
-                //     };
-                // }
-
                 contentWidth = layout.computedBox.width;
                 contentHeight = layout.computedBox.height;
-
             }
         }
 
         layout.localComputedBox = layout.computedBox;
         layout.localAtomOffsets = layout.atomOffsets;
 
-        LayoutOutput output {
+
+        LayoutResult output {
             .layout = layout,
             .sizeResult = resizeResult,
             .intrinsicSizes = IntrinsicSizes {
@@ -1116,7 +1064,7 @@ namespace tree {
         };
 
         if (mutate) {
-            node->layout = output.layout;
+            node->layout = output;
             node->constraintsKey = key;
             node->dirtySelf |= DirtyBits::PostLayout | DirtyBits::Place | DirtyBits::Finalize;
         }
@@ -1133,7 +1081,13 @@ namespace tree {
         }
         instrumentation::recordRecompute(node->id, instrumentation::Phase::PostLayout, reason);
 
-        auto& layout = *node->layout;
+        auto& result = *node->layout;
+        auto& layout = result.layout;
+        const auto& padding = result.sizeResult.padding;
+        float paddingTop = std::holds_alternative<float>(padding.top) ? std::get<float>(padding.top) : 0.0f;
+        float paddingRight = std::holds_alternative<float>(padding.right) ? std::get<float>(padding.right) : 0.0f;
+        float paddingBottom = std::holds_alternative<float>(padding.bottom) ? std::get<float>(padding.bottom) : 0.0f;
+        float paddingLeft = std::holds_alternative<float>(padding.left) ? std::get<float>(padding.left) : 0.0f;
         layout.computedBox = layout.localComputedBox;
         layout.atomOffsets = layout.localAtomOffsets;
 
@@ -1193,10 +1147,10 @@ namespace tree {
                 viewportBottom = std::min(viewportBottom, clip.rectCenter.y + clip.halfExtent.y);
             }
 
-            viewportLeft += layout.resolvedPadding.left;
-            viewportRight -= layout.resolvedPadding.right;
-            viewportTop += layout.resolvedPadding.top;
-            viewportBottom -= layout.resolvedPadding.bottom;
+            viewportLeft += paddingLeft;
+            viewportRight -= paddingRight;
+            viewportTop += paddingTop;
+            viewportBottom -= paddingBottom;
 
             node->scrollViewportSize = {
                 std::max(0.0f, viewportRight - viewportLeft),
@@ -1208,8 +1162,8 @@ namespace tree {
                                                     *node->atomized, layout);
 
         simd_float2 currContentOrigin = {
-            layout.computedBox.x + layout.resolvedPadding.left,
-            layout.computedBox.y + layout.resolvedPadding.top
+            layout.computedBox.x + paddingLeft,
+            layout.computedBox.y + paddingTop
         };
 
         if (node->shared.overflow == Overflow::Scroll) {
@@ -1259,8 +1213,8 @@ namespace tree {
             simd_float2 contentSize {0.0f, 0.0f};
             std::function<void(TreeNode*)> includeChildOverflow;
             includeChildOverflow = [&](TreeNode* child) {
-                if (!child->layout.has_value() || child->layout->outOfFlow) return;
-                auto& childBox = child->layout->computedBox;
+                if (!child->layout.has_value() || child->layout->layout.outOfFlow) return;
+                auto& childBox = child->layout->layout.computedBox;
                 if (constraints.inheritedProperties.direction == layout::Direction::rtl) {
                     contentSize.x = std::max(
                         contentSize.x,
@@ -1294,7 +1248,7 @@ namespace tree {
             instrumentation::recordRecompute(node->id, instrumentation::Phase::Place, reason);
             auto& measured = *node->measured;
             auto& atomized = *node->atomized;
-            auto& layout = *node->layout;
+            auto& layout = node->layout->layout;
 
             auto placed = node->element->place(constraints, node->shared, measured, atomized, layout);
             node->placed = placed;
@@ -1314,7 +1268,7 @@ namespace tree {
             instrumentation::recordRecompute(node->id, instrumentation::Phase::Finalize, reason);
             auto& measured =  *node->measured;
             auto& atomized = *node->atomized;
-            auto& layout = *node->layout;
+            auto& layout = node->layout->layout;
             auto& placed = *node->placed;
             auto finalized = node->element->finalize(constraints, node->shared, measured, atomized, layout, placed);
             node->finalized = finalized;

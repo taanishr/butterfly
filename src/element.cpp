@@ -821,6 +821,7 @@ namespace tree {
                 };
                 minContext = buildInlineBoxes(node, minimumSizing);
             }
+
             if (sizing.widthRequest != IntrinsicRequest::Maximum) {
                 InlineSizingInput maximumSizing {
                     .availableWidth = std::monostate{},
@@ -830,9 +831,11 @@ namespace tree {
                 maxContext = buildInlineBoxes(node, maximumSizing);
             }
 
+            // this isn't really optionally constructed. badly written imo
             float minContent = 0.0f;
             for (const auto& lineBox : minContext->lineBoxes) minContent = std::max(minContent, lineBox.width);
             float maxContent = 0.0f;
+
             for (const auto& lineBox : maxContext->lineBoxes) maxContent = std::max(maxContent, lineBox.width);
             context->intrinsicSizes = layout::IntrinsicSizes{.minimum = minContent, .maximum = maxContent};
         }

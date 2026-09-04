@@ -7,6 +7,7 @@
 
 #include "new_arch.hpp"
 #include "fragment_types.hpp"
+#include "overloaded.hpp"
 #include "sizing.hpp"
 #include <algorithm>
 #include <optional>
@@ -326,8 +327,9 @@ namespace runtime {
 }
 
 namespace layout {
-    LayoutResult LayoutEngine::layoutBlockOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized) {
-        LayoutResult lr;
+    LayoutState LayoutEngine::layoutBlockOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult) {
+
+        LayoutState lr;
         lr.outOfFlow = true;
 
         auto margins = constraints.resolvedMargins;
@@ -368,7 +370,6 @@ namespace layout {
             position
         };
         lr.siblingCursor = currentCursor;
-        lr.consumedHeight = 0;
 
         float paddingLeft = layoutInput.paddingLeft.resolveOr(constraints.availableWidth);
         float paddingTop = layoutInput.paddingTop.resolveOr(constraints.availableHeight);
@@ -382,8 +383,6 @@ namespace layout {
             .availableHeight = layoutInput.height.has_value() ? Size::px(lr.computedBox.height - paddingTop - paddingBottom) : Size::autoSize(),
             .frameInfo = constraints.frameInfo
         };
-
-        lr.resolvedPadding = {paddingTop, paddingRight, paddingBottom, paddingLeft};
 
         // Defer right/bottom positioning to postLayout where final sizes are known
         bool isRtl = constraints.inheritedProperties.direction == Direction::rtl;
@@ -400,22 +399,24 @@ namespace layout {
         return lr;
     }
 
-    LayoutResult LayoutEngine::resolveOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized) {
-        LayoutResult lr;
+    LayoutState LayoutEngine::resolveOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult) {
+        LayoutState lr;
 
         if (layoutInput.display == Display::Block || layoutInput.display == Display::Flex || layoutInput.display == Display::Grid) {
-            lr = layoutBlockOutOfFlow(constraints, currentCursor, layoutInput, atomized);
+            lr = layoutBlockOutOfFlow(constraints, currentCursor, layoutInput, atomized, sizeResult);
         }else {
-            lr = layoutInlineOutOfFlow(constraints, currentCursor, layoutInput, atomized);
+            lr = layoutInlineOutOfFlow(constraints, currentCursor, layoutInput, atomized, sizeResult);
         }
 
         return lr;
     }
 
     // relative, block/inline
-    LayoutResult LayoutEngine::layoutBlockNormalFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized) {
-        LayoutResult lr;
+    LayoutState LayoutEngine::layoutBlockNormalFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult) {
+        LayoutState lr;
         Constraints childConstraints;
+
+        lr.outOfFlow = false;
 
         auto margins = constraints.resolvedMargins;
 
@@ -428,45 +429,58 @@ namespace layout {
         simd_float2 startingPos = resolvePosition(pctx);
 
         simd_float2 newCursor {startingPos};
-
-        lr.outOfFlow = false;
-
-        float paddingLeft = layoutInput.paddingLeft.resolveOr(constraints.availableWidth);
-        float paddingTop = layoutInput.paddingTop.resolveOr(constraints.availableHeight);
-        float paddingRight = layoutInput.paddingRight.resolveOr(constraints.availableWidth);
-        float paddingBottom = layoutInput.paddingBottom.resolveOr(constraints.availableHeight);
-
+        
+        // local cursor
         childConstraints.cursor.x = 0;
         childConstraints.cursor.y = 0;
+
+        // globalish cursor?
         childConstraints.origin = childConstraints.cursor;
+
+        // frame info
         childConstraints.frameInfo = constraints.frameInfo;
 
-        lr.resolvedSize.width = layoutInput.width;
-        lr.resolvedSize.height = layoutInput.height;
+        // why does this default to 0.0f?
+        // The sizing request is the canonical source of what size something is
+        // or if it doesnt have a size, why it isnt sized
+        // Meanwhile, the computed box answers: what does the box look like at this moment
+        // for a box that is unresolved, it looks like *nothing*
+        float computedWidth = std::visit(Overloaded{
+            [&](float resolved){ return resolved; },
+            [&](auto&) { return 0.0f; }
+        }, sizeResult.outerSize.width);
 
-        float resolvedWidth = lr.resolvedSize.width.value_or(0.0f);
-        float resolvedHeight = lr.resolvedSize.height.value_or(0.0f);
+        float computedHeight = std::visit(Overloaded{
+            [&](float resolved){ return resolved; },
+            [&](auto&) { return 0.0f; }
+        }, sizeResult.outerSize.height);
+
+        // these are now dead; only user is grid (which will change slowly)
+        // // these need to die lol
+        // lr.resolvedSize.width = computedWidth;
+        // lr.resolvedSize.height = computedHeight;
 
         lr.computedBox = {
             startingPos.x,
             startingPos.y,
-            resolvedWidth,
-            resolvedHeight
+            computedWidth,
+            computedHeight
         };
 
         lr.atomOffsets = {
             startingPos
         };
 
-        lr.consumedHeight = lr.computedBox.height;
-
-        childConstraints.availableHeight = lr.resolvedSize.height
-            ? Size::px(lr.computedBox.height - paddingTop - paddingBottom)
-            : Size::autoSize();
-        childConstraints.availableWidth = lr.resolvedSize.width
-            ? Size::px(lr.computedBox.width - paddingLeft - paddingRight)
-            : Size::autoSize();
-
+        childConstraints.availableWidth = std::visit(Overloaded{
+            [&](float resolved){ return Size::px(resolved); },
+            [&](auto&) { return Size::autoSize(); }
+        }, sizeResult.innerSize.width);
+    
+        childConstraints.availableHeight = std::visit(Overloaded{
+            [&](float resolved){ return Size::px(resolved); },
+            [&](auto&) { return Size::autoSize(); }
+        }, sizeResult.innerSize.height);
+        
         lr.childConstraints = childConstraints;
 
         newCursor.y += lr.computedBox.height;
@@ -481,8 +495,6 @@ namespace layout {
             .collapsable = !layoutInput.marginBottom.isAuto(),
         };
 
-        lr.resolvedPadding = {paddingTop, paddingRight, paddingBottom, paddingLeft};
-
         return lr;
     }
 
@@ -493,15 +505,14 @@ namespace layout {
         fragmentCount += 1;
     }
 
-    // LayoutResult LayoutEngine::layoutFlex
-
-    LayoutResult LayoutEngine::layoutInlineNormalFlow(
+    LayoutState LayoutEngine::layoutInlineNormalFlow(
         Constraints& constraints,
         simd_float2 currentCursor,
         LayoutInput& layoutInput,
-        Atomized& atomized
+        Atomized& atomized,
+        const SizeResult& sizeResult
     ) {
-        LayoutResult lr;
+        LayoutState lr;
         lr.outOfFlow = false;
 
         ResolvedMargins margins = constraints.resolvedMargins;
@@ -636,7 +647,6 @@ namespace layout {
         lr.childConstraints.frameInfo = constraints.frameInfo;
 
         lr.atomOffsets = atomOffsets;
-        lr.consumedHeight = totalHeight;
         lr.prevInlineHeight = lineHeight;
 
         lr.siblingCursor = newCursor;
@@ -647,13 +657,11 @@ namespace layout {
             .collapsable = false,
         };
 
-        lr.resolvedPadding = {paddingTop, paddingRight, paddingBottom, paddingLeft};
-
         return lr;
     }
 
-    LayoutResult LayoutEngine::layoutInlineOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized) {
-        LayoutResult lr;
+    LayoutState LayoutEngine::layoutInlineOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult) {
+        LayoutState lr;
         lr.outOfFlow = true;
 
         ResolvedMargins margins = constraints.resolvedMargins;
@@ -763,11 +771,8 @@ namespace layout {
         lr.childConstraints.frameInfo = constraints.frameInfo;
 
         lr.atomOffsets = atomOffsets;
-        lr.consumedHeight = 0;
 
         lr.siblingCursor = currentCursor;
-
-        lr.resolvedPadding = {paddingTop, paddingRight, paddingBottom, paddingLeft};
 
         ContainingBlock containingBlock =
             layoutInput.position == Position::Fixed
@@ -793,21 +798,21 @@ namespace layout {
     }
 
 
-    LayoutResult LayoutEngine::resolveNormalFlow(Constraints& constraints, simd_float2 current_cursor, LayoutInput& layoutInput, Atomized& atomized) {
-        LayoutResult lr;
+    LayoutState LayoutEngine::resolveNormalFlow(Constraints& constraints, simd_float2 current_cursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult) {
+        LayoutState lr;
 
         if (layoutInput.display == Display::Block || layoutInput.display == Display::Flex || layoutInput.display == Display::Grid) {
-            lr = layoutBlockNormalFlow(constraints, current_cursor, layoutInput, atomized);
+            lr = layoutBlockNormalFlow(constraints, current_cursor, layoutInput, atomized, sizeResult);
         }else {
-            lr = layoutInlineNormalFlow(constraints, current_cursor, layoutInput, atomized);
+            lr = layoutInlineNormalFlow(constraints, current_cursor, layoutInput, atomized, sizeResult);
         }
 
         return lr;
     }
 
-    LayoutResult LayoutEngine::resolve(Constraints& constraints, LayoutInput& layoutInput, Atomized atomized)
+    LayoutState LayoutEngine::resolve(Constraints& constraints, LayoutInput& layoutInput, Atomized atomized, const SizeResult& sizeResult)
     {
-        LayoutResult lr;
+        LayoutState lr;
 
         if (layoutInput.direction.has_value()) {
             constraints.inheritedProperties.direction = *layoutInput.direction;
@@ -818,9 +823,9 @@ namespace layout {
         
         
         if (layoutInput.position == Position::Fixed || layoutInput.position == Position::Absolute) {
-            lr = resolveOutOfFlow(constraints, constraints.cursor, layoutInput, atomized);
+            lr = resolveOutOfFlow(constraints, constraints.cursor, layoutInput, atomized, sizeResult);
         }else {
-            lr = resolveNormalFlow(constraints, constraints.cursor, layoutInput, atomized);
+            lr = resolveNormalFlow(constraints, constraints.cursor, layoutInput, atomized, sizeResult);
         }
         
         return lr;

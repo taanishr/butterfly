@@ -142,6 +142,13 @@ struct IntrinsicResult {
     SizeState maximum;
 };
 
+struct PaddingResult {
+    SizeState top;
+    SizeState right;
+    SizeState bottom;
+    SizeState left;
+};
+
 // central evaluator gives back a coherently shaped SizeSpec resolution
 // SizeSpec *may or may not* be fully resolved; that is fine
 struct SizeResult {
@@ -149,6 +156,8 @@ struct SizeResult {
     SizePair innerSize;      // inner size
     SizePair minimum;   // min dim constraints evaluated against content box
     SizePair maximum; // max dim constraints evaluated against content box
+    PaddingResult padding;
+    SizeState borderWidth;
     
     std::optional<IntrinsicResult> widthIntrinsicSizes;
     std::optional<IntrinsicResult> heightIntrinsicSizes;
@@ -281,6 +290,12 @@ auto transferAspectRatio(const SizePair& pair, float ratio) -> SizePair;
 // resolve what can be resolved from size + available (this is essentially the lowest level primitive of sizing)
 auto calculateSize(const SizeState& size, const SizeState& available) -> SizeState;
 
+auto resolvePadding(const SizeRequest& req) -> PaddingResult;
+auto resolveBorderWidth(const SizeRequest& req) -> SizeState;
+
+// resolve inner sizes (w padding)
+auto resolveInnerWidth(const SizeState& size, const PaddingResult& padding, const SizeState& borderWidth) -> SizeState;
+auto resolveInnerHeight(const SizeState& size, const PaddingResult& padding, const SizeState& borderWidth) -> SizeState;
 
 auto evaluateSize(
     tree::RenderTree& tree,

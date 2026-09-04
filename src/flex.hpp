@@ -40,11 +40,11 @@ namespace layout {
             if (dir == Direction::rtl && isRow) isReversed = !isReversed;
         }
 
-        float mainSize(const LayoutResult& lr) {
+        float mainSize(const LayoutState& lr) {
             return isRow ? lr.computedBox.width : lr.computedBox.height;
         }
 
-        float crossSize(const LayoutResult& lr) {
+        float crossSize(const LayoutState& lr) {
             return isRow ? lr.computedBox.height : lr.computedBox.width;
         }
         const SizeState& mainSize(const SizePair& size) {

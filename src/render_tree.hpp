@@ -50,13 +50,13 @@ namespace tree {
         void preLayoutPhase(TreeNode* node, const FrameInfo& frameInfo, Constraints& constraints);
 
         
-        layout::LayoutOutput layoutPhase(
+        void layoutPhase(
             TreeNode* node,
             const FrameInfo& frameInfo,
             Constraints constraints,
             layout::Measured measured
         );
-        const layout::LayoutOutput& speculateLayout(
+        const layout::LayoutResult& speculateLayout(
             const FrameInfo& frameInfo,
             TreeNode* node,
             Constraints constraints,
@@ -77,7 +77,7 @@ namespace tree {
         );
 
 
-        layout::LayoutOutput layoutRecursive(
+        layout::LayoutResult layoutRecursive(
             TreeNode* node,
             const FrameInfo& frameInfo,
             Constraints constraints,
@@ -125,7 +125,7 @@ namespace tree {
         std::unique_ptr<TreeNode> elementTree;
         LayoutEngine layoutEngine;
 
-        std::unordered_map<ConstraintsKey, layout::LayoutOutput> speculativeLayoutCache;
+        std::unordered_map<ConstraintsKey, layout::LayoutResult> speculativeLayoutCache;
         std::unordered_map<size_t, SizeResult> sizeCache;
     };
 }

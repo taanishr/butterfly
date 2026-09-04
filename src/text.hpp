@@ -27,7 +27,7 @@ namespace elements {
     using layout::Constraints;
     using layout::Direction;
     using layout::Finalized;
-    using layout::LayoutResult;
+    using layout::LayoutState;
     using layout::Measured;
     using layout::Placed;
     using layout::toLayoutInput;
@@ -477,14 +477,14 @@ namespace elements {
             return Atomized{ .id = fragment.id, .atoms = std::move(atoms) };
         }
 
-        LayoutResult layout(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, TextDescriptor& desc, Measured& measured, Atomized& atomized) {
+        LayoutState layout(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, TextDescriptor& desc, Measured& measured, Atomized& atomized, const SizeResult& sizeResult) {
             auto li = toLayoutInput(shared, measured);
-            auto lr = ctx.layoutEngine.resolve(constraints, li, atomized);
+            auto lr = ctx.layoutEngine.resolve(constraints, li, atomized, sizeResult);
             lr.inlineFormatting = constraints.inlineFormatting;
             return lr;
         }
 
-        Atomized postLayout(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, TextDescriptor& desc, Measured& measured, Atomized& atomized, LayoutResult& layout) {
+        Atomized postLayout(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, TextDescriptor& desc, Measured& measured, Atomized& atomized, LayoutState& layout) {
             atomized.usesDrawableAtoms = false;
             if (!constraints.textOverflow->drawsEnding()) return atomized;
 
@@ -643,7 +643,7 @@ namespace elements {
             return atomized;
         };
 
-        Placed place(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, TextDescriptor& desc, Measured& measured, Atomized& atomized, LayoutResult& lr) {
+        Placed place(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, TextDescriptor& desc, Measured& measured, Atomized& atomized, LayoutState& lr) {
             std::vector<AtomPlacement> placements;
             
             const auto& offsets = atomized.usesDrawableAtoms
@@ -666,7 +666,7 @@ namespace elements {
             return Placed{ .id = fragment.id, .placements = placements };
         }
         
-        Finalized<U> finalize(Fragment<S>& fragment, Constraints&, SharedDescriptor& shared, TextDescriptor& desc, Measured& measured, Atomized& atomized, LayoutResult& layout, Placed& placed) {
+        Finalized<U> finalize(Fragment<S>& fragment, Constraints&, SharedDescriptor& shared, TextDescriptor& desc, Measured& measured, Atomized& atomized, LayoutState& layout, Placed& placed) {
             float fontSize;
 
             if (desc.fontSize.unit == Unit::Pt) {

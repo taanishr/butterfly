@@ -223,9 +223,6 @@ auto resolveWidth(const SizeState& size, SizeRequest& req, const std::optional<I
         float automaticWidth = *availableWidth
             - req.margins.left
             - req.margins.right;
-            // - *resolvedPaddingLeft
-            // - *resolvedPaddingRight
-            // - 2.0f * *resolvedBorderWidth;
 
         // then, branch from here
         // are we *out of flow* and do we have insets?
@@ -259,15 +256,22 @@ auto resolveWidth(const SizeState& size, SizeRequest& req, const std::optional<I
     return resolved;
 }
 
-auto resolveInnerWidth(const SizeState& size, SizeRequest& req) -> SizeState {
-    // first; calculate modifiers
-    SizeState paddingLeft = calculateSize(req.paddingLeft, req.available.width);
-    const auto* resolvedPaddingLeft = std::get_if<float>(&paddingLeft);
+auto resolvePadding(const SizeRequest& req) -> PaddingResult {
+    return {
+        .top = calculateSize(req.paddingTop, req.available.width),
+        .right = calculateSize(req.paddingRight, req.available.width),
+        .bottom = calculateSize(req.paddingBottom, req.available.width),
+        .left = calculateSize(req.paddingLeft, req.available.width),
+    };
+}
 
-    SizeState paddingRight = calculateSize(req.paddingRight, req.available.width);
-    const auto* resolvedPaddingRight = std::get_if<float>(&paddingRight);
+auto resolveBorderWidth(const SizeRequest& req) -> SizeState {
+    return calculateSize(req.borderWidth, req.available.width);
+}
 
-    SizeState borderWidth = calculateSize(req.borderWidth, req.available.width);
+auto resolveInnerWidth(const SizeState& size, const PaddingResult& padding, const SizeState& borderWidth) -> SizeState {
+    const auto* resolvedPaddingLeft = std::get_if<float>(&padding.left);
+    const auto* resolvedPaddingRight = std::get_if<float>(&padding.right);
     const auto* resolvedBorderWidth = std::get_if<float>(&borderWidth);
 
     // copy inner size & modify
@@ -365,16 +369,9 @@ auto resolveHeight(const SizeState& size, SizeRequest& req, const std::optional<
     return resolved;
 }
 
-auto resolveInnerHeight(const SizeState& size, SizeRequest& req) {
-    // first; calculate modifiers
-    // req.padding* against width is not a bug; that is geniuenly just the spec
-    SizeState paddingTop = calculateSize(req.paddingTop, req.available.width);
-    const auto* resolvedPaddingTop = std::get_if<float>(&paddingTop);
-
-    SizeState paddingBottom = calculateSize(req.paddingBottom, req.available.width);
-    const auto* resolvedPaddingBottom = std::get_if<float>(&paddingBottom);
-
-    SizeState borderWidth = calculateSize(req.borderWidth, req.available.width);
+auto resolveInnerHeight(const SizeState& size, const PaddingResult& padding, const SizeState& borderWidth) -> SizeState {
+    const auto* resolvedPaddingTop = std::get_if<float>(&padding.top);
+    const auto* resolvedPaddingBottom = std::get_if<float>(&padding.bottom);
     const auto* resolvedBorderWidth = std::get_if<float>(&borderWidth);
 
     // copy inner size & modify
@@ -966,10 +963,13 @@ auto evaluateSize(
 
     size.height = clampSize(size.height, minimum.height, maximum.height);
 
+    PaddingResult padding = resolvePadding(req);
+    SizeState borderWidth = resolveBorderWidth(req);
+
     // inner sizes 
     SizePair innerSize {
-        .width = resolveInnerWidth(size.width, req),
-        .height = resolveInnerHeight(size.height, req)
+        .width = resolveInnerWidth(size.width, padding, borderWidth),
+        .height = resolveInnerHeight(size.height, padding, borderWidth)
     };
 
     SizeResult result = {
@@ -977,6 +977,8 @@ auto evaluateSize(
         .innerSize = innerSize,
         .minimum = minimum,
         .maximum = maximum,
+        .padding = padding,
+        .borderWidth = borderWidth,
         .widthIntrinsicSizes = widthIntrinsic,
         .heightIntrinsicSizes = heightIntrinsic,
     };

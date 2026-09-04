@@ -27,7 +27,7 @@ namespace elements {
     using layout::Atomized;
     using layout::Constraints;
     using layout::Finalized;
-    using layout::LayoutResult;
+    using layout::LayoutState;
     using layout::Measured;
     using layout::Placed;
     using layout::ResolvedSize;
@@ -395,13 +395,13 @@ namespace elements {
             return Atomized{ .id = fragment.id, .atoms = atoms };
         }
 
-        LayoutResult layout(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, SVGDescriptor& desc, Measured& measured, Atomized& atomized) {
+        LayoutState layout(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, SVGDescriptor& desc, Measured& measured, Atomized& atomized, const SizeResult& sizeResult) {
             auto li = toLayoutInput(shared, measured);
-            auto lr = ctx.layoutEngine.resolve(constraints, li, atomized);
+            auto lr = ctx.layoutEngine.resolve(constraints, li, atomized, sizeResult);
             return lr;
         }
 
-        Atomized postLayout(Fragment<S>& fragment, Constraints&, SharedDescriptor& shared, SVGDescriptor& desc, Measured& measured, Atomized& atomized, LayoutResult& layout) {
+        Atomized postLayout(Fragment<S>& fragment, Constraints&, SharedDescriptor& shared, SVGDescriptor& desc, Measured& measured, Atomized& atomized, LayoutState& layout) {
             std::vector<Atom> atoms {};
             
             float width = layout.computedBox.width;
@@ -439,7 +439,7 @@ namespace elements {
             };
         };
 
-        Placed place(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, SVGDescriptor& desc, Measured&, Atomized& atomized, LayoutResult& lr) {
+        Placed place(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, SVGDescriptor& desc, Measured&, Atomized& atomized, LayoutState& lr) {
             std::vector<AtomPlacement> placements;
 
             auto offsets = lr.atomOffsets;
@@ -460,7 +460,7 @@ namespace elements {
             return Placed{ .id = fragment.id, .placements = placements };
         }
 
-        Finalized<U> finalize(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, SVGDescriptor& desc, Measured& measured, Atomized& atomized, LayoutResult& layout, Placed& placed) {
+        Finalized<U> finalize(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, SVGDescriptor& desc, Measured& measured, Atomized& atomized, LayoutState& layout, Placed& placed) {
             float borderWidth = 0.0;
 
             if (shared.borderWidth.unit == Unit::Px) {

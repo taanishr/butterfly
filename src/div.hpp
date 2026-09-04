@@ -29,7 +29,7 @@ namespace elements {
     using layout::Finalized;
     using layout::LayoutEngine;
     using layout::LayoutInput;
-    using layout::LayoutResult;
+    using layout::LayoutState;
     using layout::Measured;
     using layout::Placed;
     using layout::SizeResolutionContext;
@@ -291,15 +291,15 @@ namespace elements {
             };
         }
 
-        LayoutResult layout(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, DivDescriptor& desc, Measured& measured, Atomized& atomized) {
+        LayoutState layout(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, DivDescriptor& desc, Measured& measured, Atomized& atomized, const SizeResult& sizeResult) {
             auto li = toLayoutInput(shared, measured);
-            auto lr = ctx.layoutEngine.resolve(constraints, li, atomized);
+            auto lr = ctx.layoutEngine.resolve(constraints, li, atomized, sizeResult);
             return lr;
         }
         
         // OHHH!  Do I need to alter my later passes to have a computed size? Computed width? Ok, makes sense.
 
-        Atomized postLayout(Fragment<S>& fragment, Constraints&, SharedDescriptor& shared, DivDescriptor& desc, Measured& measured, Atomized& atomized, LayoutResult& layout) {
+        Atomized postLayout(Fragment<S>& fragment, Constraints&, SharedDescriptor& shared, DivDescriptor& desc, Measured& measured, Atomized& atomized, LayoutState& layout) {
             std::vector<Atom> atoms {};
             
             // get measurements
@@ -336,7 +336,7 @@ namespace elements {
             };
         }
         
-        Placed place(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, DivDescriptor& desc, Measured& measured, Atomized& atomized, LayoutResult& lr)
+        Placed place(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, DivDescriptor& desc, Measured& measured, Atomized& atomized, LayoutState& lr)
         {
             std::vector<AtomPlacement> placements;
             auto offsets = lr.atomOffsets;
@@ -361,7 +361,7 @@ namespace elements {
             };
         }
 
-        Finalized<U> finalize(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, DivDescriptor& desc, Measured& measured, Atomized& atomized, LayoutResult& layout, Placed& placed)
+        Finalized<U> finalize(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, DivDescriptor& desc, Measured& measured, Atomized& atomized, LayoutState& layout, Placed& placed)
         {
             float borderWidth = 0.0;
 

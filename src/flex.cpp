@@ -262,7 +262,7 @@ namespace layout {
                 flex.axis.mainSize(childRequest.override) = item.usedMainSize;
 
 
-                LayoutOutput childOutput = tree.layoutRecursive(childNode, frameInfo, preparedChildConstraints, childMeasured, false, childRequest);
+                LayoutResult childOutput = tree.layoutRecursive(childNode, frameInfo, preparedChildConstraints, childMeasured, false, childRequest);
                 const SizeResult& sizeResult = childOutput.sizeResult;
 
                 const float* preferredCrossSize = std::get_if<float>(&flex.axis.crossSize(sizeResult.outerSize));
@@ -372,11 +372,11 @@ namespace layout {
                 childRequest.automaticWidth = placement.alignment == AlignItems::Stretch ? AutomaticSizing::UseAvailable : AutomaticSizing::UseContent;
             }
 
-            LayoutOutput childOutput = tree.layoutRecursive(childNode, frameInfo, preparedChildConstraints, childMeasured, mutate, childRequest);
+            LayoutResult childOutput = tree.layoutRecursive(childNode, frameInfo, preparedChildConstraints, childMeasured, mutate, childRequest);
             const auto& childLayout = childOutput.layout;
 
             maxX = std::max(maxX, childLayout.computedBox.x + childLayout.computedBox.width);
-            maxY = std::max(maxY, childLayout.computedBox.y + childLayout.consumedHeight);
+            maxY = std::max(maxY, childLayout.computedBox.y + childLayout.computedBox.height);
         }
 
         float minimumMainContribution = 0.0f;

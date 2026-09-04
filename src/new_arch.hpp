@@ -637,18 +637,20 @@ namespace layout {
         float width, height;
     };
 
-    struct LayoutResult {
+    struct LayoutState {
+        // atom geometry
         std::vector<simd_float2> atomOffsets;
         std::vector<simd_float2> localAtomOffsets;
         std::vector<simd_float2> drawableAtomOffsets;
+
+        // inline results
         InlineFormattingInput inlineFormatting;
+        float prevInlineHeight{}; 
 
-        ResolvedSize resolvedSize;
+        ResolvedSize resolvedSize; // legacy field
+
         LayoutBox computedBox;
-        LayoutBox localComputedBox;
-
-        float consumedHeight; // how much height consumed
-        float prevInlineHeight{};
+        LayoutBox localComputedBox; // fine
 
         Constraints childConstraints; // child constraints
 
@@ -656,16 +658,12 @@ namespace layout {
         bool outOfFlow; // don't change siblings
         EdgeIntent edgeIntent;
 
-        struct {
-            float top{}, right{}, bottom{}, left{};
-        } resolvedPadding;
-
         DeferredPositionInfo deferredPosition;
         std::vector<ClipUniform> clipUniforms {};
     };
 
-    struct LayoutOutput {
-        LayoutResult layout;
+    struct LayoutResult {
+        LayoutState layout;
         SizeResult sizeResult;
         std::optional<IntrinsicSizes> intrinsicSizes;
     };
@@ -680,20 +678,20 @@ namespace layout {
         );
 
         // relative, block/inline
-        static LayoutResult layoutBlockNormalFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized);
-        static LayoutResult layoutInlineNormalFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized);
-        static LayoutResult resolveNormalFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized);
+        static LayoutState layoutBlockNormalFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
+        static LayoutState layoutInlineNormalFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
+        static LayoutState resolveNormalFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
 
         // fixed and absolute, block/inline
-        static LayoutResult layoutBlockOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized);
-        static LayoutResult layoutInlineOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized);
-        static LayoutResult resolveOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized);
+        static LayoutState layoutBlockOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
+        static LayoutState layoutInlineOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
+        static LayoutState resolveOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
 
         // flex
-        static LayoutResult layoutFlex(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized);
+        static LayoutState layoutFlex(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized);
 
 
-        static LayoutResult resolve(Constraints& constraints, LayoutInput& layoutInput, Atomized atomized);
+        static LayoutState resolve(Constraints& constraints, LayoutInput& layoutInput, Atomized atomized, const SizeResult& sizeResult);
     };
 }
 
