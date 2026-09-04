@@ -836,6 +836,11 @@ namespace tree {
         // min and max bounds; this needs to be fixed
         auto inlineFormatting = buildInlineBoxes(node, inlineSizing);
 
+        if (inlineFormatting->intrinsicSizes) {
+            minimumContent = inlineFormatting->intrinsicSizes->minimum;
+            maximumContent = inlineFormatting->intrinsicSizes->maximum;
+        }
+
         auto flexPass = [&](const SizeResult& sr) {
             auto flexDirection = node->getFlexDirection();
             auto justifyContent = node->getJustifyContent();
@@ -1015,6 +1020,11 @@ namespace tree {
 
             inlineSizing.availableWidth = childConstraints.availableWidth;
             inlineFormatting = buildInlineBoxes(node, inlineSizing);
+
+            if (inlineFormatting->intrinsicSizes) {
+                minimumContent = inlineFormatting->intrinsicSizes->minimum;
+                maximumContent = inlineFormatting->intrinsicSizes->maximum;
+            }
 
             switch (display) {
                 case style::Display::Flex: {

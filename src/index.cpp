@@ -3650,7 +3650,32 @@ div()
 //         )
 //     );
 
-    layout_test::scenes::buildBrowser();
+    // layout_test::scenes::buildBrowser();
+
+    using S = gui::Size;
+    constexpr auto intrinsicText = "short extraordinarilylongword short words that should wrap";
+
+    div(S::percent(1.0), S::percent(1.0), simd_float4{0.94,0.94,0.96,1.0})
+        .padding(S::px(32))
+    (
+        div(S::minContent(), S::autoSize(), simd_float4{0.20,0.70,0.90,1.0})
+            .padding(S::px(8))
+        (
+            text(intrinsicText)
+                .font(Arial)
+                .fontSize(S::pt(18))
+                .color(simd_float4{0.05,0.05,0.05,1.0})
+        ),
+        div(S::maxContent(), S::autoSize(), simd_float4{0.95,0.55,0.25,1.0})
+            .padding(S::px(8))
+            .marginTop(S::px(24))
+        (
+            text(intrinsicText)
+                .font(Arial)
+                .fontSize(S::pt(18))
+                .color(simd_float4{0.05,0.05,0.05,1.0})
+        )
+    );
 
     // using S = gui::Size;
 

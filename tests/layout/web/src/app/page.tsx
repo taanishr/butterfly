@@ -844,6 +844,23 @@ A considerably longer line that wraps inside the panel`;
     //       </div>
     //     </div>
     // )
+
+    // const intrinsicText = "short extraordinarilylongword short words that should wrap";
+
+    // return (
+    //   <div className="w-full h-full bg-[rgb(94%_94%_96%)] p-[32px]">
+    //     <div className="w-min h-auto bg-[rgb(20%_70%_90%)] p-[8px]">
+    //       <span className="font-[Arial] text-[18pt] text-[rgb(5%_5%_5%)]">
+    //         {intrinsicText}
+    //       </span>
+    //     </div>
+    //     <div className="w-max h-auto bg-[rgb(95%_55%_25%)] p-[8px] mt-[24px]">
+    //       <span className="font-[Arial] text-[18pt] text-[rgb(5%_5%_5%)]">
+    //         {intrinsicText}
+    //       </span>
+    //     </div>
+    //   </div>
+    // );
 }
 /*
     final constraints:
