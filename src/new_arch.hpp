@@ -587,6 +587,7 @@ namespace layout {
         simd_float2 currentCursor;
         const Constraints& constraints;
         const LayoutInput& layoutInput;
+        const SizeResult& sizeResult;
         const ResolvedMargins& margins;
     };
 

@@ -97,7 +97,10 @@ namespace layout {
                             startingX += ctx.margins.left;
                         } else {
                             if (!ctx.constraints.availableWidth.isAuto()) {
-                                startingX = ctx.constraints.origin.x + ctx.constraints.availableWidth.value - ctx.layoutInput.width.value_or(ctx.constraints.availableWidth.value) - ctx.margins.right;
+                                float width = std::holds_alternative<float>(ctx.sizeResult.outerSize.width)
+                                    ? std::get<float>(ctx.sizeResult.outerSize.width)
+                                    : ctx.constraints.availableWidth.value;
+                                startingX = ctx.constraints.origin.x + ctx.constraints.availableWidth.value - width - ctx.margins.right;
                             }
                         }
 
@@ -347,6 +350,7 @@ namespace layout {
             .currentCursor = currentCursor,
             .constraints = constraints,
             .layoutInput = layoutInput,
+            .sizeResult = sizeResult,
             .margins = margins
         };
 
@@ -424,6 +428,7 @@ namespace layout {
             .currentCursor = currentCursor,
             .constraints = constraints,
             .layoutInput = layoutInput,
+            .sizeResult = sizeResult,
             .margins = margins
         };
         simd_float2 startingPos = resolvePosition(pctx);
@@ -523,6 +528,7 @@ namespace layout {
             .currentCursor = currentCursor,
             .constraints = constraints,
             .layoutInput = layoutInput,
+            .sizeResult = sizeResult,
             .margins = margins
         };
 
@@ -672,6 +678,7 @@ namespace layout {
             .currentCursor = currentCursor,
             .constraints = constraints,
             .layoutInput = layoutInput,
+            .sizeResult = sizeResult,
             .margins = margins
         };
 
