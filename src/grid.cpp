@@ -12,7 +12,7 @@ namespace layout {
             bool spansFractionTrack = false;
             for (size_t i = start; i < end; ++i) {
                 covered += fixedTracks[i] ? fixedSizes[i] : contributions[i];
-                spansFractionTrack = spansFractionTrack || definitions[i].isFr();
+                spansFractionTrack = spansFractionTrack || definitions[i].isFr(); // why isFr()?
             }
 
             float extra = contribution - covered;
@@ -22,7 +22,7 @@ namespace layout {
             float totalWeight = 0.0f;
             size_t eligibleTracks = 0;
             for (size_t i = start; i < end; ++i) {
-                if (fixedTracks[i] || (spansFractionTrack && !definitions[i].isFr()))
+                if (fixedTracks[i] || (spansFractionTrack && !definitions[i].isFr())) // again, why isFr()??? tf lol
                     continue;
                 totalWeight += spansFractionTrack ? definitions[i].value : 1.0f;
                 eligibleTracks++;
@@ -31,7 +31,7 @@ namespace layout {
                 return;
 
             for (size_t i = start; i < end; ++i) {
-                if (fixedTracks[i] || (spansFractionTrack && !definitions[i].isFr()))
+                if (fixedTracks[i] || (spansFractionTrack && !definitions[i].isFr())) // sigh, more fr
                     continue;
                 float weight = spansFractionTrack && totalWeight > 0.0f ? definitions[i].value / totalWeight : 1.0f / static_cast<float>(eligibleTracks);
                 contributions[i] += extra * weight;
@@ -84,11 +84,14 @@ namespace layout {
     }
 
     bool Grid::regionFree(int row, int col, int spanRows, int spanCols) const {
-        for (int r = row; r < row + spanRows; ++r)
-            for (int c = col; c < col + spanCols; ++c)
-                if (occupied[r][c]) return false;
-
-        
+        for (int r = row; r < row + spanRows; ++r) {
+            for (int c = col; c < col + spanCols; ++c) {
+                if (occupied[r][c]) {
+                    return false;
+                }
+            }
+        }
+    
         return true;
     }
 
@@ -100,8 +103,9 @@ namespace layout {
             }
         } else {
             while (numCols < needed) {
-                for (auto& row : occupied)
+                for (auto& row : occupied) {
                     row.push_back(0);
+                }
                 numCols++;
             }
         }
@@ -160,16 +164,19 @@ namespace layout {
         for (auto& item : items) {
             auto& placement = item.placement;
             if (!placement.colNeedsResolution() && !placement.rowNeedsResolution()) {
-                for (int r = *placement.rowStart; r < *placement.rowEnd; ++r)
-                    for (int c = *placement.colStart; c < *placement.colEnd; ++c)
+                for (int r = *placement.rowStart; r < *placement.rowEnd; ++r) {
+                    for (int c = *placement.colStart; c < *placement.colEnd; ++c) {
                         grid.mark(r, c);
+                    }
+                }
             }
         }
 
         // place items with unresolved placements
         for (auto& item : items) {
             auto& placement = item.placement;
-            if (!placement.colNeedsResolution() && !placement.rowNeedsResolution()) continue;
+            if (!placement.colNeedsResolution() && !placement.rowNeedsResolution()) 
+                continue;
 
             int spanCols = placement.colNeedsResolution() ? 1 : (*placement.colEnd - *placement.colStart);
             int spanRows = placement.rowNeedsResolution() ? 1 : (*placement.rowEnd - *placement.rowStart);
@@ -180,6 +187,7 @@ namespace layout {
                 placement.colStart = col;
                 placement.colEnd = col + spanCols;
             }
+
             if (placement.rowNeedsResolution()) {
                 placement.rowStart = row;
                 placement.rowEnd = row + spanRows;
@@ -198,6 +206,7 @@ namespace layout {
         const float* resolvedAvailable = std::get_if<float>(&available);
         float usable = resolvedAvailable ? std::max(0.0f, *resolvedAvailable - totalGap) : 0.0f;
         Size basis = resolvedAvailable ? Size::px(*resolvedAvailable) : Size::autoSize();
+
         std::vector<float> fixedSizes(n, 0.0f);
         std::vector<bool> fixedTracks(n, false);
         std::vector<float> minimums(n, 0.0f);
@@ -273,6 +282,7 @@ namespace layout {
         float nonFractionTotal = 0.0f;
         float fractionTotal = 0.0f;
         for (size_t i = 0; i < n; ++i) {
+            // why the fuck does this exist; why are we siwtching between 12 units
             if (fixedTracks[i]) {
                 sizes[i] = fixedSizes[i];
             } else if (defs[i].unit == style::Unit::MinContent) {
@@ -281,7 +291,9 @@ namespace layout {
                 sizes[i] = maxContents[i];
             } else if (defs[i].unit == style::Unit::FitContent) {
                 IntrinsicSizes contributions{.minimum = minContents[i], .maximum = maxContents[i]};
-                sizes[i] = resolveIntrinsicSize(defs[i], contributions, basis);
+
+                // what the fuck is... bro what am i reading. idek how to repalce htis
+                // sizes[i] = resolveIntrinsicSize(defs[i], contributions, basis);
             } else if (defs[i].isFr() && resolvedAvailable) {
                 sizes[i] = minimums[i];
                 fractionTotal += defs[i].value;
@@ -482,11 +494,25 @@ namespace layout {
             auto selfJustify = childAsPtr->getJustifySelf();
             if (selfJustify != JustifySelf::Auto) {
                 switch (selfJustify) {
-                    case JustifySelf::Stretch: effectiveJustify = JustifyItems::Stretch; break;
-                    case JustifySelf::Start:   effectiveJustify = JustifyItems::Start; break;
-                    case JustifySelf::End:     effectiveJustify = JustifyItems::End; break;
-                    case JustifySelf::Center:  effectiveJustify = JustifyItems::Center; break;
-                    default: break;
+                    case JustifySelf::Stretch: {
+                        effectiveJustify = JustifyItems::Stretch; 
+                        break;
+                    }
+                    case JustifySelf::Start: {
+                        effectiveJustify = JustifyItems::Start; 
+                        break;
+                    }
+                    case JustifySelf::End: {
+                        effectiveJustify = JustifyItems::End; 
+                        break;
+                    }
+                    case JustifySelf::Center:  {
+                        effectiveJustify = JustifyItems::Center; 
+                        break;
+                    }
+                    default: {
+                        break;
+                    }
                 }
             }
 
@@ -589,15 +615,25 @@ namespace layout {
             auto selfAlign = childAsPtr->getAlignSelf();
             if (selfAlign != AlignSelf::Auto) {
                 switch (selfAlign) {
-                    case AlignSelf::Stretch:
-                        effectiveAlign = AlignItems::Stretch; break;
-                    case AlignSelf::FlexStart:
-                        effectiveAlign = AlignItems::FlexStart; break;
-                    case AlignSelf::FlexEnd:   
-                        effectiveAlign = AlignItems::FlexEnd; break;
-                    case AlignSelf::Center:    
-                        effectiveAlign = AlignItems::Center; break;
-                    default: break;
+                    case AlignSelf::Stretch: {
+                        effectiveAlign = AlignItems::Stretch; 
+                        break;
+                    }
+                    case AlignSelf::FlexStart: {
+                        effectiveAlign = AlignItems::FlexStart; 
+                        break;
+                    }
+                    case AlignSelf::FlexEnd: {
+                        effectiveAlign = AlignItems::FlexEnd; 
+                        break;
+                    }
+                    case AlignSelf::Center: {
+                        effectiveAlign = AlignItems::Center; 
+                        break;
+                    }
+                    default: {
+                        break;
+                    }
                 }
             }
 
@@ -605,15 +641,25 @@ namespace layout {
             auto selfJustify = childAsPtr->getJustifySelf();
             if (selfJustify != JustifySelf::Auto) {
                 switch (selfJustify) {
-                    case JustifySelf::Stretch: 
-                        effectiveJustify = JustifyItems::Stretch; break;
-                    case JustifySelf::Start:   
-                        effectiveJustify = JustifyItems::Start; break;
-                    case JustifySelf::End:     
-                        effectiveJustify = JustifyItems::End; break;
-                    case JustifySelf::Center:  
-                        effectiveJustify = JustifyItems::Center; break;
-                    default: break;
+                    case JustifySelf::Stretch: {
+                        effectiveJustify = JustifyItems::Stretch; 
+                        break;
+                    }
+                    case JustifySelf::Start: {
+                        effectiveJustify = JustifyItems::Start; 
+                        break;
+                    }
+                    case JustifySelf::End: {
+                        effectiveJustify = JustifyItems::End; 
+                        break;
+                    }
+                    case JustifySelf::Center: {
+                        effectiveJustify = JustifyItems::Center; 
+                        break;
+                    }
+                    default: {
+                        break;
+                    }
                 }
             }
 
@@ -684,6 +730,7 @@ namespace layout {
             preparedChildConstraints.cursor.x += dx;
             preparedChildConstraints.cursor.y += dy;
 
+            // interesting? why not just pass... mutate?
             if (mutate) {
                 childOutput = tree.layoutRecursive(
                     childAsPtr, frameInfo, preparedChildConstraints,
