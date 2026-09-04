@@ -197,8 +197,6 @@ namespace tree {
         };
         hashOptionalSize(constraints.replacedAttributes.marginTop);
         hashOptionalSize(constraints.replacedAttributes.marginBottom);
-        hash_combine(hash, constraints.shrinkWidthToFit);
-        hash_combine(hash, constraints.shrinkHeightToFit);
         hash_combine(hash, constraints.widthResolution.has_value());
         if (constraints.widthResolution.has_value()) hash_combine(hash, static_cast<int>(*constraints.widthResolution));
         hash_combine(hash, constraints.heightResolution.has_value());
@@ -766,7 +764,7 @@ namespace tree {
                 .borderWidth = node->shared.borderWidth,
                 .margins = prelayout.resolvedMargins,
                 .aspectRatio = node->shared.aspectRatio,
-                .automaticWidth = constraints.shrinkWidthToFit ? AutomaticSizing::UseContent : AutomaticSizing::UseAvailable,
+                .automaticWidth = AutomaticSizing::UseAvailable,
                 .automaticHeight = AutomaticSizing::UseContent,
                 .automaticMinimumWidth = AutomaticMinimum::Zero,
                 .automaticMinimumHeight = AutomaticMinimum::Zero,

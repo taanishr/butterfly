@@ -508,9 +508,7 @@ namespace layout {
         std::optional<TextOverflow> textOverflow{};
 
         SizePair parentOverride;
-
-        bool shrinkWidthToFit{false};
-        bool shrinkHeightToFit{false};
+        
         std::optional<AxisResolution> widthResolution;
         std::optional<AxisResolution> heightResolution;
         std::optional<Axis> intrinsicSizesAxis;
