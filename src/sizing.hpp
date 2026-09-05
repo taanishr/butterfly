@@ -1,9 +1,10 @@
 #pragma once
 #include <expected>
 #include <optional>
+#include <variant>
 
 namespace style {
-    enum class SizeResolveFailure {
+    enum class SizeError {
         Auto,
         IndefiniteBasis,
         FractionRequiresContext,
@@ -48,31 +49,34 @@ namespace style {
 
         bool isAuto() const { return unit == Unit::Auto; }
         bool isFr() const { return unit == Unit::Fr; }
+        bool isMinContent() const { return unit == Unit::MinContent; }
+        bool isMaxContent() const { return unit == Unit::MaxContent; }
+        bool isFitContent() const { return unit == Unit::FitContent; }
         bool isContentDependent() const {
-            return unit == Unit::MinContent
-                || unit == Unit::MaxContent
-                || unit == Unit::FitContent;
+            return isMinContent() || isMaxContent() || isFitContent();
         }
+        
 
-        std::expected<float, SizeResolveFailure> resolve(const Size& basis) const {
+        // these two should probably die?
+        std::expected<float, SizeError> resolve(const Size& basis) const {
             switch (unit) {
                 case Unit::Px:
                     return value;
                 case Unit::Auto:
-                    return std::unexpected(SizeResolveFailure::Auto);
+                    return std::unexpected(SizeError::Auto);
                 case Unit::Pt:
                     return value;
                 case Unit::Fr:
-                    return std::unexpected(SizeResolveFailure::FractionRequiresContext);
+                    return std::unexpected(SizeError::FractionRequiresContext);
                 case Unit::Percent:
                     if (basis.unit == Unit::Px || basis.unit == Unit::Pt) {
                         return value * basis.value;
                     }
-                    return std::unexpected(SizeResolveFailure::IndefiniteBasis);
+                    return std::unexpected(SizeError::IndefiniteBasis);
                 case Unit::MinContent:
                 case Unit::MaxContent:
                 case Unit::FitContent:
-                    return std::unexpected(SizeResolveFailure::ContentDependent);
+                    return std::unexpected(SizeError::ContentDependent);
             }
         }
 
@@ -83,5 +87,19 @@ namespace style {
 
         private:
             constexpr Size(float v, Unit u) : value(v), unit(u) {}
+    };
+}
+
+using SizeState = std::variant<std::monostate, style::Size, float, style::SizeError>;
+
+struct SizePair {
+    SizeState width;
+    SizeState height;
+};
+
+namespace layout {
+    struct IntrinsicSizes {
+        float minimum{};
+        float maximum{};
     };
 }

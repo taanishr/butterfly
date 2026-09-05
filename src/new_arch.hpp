@@ -19,10 +19,12 @@
 #include <span>
 #include <memory>
 #include <format>
+#include "margins.hpp"
 #include "AppKit_Extensions.hpp"
 #include <any>
 #include <unordered_map>
 #include <string>
+#include "new_sizing.hpp"
 #include <utility>
 #include <vector>
 
@@ -30,21 +32,16 @@ class Renderer;
 
 namespace layout {
 
-
-    struct ResolvedMargins {
-        float top, right, bottom, left;
-    };
-
     
     using FragmentID = uint64_t;
 
     struct Measured {
         FragmentID id;
-        std::expected<float, style::SizeResolveFailure> explicitWidth{
-            std::unexpected(style::SizeResolveFailure::Auto)
+        std::expected<float, style::SizeError> explicitWidth{
+            std::unexpected(style::SizeError::Auto)
         };
-        std::expected<float, style::SizeResolveFailure> explicitHeight{
-            std::unexpected(style::SizeResolveFailure::Auto)
+        std::expected<float, style::SizeError> explicitHeight{
+            std::unexpected(style::SizeError::Auto)
         };
     };
 
@@ -84,20 +81,6 @@ namespace layout {
         size_t start{};
         size_t count{};
     };
-
-    struct IntrinsicSizes {
-        style::Size minContent;
-        style::Size maxContent;
-    };
-
-    inline float resolveIntrinsicSize(const style::Size& request, const IntrinsicSizes& intrinsicSizes, style::Size availableSize) {
-        float minContent = intrinsicSizes.minContent.resolveOr(style::Size::autoSize());
-        float maxContent = intrinsicSizes.maxContent.resolveOr(style::Size::autoSize());
-        if (request.unit == style::Unit::MinContent) return minContent;
-        if (request.unit == style::Unit::MaxContent) return maxContent;
-        float stretch = availableSize.resolve(style::Size::autoSize()).value_or(maxContent);
-        return std::min(maxContent, std::max(minContent, stretch));
-    }
 
     struct InlineFormattingContext {
         std::vector<LineFragment> fragments;
@@ -368,7 +351,7 @@ namespace style {
         }
 
         static TextOverflow custom(std::string ending) {
-            return {.mode = Mode::Custom, .ending = std::move(ending)};
+            return {.mode = Mode::Custom, .ending = ending};
         }
 
         bool drawsEnding() const {
@@ -489,10 +472,8 @@ namespace layout {
     };
 
     enum class AxisResolution {
-        Final,
         MinContent,
-        MaxContent,
-        Deferred
+        MaxContent
     };
 
     struct Constraints {
@@ -517,10 +498,10 @@ namespace layout {
         std::vector<ClipUniform> clipUniforms {};
         std::optional<TextOverflow> textOverflow{};
 
-        bool shrinkWidthToFit{false};
-        bool shrinkHeightToFit{false};
-        AxisResolution widthResolution{AxisResolution::Final};
-        AxisResolution heightResolution{AxisResolution::Final};
+        SizePair parentOverride;
+
+        std::optional<AxisResolution> widthResolution;
+        std::optional<AxisResolution> heightResolution;
         std::optional<Axis> intrinsicSizesAxis;
     };
 
@@ -528,11 +509,11 @@ namespace layout {
         Position position;
         Display display;
 
-        std::expected<float, style::SizeResolveFailure> width{
-            std::unexpected(style::SizeResolveFailure::Auto)
+        std::expected<float, style::SizeError> width{
+            std::unexpected(style::SizeError::Auto)
         };
-        std::expected<float, style::SizeResolveFailure> height{
-            std::unexpected(style::SizeResolveFailure::Auto)
+        std::expected<float, style::SizeError> height{
+            std::unexpected(style::SizeError::Auto)
         };
         Size minWidth{Size::autoSize()};
         Size minHeight{Size::autoSize()};
@@ -595,24 +576,25 @@ namespace layout {
         simd_float2 currentCursor;
         const Constraints& constraints;
         const LayoutInput& layoutInput;
+        const SizeResult& sizeResult;
         const ResolvedMargins& margins;
     };
 
 
     struct ResolvedSize {
-        std::expected<float, style::SizeResolveFailure> width{
-            std::unexpected(style::SizeResolveFailure::Auto)
+        std::expected<float, style::SizeError> width{
+            std::unexpected(style::SizeError::Auto)
         };
-        std::expected<float, style::SizeResolveFailure> height{
-            std::unexpected(style::SizeResolveFailure::Auto)
+        std::expected<float, style::SizeError> height{
+            std::unexpected(style::SizeError::Auto)
         };
     };
     
     simd_float2 resolvePosition(const PositionResolutionContext& ctx);
     ResolvedSize resolveSize(const SizeResolutionContext& sizeContext);
     void transferAspectRatio(
-        std::expected<float, style::SizeResolveFailure>& width,
-        std::expected<float, style::SizeResolveFailure>& height,
+        std::expected<float, style::SizeError>& width,
+        std::expected<float, style::SizeError>& height,
         float ratio
     );
 
@@ -645,18 +627,20 @@ namespace layout {
         float width, height;
     };
 
-    struct LayoutResult {
+    struct LayoutState {
+        // atom geometry
         std::vector<simd_float2> atomOffsets;
         std::vector<simd_float2> localAtomOffsets;
         std::vector<simd_float2> drawableAtomOffsets;
+
+        // inline results
         InlineFormattingInput inlineFormatting;
+        float prevInlineHeight{}; 
 
-        ResolvedSize resolvedSize;
+        ResolvedSize resolvedSize; // legacy field
+
         LayoutBox computedBox;
-        LayoutBox localComputedBox;
-
-        float consumedHeight; // how much height consumed
-        float prevInlineHeight{};
+        LayoutBox localComputedBox; // fine
 
         Constraints childConstraints; // child constraints
 
@@ -664,17 +648,13 @@ namespace layout {
         bool outOfFlow; // don't change siblings
         EdgeIntent edgeIntent;
 
-        struct {
-            float top{}, right{}, bottom{}, left{};
-        } resolvedPadding;
-
         DeferredPositionInfo deferredPosition;
         std::vector<ClipUniform> clipUniforms {};
     };
 
-    struct LayoutOutput {
-        Measured measured;
-        LayoutResult layout;
+    struct LayoutResult {
+        LayoutState layout;
+        SizeResult sizeResult;
         std::optional<IntrinsicSizes> intrinsicSizes;
     };
 
@@ -688,20 +668,20 @@ namespace layout {
         );
 
         // relative, block/inline
-        static LayoutResult layoutBlockNormalFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized);
-        static LayoutResult layoutInlineNormalFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized);
-        static LayoutResult resolveNormalFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized);
+        static LayoutState layoutBlockNormalFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
+        static LayoutState layoutInlineNormalFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
+        static LayoutState resolveNormalFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
 
         // fixed and absolute, block/inline
-        static LayoutResult layoutBlockOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized);
-        static LayoutResult layoutInlineOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized);
-        static LayoutResult resolveOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized);
+        static LayoutState layoutBlockOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
+        static LayoutState layoutInlineOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
+        static LayoutState resolveOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
 
         // flex
-        static LayoutResult layoutFlex(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized);
+        static LayoutState layoutFlex(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized);
 
 
-        static LayoutResult resolve(Constraints& constraints, LayoutInput& layoutInput, Atomized atomized);
+        static LayoutState resolve(Constraints& constraints, LayoutInput& layoutInput, Atomized atomized, const SizeResult& sizeResult);
     };
 }
 

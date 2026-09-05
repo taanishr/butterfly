@@ -1,7 +1,9 @@
 #pragma once
 
 #include "element.hpp"
+#include "new_sizing.hpp"
 #include <optional>
+#include <unordered_map>
 #include <vector>
 
 namespace tree {
@@ -13,7 +15,6 @@ namespace layout {
     using style::JustifyItems;
     using style::JustifySelf;
     using style::Size;
-    using style::SizeResolveFailure;
     using tree::RenderTree;
     using tree::TreeNode;
 
@@ -90,16 +91,15 @@ namespace layout {
         // helpers
         void resolveStructure(size_t templateRows, size_t templateCols);
         std::vector<Track> resolveTracks(
-            std::vector<Size>& templateTracks,
-            float available,
+            std::vector<SizeState>& templateTracks, // why the fuck is this a size
+            const SizeState& available,
             float gap,
             bool isCol,
-            bool axisDefinite,
             IntrinsicSizes* intrinsicSizes = nullptr
         );
 
-        void resolveColumns(size_t numRows, size_t numCols, const std::vector<Size>& templateCols, float availableWidth, float colGap, bool widthDefinite);
-        void resolveRows(const std::vector<Size>& templateRows, float availableHeight, float rowGap, bool heightDefinite);
+        void resolveColumns(size_t numRows, size_t numCols, const std::vector<Size>& templateCols, const SizeState& availableWidth, float colGap);
+        void resolveRows(const std::vector<Size>& templateRows, const SizeState& availableHeight, float rowGap);
     };
 
     struct GridResolver {
@@ -111,12 +111,9 @@ namespace layout {
         AlignItems        alignItems;
         JustifyItems      justifyItems;
         const FrameInfo&  frameInfo;
-        Measured          measured;
+        const SizePair&   availableSize;
         bool              mutate;
-        std::optional<IntrinsicSizes> intrinsicSizes;
-        Size              childAvailableWidth;
-        Size              parentAvailableWidth;
-        Size              parentAvailableHeight;
+        std::unordered_map<size_t, SizeResult>& sizeCache;
 
         float minX;
         float minY;
@@ -132,11 +129,11 @@ namespace layout {
                      const Constraints& parentConstraints,
                      const Constraints& childConstraints,
                      const FrameInfo& frameInfo,
-                     Measured measured, bool mutate,
-                     Size parentAvailableWidth, Size parentAvailableHeight,
+                     const SizePair& availableSize, bool mutate,
+                     std::unordered_map<size_t, SizeResult>& sizeCache,
                      float minX, float minY, float maxX, float maxY);
 
-        Constraints prepareChildConstraints(TreeNode* child);
+        Constraints prepareChildConstraints();
 
         void phaseB();
         Bounds phaseC();
