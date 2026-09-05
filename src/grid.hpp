@@ -91,7 +91,7 @@ namespace layout {
         // helpers
         void resolveStructure(size_t templateRows, size_t templateCols);
         std::vector<Track> resolveTracks(
-            std::vector<Size>& templateTracks, // why the fuck is this a size
+            std::vector<SizeState>& templateTracks, // why the fuck is this a size
             const SizeState& available,
             float gap,
             bool isCol,

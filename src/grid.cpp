@@ -1,44 +1,16 @@
 #include "grid.hpp"
+#include "new_sizing.hpp"
 #include "overloaded.hpp"
 #include "render_tree.hpp"
+#include "sizing.hpp"
 #include <algorithm>
+#include <cstdint>
+#include <limits>
 #include <optional>
 #include <variant>
+#include <set>
 
 namespace layout {
-    namespace {
-        void distributeSpanningContribution(std::vector<float>& contributions, const std::vector<float>& fixedSizes, const std::vector<bool>& fixedTracks, const std::vector<Size>& definitions, size_t start, size_t end, float gap, float contribution) {
-            float covered = gap * static_cast<float>(end - start - 1);
-            bool spansFractionTrack = false;
-            for (size_t i = start; i < end; ++i) {
-                covered += fixedTracks[i] ? fixedSizes[i] : contributions[i];
-                spansFractionTrack = spansFractionTrack || definitions[i].isFr(); // why isFr()?
-            }
-
-            float extra = contribution - covered;
-            if (extra <= 0.0f)
-                return;
-
-            float totalWeight = 0.0f;
-            size_t eligibleTracks = 0;
-            for (size_t i = start; i < end; ++i) {
-                if (fixedTracks[i] || (spansFractionTrack && !definitions[i].isFr())) // again, why isFr()??? tf lol
-                    continue;
-                totalWeight += spansFractionTrack ? definitions[i].value : 1.0f;
-                eligibleTracks++;
-            }
-            if (eligibleTracks == 0)
-                return;
-
-            for (size_t i = start; i < end; ++i) {
-                if (fixedTracks[i] || (spansFractionTrack && !definitions[i].isFr())) // sigh, more fr
-                    continue;
-                float weight = spansFractionTrack && totalWeight > 0.0f ? definitions[i].value / totalWeight : 1.0f / static_cast<float>(eligibleTracks);
-                contributions[i] += extra * weight;
-            }
-        }
-    }
-
     void GridLayout::addChild(size_t childIndex, TreeNode* node, GridItemContributions widthContributions) {
         auto gridPlacement = node->getGridPlacement();
 
@@ -79,10 +51,12 @@ namespace layout {
         majorAxis{major}
     {}
 
+    // grid search funcs
     void Grid::mark(int row, int col) {
         occupied[row][col] = 1;
     }
 
+    // there's definitely a more clever algo for this too lol
     bool Grid::regionFree(int row, int col, int spanRows, int spanCols) const {
         for (int r = row; r < row + spanRows; ++r) {
             for (int c = col; c < col + spanCols; ++c) {
@@ -129,6 +103,7 @@ namespace layout {
         return (majorAxis == GridDirection::Row) ? numCols : numRows;
     }
 
+    // there's definitely a more clever algorithm for this lol
     std::pair<int, int> Grid::findSpace(int spanRows, int spanCols) {
         bool rowMajor = (majorAxis == GridDirection::Row);
         int spanMajor = rowMajor ? spanRows : spanCols;
@@ -157,6 +132,7 @@ namespace layout {
     }
 
 
+    // placement func 
     void GridLayout::resolveStructure(size_t numRows, size_t numCols) {
         grid = Grid{numRows, numCols};
 
@@ -199,164 +175,365 @@ namespace layout {
         }
     }
 
+    // sizing func
+    /*
+        complexity - the bitter lesson
+        central sizing evaluator: still responsible for sizing of boxes (individual elements)
+        however, track sizing exposes a fundementally different paradigm
 
-    std::vector<Track> GridLayout::resolveTracks(std::vector<Size>& defs, const SizeState& available, float gap, bool isCol, IntrinsicSizes* intrinsicSizes) {
-        size_t n = defs.size();
-        float totalGap = (n > 1) ? gap * (float)(n - 1) : 0;
-        const float* resolvedAvailable = std::get_if<float>(&available);
-        float usable = resolvedAvailable ? std::max(0.0f, *resolvedAvailable - totalGap) : 0.0f;
-        Size basis = resolvedAvailable ? Size::px(*resolvedAvailable) : Size::autoSize();
+        tracks are *unique to grid*, are outside of the box element model, and thus must be evaluated
+        outside of sizing
+        
+        this invariably involes calling some sizing functions, and evaluating frs, etc..., but is fine
 
-        std::vector<float> fixedSizes(n, 0.0f);
-        std::vector<bool> fixedTracks(n, false);
-        std::vector<float> minimums(n, 0.0f);
-        std::vector<float> minContents(n, 0.0f);
-        std::vector<float> maxContents(n, 0.0f);
+        tracks are outside the element sizing model; we will size tracks and then use their information
+        to determine how children size themselves
 
-        for (size_t i = 0; i < n; ++i) {
-            auto resolved = defs[i].resolve(basis);
-            if (resolved) {
-                fixedSizes[i] = *resolved;
-                fixedTracks[i] = true;
-            }
-        }
+        i.e. tracks become the sub-containers that children exist in
 
-        size_t maxSpan = 1;
-        for (const auto& item : items) {
-            const auto& placement = item.placement;
-            size_t start = isCol ? *placement.colStart : *placement.rowStart;
-            size_t end = isCol ? *placement.colEnd : *placement.rowEnd;
-            maxSpan = std::max(maxSpan, end - start);
-            if (end - start != 1)
-                continue;
+        we will commit to sizing tracks here but *NOT* elements
 
-            GridItemContributions contributions = isCol ? item.widthContributions : item.heightContributions;
-            minimums[start] = std::max(minimums[start], contributions.minimum);
-            minContents[start] = std::max(minContents[start], contributions.minContent);
-            maxContents[start] = std::max(maxContents[start], contributions.maxContent);
-        }
+        elements will size themselves according to the constraints set by their track
 
-        for (size_t span = 2; span <= maxSpan; ++span) {
-            for (const auto& item : items) {
-                const auto& placement = item.placement;
-                size_t start = isCol ? *placement.colStart : *placement.rowStart;
-                size_t end = isCol ? *placement.colEnd : *placement.rowEnd;
-                if (end - start != span)
-                    continue;
+        flex gets away without needing this bc it sizes the individual elements
 
-                GridItemContributions contributions = isCol ? item.widthContributions : item.heightContributions;
-                bool spansFractionTrack = std::any_of(defs.begin() + start, defs.begin() + end, [](const Size& definition) { return definition.isFr(); });
-                if (!spansFractionTrack)
-                    distributeSpanningContribution(minimums, fixedSizes, fixedTracks, defs, start, end, gap, contributions.minimum);
-                distributeSpanningContribution(minContents, fixedSizes, fixedTracks, defs, start, end, gap, contributions.minContent);
-                distributeSpanningContribution(maxContents, fixedSizes, fixedTracks, defs, start, end, gap, contributions.maxContent);
-            }
-        }
+        this is not sizing the elements, it sizing the tracks
+    */
 
-        float intrinsicMin = totalGap;
-        float intrinsicMax = totalGap;
-        for (size_t i = 0; i < n; ++i) {
-            if (fixedTracks[i]) {
-                intrinsicMin += fixedSizes[i];
-                intrinsicMax += fixedSizes[i];
-            } else if (defs[i].unit == style::Unit::MinContent) {
-                intrinsicMin += minContents[i];
-                intrinsicMax += minContents[i];
-            } else if (defs[i].unit == style::Unit::MaxContent) {
-                intrinsicMin += maxContents[i];
-                intrinsicMax += maxContents[i];
-            } else if (defs[i].isFr()) {
-                intrinsicMin += minContents[i];
-                intrinsicMax += maxContents[i];
-            } else {
-                intrinsicMin += minContents[i];
-                intrinsicMax += maxContents[i];
-            }
-        }
-        if (intrinsicSizes) {
-            intrinsicSizes->minimum = intrinsicMin;
-            intrinsicSizes->maximum = intrinsicMax;
-        }
-
-        std::vector<float> sizes(n, 0.0f);
-        float nonFractionTotal = 0.0f;
-        float fractionTotal = 0.0f;
-        for (size_t i = 0; i < n; ++i) {
-            // why the fuck does this exist; why are we siwtching between 12 units
-            if (fixedTracks[i]) {
-                sizes[i] = fixedSizes[i];
-            } else if (defs[i].unit == style::Unit::MinContent) {
-                sizes[i] = minContents[i];
-            } else if (defs[i].unit == style::Unit::MaxContent) {
-                sizes[i] = maxContents[i];
-            } else if (defs[i].unit == style::Unit::FitContent) {
-                IntrinsicSizes contributions{.minimum = minContents[i], .maximum = maxContents[i]};
-
-                // what the fuck is... bro what am i reading. idek how to repalce htis
-                // sizes[i] = resolveIntrinsicSize(defs[i], contributions, basis);
-            } else if (defs[i].isFr() && resolvedAvailable) {
-                sizes[i] = minimums[i];
-                fractionTotal += defs[i].value;
-                continue;
-            } else {
-                sizes[i] = maxContents[i];
-            }
-            nonFractionTotal += sizes[i];
-        }
-
-        if (fractionTotal > 0.0f) {
-            float remainingFractionSpace = std::max(0.0f, usable - nonFractionTotal);
-            std::vector<bool> frozen(n, false);
-            float unfrozenFractionTotal = fractionTotal;
-
-            while (unfrozenFractionTotal > 0.0f) {
-                float fractionSize = remainingFractionSpace / unfrozenFractionTotal;
-                bool frozeTrack = false;
-                for (size_t i = 0; i < n; ++i) {
-                    if (!defs[i].isFr() || frozen[i])
-                        continue;
-                    float share = defs[i].value * fractionSize;
-                    float minimum = minimums[i];
-                    if (share >= minimum)
-                        continue;
-                    sizes[i] = minimum;
-                    remainingFractionSpace = std::max(0.0f, remainingFractionSpace - sizes[i]);
-                    unfrozenFractionTotal -= defs[i].value;
-                    frozen[i] = true;
-                    frozeTrack = true;
+    auto generateSizeFunction(const SizeState& sizeState, const SizeState& available) -> SizeState {
+        return std::visit(Overloaded{
+            [](float resolved) -> SizeState {
+                return resolved;
+            },
+            [&](const Size& size) -> SizeState {
+                // valid sizing function types
+                if (size.isFr() || size.isAuto() || size.isContentDependent()) {
+                    return size;
                 }
-                if (frozeTrack)
-                    continue;
-                for (size_t i = 0; i < n; ++i) {
-                    if (defs[i].isFr() && !frozen[i])
-                        sizes[i] = defs[i].value * fractionSize;
-                }
-                break;
+
+                // note: minmax + fit-content(val) not supported yet
+
+                return calculateSize(size, available);
+            },
+            [&](const auto& other) -> SizeState {
+                return calculateSize(other, available);
             }
+        }, sizeState);
+    };
+
+    auto GridLayout::resolveTracks(std::vector<SizeState>& sizingFunctionReqs, const SizeState& available, float gap, bool isCol, IntrinsicSizes* intrinsicSizes) -> std::vector<Track> {
+        /*
+            this method sizes all tracks along a certain axis
+            note: the track is the abstraction for a row/column, 
+            in case that axis wording was confusing
+        */
+        
+
+        // the sizing algorithm will utilize context from the grid reoslver
+        // plus previously resolved sizes to determine how to size things
+
+        // i think available should change to become the container size result?
+        // thus we get available + the container's automatic min/max, which is useful for enabling
+        // limited min/max content
+
+        // phase 1: determine sizing functions
+        auto numTracks = sizingFunctionReqs.size();
+        
+        std::vector<SizeState> minSizingFunctions {};
+        std::vector<SizeState> maxSizingFunctions {};
+
+        for (auto& sizingFunctionReq : sizingFunctionReqs) {
+            auto sizingFunction = generateSizeFunction(sizingFunctionReq, available);
+            
+            std::visit(Overloaded{
+                [&](float resolved){
+                    minSizingFunctions.push_back(resolved);
+                    maxSizingFunctions.push_back(resolved);
+                },
+                [&](Size& size){
+                    if (size.isAuto() || size.isContentDependent()) {
+                        minSizingFunctions.push_back(size);
+                        maxSizingFunctions.push_back(size);
+                    }else if (size.isFr()) {
+                        minSizingFunctions.push_back(Size::autoSize());
+                        maxSizingFunctions.push_back(size);
+                    }else {
+                        // unrepresentible case? shore this up
+                        // sensible default preferred over error
+                        // maybe auto? what is the grid default behavior?
+                        // what if the track sizing needed more info? is that plausible 
+                        // (i.e. like available representation)
+                    }   
+                },
+                [](auto&) {
+                    // unrepresentible case? shore this up
+                }
+            }, sizingFunction);
+        }
+       
+        // phase 2: initialize track state
+        // depends on the min sizing function + max sizing func
+        std::vector<float> baseSizes;
+
+        for (const auto& minSizingFunction : minSizingFunctions) {
+            std::visit(Overloaded{
+                [&](float resolved){
+                    baseSizes.push_back(resolved);
+                    baseSizes.push_back(resolved);
+                },
+                [&](Size& size){
+                    // default to 0 for intrinsic funcs
+                    if (size.isAuto() || size.isContentDependent()) {
+                        baseSizes.push_back(0.0f);
+                        baseSizes.push_back(0.0f);;
+                    }else if (size.isFr()) {
+                        // not in spec lol?
+                    }else {
+                        // unrepresentible case? shore this up
+                        // sensible default preferred over error
+                        // maybe auto? what is the grid default behavior?
+                        // what if the track sizing needed more info? is that plausible 
+                        // (i.e. like available representation)
+                    }   
+                },
+                [](auto&) {
+                    // unrepresentible case? shore this up
+                }
+            }, minSizingFunction);
         }
 
-        std::vector<Track> tracks;
-        float offset = 0;
-        for (size_t t = 0; t < n; ++t) {
-            tracks.push_back({offset, sizes[t]});
-            offset += sizes[t] + gap;
+        std::vector<float> growthLimits;
+        for (const auto& maxSizingFunction : maxSizingFunctions) {
+            std::visit(Overloaded{
+                [&](float resolved){
+                    growthLimits.push_back(resolved);
+                    growthLimits.push_back(resolved);
+                },
+                [&](Size& size){
+                    // i think all of these default to infinity? (intrinsicMin,Max,Fit,Auto + fr)
+                    growthLimits.push_back(std::numeric_limits<float>::infinity());
+                },
+                [](auto&) {
+                    // unrepresentible case? shore this up
+                }
+            }, maxSizingFunction);
+        }
+ 
+        // next: spec says "shim baseline items" - i dont think I care; I have no clue what this even means
+
+        /*
+            The Loop: the basic primitive of grid
+            
+            imagine this 2d grid
+            |||
+            v|v
+            |v|
+            |||
+            vvv
+
+            each | v denotes a spot on the grid
+            Items create a sequence of |'s ended with a v (| start/mid of a span, v is the ned)
+
+            we're going to loop over items and track their starting | and v (start and end)
+            we're going to check if that span fits our current sizing op
+            then we're process as necessary
+        */
+
+        // next: process items taking up 1 non-fr track
+        for (auto i = 0; i < this->items.size(); ++i) {
+            auto& item = items[i];
+
+            // y is this type optional; fix colstart/rowstart optionaltiy (llm's job)
+            uint32_t start = isCol ? *item.placement.colStart : *item.placement.rowStart; // hate this selection method
+            uint32_t end = isCol ? *item.placement.colEnd : *item.placement.rowEnd;
+            uint32_t span = end - start;
+
+            // skip; we're only process 1 span, non-fr tracks now
+            // here, start = end, so it doesn't matter what we index
+            if (span != 1) {
+                continue;
+            }
+
+            auto minSizingFunction = minSizingFunctions[start];
+
+            // i hope these are corrected in addChild to use the size result
+            auto minContent = isCol ? item.widthContributions.minContent : item.heightContributions.minContent;
+            auto maxContent = isCol ? item.widthContributions.maxContent : item.heightContributions.maxContent;
+
+            // we only adjust base size according to our intrinsic tracks
+            std::visit(Overloaded{
+                [&](Size& size){
+                    if (size.isMinContent()) {
+                        baseSizes[start] = std::max(baseSizes[start], minContent);          
+                    }else if (size.isMaxContent()) {
+                        baseSizes[start] = std::max(baseSizes[start], maxContent);
+                    }else if (size.isFitContent()) {
+                        // not fully supported yet?
+                    }else if (size.isAuto()) {
+                        // odd ball case
+                        // if grid container is min/max content:
+                        // use either:
+                        // std::max(baseSizes[start], minContent); (min)
+                        // or std::max(baseSizes[start], maxContent); (max)
+                        // clamped by max track sizing case. very very fucking weird
+
+                        // else, just use (only this case is supported rn)
+                        // std::max(baseSizes[start], minContent) (min)
+                        baseSizes[start] = std::max(baseSizes[start], minContent);
+                    }
+                },
+                [&](auto&) {}
+            }, minSizingFunction);
+
+            // ok; grid template columns DEFO should not be a size?
+            // actually it should be, but i dont think we have enough separation
+            // let me finish wiritng this algo, but we're basically redoing sizing
+            // which annoys me. hm
+
+
+            auto maxSizingFunction = maxSizingFunctions[start];
+
+            // we only adjust base size according to our intrinsic tracks
+            std::visit(Overloaded{
+                [&](Size& size){
+                    if (size.isMinContent()) {
+                        growthLimits[start] = std::max(growthLimits[start], minContent);          
+                    }else if (size.isMaxContent()) {
+                        growthLimits[start] = std::max(growthLimits[start], maxContent);
+                    }else if (size.isFitContent()) {
+                        // not yet impl yet
+                        // growthLimits[start] = std::max(baseSizes[start], maxContent);
+                        // clamp by fit content arg? what is the *fit_content* arg
+                    }
+                },
+                [&](auto&) {}
+            }, maxSizingFunction);
+
+
+            // correct growth limits in case they're less than start
+            growthLimits[start] = std::max(growthLimits[start], baseSizes[start]);
         }
 
-        return tracks;
+        // process items spamming at least 2 non-fr tracks in increasing order
+        // spec calls this step: "Increase sizes to accommodate spanning items crossing content-sized tracks"
+
+        /*
+            Note: For items with a specified minimum size of auto (the initial value), 
+            the minimum contribution is usually equivalent to the min-content contribution—​but 
+            can differ in some cases, see § 6.6 Automatic Minimum Size of Grid Items. 
+            Also, minimum contribution ≤ min-content contribution ≤ max-content contribution.
+        */
+
+        // then, lets acc do the loop thingy?
+        for (uint32_t targetSpan = 2; targetSpan < numTracks; ++targetSpan) {
+            float totalBaseSizeExtraSpace = 0.0f;
+            float totalGrowthLimitExtraSpace = 0.0f;
+            std::set<int> affectedTracks {};
+
+            // loop over items as we have it
+            // consider the singular track items
+            // extra space: sum of size contribution - track size
+            // track size will just be the base size
+            // but we will need to collect extra spaces for minimum, min-content, max content
+
+            // we will also need to do it for growth limits
+            // we will track extra space for max-content and min-content contributions - growth limit
+
+            // if the contaienr is under a min or max constraint,
+            // replace max-content/min-content with  limited max-content contributions.
+            // see above for that change
+
+            /*
+                "Mark any tracks whose growth limit changed from infinite to finite in this step as infinitely growable for the next step."
+                new vector emerges
+            */
+
+
+            for (auto i = 0; i < this->items.size(); ++i) { 
+                auto& item = items[i];
+
+                // why is this type optional; fix colstart/rowstart optionaltiy (llm's job)
+                uint32_t start = isCol ? *item.placement.colStart : *item.placement.rowStart; // hate this selection method
+                uint32_t end = isCol ? *item.placement.colEnd : *item.placement.rowEnd;
+                uint32_t span = end - start;
+
+                if (span != targetSpan) {
+                    continue;
+                }
+
+                // insert affected tracks
+                affectedTracks.insert_range(std::views::iota(start, end + 1));
+
+                // gather extra space contributions
+                auto minSizingFunction = minSizingFunctions[start];
+                auto maxSizingFunction = maxSizingFunctions[start];
+
+                // i hope these are corrected in addChild to use the size result
+                auto minContribution = isCol ? item.widthContributions.minimum : item.heightContributions.minimum;
+                auto minContent = isCol ? item.widthContributions.minContent : item.heightContributions.minContent;
+                auto maxContent = isCol ? item.widthContributions.maxContent : item.heightContributions.maxContent;
+
+                // base size extra space
+                // todo (requires new arg, probably a size result)
+                // adjust for being under min/max constraints
+                
+                // base size formula: std::max(0, contribution - sum of track sizes)
+                // i approximate this as std::max(baseSizeExtraSpace, contribution - sum of track sizes)
+                // bc it starts as 0.0f and folds nicely in parallel anyways
+
+                float spanBaseSize = std::ranges::fold_left(std::span(baseSizes).subspan(start, end), 0, std::plus{});
+                float baseSizeExtraSpace = 0.0f;
+                // 1. for intrinsic minimums
+                baseSizeExtraSpace = std::max(baseSizeExtraSpace, minContribution - spanBaseSize);
+
+                // 2. for content based minimums
+                baseSizeExtraSpace = std::max(baseSizeExtraSpace, minContent - spanBaseSize);
+
+                // 3. for max-content minimums
+                baseSizeExtraSpace = std::max(baseSizeExtraSpace, maxContent - spanBaseSize);
+
+                totalBaseSizeExtraSpace += baseSizeExtraSpace;
+
+                float spanGrowthLimitSpace = std::ranges::fold_left(std::span(growthLimits).subspan(start, end), 0, std::plus{});
+                float growthExtraSpace = 0.0f;
+                // 4. For intrinsic maximums: expand growth limits
+                growthExtraSpace = std::max(growthExtraSpace, minContribution - spanGrowthLimitSpace);
+
+                totalGrowthLimitExtraSpace += growthExtraSpace;
+                
+                // mark infinitely growable? I dont really understand their explanation as to *why*
+                
+            }
+
+            // distribute extra space to tracks?
+
+            for (auto& affectedTrack : affectedTracks) {
+                baseSizes[affectedTrack] += totalBaseSizeExtraSpace / affectedTracks.size();
+                growthLimits[affectedTrack] += totalGrowthLimitExtraSpace / affectedTracks.size();
+
+                // correct growth limits
+                growthLimits[affectedTrack] = std::max(growthLimits[affectedTrack], baseSizes[affectedTrack]);
+            }
+
+        }
+
+        // 4 is the previous step repeated for flexible tracks
+        
+        // at the end, just set all growth limits with infinite size to base size
     }
 
     void GridLayout::resolveColumns(size_t numRows, size_t numCols, const std::vector<Size>& templateCols, const SizeState& availableWidth, float colGap) {
         resolveStructure(numRows, numCols);
-        std::vector<Size> colDefs(grid.numCols, Size::autoSize());
+        std::vector<SizeState> colDefs(grid.numCols, Size::autoSize());
 
         for (int j = 0; j < templateCols.size(); ++j)
             colDefs[j] = templateCols[j];
 
-        colTracks = resolveTracks(colDefs, availableWidth, colGap, true, &columnIntrinsicSizes);
+        // colTracks = resolveTracks(colDefs, availableWidth, colGap, true, &columnIntrinsicSizes);
     }
 
     void GridLayout::resolveRows(const std::vector<Size>& templateRows, const SizeState& availableHeight, float rowGap) {
-        std::vector<Size> rowDefs(grid.numRows, Size::autoSize());
+        std::vector<SizeState> rowDefs(grid.numRows, Size::autoSize());
         for (int i = 0; i < templateRows.size(); ++i)
             rowDefs[i] = templateRows[i];
 
@@ -386,7 +563,9 @@ namespace layout {
         return preparedChildConstraints;
     }
 
+    // resolve cols fully
     void GridResolver::phaseB() {
+        // idt these should be sizes?
         auto& templateCols = node->getGridTemplateColumns();
         auto& templateRows = node->getGridTemplateRows();
 
@@ -476,6 +655,7 @@ namespace layout {
         gridLayout.resolveColumns(templateRows.size(), templateCols.size(), templateCols, availableSize.width, colGap);
     }
 
+    // resolve rows fully
     GridResolver::Bounds GridResolver::phaseC() {
         float rowGap = std::visit(Overloaded {
             [&](float height) { return node->getGridRowGap().resolve(Size::px(height)).value_or(0.0f); },
@@ -610,7 +790,7 @@ namespace layout {
             preparedChildConstraints.origin = {cellX, cellY};
             preparedChildConstraints.cursor = {cellX, cellY};
 
-            // resolve alignment
+            // wtf is this lol
             AlignItems effectiveAlign = alignItems;
             auto selfAlign = childAsPtr->getAlignSelf();
             if (selfAlign != AlignSelf::Auto) {

@@ -49,12 +49,15 @@ namespace style {
 
         bool isAuto() const { return unit == Unit::Auto; }
         bool isFr() const { return unit == Unit::Fr; }
+        bool isMinContent() const { return unit == Unit::MinContent; }
+        bool isMaxContent() const { return unit == Unit::MaxContent; }
+        bool isFitContent() const { return unit == Unit::FitContent; }
         bool isContentDependent() const {
-            return unit == Unit::MinContent
-                || unit == Unit::MaxContent
-                || unit == Unit::FitContent;
+            return isMinContent() || isMaxContent() || isFitContent();
         }
+        
 
+        // these two should probably die?
         std::expected<float, SizeError> resolve(const Size& basis) const {
             switch (unit) {
                 case Unit::Px:
