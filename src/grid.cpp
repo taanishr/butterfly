@@ -223,6 +223,7 @@ namespace layout {
         }, sizeState);
     };
 
+    // rename to sizeTracks
     auto GridLayout::resolveTracks(std::vector<SizeState>& sizingFunctionReqs, const SizeResult& containerSize, float gap, bool isCol, JustifyContent justifyContent, AlignContent alignContent, IntrinsicSizes* intrinsicSizes) -> std::vector<Track> {
         /*
             this method sizes all tracks along a certain axis
@@ -240,12 +241,17 @@ namespace layout {
 
         const auto& available = isCol ? containerSize.innerSize.width : containerSize.innerSize.height;
         bool containerHasMinContentConstraint = false;
+        bool containerHasMaxContentConstraint = false;
         if (std::holds_alternative<Size>(available)) {
             containerHasMinContentConstraint = std::get<Size>(available).isMinContent();
+            containerHasMaxContentConstraint = std::get<Size>(available).isMaxContent();
         }
 
         // phase 1: determine sizing functions
         auto numTracks = sizingFunctionReqs.size();
+
+        // gutters size as fixed tracks sitting between the tracks they separate
+        float totalGapSpace = numTracks > 0 ? gap * (numTracks - 1) : 0.0f;
         
         std::vector<SizeState> minSizingFunctions {};
         std::vector<SizeState> maxSizingFunctions {};
@@ -292,14 +298,14 @@ namespace layout {
                     // default to 0 for intrinsic funcs
                     if (size.isAuto() || size.isContentDependent()) {
                         baseSizes.push_back(0.0f);
-                    }else if (size.isFr()) {
-                        // not in spec lol?
                     }else {
                         // unrepresentible case? shore this up
                         // sensible default preferred over error
                         // maybe auto? what is the grid default behavior?
                         // what if the track sizing needed more info? is that plausible 
                         // (i.e. like available representation)
+
+                        // fr wasn't in spec, so I just deleted the case and moved it here
                     }   
                 },
                 [](auto&) {
@@ -363,6 +369,7 @@ namespace layout {
             auto minSizingFunction = minSizingFunctions[start];
 
             // i hope these are corrected in addChild to use the size result
+            auto minContribution = isCol ? item.widthContributions.minimum : item.heightContributions.minimum;
             auto minContent = isCol ? item.widthContributions.minContent : item.heightContributions.minContent;
             auto maxContent = isCol ? item.widthContributions.maxContent : item.heightContributions.maxContent;
 
@@ -382,18 +389,18 @@ namespace layout {
                         // std::max(baseSizes[start], minContent); (min)
                         // or std::max(baseSizes[start], maxContent); (max)
                         // clamped by max track sizing case. very very fucking weird
-                        if (containerHasMinContentConstraint) {
+                        if (containerHasMinContentConstraint || containerHasMaxContentConstraint) {
                             float limitedMinContent = minContent;
                             if (std::holds_alternative<float>(maxSizingFunctions[start])) {
                                 float fixedTrackMaximum = std::get<float>(maxSizingFunctions[start]);
                                 limitedMinContent = std::min(limitedMinContent, fixedTrackMaximum);
                             }
-                            limitedMinContent = std::max(limitedMinContent, item.widthContributions.minimum);
+                            limitedMinContent = std::max(limitedMinContent, minContribution);
                             baseSizes[start] = std::max(baseSizes[start], limitedMinContent);
                         }else {
                             // else, just use
                             // std::max(baseSizes[start], minContent) (min)
-                            baseSizes[start] = std::max(baseSizes[start], minContent);
+                            baseSizes[start] = std::max(baseSizes[start], minContribution);
                         }
                     }
                 },
@@ -417,7 +424,7 @@ namespace layout {
                         }else {
                             growthLimits[start] = std::max(growthLimits[start], minContent); 
                         }
-                    }else if (size.isMaxContent()) {
+                    }else if (size.isMaxContent() || size.isAuto()) {
                         if (growthLimits[start] == std::numeric_limits<float>::infinity()) {
                             growthLimits[start] = maxContent;
                         }else {
@@ -501,7 +508,7 @@ namespace layout {
                     }
 
                     // init affected tracks
-                    std::set<int> affectedTracks {};
+                    std::set<uint32_t> affectedTracks {};
                     
                     // gather extra space contributions
 
@@ -520,17 +527,16 @@ namespace layout {
 
                     // 12.5.1 step 1: subtract the affected size of *every* spanned track
                     // (not just the affected ones) from the item's contribution
-                    float spanBaseSize = std::ranges::fold_left(std::span(baseSizes).subspan(start, span), 0.0f, std::plus{});
+                    float spanBaseSize = std::ranges::fold_left(std::span(baseSizes).subspan(start, span), 0.0f, std::plus{}) + gap * (span - 1);
 
                     // "(For infinite growth limits, substitute the track's base size.)"
                     // without this the sum is infinite and every extra space floors to 0 forever,
                     // so the growth limit passes would never do anything
-                    float spanGrowthLimitSpace = 0.0f;
-                    for (auto spannedTrack : std::views::iota(start, end)) {
+
+                    float spanGrowthLimitSpace = gap * (span - 1);
+                    for (auto spannedTrack = start; spannedTrack < end; ++spannedTrack) {
                         auto growthLimit = growthLimits[spannedTrack];
-                        spanGrowthLimitSpace += growthLimit == std::numeric_limits<float>::infinity()
-                            ? baseSizes[spannedTrack]
-                            : growthLimit;
+                        spanGrowthLimitSpace += growthLimit == std::numeric_limits<float>::infinity() ? baseSizes[spannedTrack] : growthLimit;
                     }
 
                     float baseSizeExtraSpace = 0.0f;
@@ -546,8 +552,20 @@ namespace layout {
                     if (spansFlexibleTrack) {
                         continue;
                     }
-                    
-                    for (auto spannedTrack : std::views::iota(start, end )) {
+
+                    // the limit for a limited min-/max-content contribution is the sum of the fixed
+                    // max sizing functions of the spanned tracks, and only applies if it spans only such tracks
+                    bool spansOnlyFixedMaximums = true;
+                    float fixedTrackMaximumSum = 0.0f;
+                    for (auto spannedTrack = start; spannedTrack < end; ++spannedTrack) {
+                        if (std::holds_alternative<float>(maxSizingFunctions[spannedTrack])) {
+                            fixedTrackMaximumSum += std::get<float>(maxSizingFunctions[spannedTrack]);
+                        }else {
+                            spansOnlyFixedMaximums = false;
+                        }
+                    }
+
+                    for (auto spannedTrack = start; spannedTrack < end; ++spannedTrack) {
                         // only count tracks s.t. they're counted in pass?
                         // so maybe make this spannedTracks
                         // vs. affectedTracks
@@ -562,13 +580,12 @@ namespace layout {
                                 if (pass == intrinsicMinimums && (size.isAuto() || size.isContentDependent())) {
                                     // 1. for intrinsic minimums
                                     float intrinsicContribution = 0.0f;
-                                    if (containerHasMinContentConstraint) {
+                                    if (containerHasMinContentConstraint || containerHasMaxContentConstraint) {
                                         float limitedMinContent = minContent;
-                                        if (std::holds_alternative<float>(maxSizingFunctions[start])) {
-                                            float fixedTrackMaximum = std::get<float>(maxSizingFunctions[start]);
-                                            limitedMinContent = std::min(limitedMinContent, fixedTrackMaximum);
+                                        if (spansOnlyFixedMaximums) {
+                                            limitedMinContent = std::min(limitedMinContent, fixedTrackMaximumSum);
                                         }
-                                        limitedMinContent = std::max(limitedMinContent, item.widthContributions.minimum);
+                                        limitedMinContent = std::max(limitedMinContent, minContribution);
                                         intrinsicContribution = limitedMinContent;
                                     }else {
                                         intrinsicContribution = minContribution;
@@ -580,9 +597,17 @@ namespace layout {
                                     // 2. for content based minimums
                                     baseSizeExtraSpace = std::max(baseSizeExtraSpace, minContent - spanBaseSize);
                                     affectedTracks.insert(spannedTrack);
-                                }else if (pass == maxContentMinimums && size.isMaxContent()) {
+                                }else if (pass == maxContentMinimums && (size.isMaxContent() || (containerHasMaxContentConstraint && size.isAuto()))) {
                                     // 3. for max-content minimums
-                                    baseSizeExtraSpace = std::max(baseSizeExtraSpace, maxContent - spanBaseSize);
+                                    float maxContentContribution = maxContent;
+                                    if (containerHasMaxContentConstraint) {
+                                        if (spansOnlyFixedMaximums) {
+                                            maxContentContribution = std::min(maxContentContribution, fixedTrackMaximumSum);
+                                        }
+                                        maxContentContribution = std::max(maxContentContribution, minContribution);
+                                    }
+
+                                    baseSizeExtraSpace = std::max(baseSizeExtraSpace, maxContentContribution - spanBaseSize);
                                     affectedTracks.insert(spannedTrack);
                                 }
                             },
@@ -598,7 +623,7 @@ namespace layout {
                                 if (pass == intrinsicMaximums && (size.isAuto() || size.isContentDependent())) {
                                     growthExtraSpace = std::max(growthExtraSpace, minContent - spanGrowthLimitSpace);
                                     affectedTracks.insert(spannedTrack);
-                                }else if (pass == maxContentMaximums && (size.isMaxContent() || size.isFitContent())) {
+                                }else if (pass == maxContentMaximums && (size.isMaxContent() || size.isAuto() || size.isFitContent())) {
                                     growthExtraSpace = std::max(growthExtraSpace, maxContent - spanGrowthLimitSpace);
                                     affectedTracks.insert(spannedTrack);
                                 }
@@ -617,12 +642,9 @@ namespace layout {
                     std::vector<float> itemIncreases(span, 0.0f);
                     std::vector<bool> frozen(span, false);
 
-                    std::vector<int> nonAffectedTracks {};
-                    for (auto spannedTrack : std::views::iota(start, end)) {
-                        if (!affectedTracks.contains(spannedTrack)) {
-                            nonAffectedTracks.push_back(spannedTrack);
-                        }
-                    }
+                    std::vector<uint32_t> nonAffectedTracks = std::views::iota(start, end)
+                                        | std::views::filter([&](auto track) { return !affectedTracks.contains(track); })
+                                        | std::ranges::to<std::vector>();
 
                     if (pass == intrinsicMinimums || pass == contentBasedMinimums || pass == maxContentMinimums) {
                         float extraSpace = baseSizeExtraSpace;
@@ -696,7 +718,7 @@ namespace layout {
                         }
 
                         if (extraSpace > 0.0f) {
-                            std::vector<int> lastResortTracks {};
+                            std::vector<uint32_t> lastResortTracks {};
 
                             for (auto affectedTrack : affectedTracks) {
                                 auto maxSizingFunction = maxSizingFunctions[affectedTrack];
@@ -731,7 +753,7 @@ namespace layout {
                         }
 
                         // updated the planned increases
-                        for (auto spannedTrack : std::views::iota(start, end)) {
+                        for (auto spannedTrack = start; spannedTrack < end; ++spannedTrack) {
                             baseSizePlannedIncreases[spannedTrack] = std::max(baseSizePlannedIncreases[spannedTrack], itemIncreases[spannedTrack - start]);
                         }
                     }else {
@@ -812,7 +834,7 @@ namespace layout {
                         }
 
                         if (extraSpace > 0.0f) {
-                            std::vector<int> lastResortTracks {};
+                            std::vector<uint32_t> lastResortTracks {};
 
                             for (auto affectedTrack : affectedTracks) {
                                 auto maxSizingFunction = maxSizingFunctions[affectedTrack];
@@ -838,7 +860,7 @@ namespace layout {
                             }
                         }
 
-                        for (auto spannedTrack : std::views::iota(start, end)) {
+                        for (auto spannedTrack = start; spannedTrack < end; ++spannedTrack) {
                             growthLimitPlannedIncreases[spannedTrack] = std::max(growthLimitPlannedIncreases[spannedTrack], itemIncreases[spannedTrack - start]);
                         }
                     }
@@ -891,7 +913,7 @@ namespace layout {
                 uint32_t span = end - start;
 
                 // init affected tracks
-                std::set<int> affectedTracks {};
+                std::set<uint32_t> affectedTracks {};
 
                 // gather extra space contributions
 
@@ -908,12 +930,12 @@ namespace layout {
                 // i approximate this as std::max(baseSizeExtraSpace, contribution - sum of track sizes)
                 // bc it starts as 0.0f and folds nicely in parallel anyways
 
-                float spanBaseSize = std::ranges::fold_left(std::span(baseSizes).subspan(start, span), 0, std::plus{});
-                float spanGrowthLimitSpace = std::ranges::fold_left(std::span(growthLimits).subspan(start, span), 0, std::plus{});
+                float spanBaseSize = std::ranges::fold_left(std::span(baseSizes).subspan(start, span), 0.0f, std::plus{}) + gap * (span - 1);
+                float spanGrowthLimitSpace = std::ranges::fold_left(std::span(growthLimits).subspan(start, span), 0.0f, std::plus{}) + gap * (span - 1);
                 float baseSizeExtraSpace = 0.0f;
                 float growthExtraSpace = 0.0f;
 
-                for (auto spannedTrack : std::views::iota(start, end )) {
+                for (auto spannedTrack = start; spannedTrack < end; ++spannedTrack) {
                     // only count tracks s.t. they're counted in pass?
                     // so maybe make this spannedTracks
                     // vs. affectedTracks
@@ -930,34 +952,35 @@ namespace layout {
 
                     std::visit(Overloaded{
                         [&](Size& size){
-                            if (pass == intrinsicMinimums && size.isFr()) {
+                            if (pass == intrinsicMinimums && (size.isAuto() || size.isContentDependent())) {
                                 // 1. for intrinsic minimums
+                                // this item spans an fr track, so it can never span only fixed
+                                // maxima and the limited contribution cap never applies here
                                 float intrinsicContribution = 0.0f;
-                                if (containerHasMinContentConstraint) {
-                                    float limitedMinContent = minContent;
-                                    if (std::holds_alternative<float>(maxSizingFunctions[start])) {
-                                        float fixedTrackMaximum = std::get<float>(maxSizingFunctions[start]);
-                                        limitedMinContent = std::min(limitedMinContent, fixedTrackMaximum);
-                                    }
-                                    limitedMinContent = std::max(limitedMinContent, item.widthContributions.minimum);
-                                    intrinsicContribution = limitedMinContent;
+                                if (containerHasMinContentConstraint || containerHasMaxContentConstraint) {
+                                    intrinsicContribution = std::max(minContent, minContribution);
                                 }else {
                                     intrinsicContribution = minContribution;
                                 }
 
                                 baseSizeExtraSpace = std::max(baseSizeExtraSpace, intrinsicContribution - spanBaseSize);
-                            }else if(pass == contentBasedMinimums && size.isFr()) {
+                            }else if(pass == contentBasedMinimums && (size.isMinContent() || size.isMaxContent())) {
                                 // 2. for content based minimums
                                 baseSizeExtraSpace = std::max(baseSizeExtraSpace, minContent - spanBaseSize);
-                            }else if (pass == maxContentMinimums && size.isFr()) {
+                            }else if (pass == maxContentMinimums && (size.isMaxContent() || (containerHasMaxContentConstraint && size.isAuto()))) {
                                 // 3. for max-content minimums
-                                baseSizeExtraSpace = std::max(baseSizeExtraSpace, maxContent - spanBaseSize);
+                                float maxContentContribution = maxContent;
+                                if (containerHasMaxContentConstraint) {
+                                    maxContentContribution = std::max(maxContentContribution, minContribution);
+                                }
+
+                                baseSizeExtraSpace = std::max(baseSizeExtraSpace, maxContentContribution - spanBaseSize);
                             }
                         },
                         [&](auto&) {
                             // dont alter intrinsic growth of base sizes/growth limits
                         }
-                    }, maxSizingFunction);
+                    }, minSizingFunction);
 
                     std::visit(Overloaded{
                         [&](Size& size){
@@ -1092,7 +1115,7 @@ namespace layout {
                         }
                     }
 
-                    for (auto spannedTrack : std::views::iota(start, end)) {
+                    for (auto spannedTrack = start; spannedTrack < end; ++spannedTrack) {
                         growthLimitPlannedIncreases[spannedTrack] = std::max(growthLimitPlannedIncreases[spannedTrack], itemIncreases[spannedTrack - start]);
                     }
                 }
@@ -1136,7 +1159,7 @@ namespace layout {
         // phase 4/5 depend on free space calc
         auto freeSpace = std::visit(Overloaded{
             [&](float resolved) -> SizeState {
-                return std::max(0.0f, resolved - std::ranges::fold_left(baseSizes, 0.0f, std::plus{})); // also sub gaps
+                return std::max(0.0f, resolved - std::ranges::fold_left(baseSizes, 0.0f, std::plus{}) - totalGapSpace); // also sub gaps
             },
             [&](auto& other) -> SizeState {
                 return other;
@@ -1163,8 +1186,25 @@ namespace layout {
 
         std::vector<float> baseSizesBeforeMaximize = baseSizes;
 
-        if (std::holds_alternative<float>(freeSpace)) {
-            float resolvedFreeSpace = std::get<float>(freeSpace);
+        bool maximizeTracks = false;
+        float maximizeFreeSpace = 0.0f;
+
+        // spec says the free space is infinite here, but literal infinity poisons the loop below:
+        // baseSize + inf is inf, so overshoot is inf, and baseSize - overshoot is NaN.
+        // infinite free space just means every track ends at its growth limit, so the total
+        // headroom (finite, since growth limits were all resolved above) gets the same result
+        if (containerHasMaxContentConstraint) {
+            maximizeTracks = true;
+            for (auto i = 0; i < baseSizes.size(); ++i) {
+                maximizeFreeSpace += growthLimits[i] - baseSizes[i];
+            }
+        }else if (std::holds_alternative<float>(freeSpace)) {
+            maximizeTracks = true;
+            maximizeFreeSpace = std::get<float>(freeSpace);
+        }
+
+        if (maximizeTracks) {
+            float resolvedFreeSpace = maximizeFreeSpace;
             std::vector<bool> frozen(numTracks, false);
 
             while (resolvedFreeSpace > 0.0f) {
@@ -1203,12 +1243,12 @@ namespace layout {
         // maximum size redo (12.6)
         if (std::holds_alternative<float>(maximum)) {
             float resolvedMaximum = std::get<float>(maximum);
-            float gridSize = std::ranges::fold_left(baseSizes, 0.0f, std::plus{});
+            float gridSize = std::ranges::fold_left(baseSizes, 0.0f, std::plus{}) + totalGapSpace;
 
             if (gridSize > resolvedMaximum) {
                 baseSizes = baseSizesBeforeMaximize;
 
-                float redoFreeSpace = std::max(0.0f, resolvedMaximum - std::ranges::fold_left(baseSizes, 0.0f, std::plus{}));
+                float redoFreeSpace = std::max(0.0f, resolvedMaximum - std::ranges::fold_left(baseSizes, 0.0f, std::plus{}) - totalGapSpace);
                 std::vector<bool> frozen(numTracks, false);
 
                 while (redoFreeSpace > 0.0f) {
@@ -1248,7 +1288,7 @@ namespace layout {
         // update free space (base sizes changed)
         freeSpace = std::visit(Overloaded{
             [&](float resolved) -> SizeState {
-                return std::max(0.0f, resolved - std::ranges::fold_left(baseSizes, 0.0f, std::plus{})); // also sub gaps
+                return std::max(0.0f, resolved - std::ranges::fold_left(baseSizes, 0.0f, std::plus{}) - totalGapSpace); // also sub gaps
             },
             [&](auto& other) -> SizeState {
                 return other;
@@ -1262,10 +1302,10 @@ namespace layout {
             auto resolvedFreeSpace = std::get<float>(freeSpace);
             if (resolvedFreeSpace > 0.0f) {
                 auto spaceToFill = std::get<float>(available);
-                auto leftoverSpace = spaceToFill; // needs to include gap?
+                auto leftoverSpace = spaceToFill - totalGapSpace;
                 std::set<uint32_t> flexibleTracks {};
 
-                for (uint32_t track = 0; track < numTracks; ++track) {
+                for (auto track = 0; track < numTracks; ++track) {
                     auto maxSizingFunction = maxSizingFunctions[track];
                     std::visit(Overloaded{
                         [&](Size& size) {
@@ -1306,11 +1346,16 @@ namespace layout {
                         leftoverSpace -= baseSizes[track];
                     }
                 }
+
+                // every track went inflexible, so there is no fr size to apply
+                if (flexibleTracks.empty()) {
+                    flexFraction = 0.0f;
+                }
             }
         }else {
 
             if (!containerHasMinContentConstraint) {
-                for (uint32_t track = 0; track < numTracks; ++track) {
+                for (auto track = 0; track < numTracks; ++track) {
                     auto maxSizingFunction = maxSizingFunctions[track];
                     std::visit(Overloaded{
                         [&](Size& size) {
@@ -1326,7 +1371,7 @@ namespace layout {
                     uint32_t start = isCol ? *item.placement.colStart : *item.placement.rowStart;
                     uint32_t end = isCol ? *item.placement.colEnd : *item.placement.rowEnd;
                     auto spaceToFill = isCol ? item.widthContributions.maxContent : item.heightContributions.maxContent;
-                    auto leftoverSpace = spaceToFill; // needs to include gap
+                    auto leftoverSpace = spaceToFill - gap * (end - start - 1);
                     std::set<uint32_t> flexibleTracks {};
 
                     for (auto track = start; track < end; ++track) {
@@ -1375,8 +1420,8 @@ namespace layout {
         }
 
         // redo phase 5 if we miss/exceed the min/max
-        float hypotheticalGridSize = 0.0f;
-        for (uint32_t track = 0; track < numTracks; ++track) {
+        float hypotheticalGridSize = totalGapSpace;
+        for (auto track = 0; track < numTracks; ++track) {
             auto maxSizingFunction = maxSizingFunctions[track];
             std::visit(Overloaded{
                 [&](Size& size) {
@@ -1410,10 +1455,10 @@ namespace layout {
         }
 
         if (needsRedo) {
-            auto leftoverSpace = redoSpaceToFill;
+            auto leftoverSpace = redoSpaceToFill - totalGapSpace;
             std::set<uint32_t> flexibleTracks {};
 
-            for (uint32_t track = 0; track < numTracks; ++track) {
+            for (auto track = 0; track < numTracks; ++track) {
                 auto maxSizingFunction = maxSizingFunctions[track];
                 std::visit(Overloaded{
                     [&](Size& size) {
@@ -1454,9 +1499,14 @@ namespace layout {
                     leftoverSpace -= baseSizes[track];
                 }
             }
+
+            // every track went inflexible, so there is no fr size to apply
+            if (flexibleTracks.empty()) {
+                flexFraction = 0.0f;
+            }
         }
 
-        for (uint32_t track = 0; track < numTracks; ++track) {
+        for (auto track = 0; track < numTracks; ++track) {
             auto maxSizingFunction = maxSizingFunctions[track];
             std::visit(Overloaded{
                 [&](Size& size) {
@@ -1474,7 +1524,7 @@ namespace layout {
 
         freeSpace = std::visit(Overloaded{
             [&](float resolved) -> SizeState {
-                return std::max(0.0f, resolved - std::ranges::fold_left(baseSizes, 0.0f, std::plus{}));
+                return std::max(0.0f, resolved - std::ranges::fold_left(baseSizes, 0.0f, std::plus{}) - totalGapSpace);
             },
             [&](auto& other) -> SizeState {
                 return other;
@@ -1487,13 +1537,13 @@ namespace layout {
             stretchFreeSpace = std::get<float>(freeSpace);
         }else if (std::holds_alternative<float>(minimum)) {
             float resolvedMinimum = std::get<float>(minimum);
-            stretchFreeSpace = std::max(0.0f, resolvedMinimum - std::ranges::fold_left(baseSizes, 0.0f, std::plus{}));
+            stretchFreeSpace = std::max(0.0f, resolvedMinimum - std::ranges::fold_left(baseSizes, 0.0f, std::plus{}) - totalGapSpace);
         }
 
         if (stretchesAutoTracks && stretchFreeSpace > 0.0f) {
             std::set<uint32_t> autoTracks {};
 
-            for (uint32_t track = 0; track < numTracks; ++track) {
+            for (auto track = 0; track < numTracks; ++track) {
                 auto maxSizingFunction = maxSizingFunctions[track];
                 std::visit(Overloaded{
                     [&](Size& size) {
@@ -1513,6 +1563,24 @@ namespace layout {
                 }
             }
         }
+    }
+
+    auto positionTracks(SizeResult& containerSize, std::vector<float> trackSizes) -> std::vector<Track> {
+        auto innerSize = containerSize.innerSize;
+
+        // calculate remaining
+
+        // calculate base offset (switch based on mode; requires argument)
+
+        std::visit(Overloaded{
+            [](){
+                // if resolved
+                // walk the tracks
+            },
+            [](){
+                // else; zero offsets
+            }
+        }, innerSize)
     }
 
     void GridLayout::resolveColumns(size_t numRows, size_t numCols, const std::vector<Size>& templateCols, const SizeState& availableWidth, float colGap) {
