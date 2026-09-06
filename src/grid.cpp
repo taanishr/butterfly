@@ -4,8 +4,10 @@
 #include "render_tree.hpp"
 #include "sizing.hpp"
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <limits>
+#include <map>
 #include <optional>
 #include <variant>
 #include <set>
@@ -425,13 +427,14 @@ namespace layout {
         */
 
         // then, lets acc do the loop thingy?
-        for (uint32_t targetSpan = 2; targetSpan < numTracks; ++targetSpan) {
-            float totalBaseSizeExtraSpace = 0.0f;
-            float totalGrowthLimitExtraSpace = 0.0f;
-            std::set<int> affectedTracks {};
+        constexpr int intrinsicMinimums = 0;
+        constexpr int contentBasedMinimums = 1;
+        constexpr int maxContentMinimums = 2;
+        constexpr int intrinsicMaximums = 3;
+        constexpr std::array passes = {intrinsicMinimums, contentBasedMinimums, maxContentMinimums, intrinsicMaximums};
 
+        for (uint32_t targetSpan = 2; targetSpan < numTracks; ++targetSpan) {
             // loop over items as we have it
-            // consider the singular track items
             // extra space: sum of size contribution - track size
             // track size will just be the base size
             // but we will need to collect extra spaces for minimum, min-content, max content
@@ -443,13 +446,147 @@ namespace layout {
             // replace max-content/min-content with  limited max-content contributions.
             // see above for that change
 
+
+            // confusing wording: this is per item? not per track
+            
             /*
                 "Mark any tracks whose growth limit changed from infinite to finite in this step as infinitely growable for the next step."
                 new vector emerges
             */
+            for (auto pass : passes) {
+                std::map<int, float> baseSizePlannedIncreases {};
+                std::map<int, float> growthLimitPlannedIncreases {};
 
+                for (auto i = 0; i < this->items.size(); ++i) {
+                    auto& item = items[i];
 
-            for (auto i = 0; i < this->items.size(); ++i) { 
+                    // why is this type optional; fix colstart/rowstart optionaltiy (llm's job)
+                    uint32_t start = isCol ? *item.placement.colStart : *item.placement.rowStart; // hate this selection method
+                    uint32_t end = isCol ? *item.placement.colEnd : *item.placement.rowEnd;
+                    uint32_t span = end - start;
+
+                    if (span != targetSpan) {
+                        continue;
+                    }
+
+                    // init affected tracks
+                    std::set<int> affectedTracks {};
+                    
+                    // gather extra space contributions
+
+                    // i hope these are corrected in addChild to use the size result
+                    auto minContribution = isCol ? item.widthContributions.minimum : item.heightContributions.minimum;
+                    auto minContent = isCol ? item.widthContributions.minContent : item.heightContributions.minContent;
+                    auto maxContent = isCol ? item.widthContributions.maxContent : item.heightContributions.maxContent;
+
+                    // base size extra space
+                    // todo (requires new arg, probably a size result)
+                    // adjust for being under min/max constraints
+                
+                    // base size formula: std::max(0, contribution - sum of track sizes)
+                    // i approximate this as std::max(baseSizeExtraSpace, contribution - sum of track sizes)
+                    // bc it starts as 0.0f and folds nicely in parallel anyways
+
+                    float spanBaseSize = std::ranges::fold_left(std::span(baseSizes).subspan(start, end), 0, std::plus{});
+                    float spanGrowthLimitSpace = std::ranges::fold_left(std::span(growthLimits).subspan(start, end), 0, std::plus{});
+                    float baseSizeExtraSpace = 0.0f;
+                    float growthExtraSpace = 0.0f;
+
+                    bool spansFlexibleTrack = std::ranges::any_of(
+                                         std::span{maxSizingFunctions.begin() + start, end - start},
+                                          [](auto& f){ 
+                                                    return std::holds_alternative<Size>(f) && std::get<Size>(f).isFr();
+                                                }
+                                            );
+
+                    if (spansFlexibleTrack) {
+                        continue;
+                    }
+                    
+                    for (auto spannedTrack : std::views::iota(start, end )) {
+                        // only count tracks s.t. they're counted in pass?
+                        // so maybe make this spannedTracks
+                        // vs. affectedTracks
+                        // then add to the affectedTracks set in the visitor
+                        // and hten divide by that after
+
+                        auto minSizingFunction = minSizingFunctions[spannedTrack];
+                        auto maxSizingFunction = maxSizingFunctions[spannedTrack];
+                     
+                        std::visit(Overloaded{
+                            [&](Size& size){
+                                if (pass == intrinsicMinimums && (size.isAuto() || size.isContentDependent())) {
+                                    // 1. for intrinsic minimums
+                                    baseSizeExtraSpace = std::max(baseSizeExtraSpace, minContribution - spanBaseSize);
+                                    affectedTracks.insert(spannedTrack);
+                                }else if(pass == contentBasedMinimums && size.isContentDependent()) {
+                                    // 2. for content based minimums
+                                    baseSizeExtraSpace = std::max(baseSizeExtraSpace, minContribution - spanBaseSize);
+                                    affectedTracks.insert(spannedTrack);
+                                }else if (pass == maxContentMinimums && size.isMaxContent()) {
+                                    // 3. for max-content minimums
+                                    baseSizeExtraSpace = std::max(baseSizeExtraSpace, maxContent - spanBaseSize);
+                                    affectedTracks.insert(spannedTrack);
+                                }
+                            },
+                            [&](auto&) {
+                                // dont alter intrinsic growth of base sizes/growth limits
+                            }
+                        }, minSizingFunction);
+
+                        std::visit(Overloaded{
+                            [&](Size& size){
+                                // intrinsic; according to the grid algo, is:
+                                // isAuto() || isContentDependent()
+                                if (pass == intrinsicMaximums && (size.isAuto() || size.isContentDependent())) {
+                                    growthExtraSpace = std::max(growthExtraSpace, minContribution - spanGrowthLimitSpace);
+                                    affectedTracks.insert(spannedTrack);
+                                }
+                            },
+                            [&](auto&) {
+                                // dont alter intrinsic growth of base sizes/growth limits
+                            }
+                        }, maxSizingFunction);
+
+                        // baseSizePlannedIncreases[affectedTrack] = std::max(baseSizePlannedIncreases[affectedTrack], baseSizeExtraSpace / affectedTracks.size());
+                        // growthLimitPlannedIncreases[affectedTrack] = std::max(growthLimitPlannedIncreases[affectedTrack], growthExtraSpace / affectedTracks.size());
+                    }
+
+                    for (auto affectedTrack : affectedTracks) {
+                        baseSizePlannedIncreases[affectedTrack] = std::max(baseSizePlannedIncreases[affectedTrack], baseSizeExtraSpace / affectedTracks.size());
+                        growthLimitPlannedIncreases[affectedTrack] = std::max(growthLimitPlannedIncreases[affectedTrack], growthExtraSpace / affectedTracks.size());
+                    }
+                    
+                
+                    // mark infinitely growable? I dont really understand their explanation as to *why*
+                
+                }
+
+                // distribute extra space to tracks? does this need to move, idrk or think so
+
+                for (auto& [track, plannedIncrease] : baseSizePlannedIncreases) {
+                    baseSizes[track] += plannedIncrease;
+                }
+
+                for (auto& [track, plannedIncrease] : growthLimitPlannedIncreases) {
+                    // acount for infinity properly; this will be buggy
+                    growthLimits[track] += plannedIncrease;
+
+                    // correct growth limits
+                    growthLimits[track] = std::max(growthLimits[track], baseSizes[track]);
+                }
+
+            }
+
+        }
+
+        // next is the previous step repeated for flexible tracks
+
+        for (auto pass : passes) {
+            std::map<int, float> baseSizePlannedIncreases {};
+            std::map<int, float> growthLimitPlannedIncreases {};
+
+            for (auto i = 0; i < this->items.size(); ++i) {
                 auto& item = items[i];
 
                 // why is this type optional; fix colstart/rowstart optionaltiy (llm's job)
@@ -457,16 +594,10 @@ namespace layout {
                 uint32_t end = isCol ? *item.placement.colEnd : *item.placement.rowEnd;
                 uint32_t span = end - start;
 
-                if (span != targetSpan) {
-                    continue;
-                }
-
-                // insert affected tracks
-                affectedTracks.insert_range(std::views::iota(start, end + 1));
+                // init affected tracks
+                std::set<int> affectedTracks {};
 
                 // gather extra space contributions
-                auto minSizingFunction = minSizingFunctions[start];
-                auto maxSizingFunction = maxSizingFunctions[start];
 
                 // i hope these are corrected in addChild to use the size result
                 auto minContribution = isCol ? item.widthContributions.minimum : item.heightContributions.minimum;
@@ -476,50 +607,112 @@ namespace layout {
                 // base size extra space
                 // todo (requires new arg, probably a size result)
                 // adjust for being under min/max constraints
-                
+
                 // base size formula: std::max(0, contribution - sum of track sizes)
                 // i approximate this as std::max(baseSizeExtraSpace, contribution - sum of track sizes)
                 // bc it starts as 0.0f and folds nicely in parallel anyways
 
                 float spanBaseSize = std::ranges::fold_left(std::span(baseSizes).subspan(start, end), 0, std::plus{});
-                float baseSizeExtraSpace = 0.0f;
-                // 1. for intrinsic minimums
-                baseSizeExtraSpace = std::max(baseSizeExtraSpace, minContribution - spanBaseSize);
-
-                // 2. for content based minimums
-                baseSizeExtraSpace = std::max(baseSizeExtraSpace, minContent - spanBaseSize);
-
-                // 3. for max-content minimums
-                baseSizeExtraSpace = std::max(baseSizeExtraSpace, maxContent - spanBaseSize);
-
-                totalBaseSizeExtraSpace += baseSizeExtraSpace;
-
                 float spanGrowthLimitSpace = std::ranges::fold_left(std::span(growthLimits).subspan(start, end), 0, std::plus{});
+                float baseSizeExtraSpace = 0.0f;
                 float growthExtraSpace = 0.0f;
-                // 4. For intrinsic maximums: expand growth limits
-                growthExtraSpace = std::max(growthExtraSpace, minContribution - spanGrowthLimitSpace);
 
-                totalGrowthLimitExtraSpace += growthExtraSpace;
-                
+                for (auto spannedTrack : std::views::iota(start, end )) {
+                    // only count tracks s.t. they're counted in pass?
+                    // so maybe make this spannedTracks
+                    // vs. affectedTracks
+                    // then add to the affectedTracks set in the visitor
+                    // and hten divide by that after
+
+                    auto minSizingFunction = minSizingFunctions[spannedTrack];
+                    auto maxSizingFunction = maxSizingFunctions[spannedTrack];
+
+                    auto frTrack = std::holds_alternative<Size>(maxSizingFunction) ? std::get<Size>(maxSizingFunction).isFr() : false;
+                    if (!frTrack) {
+                        continue;
+                    }
+
+                    std::visit(Overloaded{
+                        [&](Size& size){
+                            if (pass == intrinsicMinimums && (size.isAuto() || size.isContentDependent())) {
+                                // 1. for intrinsic minimums
+                                baseSizeExtraSpace = std::max(baseSizeExtraSpace, minContribution - spanBaseSize);
+                            }else if(pass == contentBasedMinimums && size.isContentDependent()) {
+                                // 2. for content based minimums
+                                baseSizeExtraSpace = std::max(baseSizeExtraSpace, minContribution - spanBaseSize);
+                            }else if (pass == maxContentMinimums && size.isMaxContent()) {
+                                // 3. for max-content minimums
+                                baseSizeExtraSpace = std::max(baseSizeExtraSpace, maxContent - spanBaseSize);
+                            }
+                        },
+                        [&](auto&) {
+                            // dont alter intrinsic growth of base sizes/growth limits
+                        }
+                    }, minSizingFunction);
+
+                    std::visit(Overloaded{
+                        [&](Size& size){
+                            // intrinsic; according to the grid algo, is:
+                            // isAuto() || isContentDependent()
+                            if (pass == intrinsicMaximums && (size.isAuto() || size.isContentDependent())) {
+                                growthExtraSpace = std::max(growthExtraSpace, minContribution - spanGrowthLimitSpace);
+                            }
+
+                            if (size.isFr()) {
+                                affectedTracks.insert(spannedTrack);
+                            }
+                        },
+                        [&](auto&) {
+                            // dont alter intrinsic growth of base sizes/growth limits
+                        }
+                    }, maxSizingFunction);
+
+                    // baseSizePlannedIncreases[affectedTrack] = std::max(baseSizePlannedIncreases[affectedTrack], baseSizeExtraSpace / affectedTracks.size());
+                    // growthLimitPlannedIncreases[affectedTrack] = std::max(growthLimitPlannedIncreases[affectedTrack], growthExtraSpace / affectedTracks.size());
+                }
+
+                float flexFactorSum = 0.0f;
+                for (auto affectedTrack : affectedTracks) {
+                    flexFactorSum += std::get<Size>(maxSizingFunctions[affectedTrack]).value;
+                }
+
+                for (auto affectedTrack : affectedTracks) {
+                    auto flexFactor = std::get<Size>(maxSizingFunctions[affectedTrack]).value;
+                    float proportion = flexFactorSum >= 1.0f ? flexFactor / flexFactorSum : flexFactor + (1.0f - flexFactorSum) / affectedTracks.size();
+                    baseSizePlannedIncreases[affectedTrack] = std::max(baseSizePlannedIncreases[affectedTrack], baseSizeExtraSpace * proportion);
+                    growthLimitPlannedIncreases[affectedTrack] = std::max(growthLimitPlannedIncreases[affectedTrack], growthExtraSpace * proportion);
+                }
+
+
                 // mark infinitely growable? I dont really understand their explanation as to *why*
-                
+
             }
 
-            // distribute extra space to tracks?
+            // distribute extra space to tracks? does this need to move, idrk or think so
 
-            for (auto& affectedTrack : affectedTracks) {
-                baseSizes[affectedTrack] += totalBaseSizeExtraSpace / affectedTracks.size();
-                growthLimits[affectedTrack] += totalGrowthLimitExtraSpace / affectedTracks.size();
+            for (auto& [track, plannedIncrease] : baseSizePlannedIncreases) {
+                baseSizes[track] += plannedIncrease;
+            }
+
+            for (auto& [track, plannedIncrease] : growthLimitPlannedIncreases) {
+                // acount for infinity properly; this will be buggy
+                growthLimits[track] += plannedIncrease;
 
                 // correct growth limits
-                growthLimits[affectedTrack] = std::max(growthLimits[affectedTrack], baseSizes[affectedTrack]);
+                growthLimits[track] = std::max(growthLimits[track], baseSizes[track]);
             }
 
         }
-
-        // 4 is the previous step repeated for flexible tracks
         
-        // at the end, just set all growth limits with infinite size to base size
+        // at the end, just set all growth limits with infinite size to base size?
+        for (auto i = 0; i < growthLimits.size(); ++i) {
+            if (growthLimits[i] == std::numeric_limits<float>::infinity()) {
+                growthLimits[i] = baseSizes[i];
+            }
+        }
+
+        // phase 4: distribute extra space to tracks
+        
     }
 
     void GridLayout::resolveColumns(size_t numRows, size_t numCols, const std::vector<Size>& templateCols, const SizeState& availableWidth, float colGap) {

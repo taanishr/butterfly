@@ -16,3 +16,5 @@ For user-specified refactors:
 
 Before adding any state or representation, search for an existing representation of
 the same semantic information.
+
+Never use python for edits. Always use the patch tool.
