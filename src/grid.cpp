@@ -743,7 +743,150 @@ namespace layout {
             }
         }
 
+        // update free space (base sizes changed)
+        freeSpace = std::visit(Overloaded{
+            [&](float resolved) -> SizeState {
+                return std::max(0.0f, resolved - std::ranges::fold_left(baseSizes, 0.0f, std::plus{})); // also sub gaps
+            },
+            [&](auto& other) -> SizeState {
+                return other;
+            }
+        }, available);
+
         // phase 5: expand flexible tracks
+        float flexFraction = 0.0f;
+
+        if (std::holds_alternative<float>(freeSpace)) {
+            auto resolvedFreeSpace = std::get<float>(freeSpace);
+            if (resolvedFreeSpace > 0.0f) {
+                auto spaceToFill = std::get<float>(available);
+                auto leftoverSpace = spaceToFill; // needs to include gap?
+                std::set<uint32_t> flexibleTracks {};
+
+                for (uint32_t track = 0; track < numTracks; ++track) {
+                    auto maxSizingFunction = maxSizingFunctions[track];
+                    std::visit(Overloaded{
+                        [&](Size& size) {
+                            if (size.isFr()) {
+                                flexibleTracks.insert(track);
+                            }else {
+                                leftoverSpace -= baseSizes[track];
+                            }
+                        },
+                        [&](auto&) {
+                            leftoverSpace -= baseSizes[track];
+                        }
+                    }, maxSizingFunction);
+                }
+
+                while (!flexibleTracks.empty()) {
+                    float flexFactorSum = 0.0f;
+                    for (auto track : flexibleTracks) {
+                        flexFactorSum += std::get<Size>(maxSizingFunctions[track]).value;
+                    }
+
+                    auto hypotheticalFrSize = leftoverSpace / std::max(1.0f, flexFactorSum);
+                    std::set<uint32_t> inflexibleTracks {};
+                    for (auto track : flexibleTracks) {
+                        auto flexFactor = std::get<Size>(maxSizingFunctions[track]).value;
+                        if (hypotheticalFrSize * flexFactor < baseSizes[track]) {
+                            inflexibleTracks.insert(track);
+                        }
+                    }
+
+                    if (inflexibleTracks.empty()) {
+                        flexFraction = hypotheticalFrSize;
+                        break;
+                    }
+
+                    for (auto track : inflexibleTracks) {
+                        flexibleTracks.erase(track);
+                        leftoverSpace -= baseSizes[track];
+                    }
+                }
+            }
+        }else {
+            bool isMinContentConstraint = false;
+            if (std::holds_alternative<Size>(available)) {
+                isMinContentConstraint = std::get<Size>(available).isMinContent();
+            }
+
+            if (!isMinContentConstraint) {
+                for (uint32_t track = 0; track < numTracks; ++track) {
+                    auto maxSizingFunction = maxSizingFunctions[track];
+                    std::visit(Overloaded{
+                        [&](Size& size) {
+                            if (size.isFr()) {
+                                flexFraction = std::max(flexFraction, size.value > 1.0f ? baseSizes[track] / size.value : baseSizes[track]);
+                            }
+                        },
+                        [&](auto&) {}
+                    }, maxSizingFunction);
+                }
+
+                for (auto& item : items) {
+                    uint32_t start = isCol ? *item.placement.colStart : *item.placement.rowStart;
+                    uint32_t end = isCol ? *item.placement.colEnd : *item.placement.rowEnd;
+                    auto spaceToFill = isCol ? item.widthContributions.maxContent : item.heightContributions.maxContent;
+                    auto leftoverSpace = spaceToFill; // needs to include gap
+                    std::set<uint32_t> flexibleTracks {};
+
+                    for (auto track = start; track < end; ++track) {
+                        auto maxSizingFunction = maxSizingFunctions[track];
+                        std::visit(Overloaded{
+                            [&](Size& size) {
+                                if (size.isFr()) {
+                                    flexibleTracks.insert(track);
+                                }else {
+                                    leftoverSpace -= baseSizes[track];
+                                }
+                            },
+                            [&](auto&) {
+                                leftoverSpace -= baseSizes[track];
+                            }
+                        }, maxSizingFunction);
+                    }
+
+                    while (!flexibleTracks.empty()) {
+                        float flexFactorSum = 0.0f;
+                        for (auto track : flexibleTracks) {
+                            flexFactorSum += std::get<Size>(maxSizingFunctions[track]).value;
+                        }
+
+                        auto hypotheticalFrSize = leftoverSpace / std::max(1.0f, flexFactorSum);
+                        std::set<uint32_t> inflexibleTracks {};
+                        for (auto track : flexibleTracks) {
+                            auto flexFactor = std::get<Size>(maxSizingFunctions[track]).value;
+                            if (hypotheticalFrSize * flexFactor < baseSizes[track]) {
+                                inflexibleTracks.insert(track);
+                            }
+                        }
+
+                        if (inflexibleTracks.empty()) {
+                            flexFraction = std::max(flexFraction, hypotheticalFrSize);
+                            break;
+                        }
+
+                        for (auto track : inflexibleTracks) {
+                            flexibleTracks.erase(track);
+                            leftoverSpace -= baseSizes[track];
+                        }
+                    }
+                }
+            }
+        }
+
+        for (uint32_t track = 0; track < numTracks; ++track) {
+            auto maxSizingFunction = maxSizingFunctions[track];
+            std::visit(Overloaded{
+                [&](Size& size) {
+                    if (size.isFr()) {
+                        baseSizes[track] = std::max(baseSizes[track], flexFraction * size.value);
+                    }
+                },
+                [&](auto&) {}
+            }, maxSizingFunction);
+        }
     }
 
     void GridLayout::resolveColumns(size_t numRows, size_t numCols, const std::vector<Size>& templateCols, const SizeState& availableWidth, float colGap) {
