@@ -412,9 +412,17 @@ namespace layout {
             std::visit(Overloaded{
                 [&](Size& size){
                     if (size.isMinContent()) {
-                        growthLimits[start] = std::max(growthLimits[start], minContent);          
+                        if (growthLimits[start] == std::numeric_limits<float>::infinity()) {
+                            growthLimits[start] = minContent;
+                        }else {
+                            growthLimits[start] = std::max(growthLimits[start], minContent); 
+                        }
                     }else if (size.isMaxContent()) {
-                        growthLimits[start] = std::max(growthLimits[start], maxContent);
+                        if (growthLimits[start] == std::numeric_limits<float>::infinity()) {
+                            growthLimits[start] = maxContent;
+                        }else {
+                            growthLimits[start] = std::max(growthLimits[start], maxContent);
+                        }
                     }else if (size.isFitContent()) {
                         // not yet impl yet
                         // growthLimits[start] = std::max(baseSizes[start], maxContent);
@@ -448,6 +456,12 @@ namespace layout {
         constexpr std::array passes = {intrinsicMinimums, contentBasedMinimums, maxContentMinimums, intrinsicMaximums, maxContentMaximums};
 
         for (uint32_t targetSpan = 2; targetSpan < numTracks; ++targetSpan) {
+            /*
+                we don't want to stop growth mid-phase; if a growth limit is infinite
+                we want to comp against that, not thej ust changed limit.
+            */
+            std::vector<bool> infinitelyGrowable(numTracks, false);
+
             // loop over items as we have it
             // extra space: sum of size contribution - track size
             // track size will just be the base size
@@ -504,8 +518,21 @@ namespace layout {
                     // i approximate this as std::max(baseSizeExtraSpace, contribution - sum of track sizes)
                     // bc it starts as 0.0f and folds nicely in parallel anyways
 
-                    float spanBaseSize = std::ranges::fold_left(std::span(baseSizes).subspan(start, end), 0, std::plus{});
-                    float spanGrowthLimitSpace = std::ranges::fold_left(std::span(growthLimits).subspan(start, end), 0, std::plus{});
+                    // 12.5.1 step 1: subtract the affected size of *every* spanned track
+                    // (not just the affected ones) from the item's contribution
+                    float spanBaseSize = std::ranges::fold_left(std::span(baseSizes).subspan(start, span), 0.0f, std::plus{});
+
+                    // "(For infinite growth limits, substitute the track's base size.)"
+                    // without this the sum is infinite and every extra space floors to 0 forever,
+                    // so the growth limit passes would never do anything
+                    float spanGrowthLimitSpace = 0.0f;
+                    for (auto spannedTrack : std::views::iota(start, end)) {
+                        auto growthLimit = growthLimits[spannedTrack];
+                        spanGrowthLimitSpace += growthLimit == std::numeric_limits<float>::infinity()
+                            ? baseSizes[spannedTrack]
+                            : growthLimit;
+                    }
+
                     float baseSizeExtraSpace = 0.0f;
                     float growthExtraSpace = 0.0f;
 
@@ -542,7 +569,7 @@ namespace layout {
                                             limitedMinContent = std::min(limitedMinContent, fixedTrackMaximum);
                                         }
                                         limitedMinContent = std::max(limitedMinContent, item.widthContributions.minimum);
-                                        intrinsicContribution = minContribution;
+                                        intrinsicContribution = limitedMinContent;
                                     }else {
                                         intrinsicContribution = minContribution;
                                     }
@@ -585,9 +612,235 @@ namespace layout {
                         // growthLimitPlannedIncreases[affectedTrack] = std::max(growthLimitPlannedIncreases[affectedTrack], growthExtraSpace / affectedTracks.size());
                     }
 
-                    for (auto affectedTrack : affectedTracks) {
-                        baseSizePlannedIncreases[affectedTrack] = std::max(baseSizePlannedIncreases[affectedTrack], baseSizeExtraSpace / affectedTracks.size());
-                        growthLimitPlannedIncreases[affectedTrack] = std::max(growthLimitPlannedIncreases[affectedTrack], growthExtraSpace / affectedTracks.size());
+                    // the space distribution loop
+                    // this incorporates the frozen/unfrozen part of the distribution spec
+                    std::vector<float> itemIncreases(span, 0.0f);
+                    std::vector<bool> frozen(span, false);
+
+                    std::vector<int> nonAffectedTracks {};
+                    for (auto spannedTrack : std::views::iota(start, end)) {
+                        if (!affectedTracks.contains(spannedTrack)) {
+                            nonAffectedTracks.push_back(spannedTrack);
+                        }
+                    }
+
+                    if (pass == intrinsicMinimums || pass == contentBasedMinimums || pass == maxContentMinimums) {
+                        float extraSpace = baseSizeExtraSpace;
+
+                        // keep distributing while we have extra space to dsitribute
+                        while (extraSpace > 0.0f) {
+                            uint32_t unfrozenCount = 0;
+                            for (auto affectedTrack : affectedTracks) {
+                                if (!frozen[affectedTrack - start]) {
+                                    ++unfrozenCount;
+                                }
+                            }
+
+                            if (unfrozenCount == 0) {
+                                break;
+                            }
+ 
+                            float share = extraSpace / unfrozenCount;
+
+                            for (auto affectedTrack : affectedTracks) {
+                                auto index = affectedTrack - start;
+                                if (frozen[index]) {
+                                    continue;
+                                }
+
+                                // here's where we check if we exceeded the growth limit
+                                // if we do, freeze the track immediately and deducted this from extra space
+                                itemIncreases[index] += share;
+                                extraSpace -= share;
+
+                                if (baseSizes[affectedTrack] + itemIncreases[index] > growthLimits[affectedTrack]) {
+                                    float overshoot =  baseSizes[affectedTrack] + itemIncreases[index] - growthLimits[affectedTrack];
+                                    itemIncreases[index] -= overshoot;
+                                    extraSpace += overshoot;
+                                    frozen[index] = true;
+                                }
+                            }
+                        }
+
+                        while (extraSpace > 0.0f) {
+                            uint32_t unfrozenCount = 0;
+                            for (auto nonAffectedTrack : nonAffectedTracks) {
+                                if (!frozen[nonAffectedTrack - start]) {
+                                    ++unfrozenCount;
+                                }
+                            }
+
+                            if (unfrozenCount == 0) {
+                                break;
+                            }
+
+                            float share = extraSpace / unfrozenCount;
+
+                            for (auto nonAffectedTrack : nonAffectedTracks) {
+                                auto index = nonAffectedTrack - start;
+                                if (frozen[index]) {
+                                    continue;
+                                }
+
+                                itemIncreases[index] += share;
+                                extraSpace -= share;
+
+                                if (baseSizes[nonAffectedTrack] + itemIncreases[index] > growthLimits[nonAffectedTrack]) {
+                                    float overshoot = baseSizes[nonAffectedTrack] + itemIncreases[index] - growthLimits[nonAffectedTrack];
+
+                                    itemIncreases[index] -= overshoot;
+                                    extraSpace += overshoot;
+                                    frozen[index] = true;
+                                }
+                            }
+                        }
+
+                        if (extraSpace > 0.0f) {
+                            std::vector<int> lastResortTracks {};
+
+                            for (auto affectedTrack : affectedTracks) {
+                                auto maxSizingFunction = maxSizingFunctions[affectedTrack];
+
+                                std::visit(Overloaded{
+                                    [&](Size& size){
+                                        if (pass == maxContentMinimums) {
+                                            if (size.isMaxContent()) {
+                                                lastResortTracks.push_back(affectedTrack);
+                                            }
+                                        }else if (size.isAuto() || size.isContentDependent()) {
+                                            lastResortTracks.push_back(affectedTrack);
+                                        }
+                                    },
+                                    [&](auto&) {}
+                                }, maxSizingFunction);
+                            }
+
+                            if (lastResortTracks.empty()) {
+                                lastResortTracks = {affectedTracks.begin(), affectedTracks.end()};
+                            }
+
+                            if (!lastResortTracks.empty()) {
+                                float share = extraSpace / lastResortTracks.size();
+
+                                for (auto lastResortTrack : lastResortTracks) {
+                                    itemIncreases[lastResortTrack - start] += share;
+                                }
+
+                                extraSpace = 0.0f;
+                            }
+                        }
+
+                        // updated the planned increases
+                        for (auto spannedTrack : std::views::iota(start, end)) {
+                            baseSizePlannedIncreases[spannedTrack] = std::max(baseSizePlannedIncreases[spannedTrack], itemIncreases[spannedTrack - start]);
+                        }
+                    }else {
+                        float extraSpace = growthExtraSpace;
+
+                        while (extraSpace > 0.0f) {
+                            uint32_t unfrozenCount = 0;
+                            for (auto affectedTrack : affectedTracks) {
+                                if (!frozen[affectedTrack - start]) {
+                                    ++unfrozenCount;
+                                }
+                            }
+
+                            if (unfrozenCount == 0) {
+                                break;
+                            }
+
+                            float share = extraSpace / unfrozenCount;
+
+                            for (auto affectedTrack : affectedTracks) {
+                                auto index = affectedTrack - start;
+                                if (frozen[index]) {
+                                    continue;
+                                }
+
+                                bool growthLimitIsFinite = growthLimits[affectedTrack] != std::numeric_limits<float>::infinity();
+                                float affectedSize = growthLimitIsFinite ? growthLimits[affectedTrack] : baseSizes[affectedTrack];
+                                float limit = growthLimitIsFinite && !infinitelyGrowable[affectedTrack] ? growthLimits[affectedTrack] : std::numeric_limits<float>::infinity();
+
+                                itemIncreases[index] += share;
+                                extraSpace -= share;
+
+                                if (affectedSize + itemIncreases[index] > limit) {
+                                    float overshoot = affectedSize + itemIncreases[index] - limit;
+
+                                    itemIncreases[index] -= overshoot;
+                                    extraSpace += overshoot;
+                                    frozen[index] = true;
+                                }
+                            }
+                        }
+
+                        while (extraSpace > 0.0f) {
+                            uint32_t unfrozenCount = 0;
+                            for (auto nonAffectedTrack : nonAffectedTracks) {
+                                if (!frozen[nonAffectedTrack - start]) {
+                                    ++unfrozenCount;
+                                }
+                            }
+
+                            if (unfrozenCount == 0) {
+                                break;
+                            }
+
+                            float share = extraSpace / unfrozenCount;
+
+                            for (auto nonAffectedTrack : nonAffectedTracks) {
+                                auto index = nonAffectedTrack - start;
+                                if (frozen[index]) {
+                                    continue;
+                                }
+
+                                bool growthLimitIsFinite = growthLimits[nonAffectedTrack] != std::numeric_limits<float>::infinity();
+                                float affectedSize = growthLimitIsFinite ? growthLimits[nonAffectedTrack] : baseSizes[nonAffectedTrack];
+                                float limit = growthLimitIsFinite && !infinitelyGrowable[nonAffectedTrack] ? growthLimits[nonAffectedTrack] : std::numeric_limits<float>::infinity();
+
+                                itemIncreases[index] += share;
+                                extraSpace -= share;
+
+                                if (affectedSize + itemIncreases[index] > limit) {
+                                    float overshoot = affectedSize + itemIncreases[index] - limit;
+
+                                    itemIncreases[index] -= overshoot;
+                                    extraSpace += overshoot;
+                                    frozen[index] = true;
+                                }
+                            }
+                        }
+
+                        if (extraSpace > 0.0f) {
+                            std::vector<int> lastResortTracks {};
+
+                            for (auto affectedTrack : affectedTracks) {
+                                auto maxSizingFunction = maxSizingFunctions[affectedTrack];
+
+                                std::visit(Overloaded{
+                                    [&](Size& size){
+                                        if (size.isAuto() || size.isContentDependent()) {
+                                            lastResortTracks.push_back(affectedTrack);
+                                        }
+                                    },
+                                    [&](auto&) {}
+                                }, maxSizingFunction);
+                            }
+
+                            if (!lastResortTracks.empty()) {
+                                float share = extraSpace / lastResortTracks.size();
+
+                                for (auto lastResortTrack : lastResortTracks) {
+                                    itemIncreases[lastResortTrack - start] += share;
+                                }
+
+                                extraSpace = 0.0f;
+                            }
+                        }
+
+                        for (auto spannedTrack : std::views::iota(start, end)) {
+                            growthLimitPlannedIncreases[spannedTrack] = std::max(growthLimitPlannedIncreases[spannedTrack], itemIncreases[spannedTrack - start]);
+                        }
                     }
                     
                 
@@ -603,7 +856,13 @@ namespace layout {
 
                 for (auto& [track, plannedIncrease] : growthLimitPlannedIncreases) {
                     // how does something go from infinite to... finite?
-                    if (growthLimits[track] != std::numeric_limits<float>::infinity()) {
+                    if (growthLimits[track] == std::numeric_limits<float>::infinity()) {
+                        growthLimits[track] = baseSizes[track] + plannedIncrease;
+
+                        if (pass == intrinsicMaximums) {
+                            infinitelyGrowable[track] = true;
+                        }
+                    }else {
                         growthLimits[track] += plannedIncrease;
                     }
 
@@ -616,6 +875,8 @@ namespace layout {
         }
 
         // next is the previous step repeated for flexible tracks
+
+        std::vector<bool> infinitelyGrowable(numTracks, false);
 
         for (auto pass : passes) {
             std::map<int, float> baseSizePlannedIncreases {};
@@ -647,8 +908,8 @@ namespace layout {
                 // i approximate this as std::max(baseSizeExtraSpace, contribution - sum of track sizes)
                 // bc it starts as 0.0f and folds nicely in parallel anyways
 
-                float spanBaseSize = std::ranges::fold_left(std::span(baseSizes).subspan(start, end), 0, std::plus{});
-                float spanGrowthLimitSpace = std::ranges::fold_left(std::span(growthLimits).subspan(start, end), 0, std::plus{});
+                float spanBaseSize = std::ranges::fold_left(std::span(baseSizes).subspan(start, span), 0, std::plus{});
+                float spanGrowthLimitSpace = std::ranges::fold_left(std::span(growthLimits).subspan(start, span), 0, std::plus{});
                 float baseSizeExtraSpace = 0.0f;
                 float growthExtraSpace = 0.0f;
 
@@ -679,7 +940,7 @@ namespace layout {
                                         limitedMinContent = std::min(limitedMinContent, fixedTrackMaximum);
                                     }
                                     limitedMinContent = std::max(limitedMinContent, item.widthContributions.minimum);
-                                    intrinsicContribution = minContribution;
+                                    intrinsicContribution = limitedMinContent;
                                 }else {
                                     intrinsicContribution = minContribution;
                                 }
@@ -721,16 +982,119 @@ namespace layout {
                     // growthLimitPlannedIncreases[affectedTrack] = std::max(growthLimitPlannedIncreases[affectedTrack], growthExtraSpace / affectedTracks.size());
                 }
 
-                float flexFactorSum = 0.0f;
-                for (auto affectedTrack : affectedTracks) {
-                    flexFactorSum += std::get<Size>(maxSizingFunctions[affectedTrack]).value;
-                }
+                std::vector<float> itemIncreases(span, 0.0f);
+                std::vector<bool> frozen(span, false);
 
-                for (auto affectedTrack : affectedTracks) {
-                    auto flexFactor = std::get<Size>(maxSizingFunctions[affectedTrack]).value;
-                    float proportion = flexFactorSum >= 1.0f ? flexFactor / flexFactorSum : flexFactor + (1.0f - flexFactorSum) / affectedTracks.size();
-                    baseSizePlannedIncreases[affectedTrack] = std::max(baseSizePlannedIncreases[affectedTrack], baseSizeExtraSpace * proportion);
-                    growthLimitPlannedIncreases[affectedTrack] = std::max(growthLimitPlannedIncreases[affectedTrack], growthExtraSpace * proportion);
+                if (pass == intrinsicMinimums || pass == contentBasedMinimums || pass == maxContentMinimums) {
+                    float extraSpace = baseSizeExtraSpace;
+
+                    while (extraSpace > 0.0f) {
+                        uint32_t unfrozenCount = 0;
+                        float flexFactorSum = 0.0f;
+                        for (auto affectedTrack : affectedTracks) {
+                            if (!frozen[affectedTrack - start]) {
+                                ++unfrozenCount;
+                                flexFactorSum += std::get<Size>(maxSizingFunctions[affectedTrack]).value;
+                            }
+                        }
+
+                        if (unfrozenCount == 0) {
+                            break;
+                        }
+
+                        float spaceToDistribute = extraSpace;
+
+                        for (auto affectedTrack : affectedTracks) {
+                            auto index = affectedTrack - start;
+                            if (frozen[index]) {
+                                continue;
+                            }
+
+                            auto flexFactor = std::get<Size>(maxSizingFunctions[affectedTrack]).value;
+                            float proportion = flexFactorSum >= 1.0f ? flexFactor / flexFactorSum : flexFactor + (1.0f - flexFactorSum) / unfrozenCount;
+                            float share = spaceToDistribute * proportion;
+
+                            itemIncreases[index] += share;
+                            extraSpace -= share;
+
+                            if (baseSizes[affectedTrack] + itemIncreases[index] > growthLimits[affectedTrack]) {
+                                float overshoot = baseSizes[affectedTrack] + itemIncreases[index] - growthLimits[affectedTrack];
+
+                                itemIncreases[index] -= overshoot;
+                                extraSpace += overshoot;
+                                frozen[index] = true;
+                            }
+                        }
+                    }
+
+                    if (extraSpace > 0.0f && !affectedTracks.empty()) {
+                        float flexFactorSum = 0.0f;
+                        for (auto affectedTrack : affectedTracks) {
+                            flexFactorSum += std::get<Size>(maxSizingFunctions[affectedTrack]).value;
+                        }
+
+                        for (auto affectedTrack : affectedTracks) {
+                            auto flexFactor = std::get<Size>(maxSizingFunctions[affectedTrack]).value;
+                            float proportion = flexFactorSum >= 1.0f ? flexFactor / flexFactorSum : flexFactor + (1.0f - flexFactorSum) / affectedTracks.size();
+
+                            itemIncreases[affectedTrack - start] += extraSpace * proportion;
+                        }
+
+                        extraSpace = 0.0f;
+                    }
+
+                    for (auto spannedTrack : std::views::iota(start, end)) {
+                        baseSizePlannedIncreases[spannedTrack] = std::max(baseSizePlannedIncreases[spannedTrack], itemIncreases[spannedTrack - start]);
+                    }
+                }else {
+                    float extraSpace = growthExtraSpace;
+
+                    while (extraSpace > 0.0f) {
+                        uint32_t unfrozenCount = 0;
+                        float flexFactorSum = 0.0f;
+                        for (auto affectedTrack : affectedTracks) {
+                            if (!frozen[affectedTrack - start]) {
+                                ++unfrozenCount;
+                                flexFactorSum += std::get<Size>(maxSizingFunctions[affectedTrack]).value;
+                            }
+                        }
+
+                        if (unfrozenCount == 0) {
+                            break;
+                        }
+
+                        float spaceToDistribute = extraSpace;
+
+                        for (auto affectedTrack : affectedTracks) {
+                            auto index = affectedTrack - start;
+                            if (frozen[index]) {
+                                continue;
+                            }
+
+                            bool growthLimitIsFinite = growthLimits[affectedTrack] != std::numeric_limits<float>::infinity();
+                            float affectedSize = growthLimitIsFinite ? growthLimits[affectedTrack] : baseSizes[affectedTrack];
+                            float limit = growthLimitIsFinite && !infinitelyGrowable[affectedTrack] ? growthLimits[affectedTrack] : std::numeric_limits<float>::infinity();
+
+                            auto flexFactor = std::get<Size>(maxSizingFunctions[affectedTrack]).value;
+                            float proportion = flexFactorSum >= 1.0f ? flexFactor / flexFactorSum : flexFactor + (1.0f - flexFactorSum) / unfrozenCount;
+                            float share = spaceToDistribute * proportion;
+
+                            itemIncreases[index] += share;
+                            extraSpace -= share;
+
+                            if (affectedSize + itemIncreases[index] > limit) {
+                                float overshoot = affectedSize + itemIncreases[index] - limit;
+
+                                itemIncreases[index] -= overshoot;
+                                extraSpace += overshoot;
+                                frozen[index] = true;
+                            }
+                        }
+                    }
+
+                    for (auto spannedTrack : std::views::iota(start, end)) {
+                        growthLimitPlannedIncreases[spannedTrack] = std::max(growthLimitPlannedIncreases[spannedTrack], itemIncreases[spannedTrack - start]);
+                    }
                 }
 
 
@@ -746,7 +1110,13 @@ namespace layout {
 
             for (auto& [track, plannedIncrease] : growthLimitPlannedIncreases) {
                 // how does something go from infinite to... finite?
-                if (growthLimits[track] != std::numeric_limits<float>::infinity()) {
+                if (growthLimits[track] == std::numeric_limits<float>::infinity()) {
+                    growthLimits[track] = baseSizes[track] + plannedIncrease;
+
+                    if (pass == intrinsicMaximums) {
+                        infinitelyGrowable[track] = true;
+                    }
+                }else {
                     growthLimits[track] += plannedIncrease;
                 }
 
