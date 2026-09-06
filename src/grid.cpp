@@ -223,7 +223,7 @@ namespace layout {
         }, sizeState);
     };
 
-    auto GridLayout::resolveTracks(std::vector<SizeState>& sizingFunctionReqs, const SizeResult& containerSize, float gap, bool isCol, IntrinsicSizes* intrinsicSizes) -> std::vector<Track> {
+    auto GridLayout::resolveTracks(std::vector<SizeState>& sizingFunctionReqs, const SizeResult& containerSize, float gap, bool isCol, JustifyContent justifyContent, AlignContent alignContent, IntrinsicSizes* intrinsicSizes) -> std::vector<Track> {
         /*
             this method sizes all tracks along a certain axis
             note: the track is the abstraction for a row/column, 
@@ -455,7 +455,7 @@ namespace layout {
         constexpr int maxContentMaximums = 4;
         constexpr std::array passes = {intrinsicMinimums, contentBasedMinimums, maxContentMinimums, intrinsicMaximums, maxContentMaximums};
 
-        for (uint32_t targetSpan = 2; targetSpan < numTracks; ++targetSpan) {
+        for (uint32_t targetSpan = 2; targetSpan <= numTracks; ++targetSpan) {
             /*
                 we don't want to stop growth mid-phase; if a growth limit is infinite
                 we want to comp against that, not thej ust changed limit.
@@ -1158,10 +1158,90 @@ namespace layout {
             to its max-width/height. (for this I need the size state arg)
         */
 
+        const auto& minimum = isCol ? containerSize.minimum.width : containerSize.minimum.height;
+        const auto& maximum = isCol ? containerSize.maximum.width : containerSize.maximum.height;
+
+        std::vector<float> baseSizesBeforeMaximize = baseSizes;
+
         if (std::holds_alternative<float>(freeSpace)) {
             float resolvedFreeSpace = std::get<float>(freeSpace);
-            for (auto [baseSize, growthLimit] : std::ranges::views::zip(baseSizes, growthLimits)) {
-                baseSize = std::min(baseSize + resolvedFreeSpace / baseSizes.size(), growthLimit);
+            std::vector<bool> frozen(numTracks, false);
+
+            while (resolvedFreeSpace > 0.0f) {
+                uint32_t unfrozenCount = 0;
+                for (auto i = 0; i < baseSizes.size(); ++i) {
+                    if (!frozen[i]) {
+                        ++unfrozenCount;
+                    }
+                }
+
+                if (unfrozenCount == 0) {
+                    break;
+                }
+
+                float share = resolvedFreeSpace / unfrozenCount;
+
+                for (auto i = 0; i < baseSizes.size(); ++i) {
+                    if (frozen[i]) {
+                        continue;
+                    }
+
+                    baseSizes[i] += share;
+                    resolvedFreeSpace -= share;
+
+                    if (baseSizes[i] > growthLimits[i]) {
+                        float overshoot = baseSizes[i] - growthLimits[i];
+
+                        baseSizes[i] -= overshoot;
+                        resolvedFreeSpace += overshoot;
+                        frozen[i] = true;
+                    }
+                }
+            }
+        }
+
+        // maximum size redo (12.6)
+        if (std::holds_alternative<float>(maximum)) {
+            float resolvedMaximum = std::get<float>(maximum);
+            float gridSize = std::ranges::fold_left(baseSizes, 0.0f, std::plus{});
+
+            if (gridSize > resolvedMaximum) {
+                baseSizes = baseSizesBeforeMaximize;
+
+                float redoFreeSpace = std::max(0.0f, resolvedMaximum - std::ranges::fold_left(baseSizes, 0.0f, std::plus{}));
+                std::vector<bool> frozen(numTracks, false);
+
+                while (redoFreeSpace > 0.0f) {
+                    uint32_t unfrozenCount = 0;
+                    for (auto i = 0; i < baseSizes.size(); ++i) {
+                        if (!frozen[i]) {
+                            ++unfrozenCount;
+                        }
+                    }
+
+                    if (unfrozenCount == 0) {
+                        break;
+                    }
+
+                    float share = redoFreeSpace / unfrozenCount;
+
+                    for (auto i = 0; i < baseSizes.size(); ++i) {
+                        if (frozen[i]) {
+                            continue;
+                        }
+
+                        baseSizes[i] += share;
+                        redoFreeSpace -= share;
+
+                        if (baseSizes[i] > growthLimits[i]) {
+                            float overshoot = baseSizes[i] - growthLimits[i];
+
+                            baseSizes[i] -= overshoot;
+                            redoFreeSpace += overshoot;
+                            frozen[i] = true;
+                        }
+                    }
+                }
             }
         }
 
@@ -1294,6 +1374,88 @@ namespace layout {
             }
         }
 
+        // redo phase 5 if we miss/exceed the min/max
+        float hypotheticalGridSize = 0.0f;
+        for (uint32_t track = 0; track < numTracks; ++track) {
+            auto maxSizingFunction = maxSizingFunctions[track];
+            std::visit(Overloaded{
+                [&](Size& size) {
+                    hypotheticalGridSize += size.isFr() ? std::max(baseSizes[track], flexFraction * size.value) : baseSizes[track];
+                },
+                [&](auto&) {
+                    hypotheticalGridSize += baseSizes[track];
+                }
+            }, maxSizingFunction);
+        }
+
+        bool needsRedo = false;
+        float redoSpaceToFill = 0.0f;
+
+        if (std::holds_alternative<float>(minimum)) {
+            float resolvedMinimum = std::get<float>(minimum);
+
+            if (hypotheticalGridSize < resolvedMinimum) {
+                needsRedo = true;
+                redoSpaceToFill = resolvedMinimum;
+            }
+        }
+
+        if (std::holds_alternative<float>(maximum)) {
+            float resolvedMaximum = std::get<float>(maximum);
+
+            if (hypotheticalGridSize > resolvedMaximum) {
+                needsRedo = true;
+                redoSpaceToFill = resolvedMaximum;
+            }
+        }
+
+        if (needsRedo) {
+            auto leftoverSpace = redoSpaceToFill;
+            std::set<uint32_t> flexibleTracks {};
+
+            for (uint32_t track = 0; track < numTracks; ++track) {
+                auto maxSizingFunction = maxSizingFunctions[track];
+                std::visit(Overloaded{
+                    [&](Size& size) {
+                        if (size.isFr()) {
+                            flexibleTracks.insert(track);
+                        }else {
+                            leftoverSpace -= baseSizes[track];
+                        }
+                    },
+                    [&](auto&) {
+                        leftoverSpace -= baseSizes[track];
+                    }
+                }, maxSizingFunction);
+            }
+
+            while (!flexibleTracks.empty()) {
+                float flexFactorSum = 0.0f;
+                for (auto track : flexibleTracks) {
+                    flexFactorSum += std::get<Size>(maxSizingFunctions[track]).value;
+                }
+
+                auto hypotheticalFrSize = leftoverSpace / std::max(1.0f, flexFactorSum);
+                std::set<uint32_t> inflexibleTracks {};
+                for (auto track : flexibleTracks) {
+                    auto flexFactor = std::get<Size>(maxSizingFunctions[track]).value;
+                    if (hypotheticalFrSize * flexFactor < baseSizes[track]) {
+                        inflexibleTracks.insert(track);
+                    }
+                }
+
+                if (inflexibleTracks.empty()) {
+                    flexFraction = hypotheticalFrSize;
+                    break;
+                }
+
+                for (auto track : inflexibleTracks) {
+                    flexibleTracks.erase(track);
+                    leftoverSpace -= baseSizes[track];
+                }
+            }
+        }
+
         for (uint32_t track = 0; track < numTracks; ++track) {
             auto maxSizingFunction = maxSizingFunctions[track];
             std::visit(Overloaded{
@@ -1304,6 +1466,52 @@ namespace layout {
                 },
                 [&](auto&) {}
             }, maxSizingFunction);
+        }
+
+        // phase 6: stretch auto tracks
+        bool stretchesAutoTracks = isCol ? justifyContent == JustifyContent::Stretch || justifyContent == JustifyContent::Normal 
+                                        : alignContent == AlignContent::Stretch || alignContent == AlignContent::Normal;
+
+        freeSpace = std::visit(Overloaded{
+            [&](float resolved) -> SizeState {
+                return std::max(0.0f, resolved - std::ranges::fold_left(baseSizes, 0.0f, std::plus{}));
+            },
+            [&](auto& other) -> SizeState {
+                return other;
+            }
+        }, available);
+
+        float stretchFreeSpace = 0.0f;
+
+        if (std::holds_alternative<float>(freeSpace)) {
+            stretchFreeSpace = std::get<float>(freeSpace);
+        }else if (std::holds_alternative<float>(minimum)) {
+            float resolvedMinimum = std::get<float>(minimum);
+            stretchFreeSpace = std::max(0.0f, resolvedMinimum - std::ranges::fold_left(baseSizes, 0.0f, std::plus{}));
+        }
+
+        if (stretchesAutoTracks && stretchFreeSpace > 0.0f) {
+            std::set<uint32_t> autoTracks {};
+
+            for (uint32_t track = 0; track < numTracks; ++track) {
+                auto maxSizingFunction = maxSizingFunctions[track];
+                std::visit(Overloaded{
+                    [&](Size& size) {
+                        if (size.isAuto()) {
+                            autoTracks.insert(track);
+                        }
+                    },
+                    [&](auto&) {}
+                }, maxSizingFunction);
+            }
+
+            if (!autoTracks.empty()) {
+                float share = stretchFreeSpace / autoTracks.size();
+
+                for (auto track : autoTracks) {
+                    baseSizes[track] += share;
+                }
+            }
         }
     }
 

@@ -11,7 +11,9 @@ namespace tree {
 }
 
 namespace layout {
+    using style::AlignContent;
     using style::AlignItems;
+    using style::JustifyContent;
     using style::JustifyItems;
     using style::JustifySelf;
     using style::Size;
@@ -95,6 +97,8 @@ namespace layout {
             const SizeResult& containerSize,
             float gap,
             bool isCol,
+            JustifyContent justifyContent,
+            AlignContent alignContent,
             IntrinsicSizes* intrinsicSizes = nullptr
         );
 

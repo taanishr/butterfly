@@ -45,24 +45,37 @@ namespace layout {
     // and just putting them in a namespace
     DistributeMode toDistributeMode(JustifyContent jc) {
         switch (jc) {
-            case JustifyContent::FlexStart:    return DistributeMode::FlexStart;
-            case JustifyContent::FlexEnd:      return DistributeMode::FlexEnd;
-            case JustifyContent::Center:       return DistributeMode::Center;
-            case JustifyContent::SpaceBetween: return DistributeMode::SpaceBetween;
-            case JustifyContent::SpaceAround:  return DistributeMode::SpaceAround;
-            case JustifyContent::SpaceEvenly:  return DistributeMode::SpaceEvenly;
+            case JustifyContent::FlexStart:    
+                return DistributeMode::FlexStart;
+            case JustifyContent::FlexEnd:      
+                return DistributeMode::FlexEnd;
+            case JustifyContent::Center:       
+                return DistributeMode::Center;
+            case JustifyContent::SpaceBetween: 
+                return DistributeMode::SpaceBetween;
+            case JustifyContent::SpaceAround:  
+                return DistributeMode::SpaceAround;
+            case JustifyContent::SpaceEvenly:  
+                return DistributeMode::SpaceEvenly;
         }
     }
 
     DistributeMode toDistributeMode(AlignContent ac) {
         switch (ac) {
-            case AlignContent::Stretch:      return DistributeMode::FlexStart;
-            case AlignContent::FlexStart:    return DistributeMode::FlexStart;
-            case AlignContent::FlexEnd:      return DistributeMode::FlexEnd;
-            case AlignContent::Center:       return DistributeMode::Center;
-            case AlignContent::SpaceBetween: return DistributeMode::SpaceBetween;
-            case AlignContent::SpaceAround:  return DistributeMode::SpaceAround;
-            case AlignContent::SpaceEvenly:  return DistributeMode::SpaceEvenly;
+            case AlignContent::Stretch:      
+                return DistributeMode::FlexStart;
+            case AlignContent::FlexStart:    
+                return DistributeMode::FlexStart;
+            case AlignContent::FlexEnd:     
+                return DistributeMode::FlexEnd;
+            case AlignContent::Center:      
+                return DistributeMode::Center;
+            case AlignContent::SpaceBetween: 
+                return DistributeMode::SpaceBetween;
+            case AlignContent::SpaceAround:  
+                return DistributeMode::SpaceAround;
+            case AlignContent::SpaceEvenly:  
+                return DistributeMode::SpaceEvenly;
         }
     }
 

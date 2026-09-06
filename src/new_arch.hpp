@@ -253,7 +253,9 @@ namespace style {
         Center,
         SpaceBetween,
         SpaceAround,
-        SpaceEvenly
+        SpaceEvenly,
+        Normal,
+        Stretch,
     };
 
     enum class AlignItems {
@@ -276,7 +278,8 @@ namespace style {
         Center,
         SpaceBetween,
         SpaceAround,
-        SpaceEvenly
+        SpaceEvenly,
+        Normal,
     };
 
     enum class AlignSelf {
