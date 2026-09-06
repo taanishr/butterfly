@@ -281,13 +281,11 @@ namespace layout {
             std::visit(Overloaded{
                 [&](float resolved){
                     baseSizes.push_back(resolved);
-                    baseSizes.push_back(resolved);
                 },
                 [&](Size& size){
                     // default to 0 for intrinsic funcs
                     if (size.isAuto() || size.isContentDependent()) {
                         baseSizes.push_back(0.0f);
-                        baseSizes.push_back(0.0f);;
                     }else if (size.isFr()) {
                         // not in spec lol?
                     }else {
@@ -308,7 +306,6 @@ namespace layout {
         for (const auto& maxSizingFunction : maxSizingFunctions) {
             std::visit(Overloaded{
                 [&](float resolved){
-                    growthLimits.push_back(resolved);
                     growthLimits.push_back(resolved);
                 },
                 [&](Size& size){
