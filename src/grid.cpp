@@ -711,8 +711,39 @@ namespace layout {
             }
         }
 
-        // phase 4: distribute extra space to tracks
-        
+        // phase 4/5 depend on free space calc
+        auto freeSpace = std::visit(Overloaded{
+            [&](float resolved) -> SizeState {
+                return std::max(0.0f, resolved - std::ranges::fold_left(baseSizes, 0.0f, std::plus{})); // also sub gaps
+            },
+            [&](auto& other) -> SizeState {
+                return other;
+            }
+        }, available);
+
+        // phase 4: maximize tracks
+        /*
+            Equal to the available grid space minus the sum of the base sizes of all the grid tracks (including gutters), floored at zero. 
+            If available grid space is indefinite, the free space is indefinite as well.
+        */
+
+        /*
+            other cases to shore up:
+            For the purpose of this step: if sizing the grid container under a max-content constraint, the free space is infinite; if sizing under a min-content constraint, the free space is zero.
+
+            If this would cause the grid to be larger than the grid container’s inner size as limited by its max-width/height, 
+            then redo this step, treating the available grid space as equal to the grid container’s inner size when it’s sized 
+            to its max-width/height. (for this I need the size state arg)
+        */
+
+        if (std::holds_alternative<float>(freeSpace)) {
+            float resolvedFreeSpace = std::get<float>(freeSpace);
+            for (auto [baseSize, growthLimit] : std::ranges::views::zip(baseSizes, growthLimits)) {
+                baseSize = std::min(baseSize + resolvedFreeSpace / baseSizes.size(), growthLimit);
+            }
+        }
+
+        // phase 5: expand flexible tracks
     }
 
     void GridLayout::resolveColumns(size_t numRows, size_t numCols, const std::vector<Size>& templateCols, const SizeState& availableWidth, float colGap) {
