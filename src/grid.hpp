@@ -92,7 +92,7 @@ namespace layout {
         void resolveStructure(size_t templateRows, size_t templateCols);
         std::vector<Track> resolveTracks(
             std::vector<SizeState>& templateTracks, // why the fuck is this a size
-            const SizeState& available,
+            const SizeResult& containerSize,
             float gap,
             bool isCol,
             IntrinsicSizes* intrinsicSizes = nullptr

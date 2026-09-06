@@ -223,7 +223,7 @@ namespace layout {
         }, sizeState);
     };
 
-    auto GridLayout::resolveTracks(std::vector<SizeState>& sizingFunctionReqs, const SizeState& available, float gap, bool isCol, IntrinsicSizes* intrinsicSizes) -> std::vector<Track> {
+    auto GridLayout::resolveTracks(std::vector<SizeState>& sizingFunctionReqs, const SizeResult& containerSize, float gap, bool isCol, IntrinsicSizes* intrinsicSizes) -> std::vector<Track> {
         /*
             this method sizes all tracks along a certain axis
             note: the track is the abstraction for a row/column, 
@@ -237,6 +237,12 @@ namespace layout {
         // i think available should change to become the container size result?
         // thus we get available + the container's automatic min/max, which is useful for enabling
         // limited min/max content
+
+        const auto& available = isCol ? containerSize.innerSize.width : containerSize.innerSize.height;
+        bool containerHasMinContentConstraint = false;
+        if (std::holds_alternative<Size>(available)) {
+            containerHasMinContentConstraint = std::get<Size>(available).isMinContent();
+        }
 
         // phase 1: determine sizing functions
         auto numTracks = sizingFunctionReqs.size();
@@ -318,7 +324,8 @@ namespace layout {
             }, maxSizingFunction);
         }
  
-        // next: spec says "shim baseline items" - i dont think I care; I have no clue what this even means
+        // next: "shim baseline items"
+        // skipped for now in this impl; applied later
 
         /*
             The Loop: the basic primitive of grid
@@ -375,10 +382,19 @@ namespace layout {
                         // std::max(baseSizes[start], minContent); (min)
                         // or std::max(baseSizes[start], maxContent); (max)
                         // clamped by max track sizing case. very very fucking weird
-
-                        // else, just use (only this case is supported rn)
-                        // std::max(baseSizes[start], minContent) (min)
-                        baseSizes[start] = std::max(baseSizes[start], minContent);
+                        if (containerHasMinContentConstraint) {
+                            float limitedMinContent = minContent;
+                            if (std::holds_alternative<float>(maxSizingFunctions[start])) {
+                                float fixedTrackMaximum = std::get<float>(maxSizingFunctions[start]);
+                                limitedMinContent = std::min(limitedMinContent, fixedTrackMaximum);
+                            }
+                            limitedMinContent = std::max(limitedMinContent, item.widthContributions.minimum);
+                            baseSizes[start] = std::max(baseSizes[start], limitedMinContent);
+                        }else {
+                            // else, just use
+                            // std::max(baseSizes[start], minContent) (min)
+                            baseSizes[start] = std::max(baseSizes[start], minContent);
+                        }
                     }
                 },
                 [&](auto&) {}
@@ -428,7 +444,8 @@ namespace layout {
         constexpr int contentBasedMinimums = 1;
         constexpr int maxContentMinimums = 2;
         constexpr int intrinsicMaximums = 3;
-        constexpr std::array passes = {intrinsicMinimums, contentBasedMinimums, maxContentMinimums, intrinsicMaximums};
+        constexpr int maxContentMaximums = 4;
+        constexpr std::array passes = {intrinsicMinimums, contentBasedMinimums, maxContentMinimums, intrinsicMaximums, maxContentMaximums};
 
         for (uint32_t targetSpan = 2; targetSpan < numTracks; ++targetSpan) {
             // loop over items as we have it
@@ -450,6 +467,9 @@ namespace layout {
                 "Mark any tracks whose growth limit changed from infinite to finite in this step as infinitely growable for the next step."
                 new vector emerges
             */
+
+            // while *extra space exists*
+            // keep distributing
             for (auto pass : passes) {
                 std::map<int, float> baseSizePlannedIncreases {};
                 std::map<int, float> growthLimitPlannedIncreases {};
@@ -514,11 +534,24 @@ namespace layout {
                             [&](Size& size){
                                 if (pass == intrinsicMinimums && (size.isAuto() || size.isContentDependent())) {
                                     // 1. for intrinsic minimums
-                                    baseSizeExtraSpace = std::max(baseSizeExtraSpace, minContribution - spanBaseSize);
+                                    float intrinsicContribution = 0.0f;
+                                    if (containerHasMinContentConstraint) {
+                                        float limitedMinContent = minContent;
+                                        if (std::holds_alternative<float>(maxSizingFunctions[start])) {
+                                            float fixedTrackMaximum = std::get<float>(maxSizingFunctions[start]);
+                                            limitedMinContent = std::min(limitedMinContent, fixedTrackMaximum);
+                                        }
+                                        limitedMinContent = std::max(limitedMinContent, item.widthContributions.minimum);
+                                        intrinsicContribution = minContribution;
+                                    }else {
+                                        intrinsicContribution = minContribution;
+                                    }
+
+                                    baseSizeExtraSpace = std::max(baseSizeExtraSpace, intrinsicContribution - spanBaseSize);
                                     affectedTracks.insert(spannedTrack);
-                                }else if(pass == contentBasedMinimums && size.isContentDependent()) {
+                                }else if(pass == contentBasedMinimums && (size.isMinContent() || size.isMaxContent())) {
                                     // 2. for content based minimums
-                                    baseSizeExtraSpace = std::max(baseSizeExtraSpace, minContribution - spanBaseSize);
+                                    baseSizeExtraSpace = std::max(baseSizeExtraSpace, minContent - spanBaseSize);
                                     affectedTracks.insert(spannedTrack);
                                 }else if (pass == maxContentMinimums && size.isMaxContent()) {
                                     // 3. for max-content minimums
@@ -536,7 +569,10 @@ namespace layout {
                                 // intrinsic; according to the grid algo, is:
                                 // isAuto() || isContentDependent()
                                 if (pass == intrinsicMaximums && (size.isAuto() || size.isContentDependent())) {
-                                    growthExtraSpace = std::max(growthExtraSpace, minContribution - spanGrowthLimitSpace);
+                                    growthExtraSpace = std::max(growthExtraSpace, minContent - spanGrowthLimitSpace);
+                                    affectedTracks.insert(spannedTrack);
+                                }else if (pass == maxContentMaximums && (size.isMaxContent() || size.isFitContent())) {
+                                    growthExtraSpace = std::max(growthExtraSpace, maxContent - spanGrowthLimitSpace);
                                     affectedTracks.insert(spannedTrack);
                                 }
                             },
@@ -566,8 +602,10 @@ namespace layout {
                 }
 
                 for (auto& [track, plannedIncrease] : growthLimitPlannedIncreases) {
-                    // acount for infinity properly; this will be buggy
-                    growthLimits[track] += plannedIncrease;
+                    // how does something go from infinite to... finite?
+                    if (growthLimits[track] != std::numeric_limits<float>::infinity()) {
+                        growthLimits[track] += plannedIncrease;
+                    }
 
                     // correct growth limits
                     growthLimits[track] = std::max(growthLimits[track], baseSizes[track]);
@@ -631,13 +669,26 @@ namespace layout {
 
                     std::visit(Overloaded{
                         [&](Size& size){
-                            if (pass == intrinsicMinimums && (size.isAuto() || size.isContentDependent())) {
+                            if (pass == intrinsicMinimums && size.isFr()) {
                                 // 1. for intrinsic minimums
-                                baseSizeExtraSpace = std::max(baseSizeExtraSpace, minContribution - spanBaseSize);
-                            }else if(pass == contentBasedMinimums && size.isContentDependent()) {
+                                float intrinsicContribution = 0.0f;
+                                if (containerHasMinContentConstraint) {
+                                    float limitedMinContent = minContent;
+                                    if (std::holds_alternative<float>(maxSizingFunctions[start])) {
+                                        float fixedTrackMaximum = std::get<float>(maxSizingFunctions[start]);
+                                        limitedMinContent = std::min(limitedMinContent, fixedTrackMaximum);
+                                    }
+                                    limitedMinContent = std::max(limitedMinContent, item.widthContributions.minimum);
+                                    intrinsicContribution = minContribution;
+                                }else {
+                                    intrinsicContribution = minContribution;
+                                }
+
+                                baseSizeExtraSpace = std::max(baseSizeExtraSpace, intrinsicContribution - spanBaseSize);
+                            }else if(pass == contentBasedMinimums && size.isFr()) {
                                 // 2. for content based minimums
-                                baseSizeExtraSpace = std::max(baseSizeExtraSpace, minContribution - spanBaseSize);
-                            }else if (pass == maxContentMinimums && size.isMaxContent()) {
+                                baseSizeExtraSpace = std::max(baseSizeExtraSpace, minContent - spanBaseSize);
+                            }else if (pass == maxContentMinimums && size.isFr()) {
                                 // 3. for max-content minimums
                                 baseSizeExtraSpace = std::max(baseSizeExtraSpace, maxContent - spanBaseSize);
                             }
@@ -645,14 +696,16 @@ namespace layout {
                         [&](auto&) {
                             // dont alter intrinsic growth of base sizes/growth limits
                         }
-                    }, minSizingFunction);
+                    }, maxSizingFunction);
 
                     std::visit(Overloaded{
                         [&](Size& size){
                             // intrinsic; according to the grid algo, is:
                             // isAuto() || isContentDependent()
-                            if (pass == intrinsicMaximums && (size.isAuto() || size.isContentDependent())) {
-                                growthExtraSpace = std::max(growthExtraSpace, minContribution - spanGrowthLimitSpace);
+                            if (pass == intrinsicMaximums && size.isFr()) {
+                                growthExtraSpace = std::max(growthExtraSpace, minContent - spanGrowthLimitSpace);
+                            }else if (pass == maxContentMaximums && size.isFr()) {
+                                growthExtraSpace = std::max(growthExtraSpace, maxContent - spanGrowthLimitSpace);
                             }
 
                             if (size.isFr()) {
@@ -692,8 +745,10 @@ namespace layout {
             }
 
             for (auto& [track, plannedIncrease] : growthLimitPlannedIncreases) {
-                // acount for infinity properly; this will be buggy
-                growthLimits[track] += plannedIncrease;
+                // how does something go from infinite to... finite?
+                if (growthLimits[track] != std::numeric_limits<float>::infinity()) {
+                    growthLimits[track] += plannedIncrease;
+                }
 
                 // correct growth limits
                 growthLimits[track] = std::max(growthLimits[track], baseSizes[track]);
@@ -803,12 +858,8 @@ namespace layout {
                 }
             }
         }else {
-            bool isMinContentConstraint = false;
-            if (std::holds_alternative<Size>(available)) {
-                isMinContentConstraint = std::get<Size>(available).isMinContent();
-            }
 
-            if (!isMinContentConstraint) {
+            if (!containerHasMinContentConstraint) {
                 for (uint32_t track = 0; track < numTracks; ++track) {
                     auto maxSizingFunction = maxSizingFunctions[track];
                     std::visit(Overloaded{
