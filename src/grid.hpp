@@ -1,6 +1,7 @@
 #pragma once
 
 #include "element.hpp"
+#include "new_arch.hpp"
 #include "new_sizing.hpp"
 #include <optional>
 #include <unordered_map>
@@ -92,15 +93,24 @@ namespace layout {
 
         // helpers
         void resolveStructure(size_t templateRows, size_t templateCols);
-        std::vector<Track> resolveTracks(
-            std::vector<SizeState>& templateTracks, // why the fuck is this a size
-            const SizeResult& containerSize,
-            float gap,
+
+        auto sizeTracks(
+            const std::vector<SizeState>& sizingFunctionReqs, 
+            const SizeResult& containerSize, 
             bool isCol,
+            float gap, 
+            JustifyContent justifyContent, 
+            AlignContent alignContent
+        ) -> std::vector<float>;
+
+        auto positionTracks(
+            const SizeResult& containerSize,
+            const std::vector<float>& trackSizes, 
+            bool isCol,
+            float gap,
             JustifyContent justifyContent,
             AlignContent alignContent,
-            IntrinsicSizes* intrinsicSizes = nullptr
-        );
+        ) -> std::vector<float>;
 
         void resolveColumns(size_t numRows, size_t numCols, const std::vector<Size>& templateCols, const SizeState& availableWidth, float colGap);
         void resolveRows(const std::vector<Size>& templateRows, const SizeState& availableHeight, float rowGap);

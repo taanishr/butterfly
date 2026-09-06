@@ -1,4 +1,5 @@
 #include "grid.hpp"
+#include "new_arch.hpp"
 #include "new_sizing.hpp"
 #include "overloaded.hpp"
 #include "render_tree.hpp"
@@ -223,8 +224,7 @@ namespace layout {
         }, sizeState);
     };
 
-    // rename to sizeTracks
-    auto GridLayout::resolveTracks(std::vector<SizeState>& sizingFunctionReqs, const SizeResult& containerSize, float gap, bool isCol, JustifyContent justifyContent, AlignContent alignContent, IntrinsicSizes* intrinsicSizes) -> std::vector<Track> {
+    auto GridLayout::sizeTracks(const std::vector<SizeState>& sizingFunctionReqs, const SizeResult& containerSize, bool isCol, float gap, JustifyContent justifyContent, AlignContent alignContent) -> std::vector<float> {
         /*
             this method sizes all tracks along a certain axis
             note: the track is the abstraction for a row/column, 
@@ -1563,24 +1563,155 @@ namespace layout {
                 }
             }
         }
+
+        return baseSizes;
     }
 
-    auto positionTracks(SizeResult& containerSize, std::vector<float> trackSizes) -> std::vector<Track> {
-        auto innerSize = containerSize.innerSize;
+    auto positionTracks(const SizeResult& containerSize, const std::vector<float>& trackSizes, bool isCol, float gap, JustifyContent justifyContent, AlignContent alignContent) -> std::vector<float> {
+        auto innerSize = isCol ? containerSize.innerSize.width : containerSize.innerSize.height;
 
-        // calculate remaining
+        auto numTracks = trackSizes.size();
 
-        // calculate base offset (switch based on mode; requires argument)
+        std::vector<float> trackPositions (numTracks, 0.0f);
+
+        if (numTracks == 0) {
+            return trackPositions;
+        }
 
         std::visit(Overloaded{
-            [](){
+            [&](float resolvedInnerSize) {
                 // if resolved
+
+                // calculate remaining
+                float summedTrackSizes = std::ranges::fold_left(trackSizes, 0.0f, std::plus{});
+                float remaining = resolvedInnerSize - summedTrackSizes - gap * (numTracks - 1);
+
+                // calculate leading space
+                float leadingSpace = 0.0f;
+                if (isCol) {
+                    switch (justifyContent) {
+                        case JustifyContent::Normal:
+                        case JustifyContent::Stretch:
+                        case JustifyContent::FlexStart:
+                        case JustifyContent::Start: {
+                            leadingSpace = 0.0f;
+                            break;
+                        }
+                        case JustifyContent::FlexEnd:
+                        case JustifyContent::End: {
+                            leadingSpace = remaining;
+                            break;
+                        }
+                        case JustifyContent::Center: {
+                            leadingSpace = remaining / 2;
+                            break;
+                        }
+                        case JustifyContent::SpaceBetween: {
+                            leadingSpace = 0.0f;
+                            break;
+                        }
+                        case JustifyContent::SpaceAround: {
+                            leadingSpace = std::max(0.0f, remaining) / (numTracks * 2);
+                            break;
+                        }
+                        case JustifyContent::SpaceEvenly: {
+                            leadingSpace = std::max(0.0f, remaining) / (numTracks + 1);
+                            break;
+                        }
+                    }
+                }else {
+                    switch (alignContent) {
+                        case AlignContent::Normal:
+                        case AlignContent::Stretch:
+                        case AlignContent::FlexStart:
+                        case AlignContent::Start: {
+                            leadingSpace = 0.0f;
+                            break;
+                        }
+                        case AlignContent::FlexEnd:
+                        case AlignContent::End: {
+                            leadingSpace = remaining;
+                            break;
+                        }
+                        case AlignContent::Center: {
+                            leadingSpace = remaining / 2;
+                            break;
+                        }
+                        case AlignContent::SpaceBetween: {
+                            leadingSpace = 0.0f;
+                            break;
+                        }
+                        case AlignContent::SpaceAround: {
+                            // these can't handle overflowing space
+                            leadingSpace = std::max(0.0f, remaining) / (numTracks * 2);
+                            break;
+                        }
+                        case AlignContent::SpaceEvenly: {
+                            leadingSpace = std::max(0.0f, remaining) / (numTracks + 1);
+                            break;
+                        }
+                    }
+                }
+
+                // calculate extra space
+                float extraSpaceBetween = 0.0f;
+                if (isCol) {
+                    switch (justifyContent) {
+                        case JustifyContent::Start:
+                        case JustifyContent::End:
+                        case JustifyContent::Center: {
+                            extraSpaceBetween = 0.0f;
+                            break;                
+                        }
+                        case JustifyContent::SpaceBetween: {
+                            extraSpaceBetween = std::max(0.0f, remaining) / (numTracks - 1);
+                            break;
+                        }
+                        case JustifyContent::SpaceAround: {
+                            extraSpaceBetween = std::max(0.0f, remaining) / (numTracks);
+                            break;
+                        }
+                        case JustifyContent::SpaceEvenly: {
+                            extraSpaceBetween = std::max(0.0f, remaining) / (numTracks + 1);
+                            break;
+                        }
+                    }
+                }else {
+                    switch (alignContent) {
+                        case AlignContent::Start:
+                        case AlignContent::End:
+                        case AlignContent::Center: {
+                            extraSpaceBetween = 0.0f;
+                            break;                
+                        }
+                        case AlignContent::SpaceBetween: {
+                            extraSpaceBetween = std::max(0.0f, remaining) / (numTracks - 1);
+                            break;
+                        }
+                        case AlignContent::SpaceAround: {
+                            extraSpaceBetween = std::max(0.0f, remaining) / (numTracks);
+                            break;
+                        }
+                        case AlignContent::SpaceEvenly: {
+                            extraSpaceBetween = std::max(0.0f, remaining) / (numTracks + 1);
+                            break;
+                        }
+                    }
+                }
+
                 // walk the tracks
+                float cursor = leadingSpace;
+                for (auto i = 0; i < trackPositions.size(); ++i) {
+                    trackPositions[i] = cursor;
+                    cursor += trackSizes[i] + extraSpaceBetween + gap;
+                }
             },
-            [](){
+            [](auto&){
                 // else; zero offsets
             }
-        }, innerSize)
+        }, innerSize);
+
+        return trackPositions;
     }
 
     void GridLayout::resolveColumns(size_t numRows, size_t numCols, const std::vector<Size>& templateCols, const SizeState& availableWidth, float colGap) {
@@ -1598,7 +1729,7 @@ namespace layout {
         for (int i = 0; i < templateRows.size(); ++i)
             rowDefs[i] = templateRows[i];
 
-        rowTracks = resolveTracks(rowDefs, availableHeight, rowGap, false, &rowIntrinsicSizes);
+        // rowTracks = resolveTracks(rowDefs, availableHeight, rowGap, false, &rowIntrinsicSizes);
     }
 
     GridResolver::GridResolver(RenderTree& tree, TreeNode* node,

@@ -256,6 +256,8 @@ namespace style {
         SpaceEvenly,
         Normal,
         Stretch,
+        Start,
+        End
     };
 
     enum class AlignItems {
@@ -280,6 +282,8 @@ namespace style {
         SpaceAround,
         SpaceEvenly,
         Normal,
+        Start,
+        End
     };
 
     enum class AlignSelf {
