@@ -876,7 +876,7 @@ namespace tree {
 
         auto gridPass = [&](const SizeResult& sr) {
             GridResolver gr {
-                *this, node, constraints, childConstraints, frameInfo, sr.innerSize,
+                *this, node, constraints, childConstraints, frameInfo, sr,
                 mutate, sizeCache,
                 minX, minY, maxX, maxY
             };

@@ -109,11 +109,8 @@ namespace layout {
             bool isCol,
             float gap,
             JustifyContent justifyContent,
-            AlignContent alignContent,
+            AlignContent alignContent
         ) -> std::vector<float>;
-
-        void resolveColumns(size_t numRows, size_t numCols, const std::vector<Size>& templateCols, const SizeState& availableWidth, float colGap);
-        void resolveRows(const std::vector<Size>& templateRows, const SizeState& availableHeight, float rowGap);
     };
 
     struct GridResolver {
@@ -125,7 +122,7 @@ namespace layout {
         AlignItems        alignItems;
         JustifyItems      justifyItems;
         const FrameInfo&  frameInfo;
-        const SizePair&   availableSize;
+        const SizeResult& containerSize;
         bool              mutate;
         std::unordered_map<size_t, SizeResult>& sizeCache;
 
@@ -143,7 +140,7 @@ namespace layout {
                      const Constraints& parentConstraints,
                      const Constraints& childConstraints,
                      const FrameInfo& frameInfo,
-                     const SizePair& availableSize, bool mutate,
+                     const SizeResult& containerSize, bool mutate,
                      std::unordered_map<size_t, SizeResult>& sizeCache,
                      float minX, float minY, float maxX, float maxY);
 
