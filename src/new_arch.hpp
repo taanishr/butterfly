@@ -26,6 +26,7 @@
 #include <string>
 #include "new_sizing.hpp"
 #include <utility>
+#include <variant>
 #include <vector>
 
 class Renderer;
@@ -86,12 +87,23 @@ namespace layout {
         std::vector<LineFragment> fragments;
         std::vector<LineBox> lineBoxes;
         std::vector<InlineFragmentRange> childFragments;
+
+        std::vector<LineFragment> minFragments;
+        std::vector<LineBox> minLineBoxes;
+        std::vector<InlineFragmentRange> minChildFragments;
+
+        std::vector<LineFragment> maxFragments;
+        std::vector<LineBox> maxLineBoxes;
+        std::vector<InlineFragmentRange> maxChildFragments;
+
         std::optional<IntrinsicSizes> intrinsicSizes;
     };
 
     struct InlineFormattingInput {
         std::shared_ptr<const InlineFormattingContext> context;
         InlineFragmentRange fragments;
+        InlineFragmentRange minFragments;
+        InlineFragmentRange maxFragments;
 
         std::span<const LineFragment> lineFragments() const {
             if (!context || fragments.count == 0) return {};
@@ -101,6 +113,16 @@ namespace layout {
         std::span<const LineBox> lineBoxes() const {
             if (!context) return {};
             return context->lineBoxes;
+        }
+
+        std::span<const LineFragment> minLineFragments() const {
+            if (!context || minFragments.count == 0) return {};
+            return std::span{context->minFragments}.subspan(minFragments.start, minFragments.count);
+        }
+
+        std::span<const LineFragment> maxLineFragments() const {
+            if (!context || maxFragments.count == 0) return {};
+            return std::span{context->maxFragments}.subspan(maxFragments.start, maxFragments.count);
         }
     };
 
@@ -634,7 +656,8 @@ namespace layout {
         float width, height;
     };
 
-    struct LayoutState {
+    // first class layout modes: every node is laid out as block or inline
+    struct BlockState {
         // atom geometry
         std::vector<simd_float2> atomOffsets;
         std::vector<simd_float2> localAtomOffsets;
@@ -642,9 +665,7 @@ namespace layout {
 
         // inline results
         InlineFormattingInput inlineFormatting;
-        float prevInlineHeight{}; 
-
-        ResolvedSize resolvedSize; // legacy field
+        float prevInlineHeight{};
 
         LayoutBox computedBox;
         LayoutBox localComputedBox; // fine
@@ -659,13 +680,59 @@ namespace layout {
         std::vector<ClipUniform> clipUniforms {};
     };
 
+    struct InlineState {
+        // atom geometry
+        std::vector<simd_float2> atomOffsets;
+        std::vector<simd_float2> localAtomOffsets;
+        std::vector<simd_float2> drawableAtomOffsets;
+
+        // inline results
+        InlineFormattingInput inlineFormatting;
+        float prevInlineHeight{};
+
+        LayoutBox computedBox;
+        LayoutBox localComputedBox; // fine
+
+        Constraints childConstraints; // child constraints
+
+        simd_float2 siblingCursor;
+        bool outOfFlow; // don't change siblings
+        EdgeIntent edgeIntent;
+
+        DeferredPositionInfo deferredPosition;
+        std::vector<ClipUniform> clipUniforms {};
+
+        // inline formatting knows these while it lays the fragments out
+        std::optional<IntrinsicSizes> widthIntrinsicSizes;
+        std::optional<IntrinsicSizes> heightIntrinsicSizes;
+    };
+
+    template <typename S>
+    concept LayoutStateType = requires(S state) {
+        { state.atomOffsets } -> std::same_as<std::vector<simd_float2>&>;
+        { state.localAtomOffsets } -> std::same_as<std::vector<simd_float2>&>;
+        { state.drawableAtomOffsets } -> std::same_as<std::vector<simd_float2>&>;
+        { state.inlineFormatting } -> std::same_as<InlineFormattingInput&>;
+        { state.prevInlineHeight } -> std::same_as<float&>;
+        { state.computedBox } -> std::same_as<LayoutBox&>;
+        { state.localComputedBox } -> std::same_as<LayoutBox&>;
+        { state.childConstraints } -> std::same_as<Constraints&>;
+        { state.siblingCursor } -> std::same_as<simd_float2&>;
+        { state.outOfFlow } -> std::same_as<bool&>;
+        { state.edgeIntent } -> std::same_as<EdgeIntent&>;
+        { state.deferredPosition } -> std::same_as<DeferredPositionInfo&>;
+        { state.clipUniforms } -> std::same_as<std::vector<ClipUniform>&>;
+    };
+
+    using LayoutState = std::variant<BlockState, InlineState>;
+
     struct LayoutResult {
         LayoutState layout;
         SizeResult sizeResult;
         std::optional<IntrinsicSizes> intrinsicSizes;
     };
 
-    
+
     struct LayoutEngine {
         static ResolvedMargins resolveAutoMargins(
             const LayoutInput& li,
@@ -675,18 +742,14 @@ namespace layout {
         );
 
         // relative, block/inline
-        static LayoutState layoutBlockNormalFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
-        static LayoutState layoutInlineNormalFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
+        static BlockState layoutBlockNormalFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
+        static InlineState layoutInlineNormalFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
         static LayoutState resolveNormalFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
 
         // fixed and absolute, block/inline
-        static LayoutState layoutBlockOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
-        static LayoutState layoutInlineOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
+        static BlockState layoutBlockOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
+        static InlineState layoutInlineOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
         static LayoutState resolveOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
-
-        // flex
-        static LayoutState layoutFlex(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized);
-
 
         static LayoutState resolve(Constraints& constraints, LayoutInput& layoutInput, Atomized atomized, const SizeResult& sizeResult);
     };

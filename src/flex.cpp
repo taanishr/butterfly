@@ -5,9 +5,7 @@
 #include "render_tree.hpp"
 #include "render_tree.hpp"
 #include <algorithm>
-#include <format>
 #include <optional>
-#include <string>
 #include <variant>
 
 namespace layout {
@@ -109,7 +107,6 @@ namespace layout {
                 .position = childAsPtr->shared.position,
                 .specified = {.width = childAsPtr->shared.width, .height = childAsPtr->shared.height},
                 .override = {.width = std::monostate{}, .height = std::monostate{}},
-                .content = {.width = std::monostate{}, .height = std::monostate{}},
                 .minimum = {.width = childAsPtr->shared.minWidth, .height = childAsPtr->shared.minHeight},
                 .maximum = {
                     .width = childAsPtr->shared.maxWidth ? SizeState{*childAsPtr->shared.maxWidth} : SizeState{std::monostate{}},
@@ -156,7 +153,7 @@ namespace layout {
             preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childAsPtr, {
                 .availableWidth = preparedChildConstraints.availableWidth,
                 .widthRequest = childRequest.intrinsicWidthRequest,
-                .trackIntrinsicWidth = false,
+                .trackIntrinsicWidth = flex.axis.isRow ? true : false,
             });
 
             SizeResult childSizing = evaluateSize(tree, childAsPtr, frameInfo, preparedChildConstraints, childMeasured, childRequest, sizeCache);
@@ -196,19 +193,27 @@ namespace layout {
         for (auto& line : flex.lines) {
             totalFlexBaseSize += line.totalWithGap(resolvedGap);
         }
+
+        if (node->id == 31) {
+            std::println("available size: {}", describeSizeState(availableSize.height));
+        }
         
         availableMain = std::visit(Overloaded {
             [](float value) { return value; },
             [&](const auto&) { return totalFlexBaseSize; },
         }, flex.axis.mainSize(availableSize));
+
+        // if (node-> id == 31) {
+        //     availableMain = 128;
+        // }
         
+
         if (node->shared.overflow == Overflow::Scroll) {
             availableMain = std::max(availableMain, totalFlexBaseSize);
         }
 
 
         resolvedMainSizes = flex.resolveSizes(availableMain, resolvedGap);
-
     }
 
     auto FlexResolver::phaseC() -> FlexResolver::FlexResult {
@@ -232,7 +237,6 @@ namespace layout {
                     .position = childNode->shared.position,
                     .specified = {.width = childNode->shared.width, .height = childNode->shared.height},
                     .override = {.width = std::monostate{}, .height = std::monostate{}},
-                    .content = {.width = std::monostate{}, .height = std::monostate{}},
                     .minimum = {.width = childNode->shared.minWidth, .height = childNode->shared.minHeight},
                     .maximum = {
                         .width = childNode->shared.maxWidth ? SizeState{*childNode->shared.maxWidth} : SizeState{std::monostate{}},
@@ -262,7 +266,7 @@ namespace layout {
                 preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childNode, {
                     .availableWidth = childAvailableSize.width,
                     .widthRequest = childRequest.intrinsicWidthRequest,
-                    .trackIntrinsicWidth = false,
+                    .trackIntrinsicWidth = flex.axis.isRow ? false : true,
                 });
 
                 if (flex.axis.isRow) {
@@ -278,11 +282,42 @@ namespace layout {
                 LayoutResult childOutput = tree.layoutRecursive(childNode, frameInfo, preparedChildConstraints, childMeasured, false, childRequest);
                 const SizeResult& sizeResult = childOutput.sizeResult;
 
-                const float* preferredCrossSize = std::get_if<float>(&flex.axis.crossSize(sizeResult.outerSize));
+                // if (std::holds_alternative<float>(flex.axis.crossSize(sizeResult.outerSize))) {
+                //     item.hypotheticalCrossSize = std::get<float>(flex.axis.crossSize(sizeResult.outerSize));
+                // }else {
+                //     item.hypotheticalCrossSize = 0.0f;
+                // }
 
-                item.hypotheticalCrossSize = preferredCrossSize ? *preferredCrossSize : flex.axis.crossSize(childOutput.layout);
+                // const auto& measuredCrossIntrinsicSizes = flex.axis.isRow ? sizeResult.heightIntrinsicSizes : sizeResult.widthIntrinsicSizes;
+
+                // // unresolved intrinsic sizes; skip
+                // if (!std::holds_alternative<float>(measuredCrossIntrinsicSizes->minimum) || !std::holds_alternative<float>(measuredCrossIntrinsicSizes->maximum)) {
+                //     continue;
+                // }
+
+                // float childMinimumCrossContribution = std::get<float>(measuredCrossIntrinsicSizes->minimum);
+                // float childMaximumCrossContribution = std::get<float>(measuredCrossIntrinsicSizes->maximum);
+
+                // lineMinimumCrossContribution = std::max(lineMinimumCrossContribution, childMinimumCrossContribution);
+                // lineMaximumCrossContribution = std::max(lineMaximumCrossContribution, childMaximumCrossContribution);
+                // line.maxCrossSize = std::max(line.maxCrossSize, item.hypotheticalCrossSize);
+
+                if (std::holds_alternative<float>(flex.axis.crossSize(sizeResult.outerSize))) {
+                    item.hypotheticalCrossSize = std::get<float>(flex.axis.crossSize(sizeResult.outerSize));
+                    lineMinimumCrossContribution = std::max(lineMinimumCrossContribution, item.hypotheticalCrossSize);
+                    lineMaximumCrossContribution = std::max(lineMaximumCrossContribution, item.hypotheticalCrossSize);
+                    line.maxCrossSize = std::max(line.maxCrossSize, item.hypotheticalCrossSize);
+                    continue;
+                }else {
+                    item.hypotheticalCrossSize = 0.0f;
+                }
 
                 const auto& measuredCrossIntrinsicSizes = flex.axis.isRow ? sizeResult.heightIntrinsicSizes : sizeResult.widthIntrinsicSizes;
+
+                // unresolved intrinsic sizes; skip
+                if (!std::holds_alternative<float>(measuredCrossIntrinsicSizes->minimum) || !std::holds_alternative<float>(measuredCrossIntrinsicSizes->maximum)) {
+                    continue;
+                }
 
                 float childMinimumCrossContribution = std::get<float>(measuredCrossIntrinsicSizes->minimum);
                 float childMaximumCrossContribution = std::get<float>(measuredCrossIntrinsicSizes->maximum);
@@ -344,7 +379,6 @@ namespace layout {
                 .position = childNode->shared.position,
                 .specified = {.width = childNode->shared.width, .height = childNode->shared.height},
                 .override = {.width = std::monostate{}, .height = std::monostate{}},
-                .content = {.width = std::monostate{}, .height = std::monostate{}},
                 .minimum = {.width = childNode->shared.minWidth, .height = childNode->shared.minHeight},
                 .maximum = {
                     .width = childNode->shared.maxWidth ? SizeState{*childNode->shared.maxWidth} : SizeState{std::monostate{}},
@@ -386,10 +420,10 @@ namespace layout {
             }
 
             LayoutResult childOutput = tree.layoutRecursive(childNode, frameInfo, preparedChildConstraints, childMeasured, mutate, childRequest);
-            const auto& childLayout = childOutput.layout;
-
-            maxX = std::max(maxX, childLayout.computedBox.x + childLayout.computedBox.width);
-            maxY = std::max(maxY, childLayout.computedBox.y + childLayout.computedBox.height);
+            std::visit([&](const auto& childLayout) {
+                maxX = std::max(maxX, childLayout.computedBox.x + childLayout.computedBox.width);
+                maxY = std::max(maxY, childLayout.computedBox.y + childLayout.computedBox.height);
+            }, childOutput.layout);
         }
 
         float minimumMainContribution = 0.0f;

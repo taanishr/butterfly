@@ -330,9 +330,9 @@ namespace runtime {
 }
 
 namespace layout {
-    LayoutState LayoutEngine::layoutBlockOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult) {
+    BlockState LayoutEngine::layoutBlockOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult) {
 
-        LayoutState lr;
+        BlockState lr;
         lr.outOfFlow = true;
 
         auto margins = constraints.resolvedMargins;
@@ -407,20 +407,16 @@ namespace layout {
     }
 
     LayoutState LayoutEngine::resolveOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult) {
-        LayoutState lr;
-
         if (layoutInput.display == Display::Block || layoutInput.display == Display::Flex || layoutInput.display == Display::Grid) {
-            lr = layoutBlockOutOfFlow(constraints, currentCursor, layoutInput, atomized, sizeResult);
-        }else {
-            lr = layoutInlineOutOfFlow(constraints, currentCursor, layoutInput, atomized, sizeResult);
+            return layoutBlockOutOfFlow(constraints, currentCursor, layoutInput, atomized, sizeResult);
         }
 
-        return lr;
+        return layoutInlineOutOfFlow(constraints, currentCursor, layoutInput, atomized, sizeResult);
     }
 
     // relative, block/inline
-    LayoutState LayoutEngine::layoutBlockNormalFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult) {
-        LayoutState lr;
+    BlockState LayoutEngine::layoutBlockNormalFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult) {
+        BlockState lr;
         Constraints childConstraints;
 
         lr.outOfFlow = false;
@@ -462,11 +458,6 @@ namespace layout {
             [&](float resolved){ return resolved; },
             [&](auto&) { return 0.0f; }
         }, sizeResult.outerSize.height);
-
-        // these are now dead; only user is grid (which will change slowly)
-        // // these need to die lol
-        // lr.resolvedSize.width = computedWidth;
-        // lr.resolvedSize.height = computedHeight;
 
         lr.computedBox = {
             startingPos.x,
@@ -513,14 +504,14 @@ namespace layout {
         fragmentCount += 1;
     }
 
-    LayoutState LayoutEngine::layoutInlineNormalFlow(
+    InlineState LayoutEngine::layoutInlineNormalFlow(
         Constraints& constraints,
         simd_float2 currentCursor,
         LayoutInput& layoutInput,
         Atomized& atomized,
         const SizeResult& sizeResult
     ) {
-        LayoutState lr;
+        InlineState lr;
         lr.outOfFlow = false;
 
         ResolvedMargins margins = constraints.resolvedMargins;
@@ -547,6 +538,20 @@ namespace layout {
 
         bool isLtr = constraints.inheritedProperties.direction == Direction::ltr;
         size_t prevLineBoxIndex = -1;
+
+        /*
+            there is a few conflicts
+            1) this returns the line box derived size
+            2) inline boxes get initialized with the actual min and max possible line box width
+            3) line box derived size can disagree with the actual min and max possible line box width
+            4) that isn't a problem; its completely expected
+            5) but it screws up intrinsic measurement
+            6) one idea: get rid of the *disagreement*
+            7) but the problem is, then cyclical dependencies
+            8) but I cant think of a good reason as to why text should even contribute a size... huh? Why does it matter per element
+            9) lol what was the point of this collect 
+
+        */
 
         /*
             unfortunately: inline still needs to collect *this sizing info*
@@ -643,16 +648,59 @@ namespace layout {
         totalHeight += lineHeight;
         totalWidth = std::max(currentTotalWidth, totalWidth);
 
-        // dead field
-        // lr.resolvedSize.width = totalWidth;
-        // lr.resolvedSize.height = totalHeight;
-
         lr.computedBox = {
             minX,
             minY,
             totalWidth,
             totalHeight
         };
+
+        float minWidth = totalWidth;
+        auto minLineFragments = constraints.inlineFormatting.minLineFragments();
+        if (!minLineFragments.empty()) {
+            minWidth = 0.0f;
+            float currentWidth = 0.0f;
+            size_t prevIndex = -1;
+            for (const LineFragment& fragment : minLineFragments) {
+                if (fragment.lineBoxIndex != prevIndex && prevIndex != -1) {
+                    minWidth = std::max(currentWidth, minWidth);
+                    currentWidth = 0.0f;
+                }
+
+                size_t atomIndex = fragment.atomStart;
+                for (size_t i = 0; i < fragment.atomCount && atomIndex < atomized.atoms.size(); ++i, ++atomIndex) {
+                    currentWidth += atomized.atoms[atomIndex].width;
+                }
+
+                prevIndex = fragment.lineBoxIndex;
+            }
+            minWidth = std::max(currentWidth, minWidth);
+        }
+
+        float maxWidth = totalWidth;
+        auto maxLineFragments = constraints.inlineFormatting.maxLineFragments();
+        if (!maxLineFragments.empty()) {
+            maxWidth = 0.0f;
+            float currentWidth = 0.0f;
+            size_t prevIndex = -1;
+            for (const LineFragment& fragment : maxLineFragments) {
+                if (fragment.lineBoxIndex != prevIndex && prevIndex != -1) {
+                    maxWidth = std::max(currentWidth, maxWidth);
+                    currentWidth = 0.0f;
+                }
+
+                size_t atomIndex = fragment.atomStart;
+                for (size_t i = 0; i < fragment.atomCount && atomIndex < atomized.atoms.size(); ++i, ++atomIndex) {
+                    currentWidth += atomized.atoms[atomIndex].width;
+                }
+
+                prevIndex = fragment.lineBoxIndex;
+            }
+            maxWidth = std::max(currentWidth, maxWidth);
+        }
+
+        lr.widthIntrinsicSizes = IntrinsicSizes {.minimum = minWidth, .maximum = maxWidth};
+        lr.heightIntrinsicSizes = IntrinsicSizes {.minimum = totalHeight, .maximum = totalHeight};
 
         // padding / nor child available space is really relevant or correct for inline contaienrs
         // float paddingLeft = layoutInput.paddingLeft.resolveOr(constraints.availableWidth);
@@ -679,8 +727,8 @@ namespace layout {
         return lr;
     }
 
-    LayoutState LayoutEngine::layoutInlineOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult) {
-        LayoutState lr;
+    InlineState LayoutEngine::layoutInlineOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult) {
+        InlineState lr;
         lr.outOfFlow = true;
 
         ResolvedMargins margins = constraints.resolvedMargins;
@@ -771,15 +819,15 @@ namespace layout {
         totalHeight += lineHeight;
         totalWidth = std::max(currentTotalWidth, totalWidth);
 
-        lr.resolvedSize.width = totalWidth;
-        lr.resolvedSize.height = totalHeight;
-
         lr.computedBox = {
             minX,
             minY,
             totalWidth,
             totalHeight
         };
+
+        lr.widthIntrinsicSizes = IntrinsicSizes {.minimum = totalWidth, .maximum = totalWidth};
+        lr.heightIntrinsicSizes = IntrinsicSizes {.minimum = totalHeight, .maximum = totalHeight};
 
         // i dont think any of these are really relevant for inline containers
         // children get lifted up; so these dont need to be set whatsoever
@@ -823,21 +871,15 @@ namespace layout {
 
 
     LayoutState LayoutEngine::resolveNormalFlow(Constraints& constraints, simd_float2 current_cursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult) {
-        LayoutState lr;
-
         if (layoutInput.display == Display::Block || layoutInput.display == Display::Flex || layoutInput.display == Display::Grid) {
-            lr = layoutBlockNormalFlow(constraints, current_cursor, layoutInput, atomized, sizeResult);
-        }else {
-            lr = layoutInlineNormalFlow(constraints, current_cursor, layoutInput, atomized, sizeResult);
+            return layoutBlockNormalFlow(constraints, current_cursor, layoutInput, atomized, sizeResult);
         }
 
-        return lr;
+        return layoutInlineNormalFlow(constraints, current_cursor, layoutInput, atomized, sizeResult);
     }
 
     LayoutState LayoutEngine::resolve(Constraints& constraints, LayoutInput& layoutInput, Atomized atomized, const SizeResult& sizeResult)
     {
-        LayoutState lr;
-
         if (layoutInput.direction.has_value()) {
             constraints.inheritedProperties.direction = *layoutInput.direction;
         }
@@ -847,11 +889,9 @@ namespace layout {
         
         
         if (layoutInput.position == Position::Fixed || layoutInput.position == Position::Absolute) {
-            lr = resolveOutOfFlow(constraints, constraints.cursor, layoutInput, atomized, sizeResult);
-        }else {
-            lr = resolveNormalFlow(constraints, constraints.cursor, layoutInput, atomized, sizeResult);
+            return resolveOutOfFlow(constraints, constraints.cursor, layoutInput, atomized, sizeResult);
         }
-        
-        return lr;
+
+        return resolveNormalFlow(constraints, constraints.cursor, layoutInput, atomized, sizeResult);
     }
 }

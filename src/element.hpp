@@ -66,18 +66,18 @@ namespace elements {
         const SizeResult& sizeResult,
         Placed& placed,
         Finalized<U>& finalized,
-        LayoutState layout,
+        layout::BlockState blockState,
         MTL::RenderCommandEncoder* encoder
     ) {
         { proc.measure(fragment, constraints, shared, desc) } -> std::same_as<Measured>;
         { proc.atomize(fragment, constraints, shared, desc, measured) } -> std::same_as<Atomized>;
         { proc.layout(fragment, constraints, shared, desc, measured, atomized, sizeResult) } -> std::same_as<LayoutState>;
 
-        { proc.postLayout(fragment, constraints, shared, desc, measured, atomized, layout) } -> std::same_as<Atomized>;
+        { proc.postLayout(fragment, constraints, shared, desc, measured, atomized, blockState) } -> std::same_as<Atomized>;
 
-        { proc.place(fragment, constraints, shared, desc, measured, atomized, layout) } -> std::same_as<Placed>;
+        { proc.place(fragment, constraints, shared, desc, measured, atomized, blockState) } -> std::same_as<Placed>;
 
-        { proc.finalize(fragment, constraints, shared, desc, measured, atomized, layout, placed) } -> std::same_as<Finalized<U>>;
+        { proc.finalize(fragment, constraints, shared, desc, measured, atomized, blockState, placed) } -> std::same_as<Finalized<U>>;
         { proc.setupHitTestFunction() } -> std::same_as<std::function<bool(HitTestContext<U>&, simd_float2)>>;
         proc.encode(encoder, fragment, finalized);
     };
@@ -127,15 +127,21 @@ namespace elements {
         }
 
         Atomized postLayout(Constraints& constraints, SharedDescriptor& shared, Measured& measured, Atomized& atomized, LayoutState& layout) override {
-            return processor.postLayout(element.getFragment(), constraints, shared, element.getDescriptor(), measured, atomized, layout);
+            return std::visit([&](auto& state) {
+                return processor.postLayout(element.getFragment(), constraints, shared, element.getDescriptor(), measured, atomized, state);
+            }, layout);
         }
 
         Placed place(Constraints& constraints, SharedDescriptor& shared, Measured& measured, Atomized& atomized, LayoutState& layout) override {
-            return processor.place(element.getFragment(), constraints, shared, element.getDescriptor(), measured, atomized, layout);
+            return std::visit([&](auto& state) {
+                return processor.place(element.getFragment(), constraints, shared, element.getDescriptor(), measured, atomized, state);
+            }, layout);
         }
 
         std::any finalize(Constraints& constraints, SharedDescriptor& shared, Measured& measured, Atomized& atomized, LayoutState& layout, Placed& placed) override {
-            auto finalized = processor.finalize(element.getFragment(), constraints, shared, element.getDescriptor(), measured, atomized, layout, placed);
+            auto finalized = std::visit([&](auto& state) {
+                return processor.finalize(element.getFragment(), constraints, shared, element.getDescriptor(), measured, atomized, state, placed);
+            }, layout);
             auto finalizedErased = finalized;
             return finalizedErased;
         }
@@ -359,18 +365,24 @@ namespace tree {
             if (shared.pointerEvents == PointerEvents::None) return false;
             if (!layout.has_value()) return false;
             
-            auto& box = layout->layout.computedBox;
+            bool withinBounds = std::visit([&](const auto& state) {
+                const auto& box = state.computedBox;
 
-            if (point.x < box.x || point.x > box.x + box.width ||
-                point.y < box.y || point.y > box.y + box.height) {
-                return false;
-            }
-
-            for (auto& clip : layout->layout.clipUniforms) {
-                if (rounded_rect_sdf(point - clip.rectCenter, clip.halfExtent, clip.cornerRadius) > 0.0f) {
+                if (point.x < box.x || point.x > box.x + box.width ||
+                    point.y < box.y || point.y > box.y + box.height) {
                     return false;
                 }
-            }
+
+                for (const auto& clip : state.clipUniforms) {
+                    if (rounded_rect_sdf(point - clip.rectCenter, clip.halfExtent, clip.cornerRadius) > 0.0f) {
+                        return false;
+                    }
+                }
+
+                return true;
+            }, layout->layout);
+
+            if (!withinBounds) return false;
 
             return element->preciseHitTest(point, layout->layout, finalized);
         }

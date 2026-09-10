@@ -30,6 +30,7 @@ namespace elements {
     using layout::LayoutEngine;
     using layout::LayoutInput;
     using layout::LayoutState;
+    using layout::LayoutStateType;
     using layout::Measured;
     using layout::Placed;
     using layout::SizeResolutionContext;
@@ -299,7 +300,8 @@ namespace elements {
         
         // OHHH!  Do I need to alter my later passes to have a computed size? Computed width? Ok, makes sense.
 
-        Atomized postLayout(Fragment<S>& fragment, Constraints&, SharedDescriptor& shared, DivDescriptor& desc, Measured& measured, Atomized& atomized, LayoutState& layout) {
+        template <LayoutStateType L>
+        Atomized postLayout(Fragment<S>& fragment, Constraints&, SharedDescriptor& shared, DivDescriptor& desc, Measured& measured, Atomized& atomized, L& layout) {
             std::vector<Atom> atoms {};
             
             // get measurements
@@ -336,7 +338,8 @@ namespace elements {
             };
         }
         
-        Placed place(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, DivDescriptor& desc, Measured& measured, Atomized& atomized, LayoutState& lr)
+        template <LayoutStateType L>
+        Placed place(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, DivDescriptor& desc, Measured& measured, Atomized& atomized, L& lr)
         {
             std::vector<AtomPlacement> placements;
             auto offsets = lr.atomOffsets;
@@ -361,7 +364,8 @@ namespace elements {
             };
         }
 
-        Finalized<U> finalize(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, DivDescriptor& desc, Measured& measured, Atomized& atomized, LayoutState& layout, Placed& placed)
+        template <LayoutStateType L>
+        Finalized<U> finalize(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, DivDescriptor& desc, Measured& measured, Atomized& atomized, L& layout, Placed& placed)
         {
             float borderWidth = 0.0;
 
@@ -442,8 +446,12 @@ namespace elements {
 
         std::function<bool(HitTestContext<U>& context, simd_float2 testPoint)> setupHitTestFunction() {
             auto hitTestFunction = [](HitTestContext<U>& context, simd_float2 testPoint){
-                simd_float2 halfExtent {context.layout.computedBox.width / 2.0f, context.layout.computedBox.height / 2.0f};
-                simd_float2 centerPoint {context.layout.computedBox.x + halfExtent.x, context.layout.computedBox.y + halfExtent.y};
+                const auto& box = std::visit(
+                    [](const auto& state) -> const layout::LayoutBox& { return state.computedBox; },
+                    context.layout
+                );
+                simd_float2 halfExtent {box.width / 2.0f, box.height / 2.0f};
+                simd_float2 centerPoint {box.x + halfExtent.x, box.y + halfExtent.y};
                 simd_float2 localTestPoint = testPoint - centerPoint;
                 simd_float2 cr = context.finalized.uniforms.style.cornerRadius;
 

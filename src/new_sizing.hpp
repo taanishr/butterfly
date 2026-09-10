@@ -101,7 +101,6 @@ struct SizeRequest {
 
     SizePair specified; // specified h/w
     SizePair override;  // externally imposed size for this evaluation
-    SizePair content;   // content box
     SizePair minimum; // minimums
     SizePair maximum; // maximums
     SizePair available;
@@ -221,7 +220,7 @@ struct SizeResult {
 //   - automatic using available size
 //   - automatic using content size
 // needs to be imbued with ctx
-auto resolveWidth(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic, const PaddingResult& padding, const SizeState& borderWidth) -> SizeState;
+auto resolveWidth(tree::TreeNode* node, const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic, const PaddingResult& padding, const SizeState& borderWidth) -> SizeState;
 auto resolveHeight(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic, const PaddingResult& padding, const SizeState& borderWidth) -> SizeState;
 
 // these ONLY exist because of different auto behavior fo min/max widht and height

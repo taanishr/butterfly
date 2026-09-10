@@ -7,6 +7,7 @@
 #include "sizing.hpp"
 #include <algorithm>
 #include <optional>
+#include <print>
 #include <variant>
 
 // hash helpers
@@ -30,7 +31,6 @@ auto hashSizeRequest(const SizeRequest& sizeRequest, std::size_t& key) -> void {
 
     hashSizePair(sizeRequest.specified, key);
     hashSizePair(sizeRequest.override, key);
-    hashSizePair(sizeRequest.content, key);
     hashSizePair(sizeRequest.minimum, key);
     hashSizePair(sizeRequest.maximum, key);
     hashSizePair(sizeRequest.available, key);
@@ -124,8 +124,8 @@ auto calculateSize(const SizeState& size, const SizeState& available) -> SizeSta
                             switch (error) {
                                 case style::SizeError::ContentDependent:
                                 case style::SizeError::FractionRequiresContext:
-                                    return error;
                                 case style::SizeError::Auto:
+                                    return error;
                                 case style::SizeError::IndefiniteBasis:
                                     return style::SizeError::IndefiniteBasis;
                             }
@@ -162,7 +162,7 @@ auto calculateSize(const SizeState& size, const SizeState& available) -> SizeSta
 //   - automatic using available size
 //   - automatic using outer size
 // needs to be imbued with ctx
-auto resolveWidth(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic, const PaddingResult& padding, const SizeState& borderWidth) -> SizeState {
+auto resolveWidth(tree::TreeNode* node, const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic, const PaddingResult& padding, const SizeState& borderWidth) -> SizeState {
     // run size through a calculate size pass (maybe avail too)
     SizeState resolved = calculateSize(size, req.available.width);
 
@@ -173,6 +173,7 @@ auto resolveWidth(const SizeState& size, SizeRequest& req, const std::optional<I
     if (!error) {
         return resolved;
     }
+
 
     if (*error == SizeError::ContentDependent) {
         if (!intrinsic) {
@@ -186,30 +187,29 @@ auto resolveWidth(const SizeState& size, SizeRequest& req, const std::optional<I
     if (*error == SizeError::Auto) {
         // are we content sizing?
         if (req.automaticWidth == AutomaticSizing::UseContent) {
-            auto content = calculateSize(req.content.width, req.available.width);
-            auto contentWidth = std::get_if<float>(&content);
-
-            if (!contentWidth) {
-                return content;
+            if (!intrinsic || !std::holds_alternative<float>(intrinsic->maximum)) {
+                return SizeError::ContentDependent;
             }
+            
+            auto contentWidth = std::get<float>(intrinsic->maximum);
 
             const auto* resolvedPaddingLeft = std::get_if<float>(&padding.left);
             const auto* resolvedPaddingRight = std::get_if<float>(&padding.right);
             const auto* resolvedBorderWidth = std::get_if<float>(&borderWidth);
          
             if (resolvedPaddingLeft) {
-                *contentWidth += *resolvedPaddingLeft;
+                contentWidth += *resolvedPaddingLeft;
             }
 
             if (resolvedPaddingRight) {
-                *contentWidth += *resolvedPaddingRight;
+                contentWidth += *resolvedPaddingRight;
             }
     
             if (resolvedBorderWidth) {
-                *contentWidth += 2 * *resolvedBorderWidth;
+                contentWidth += 2 * *resolvedBorderWidth;
             }
 
-            return *contentWidth;
+            return contentWidth;
 
             
         }
@@ -322,6 +322,38 @@ auto resolveInnerWidth(const SizeState& size, const PaddingResult& padding, cons
     }, size);
 }
 
+// KNOWN DIVERGENCE FROM BROWSERS: percentage heights against a content produced basis
+//
+// a percent height inside an auto height ancestor resolves here and does not in a browser.
+// e.g. parent height auto, child height 50%: we give the child half the parent's content
+// height, a browser gives the child its own content height (percent behaves as auto).
+//
+// why browsers do that: CSS2 10.5 says if the containing block's height is "not specified
+// explicitly (i.e. it depends on content height)" the used height is calculated as if auto
+// was specified. the condition is on the containing block's *specified* value, not on
+// whether a number exists for it. so it does not matter that we have a perfectly good
+// definite height by the second pass; the browser's resolution path never reads it. it
+// reads style, and style still says auto.
+//
+// width has no counterpart rule. percent widths resolve against the used content width
+// directly, which is why a percent width inside a shrink to fit float resolves against a
+// content produced number without complaint. so it is a real axis asymmetry.
+//
+// why we do not encode it: there is no principle to derive it from. block layout has no
+// modern spec at all - css-box-3 retired its block layout prose for a Block Layout module
+// that was never written, and css-sizing-3 3.2 delegates percent resolution to "the
+// relevant layout module", which for block layout is still CSS2 chapter 10. 10.5 was
+// written to describe what implementations already did in 1998, and css-sizing-3 3.2.1
+// retrofits a name onto it ("behaves as auto") while noting the language needs updating.
+// encoding it means a special case in the sizing model to reproduce what is, in practice,
+// a no-op that authors write freely because it does nothing.
+//
+// what this costs us: authors write percent heights under auto height ancestors expecting
+// nothing to happen. here something happens. worth watching that it is stable and not just
+// different - the parent's content height now depends on a child whose height depends on
+// the parent, so check whether the pass count bounds it (parent 128 / child 64, stable but
+// inconsistent) or whether it keeps collapsing. that is a property of the pass structure,
+// not of this function.
 auto resolveHeight(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic, const PaddingResult& padding, const SizeState& borderWidth) -> SizeState {
     // run size through a calculate size pass (maybe avail too)
     SizeState resolved = calculateSize(size, req.available.height);
@@ -346,30 +378,29 @@ auto resolveHeight(const SizeState& size, SizeRequest& req, const std::optional<
     if (*error == SizeError::Auto) {
         // are we content sizing?
         if (req.automaticHeight == AutomaticSizing::UseContent) {
-            auto content = calculateSize(req.content.height, req.available.height);
-            auto contentHeight = std::get_if<float>(&content);
-
-            if (!contentHeight) {
-                return content;
+            if (!intrinsic || !std::holds_alternative<float>(intrinsic->maximum)) {
+                return SizeError::ContentDependent;
             }
-
+            
+            auto contentHeight = std::get<float>(intrinsic->maximum);
+            
             const auto* resolvedPaddingTop = std::get_if<float>(&padding.top);
             const auto* resolvedPaddingBottom = std::get_if<float>(&padding.bottom);
             const auto* resolvedBorderWidth = std::get_if<float>(&borderWidth);
          
             if (resolvedPaddingTop) {
-                *contentHeight += *resolvedPaddingTop;
+                contentHeight += *resolvedPaddingTop;
             }
 
             if (resolvedPaddingBottom) {
-                *contentHeight += *resolvedPaddingBottom;
+                contentHeight += *resolvedPaddingBottom;
             }
     
             if (resolvedBorderWidth) {
-                *contentHeight += 2 * *resolvedBorderWidth;
+                contentHeight += 2 * *resolvedBorderWidth;
             }
 
-            return *contentHeight;
+            return contentHeight;
         }
 
         // are we avail sizing?
@@ -608,7 +639,7 @@ auto measureIntrinsicWidth(
 ) -> IntrinsicResult {
     // antiSize: not used here
 
-    if (req.resolvingIntrinsicWidth) {
+    if (req.resolvingIntrinsicWidth || req.resolvingIntrinsicHeight) {
         return {
             .minimum = SizeError::ContentDependent,
             .maximum = SizeError::ContentDependent,
@@ -618,16 +649,17 @@ auto measureIntrinsicWidth(
     // first; create a new request (or have the recursive tree func do this)
     // this new request should set resolvingIntrinsicWidth = true
     req.resolvingIntrinsicWidth = true;
-    // legacy override
-    measured.explicitWidth = std::unexpected(style::SizeError::Auto);
+    req.intrinsicWidthRequest = IntrinsicRequest::Both;
+        
+    // // legacy override
+    // measured.explicitWidth = std::unexpected(style::SizeError::Auto);
 
-    // content.width may have been populated by an earlier resize pass from the
-    // node's used layout width. Carrying that cached measurement into this new
-    // intrinsic pass makes an automatic width resolve back to the previous used
-    // width, which then gets reported and collected as the intrinsic width. Start
-    // without that prior output so this pass measures the node's actual content.
+    // override.width may have been populated by an earlier pass from the node's
+    // used layout width. Carrying that cached measurement into this new intrinsic
+    // pass makes an automatic width resolve back to the previous used width, which
+    // then gets reported and collected as the intrinsic width. Start without that
+    // prior output so this pass measures the node's actual content.
     req.override.width = style::Size::autoSize();
-    req.content.width = std::monostate{};
     req.automaticWidth = AutomaticSizing::UseContent;
         
     /*
@@ -639,7 +671,8 @@ auto measureIntrinsicWidth(
     */
 
     // afterwards, establish the recursive call
-    auto intrinsic = tree.measureIntrinsicSizes(node, frameInfo, constraints, measured, req);
+    auto output = tree.layoutRecursive(node, frameInfo, constraints, measured, false, req);
+    auto intrinsic = output.intrinsicSizes;
 
     if (!intrinsic) {
         return {
@@ -665,7 +698,7 @@ auto measureIntrinsicHeight(
 ) -> IntrinsicResult {
     // antisize: USED HERE
 
-    if (req.resolvingIntrinsicHeight) {
+    if (req.resolvingIntrinsicHeight || req.resolvingIntrinsicWidth) {
         return {
             .minimum = SizeError::ContentDependent,
             .maximum = SizeError::ContentDependent,
@@ -675,11 +708,11 @@ auto measureIntrinsicHeight(
     // first; create a new request (or have the recursive tree func do this)
     // this new request should set resolvingIntrinsicHeight = true
     req.resolvingIntrinsicHeight = true;
+    req.intrinsicHeightRequest = IntrinsicRequest::Both;
     
-    measured.explicitHeight = std::unexpected(style::SizeError::Auto);
-
+    // measured.explicitHeight = std::unexpected(style::SizeError::Auto);
+    
     req.override.height = style::Size::autoSize();
-    req.content.height = std::monostate{};
     req.automaticHeight = AutomaticSizing::UseContent;
 
     // if an antiSize has been resolved and provided via antisize, the request SHOULD note this
@@ -691,7 +724,9 @@ auto measureIntrinsicHeight(
     }
 
     // establish the recursive call; make sure it establishes the specified antiSize correctly
-    auto intrinsic = tree.measureIntrinsicSizes(node, frameInfo, constraints, measured, req);
+    auto output = tree.layoutRecursive(node, frameInfo, constraints, measured, false, req);
+    auto intrinsic = output.intrinsicSizes;
+
 
     if (!intrinsic) {
         return {
@@ -930,9 +965,13 @@ auto evaluateSize(
     SizeState borderWidth = resolveBorderWidth(req);
 
     SizePair size {
-        .width = resolveWidth(requestedWidth, req, std::nullopt, padding, borderWidth),
+        .width = resolveWidth(node, requestedWidth, req, std::nullopt, padding, borderWidth),
         .height = resolveHeight(requestedHeight, req, std::nullopt, padding, borderWidth),
     };
+
+    // if (node->id == 4) {
+    //     std::println("size resolver, req: {}, resolved: {}", describeSizeState(requestedWidth), describeSizeState(size.width));
+    // }
 
     SizePair minimum {
         .width = resolveMinWidth(req.minimum.width, req, std::nullopt),
@@ -951,6 +990,9 @@ auto evaluateSize(
     const auto* minHeightError = std::get_if<SizeError>(&minimum.height);
     const auto* maxHeightError = std::get_if<SizeError>(&maximum.height);
 
+    // if (node->id == 4) {
+    //     std::println("blue - is this class of auto error... true? {}", widthError && *widthError == SizeError::ContentDependent);
+    // }
     bool widthIntrinsicError = widthError && *widthError == SizeError::ContentDependent;
     bool minWidthIntrinsicError = (minWidthError && *minWidthError == SizeError::ContentDependent)
                                 || req.intrinsicWidthRequest == IntrinsicRequest::Minimum
@@ -979,7 +1021,7 @@ auto evaluateSize(
         widthIntrinsic = measureIntrinsicWidth(tree, node, frameInfo, constraints, measured, size.height, req);
 
         if (widthIntrinsicError) {
-            size.width = resolveWidth(requestedWidth, req, widthIntrinsic, padding, borderWidth);
+            size.width = resolveWidth(node, requestedWidth, req, widthIntrinsic, padding, borderWidth);
         }
         if (minWidthIntrinsicError) {
             minimum.width = resolveMinWidth(req.minimum.width, req, widthIntrinsic);

@@ -1698,6 +1698,7 @@ auto index() -> void {
     // );
 
     // // Browser reference: react_tests/src/app/intrinsic-sizing/page.tsx
+    // using S = gui::Size;
     // constexpr auto intrinsicText = "Intrinsic sizing chooses every soft break opportunity";
 
     // div(S::percent(1.0), S::percent(1.0), simd_float4{0.059,0.071,0.090,1.0})

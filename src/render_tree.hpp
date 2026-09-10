@@ -56,26 +56,12 @@ namespace tree {
             Constraints constraints,
             layout::Measured measured
         );
-        const layout::LayoutResult& speculateLayout(
-            const FrameInfo& frameInfo,
-            TreeNode* node,
-            Constraints constraints,
-            layout::Measured measured
-        );
+    
         void postLayoutPhase(TreeNode* node, const FrameInfo& frameInfo, Constraints& constraints,
                              simd_float2 parentGlobalOrigin, simd_float2 absBlockGlobalOrigin);
 
         void placePhase(TreeNode* node, const FrameInfo& frameInfo, Constraints& constraints);
         void finalizePhase(TreeNode* node, Constraints& constraints);
-
-        std::optional<layout::IntrinsicSizes> measureIntrinsicSizes(
-            TreeNode* node, 
-            const FrameInfo& frameInfo, 
-            Constraints constraints, 
-            layout::Measured measured, 
-            SizeRequest sizeRequest
-        );
-
 
         layout::LayoutResult layoutRecursive(
             TreeNode* node,

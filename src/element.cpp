@@ -294,6 +294,7 @@ namespace tree {
         const SizeState& availableWidth
     ) {
         if (!hasBreakOpportunity || !lineHasContent) return false;
+
         if (widthRequest == IntrinsicRequest::Minimum) return true;
         if (widthRequest == IntrinsicRequest::Maximum) return false;
 
@@ -718,7 +719,10 @@ namespace tree {
             for (float width : maxLineWidths) {
                 maxContent = std::max(maxContent, width);
             }
-            context->intrinsicSizes = layout::IntrinsicSizes{.minimum = minContent, .maximum = maxContent};
+
+            if (!minLineWidths.empty() || !maxLineWidths.empty()) {
+                context->intrinsicSizes = layout::IntrinsicSizes{.minimum = minContent, .maximum = maxContent};
+            }
         }
 
         const size_t fragmentCount = fragments.size();
@@ -806,15 +810,16 @@ namespace tree {
         reorderLineFragments(*context);
 
         if (sizing.trackIntrinsicWidth) {
-            auto minContext = context;
-            auto maxContext = context;
             if (sizing.widthRequest != IntrinsicRequest::Minimum) {
                 InlineSizingInput minimumSizing {
                     .availableWidth = std::monostate{},
                     .widthRequest = IntrinsicRequest::Minimum,
                     .trackIntrinsicWidth = false,
                 };
-                minContext = buildInlineBoxes(node, minimumSizing);
+                auto minContext = buildInlineBoxes(node, minimumSizing);
+                context->minFragments = std::move(minContext->fragments);
+                context->minLineBoxes = std::move(minContext->lineBoxes);
+                context->minChildFragments = std::move(minContext->childFragments);
             }
 
             if (sizing.widthRequest != IntrinsicRequest::Maximum) {
@@ -823,16 +828,27 @@ namespace tree {
                     .widthRequest = IntrinsicRequest::Maximum,
                     .trackIntrinsicWidth = false,
                 };
-                maxContext = buildInlineBoxes(node, maximumSizing);
+                auto maxContext = buildInlineBoxes(node, maximumSizing);
+                context->maxFragments = std::move(maxContext->fragments);
+                context->maxLineBoxes = std::move(maxContext->lineBoxes);
+                context->maxChildFragments = std::move(maxContext->childFragments);
             }
 
-            // this isn't really optionally constructed. badly written imo
-            float minContent = 0.0f;
-            for (const auto& lineBox : minContext->lineBoxes) minContent = std::max(minContent, lineBox.width);
-            float maxContent = 0.0f;
+            const auto& minLineBoxes = context->minLineBoxes.empty() ? context->lineBoxes : context->minLineBoxes;
+            const auto& maxLineBoxes = context->maxLineBoxes.empty() ? context->lineBoxes : context->maxLineBoxes;
 
-            for (const auto& lineBox : maxContext->lineBoxes) maxContent = std::max(maxContent, lineBox.width);
-            context->intrinsicSizes = layout::IntrinsicSizes{.minimum = minContent, .maximum = maxContent};
+            if (!minLineBoxes.empty() || !maxLineBoxes.empty()) {
+                float minContent = 0.0f;
+                for (const auto& lineBox : minLineBoxes) {
+                    minContent = std::max(minContent, lineBox.width);
+                }
+                float maxContent = 0.0f;
+
+                for (const auto& lineBox : maxLineBoxes) {
+                    maxContent = std::max(maxContent, lineBox.width);
+                }
+                context->intrinsicSizes = layout::IntrinsicSizes{.minimum = minContent, .maximum = maxContent};
+            }
         }
 
         return context;

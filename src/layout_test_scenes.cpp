@@ -14,10 +14,10 @@
 namespace layout_test::scenes {
     namespace {
         constexpr std::array sceneNames{
+            std::string_view{"phase-a-shrink"},
+            std::string_view{"auto-percent-width"},
             std::string_view{"music-player"},
             std::string_view{"intrinsic-sizing"},
-            std::string_view{"auto-percent-width"},
-            std::string_view{"phase-a-shrink"},
             std::string_view{"sizing"},
             std::string_view{"justify-items"},
             std::string_view{"complex"},
@@ -877,12 +877,12 @@ namespace layout_test::scenes {
 
             div(S::percent(1.0), S::percent(1.0), simd_float4{0.06,0.07,0.09,1.0})
             (
-                div(S::autoSize(), S::autoSize(), simd_float4{0.08,0.72,0.86,1.0})
+                div(S::autoSize(), S::autoSize(), simd_float4{0.08,0.72,0.86,1.0}) // blue
                     .position(gui::Position::Absolute)
                     .left(S::px(80))
                     .top(S::px(80))
                 (
-                    div(S::percent(0.5), S::px(120), simd_float4{0.96,0.30,0.46,1.0})
+                    div(S::percent(0.5), S::px(120), simd_float4{0.96,0.30,0.46,1.0}) // pink
                     (
                         div(S::px(600), S::px(80), simd_float4{0.98,0.76,0.20,1.0})()
                     )

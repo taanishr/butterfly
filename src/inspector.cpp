@@ -393,14 +393,16 @@ namespace Inspector {
             htNodeDisplay = displayName(htNode->shared.display);
             htNodePosition = positionName(htNode->shared.position);
             htNodeOverflow = overflowName(htNode->shared.overflow);
-            htNodeX = htNode->layout->layout.computedBox.x;
-            htNodeY = htNode->layout->layout.computedBox.y;
-            htNodeW = htNode->layout->layout.computedBox.width;
-            htNodeH = htNode->layout->layout.computedBox.height;
-            htNodeLocalX = htNode->layout->layout.localComputedBox.x;
-            htNodeLocalY = htNode->layout->layout.localComputedBox.y;
-            htNodeLocalW = htNode->layout->layout.localComputedBox.width;
-            htNodeLocalH = htNode->layout->layout.localComputedBox.height;
+            std::visit([&](const auto& htNodeLayout) {
+                htNodeX = htNodeLayout.computedBox.x;
+                htNodeY = htNodeLayout.computedBox.y;
+                htNodeW = htNodeLayout.computedBox.width;
+                htNodeH = htNodeLayout.computedBox.height;
+                htNodeLocalX = htNodeLayout.localComputedBox.x;
+                htNodeLocalY = htNodeLayout.localComputedBox.y;
+                htNodeLocalW = htNodeLayout.localComputedBox.width;
+                htNodeLocalH = htNodeLayout.localComputedBox.height;
+            }, htNode->layout->layout);
             htNodeScrollX = float(htNode->scrollOffset.x);
             htNodeScrollY = float(htNode->scrollOffset.y);
             htNodeZIndex = htNode->globalZIndex;
@@ -634,8 +636,10 @@ namespace Inspector {
         }
 
         const auto& result = *node->layout;
-        const auto& layout = result.layout;
-        const auto& box = layout.computedBox;
+        const auto& box = std::visit(
+            [](const auto& layout) -> const layout::LayoutBox& { return layout.computedBox; },
+            result.layout
+        );
         auto margins = node->preLayout.has_value()
             ? node->preLayout->resolvedMargins
             : ResolvedMargins{};

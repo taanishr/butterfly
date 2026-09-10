@@ -1766,7 +1766,6 @@ namespace layout {
                 .position = childAsPtr->shared.position,
                 .specified = {.width = childAsPtr->shared.width, .height = childAsPtr->shared.height},
                 .override = {.width = std::monostate{}, .height = std::monostate{}},
-                .content = {.width = std::monostate{}, .height = std::monostate{}},
                 .minimum = {.width = childAsPtr->shared.minWidth, .height = childAsPtr->shared.minHeight},
                 .maximum = {
                     .width = childAsPtr->shared.maxWidth ? SizeState{*childAsPtr->shared.maxWidth} : SizeState{std::monostate{}},
@@ -1900,7 +1899,6 @@ namespace layout {
                 .position = childAsPtr->shared.position,
                 .specified = {.width = childAsPtr->shared.width, .height = childAsPtr->shared.height},
                 .override = {.width = std::monostate{}, .height = std::monostate{}},
-                .content = {.width = std::monostate{}, .height = std::monostate{}},
                 .minimum = {.width = childAsPtr->shared.minWidth, .height = childAsPtr->shared.minHeight},
                 .maximum = {
                     .width = childAsPtr->shared.maxWidth ? SizeState{*childAsPtr->shared.maxWidth} : SizeState{std::monostate{}},
@@ -2067,7 +2065,6 @@ namespace layout {
                 .position = childAsPtr->shared.position,
                 .specified = {.width = childAsPtr->shared.width, .height = childAsPtr->shared.height},
                 .override = {.width = std::monostate{}, .height = std::monostate{}},
-                .content = {.width = std::monostate{}, .height = std::monostate{}},
                 .minimum = {.width = childAsPtr->shared.minWidth, .height = childAsPtr->shared.minHeight},
                 .maximum = {
                     .width = childAsPtr->shared.maxWidth ? SizeState{*childAsPtr->shared.maxWidth} : SizeState{std::monostate{}},
@@ -2151,10 +2148,10 @@ namespace layout {
             //     );
             // }
 
-            const auto& childLayout = childOutput.layout;
-
-            maxX = std::max(maxX, childLayout.computedBox.x + childLayout.computedBox.width);
-            maxY = std::max(maxY, childLayout.computedBox.y + childLayout.computedBox.height);
+            std::visit([&](const auto& childLayout) {
+                maxX = std::max(maxX, childLayout.computedBox.x + childLayout.computedBox.width);
+                maxY = std::max(maxY, childLayout.computedBox.y + childLayout.computedBox.height);
+            }, childOutput.layout);
         }
 
         return {maxX, maxY};
