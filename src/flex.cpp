@@ -6,6 +6,7 @@
 #include "render_tree.hpp"
 #include <algorithm>
 #include <optional>
+#include <utility>
 #include <variant>
 
 namespace layout {
@@ -146,7 +147,6 @@ namespace layout {
                                           ),
                 .intrinsicWidthRequest = flex.axis.isRow ? std::optional{IntrinsicRequest::Both} : std::nullopt,
                 .intrinsicHeightRequest = flex.axis.isRow ? std::nullopt : std::optional{IntrinsicRequest::Both},
-                .tag = "flex phase B, main size"
             };
 
             preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childAsPtr, {
@@ -250,7 +250,7 @@ namespace layout {
                     .automaticMinimumHeight = AutomaticMinimum::Zero,
                     .intrinsicWidthRequest = flex.axis.isRow ? std::nullopt : std::optional{IntrinsicRequest::Both},
                     .intrinsicHeightRequest = flex.axis.isRow ? std::optional{IntrinsicRequest::Both} : std::nullopt,
-                    .tag = "flex phase C, cross Size req"
+
                 };
 
                 preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childNode, {
@@ -367,8 +367,6 @@ namespace layout {
                 .automaticHeight = AutomaticSizing::UseContent,
                 .automaticMinimumWidth = AutomaticMinimum::Zero,
                 .automaticMinimumHeight = AutomaticMinimum::Zero,
-
-                .tag = "flex phase C, final req"
             };
 
             preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childNode, {
@@ -386,7 +384,7 @@ namespace layout {
                 childRequest.automaticWidth = placement.alignment == AlignItems::Stretch ? AutomaticSizing::UseAvailable : AutomaticSizing::UseContent;
             }
 
-            LayoutResult childOutput = tree.layoutRecursive(childNode, frameInfo, preparedChildConstraints, childMeasured, mutate, childRequest);
+            LayoutResult childOutput = tree.layoutRecursive(childNode, frameInfo, std::move(preparedChildConstraints), childMeasured, mutate, std::move(childRequest));
             std::visit([&](const auto& childLayout) {
                 maxX = std::max(maxX, childLayout.computedBox.x + childLayout.computedBox.width);
                 maxY = std::max(maxY, childLayout.computedBox.y + childLayout.computedBox.height);

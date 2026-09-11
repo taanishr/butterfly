@@ -12,6 +12,7 @@
 #include <simd/vector_types.h>
 #include <string>
 #include <unordered_map>
+#include <utility>
 
 
 namespace elements {
@@ -44,8 +45,7 @@ namespace tree {
         return std::nullopt;
     }
 
-    Result<std::vector<std::optional<bidi::TextBidiInput>>>
-    prepareChildBidiInputs(
+    Result<std::vector<std::optional<bidi::TextBidiInput>>> prepareChildBidiInputs(
         TreeNode* parent,
         layout::Direction baseDirection
     ) {
@@ -95,8 +95,7 @@ namespace tree {
                     : bidi::BidiBaseDirection::Ltr
             );
             if (!resolvedContext) return std::unexpected{resolvedContext.error()};
-            auto context = std::make_shared<bidi::TextBidiContext>(
-                std::move(*resolvedContext));
+            auto context = std::make_shared<bidi::TextBidiContext>(std::move(*resolvedContext));
 
             for (size_t i = sequenceStart; i < sequenceEnd; ++i) {
                 const size_t childStart = childStarts[i - sequenceStart];
@@ -237,9 +236,12 @@ namespace tree {
     }
 
     void reorderLineFragments(layout::InlineFormattingContext& context) {
+        std::vector<LineFragment*> fragments;
+        fragments.reserve(context.fragments.size());
+
         for (size_t lineIndex = 0; lineIndex < context.lineBoxes.size(); ++lineIndex) {
             auto& lineBox = context.lineBoxes[lineIndex];
-            std::vector<LineFragment*> fragments;
+            fragments.clear();
             int maximumLevel = 0;
             int minimumOddLevel = -1;
 
@@ -328,7 +330,7 @@ namespace tree {
                 currentLineBox.width + width,
                 availableWidth
             )) {
-            lineBoxes.push_back(currentLineBox);
+            lineBoxes.push_back(std::move(currentLineBox));
             currentLineBox = {};
             currentLineBoxIndex++;
         }
@@ -390,7 +392,7 @@ namespace tree {
                         currentLineBox.width + runningWidth,
                         availableWidth
                     )) {
-                    lineBoxes.push_back(currentLineBox);
+                    lineBoxes.push_back(std::move(currentLineBox));
                     currentLineBox = {};
                     currentLineBoxIndex++;
                 }
@@ -406,7 +408,7 @@ namespace tree {
                     currentLineBoxIndex
                 );
 
-                lineBoxes.push_back(currentLineBox);
+                lineBoxes.push_back(std::move(currentLineBox));
                 currentLineBox = {};
                 currentLineBoxIndex++;
                 lastFragmentHasBreakOpportunity = false;
@@ -442,7 +444,7 @@ namespace tree {
                         );
                     }
 
-                    lineBoxes.push_back(currentLineBox);
+                    lineBoxes.push_back(std::move(currentLineBox));
                     currentLineBox = {};
                     currentLineBoxIndex++;
                     lastFragmentHasBreakOpportunity = false;
@@ -483,7 +485,7 @@ namespace tree {
                     currentLineBox.width + runningWidth,
                     availableWidth
                 )) {
-                lineBoxes.push_back(currentLineBox);
+                lineBoxes.push_back(std::move(currentLineBox));
                 currentLineBox = {};
                 currentLineBoxIndex++;
             }
@@ -515,7 +517,7 @@ namespace tree {
                     currentLineBox.width + runningWidth,
                     availableWidth
                 )) {
-                lineBoxes.push_back(currentLineBox);
+                lineBoxes.push_back(std::move(currentLineBox));
                 currentLineBox = {};
                 currentLineBoxIndex++;
             }
@@ -677,7 +679,7 @@ namespace tree {
         }
 
         if (currentLineBox.fragmentCount > 0)
-            lineBoxes.push_back(currentLineBox);
+            lineBoxes.push_back(std::move(currentLineBox));
 
         reorderLineFragments(*context);
 
@@ -755,7 +757,7 @@ namespace tree {
                 auto& atoms = child->atomized->atoms;
 
                 if (i > 0 && !prevInline && currentLineBox.fragmentCount > 0) {
-                    childrenLineBoxes.push_back(currentLineBox);
+                    childrenLineBoxes.push_back(std::move(currentLineBox));
                     currentLineBox = {};
                     currentLineBoxIndex++;
                 }
@@ -804,7 +806,7 @@ namespace tree {
         }
 
         if (currentLineBox.fragmentCount > 0) {
-            childrenLineBoxes.push_back(currentLineBox);
+            childrenLineBoxes.push_back(std::move(currentLineBox));
         }
 
         reorderLineFragments(*context);

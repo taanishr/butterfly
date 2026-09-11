@@ -8,6 +8,7 @@
 #include <chrono>
 #include <optional>
 #include <print>
+#include <utility>
 #include <variant>
 
 namespace tree {
@@ -413,8 +414,8 @@ namespace tree {
             auto layoutStart = std::chrono::steady_clock::now();
             layoutPhase(root, frameInfo, rootConstraints, *root->measured);
             auto layoutEnd = std::chrono::steady_clock::now();
-            std::println("layout pass: {:.3f} ms",
-                std::chrono::duration<double, std::milli>(layoutEnd - layoutStart).count());
+            // std::println("layout pass: {:.3f} ms",
+            //     std::chrono::duration<double, std::milli>(layoutEnd - layoutStart).count());
             root->calculateGlobalZIndex(0);
         }
 
@@ -689,8 +690,9 @@ namespace tree {
         auto& atomized = *node->atomized;
         auto& prelayout = *node->preLayout;
 
-        SizeRequest sizeRequest = sizeRequestOverride.value_or(
-            SizeRequest {
+        SizeRequest sizeRequest = sizeRequestOverride
+            ? std::move(*sizeRequestOverride)
+            : SizeRequest {
                 .position = node->shared.position,
                 .specified = {.width = node->shared.width, .height = node->shared.height},
                 .override = constraints.parentOverride,
@@ -715,8 +717,7 @@ namespace tree {
                 .automaticHeight = AutomaticSizing::UseContent,
                 .automaticMinimumWidth = AutomaticMinimum::Zero,
                 .automaticMinimumHeight = AutomaticMinimum::Zero,
-            }
-        );
+            };
 
         if (intrinsicWidthRequestOverride) {
             sizeRequest.intrinsicWidthRequest = intrinsicWidthRequestOverride;
@@ -1063,7 +1064,7 @@ namespace tree {
         }, layout);
 
         LayoutResult output {
-            .layout = layout,
+            .layout = std::move(layout),
             .sizeResult = sizeResult,
             .intrinsicSizes = intrinsicResult
         };

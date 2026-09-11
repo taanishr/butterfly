@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <optional>
 #include <print>
+#include <utility>
 #include <variant>
 
 // hash helpers
@@ -671,7 +672,7 @@ auto measureIntrinsicWidth(
     */
 
     // afterwards, establish the recursive call
-    auto output = tree.layoutRecursive(node, frameInfo, constraints, measured, false, req);
+    auto output = tree.layoutRecursive(node, frameInfo, std::move(constraints), measured, false, std::move(req));
     auto intrinsic = output.intrinsicSizes;
 
     if (!intrinsic) {
@@ -724,7 +725,7 @@ auto measureIntrinsicHeight(
     }
 
     // establish the recursive call; make sure it establishes the specified antiSize correctly
-    auto output = tree.layoutRecursive(node, frameInfo, constraints, measured, false, req);
+    auto output = tree.layoutRecursive(node, frameInfo, std::move(constraints), measured, false, std::move(req));
     auto intrinsic = output.intrinsicSizes;
 
 

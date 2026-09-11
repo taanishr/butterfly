@@ -1790,7 +1790,6 @@ namespace layout {
                     : AutomaticMinimum::ContentBased,
                 .automaticMinimumHeight = AutomaticMinimum::Zero,
                 .intrinsicWidthRequest = IntrinsicRequest::Both,
-                .tag = "grid phase B, column contributions"
             };
 
             preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childNode, {
@@ -1922,7 +1921,6 @@ namespace layout {
                     ? AutomaticMinimum::Zero
                     : AutomaticMinimum::ContentBased,
                 .intrinsicHeightRequest = IntrinsicRequest::Both,
-                .tag = "grid phase C, row contributions"
             };
 
             preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childNode, {
@@ -2081,8 +2079,7 @@ namespace layout {
                     ? AutomaticSizing::UseAvailable
                     : AutomaticSizing::UseContent,
                 .automaticMinimumWidth = AutomaticMinimum::Zero,
-                .automaticMinimumHeight = AutomaticMinimum::Zero,
-                .tag = "grid phase C, final request"
+                .automaticMinimumHeight = AutomaticMinimum::Zero
             };
 
             preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childNode, {

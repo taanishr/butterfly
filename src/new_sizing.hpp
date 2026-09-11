@@ -131,9 +131,6 @@ struct SizeRequest {
 
     bool resolvingIntrinsicWidth{false};
     bool resolvingIntrinsicHeight{false};
-
-    // debug tag
-    std::optional<std::string> tag {std::nullopt};
 };  
 
 struct IntrinsicResult {
