@@ -260,28 +260,6 @@ namespace tree {
         return ConstraintsKey{.value = hash};
     }
 
-    ConstraintsKey RenderTree::makeSpeculativeKey(
-        const TreeNode* node,
-        const Constraints& constraints,
-        const Measured& measured
-    ) const {
-        auto key = makeConstraintsKey(constraints);
-        hash_combine(key.value, node->id);
-        hash_combine(key.value, measured.explicitWidth.has_value());
-        if (measured.explicitWidth.has_value()) {
-            hash_combine(key.value, *measured.explicitWidth);
-        } else {
-            hash_combine(key.value, static_cast<int>(measured.explicitWidth.error()));
-        }
-        hash_combine(key.value, measured.explicitHeight.has_value());
-        if (measured.explicitHeight.has_value()) {
-            hash_combine(key.value, *measured.explicitHeight);
-        } else {
-            hash_combine(key.value, static_cast<int>(measured.explicitHeight.error()));
-        }
-        return key;
-    }
-
     instrumentation::RecomputeReason RenderTree::recomputeReason(
         TreeNode* node,
         DirtyBits bit,
@@ -429,7 +407,6 @@ namespace tree {
         }
         // initial layout pass
         if (needsLayoutPass) {
-            speculativeLayoutCache.clear();
             sizeCache.clear();
             instrumentation::PhaseTimer timer{instrumentation::Phase::Layout};
             layoutPhase(root, frameInfo, rootConstraints, *root->measured);
@@ -706,10 +683,6 @@ namespace tree {
         auto& atomized = *node->atomized;
         auto& prelayout = *node->preLayout;
 
-        if (node->id == 31) {
-            std::println("31 size req avail size: {}", describeSize(constraints.availableHeight));
-        }
-
         SizeRequest sizeRequest = sizeRequestOverride.value_or(
             SizeRequest {
                 .position = node->shared.position,
@@ -945,9 +918,9 @@ namespace tree {
                     ? (flexContext.axis.isRow ? result.mainIntrinsicSizes : result.crossIntrinsicSizes)
                     : (flexContext.axis.isRow ? result.crossIntrinsicSizes : result.mainIntrinsicSizes);
 
-                if (node->id == 32) {
-                    std::println("intrinsic min: {} intrinsic max: {}", intrinsicResult->minimum, intrinsicResult->maximum);
-                }   
+                // if (node->id == 32) {
+                //     std::println("intrinsic min: {} intrinsic max: {}", intrinsicResult->minimum, intrinsicResult->maximum);
+                // }   
 
                 intrinsicResult = IntrinsicSizes {
                     .minimum = std::get<float>(intrinsicSizes.minimum),

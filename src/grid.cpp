@@ -1755,37 +1755,37 @@ namespace layout {
         }, containerSize.innerSize.width);
 
         for (size_t i = 0; i < node->children.size(); ++i) {
-            auto childAsPtr = node->children[i].get();
-            auto childPos = childAsPtr->getPosition();
+            auto childNode = node->children[i].get();
+            auto childPos = childNode->getPosition();
             if (childPos == Position::Absolute || childPos == Position::Fixed) 
                 continue;
 
-            Measured childMeasured = *childAsPtr->measured;
+            Measured childMeasured = *childNode->measured;
             auto preparedChildConstraints = prepareChildConstraints();
             SizeRequest childRequest {
-                .position = childAsPtr->shared.position,
-                .specified = {.width = childAsPtr->shared.width, .height = childAsPtr->shared.height},
+                .position = childNode->shared.position,
+                .specified = {.width = childNode->shared.width, .height = childNode->shared.height},
                 .override = {.width = std::monostate{}, .height = std::monostate{}},
-                .minimum = {.width = childAsPtr->shared.minWidth, .height = childAsPtr->shared.minHeight},
+                .minimum = {.width = childNode->shared.minWidth, .height = childNode->shared.minHeight},
                 .maximum = {
-                    .width = childAsPtr->shared.maxWidth ? SizeState{*childAsPtr->shared.maxWidth} : SizeState{std::monostate{}},
-                    .height = childAsPtr->shared.maxHeight ? SizeState{*childAsPtr->shared.maxHeight} : SizeState{std::monostate{}},
+                    .width = childNode->shared.maxWidth ? SizeState{*childNode->shared.maxWidth} : SizeState{std::monostate{}},
+                    .height = childNode->shared.maxHeight ? SizeState{*childNode->shared.maxHeight} : SizeState{std::monostate{}},
                 },
                 .available = containerSize.innerSize,
-                .top = childAsPtr->shared.top,
-                .right = childAsPtr->shared.right,
-                .bottom = childAsPtr->shared.bottom,
-                .left = childAsPtr->shared.left,
-                .paddingTop = childAsPtr->shared.paddingTop.value_or(childAsPtr->shared.padding),
-                .paddingRight = childAsPtr->shared.paddingRight.value_or(childAsPtr->shared.padding),
-                .paddingBottom = childAsPtr->shared.paddingBottom.value_or(childAsPtr->shared.padding),
-                .paddingLeft = childAsPtr->shared.paddingLeft.value_or(childAsPtr->shared.padding),
-                .borderWidth = childAsPtr->shared.borderWidth,
-                .margins = childAsPtr->preLayout->resolvedMargins,
-                .aspectRatio = childAsPtr->shared.aspectRatio,
+                .top = childNode->shared.top,
+                .right = childNode->shared.right,
+                .bottom = childNode->shared.bottom,
+                .left = childNode->shared.left,
+                .paddingTop = childNode->shared.paddingTop.value_or(childNode->shared.padding),
+                .paddingRight = childNode->shared.paddingRight.value_or(childNode->shared.padding),
+                .paddingBottom = childNode->shared.paddingBottom.value_or(childNode->shared.padding),
+                .paddingLeft = childNode->shared.paddingLeft.value_or(childNode->shared.padding),
+                .borderWidth = childNode->shared.borderWidth,
+                .margins = childNode->preLayout->resolvedMargins,
+                .aspectRatio = childNode->shared.aspectRatio,
                 .automaticWidth = AutomaticSizing::UseContent,
                 .automaticHeight = AutomaticSizing::UseContent,
-                .automaticMinimumWidth = childAsPtr->shared.overflow == Overflow::Scroll
+                .automaticMinimumWidth = childNode->shared.overflow == Overflow::Scroll
                     ? AutomaticMinimum::Zero
                     : AutomaticMinimum::ContentBased,
                 .automaticMinimumHeight = AutomaticMinimum::Zero,
@@ -1793,16 +1793,13 @@ namespace layout {
                 .tag = "grid phase B, column contributions"
             };
 
-            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childAsPtr, {
+            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childNode, {
                 .availableWidth = childRequest.available.width,
                 .widthRequest = childRequest.intrinsicWidthRequest,
                 .trackIntrinsicWidth = false,
             });
 
-            SizeResult childSizing = evaluateSize(
-                tree, childAsPtr, frameInfo, preparedChildConstraints,
-                childMeasured, childRequest, sizeCache
-            );
+            const SizeResult childSizing = evaluateSize(tree, childNode, frameInfo, preparedChildConstraints, childMeasured, childRequest, sizeCache);
 
             const auto& intrinsicWidths = *childSizing.widthIntrinsicSizes;
             float minContent = std::get<float>(intrinsicWidths.minimum);
@@ -1828,7 +1825,7 @@ namespace layout {
             if (maxWidth)
                 minimum = std::min(minimum, *maxWidth);
 
-            gridLayout.addChild(i, childAsPtr, {.minimum = minimum, .minContent = minContent, .maxContent = maxContent});
+            gridLayout.addChild(i, childNode, {.minimum = minimum, .minContent = minContent, .maxContent = maxContent});
         }
 
         gridLayout.resolveStructure(templateRows.size(), templateCols.size());
@@ -1859,15 +1856,15 @@ namespace layout {
         }, containerSize.innerSize.height);
 
         for (auto& item : gridLayout.items) {
-            auto childAsPtr = node->children[item.childIndex].get();
+            auto childNode = node->children[item.childIndex].get();
             auto& placement = item.placement;
             float cellX = gridLayout.colTracks[*placement.colStart].offset;
             float cellW = gridLayout.colTracks[*placement.colEnd - 1].offset + gridLayout.colTracks[*placement.colEnd - 1].size - cellX;
-            Measured childMeasured = *childAsPtr->measured;
+            Measured childMeasured = *childNode->measured;
             auto preparedChildConstraints = prepareChildConstraints();
 
             JustifyItems effectiveJustify = justifyItems;
-            auto selfJustify = childAsPtr->getJustifySelf();
+            auto selfJustify = childNode->getJustifySelf();
             if (selfJustify != JustifySelf::Auto) {
                 switch (selfJustify) {
                     case JustifySelf::Stretch: {
@@ -1896,49 +1893,45 @@ namespace layout {
             childAvailableSize.width = cellW;
 
             SizeRequest childRequest {
-                .position = childAsPtr->shared.position,
-                .specified = {.width = childAsPtr->shared.width, .height = childAsPtr->shared.height},
+                .position = childNode->shared.position,
+                .specified = {.width = childNode->shared.width, .height = childNode->shared.height},
                 .override = {.width = std::monostate{}, .height = std::monostate{}},
-                .minimum = {.width = childAsPtr->shared.minWidth, .height = childAsPtr->shared.minHeight},
+                .minimum = {.width = childNode->shared.minWidth, .height = childNode->shared.minHeight},
                 .maximum = {
-                    .width = childAsPtr->shared.maxWidth ? SizeState{*childAsPtr->shared.maxWidth} : SizeState{std::monostate{}},
-                    .height = childAsPtr->shared.maxHeight ? SizeState{*childAsPtr->shared.maxHeight} : SizeState{std::monostate{}},
+                    .width = childNode->shared.maxWidth ? SizeState{*childNode->shared.maxWidth} : SizeState{std::monostate{}},
+                    .height = childNode->shared.maxHeight ? SizeState{*childNode->shared.maxHeight} : SizeState{std::monostate{}},
                 },
                 .available = childAvailableSize,
-                .top = childAsPtr->shared.top,
-                .right = childAsPtr->shared.right,
-                .bottom = childAsPtr->shared.bottom,
-                .left = childAsPtr->shared.left,
-                .paddingTop = childAsPtr->shared.paddingTop.value_or(childAsPtr->shared.padding),
-                .paddingRight = childAsPtr->shared.paddingRight.value_or(childAsPtr->shared.padding),
-                .paddingBottom = childAsPtr->shared.paddingBottom.value_or(childAsPtr->shared.padding),
-                .paddingLeft = childAsPtr->shared.paddingLeft.value_or(childAsPtr->shared.padding),
-                .borderWidth = childAsPtr->shared.borderWidth,
-                .margins = childAsPtr->preLayout->resolvedMargins,
-                .aspectRatio = childAsPtr->shared.aspectRatio,
+                .top = childNode->shared.top,
+                .right = childNode->shared.right,
+                .bottom = childNode->shared.bottom,
+                .left = childNode->shared.left,
+                .paddingTop = childNode->shared.paddingTop.value_or(childNode->shared.padding),
+                .paddingRight = childNode->shared.paddingRight.value_or(childNode->shared.padding),
+                .paddingBottom = childNode->shared.paddingBottom.value_or(childNode->shared.padding),
+                .paddingLeft = childNode->shared.paddingLeft.value_or(childNode->shared.padding),
+                .borderWidth = childNode->shared.borderWidth,
+                .margins = childNode->preLayout->resolvedMargins,
+                .aspectRatio = childNode->shared.aspectRatio,
                 .automaticWidth = effectiveJustify == JustifyItems::Stretch
                     ? AutomaticSizing::UseAvailable
                     : AutomaticSizing::UseContent,
                 .automaticHeight = AutomaticSizing::UseContent,
                 .automaticMinimumWidth = AutomaticMinimum::Zero,
-                .automaticMinimumHeight = childAsPtr->shared.overflow == Overflow::Scroll
+                .automaticMinimumHeight = childNode->shared.overflow == Overflow::Scroll
                     ? AutomaticMinimum::Zero
                     : AutomaticMinimum::ContentBased,
                 .intrinsicHeightRequest = IntrinsicRequest::Both,
                 .tag = "grid phase C, row contributions"
             };
 
-            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childAsPtr, {
+            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childNode, {
                 .availableWidth = childRequest.available.width,
                 .widthRequest = childRequest.intrinsicWidthRequest,
                 .trackIntrinsicWidth = false,
             });
 
-            LayoutResult childOutput = tree.layoutRecursive(
-                childAsPtr, frameInfo, preparedChildConstraints,
-                childMeasured, false, childRequest
-            );
-            const SizeResult& childSizing = childOutput.sizeResult;
+            SizeResult childSizing = evaluateSize( tree, childNode, frameInfo, preparedChildConstraints, childMeasured, childRequest, sizeCache);
 
             const auto& intrinsicHeights = *childSizing.heightIntrinsicSizes;
             float minContent = std::get<float>(intrinsicHeights.minimum);
@@ -1986,9 +1979,9 @@ namespace layout {
         gridLayout.rowIntrinsicSizes = {.minimum = rowContentSize, .maximum = rowContentSize};
 
         for (auto& item : gridLayout.items) {
-            auto childAsPtr = node->children[item.childIndex].get();
+            auto childNode = node->children[item.childIndex].get();
             auto& placement = item.placement;
-            Measured childMeasured = *childAsPtr->measured;
+            Measured childMeasured = *childNode->measured;
 
             auto& colTracks = gridLayout.colTracks;
             auto& rowTracks = gridLayout.rowTracks;
@@ -2003,9 +1996,8 @@ namespace layout {
             preparedChildConstraints.origin = {cellX, cellY};
             preparedChildConstraints.cursor = {cellX, cellY};
 
-            // wtf is this lol
             AlignItems effectiveAlign = alignItems;
-            auto selfAlign = childAsPtr->getAlignSelf();
+            auto selfAlign = childNode->getAlignSelf();
             if (selfAlign != AlignSelf::Auto) {
                 switch (selfAlign) {
                     case AlignSelf::Stretch: {
@@ -2031,7 +2023,7 @@ namespace layout {
             }
 
             JustifyItems effectiveJustify = justifyItems;
-            auto selfJustify = childAsPtr->getJustifySelf();
+            auto selfJustify = childNode->getJustifySelf();
             if (selfJustify != JustifySelf::Auto) {
                 switch (selfJustify) {
                     case JustifySelf::Stretch: {
@@ -2062,26 +2054,26 @@ namespace layout {
             };
 
             SizeRequest childRequest {
-                .position = childAsPtr->shared.position,
-                .specified = {.width = childAsPtr->shared.width, .height = childAsPtr->shared.height},
+                .position = childNode->shared.position,
+                .specified = {.width = childNode->shared.width, .height = childNode->shared.height},
                 .override = {.width = std::monostate{}, .height = std::monostate{}},
-                .minimum = {.width = childAsPtr->shared.minWidth, .height = childAsPtr->shared.minHeight},
+                .minimum = {.width = childNode->shared.minWidth, .height = childNode->shared.minHeight},
                 .maximum = {
-                    .width = childAsPtr->shared.maxWidth ? SizeState{*childAsPtr->shared.maxWidth} : SizeState{std::monostate{}},
-                    .height = childAsPtr->shared.maxHeight ? SizeState{*childAsPtr->shared.maxHeight} : SizeState{std::monostate{}},
+                    .width = childNode->shared.maxWidth ? SizeState{*childNode->shared.maxWidth} : SizeState{std::monostate{}},
+                    .height = childNode->shared.maxHeight ? SizeState{*childNode->shared.maxHeight} : SizeState{std::monostate{}},
                 },
                 .available = childAvailableSize,
-                .top = childAsPtr->shared.top,
-                .right = childAsPtr->shared.right,
-                .bottom = childAsPtr->shared.bottom,
-                .left = childAsPtr->shared.left,
-                .paddingTop = childAsPtr->shared.paddingTop.value_or(childAsPtr->shared.padding),
-                .paddingRight = childAsPtr->shared.paddingRight.value_or(childAsPtr->shared.padding),
-                .paddingBottom = childAsPtr->shared.paddingBottom.value_or(childAsPtr->shared.padding),
-                .paddingLeft = childAsPtr->shared.paddingLeft.value_or(childAsPtr->shared.padding),
-                .borderWidth = childAsPtr->shared.borderWidth,
-                .margins = childAsPtr->preLayout->resolvedMargins,
-                .aspectRatio = childAsPtr->shared.aspectRatio,
+                .top = childNode->shared.top,
+                .right = childNode->shared.right,
+                .bottom = childNode->shared.bottom,
+                .left = childNode->shared.left,
+                .paddingTop = childNode->shared.paddingTop.value_or(childNode->shared.padding),
+                .paddingRight = childNode->shared.paddingRight.value_or(childNode->shared.padding),
+                .paddingBottom = childNode->shared.paddingBottom.value_or(childNode->shared.padding),
+                .paddingLeft = childNode->shared.paddingLeft.value_or(childNode->shared.padding),
+                .borderWidth = childNode->shared.borderWidth,
+                .margins = childNode->preLayout->resolvedMargins,
+                .aspectRatio = childNode->shared.aspectRatio,
                 .automaticWidth = effectiveJustify == JustifyItems::Stretch
                     ? AutomaticSizing::UseAvailable
                     : AutomaticSizing::UseContent,
@@ -2093,20 +2085,17 @@ namespace layout {
                 .tag = "grid phase C, final request"
             };
 
-            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childAsPtr, {
+            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childNode, {
                 .availableWidth = childRequest.available.width,
                 .widthRequest = childRequest.intrinsicWidthRequest,
                 .trackIntrinsicWidth = false,
             });
 
-            LayoutResult childOutput = tree.layoutRecursive(
-                childAsPtr, frameInfo, preparedChildConstraints,
-                childMeasured, false, childRequest
-            );
+            const SizeResult childSizing = evaluateSize(tree, childNode, frameInfo, preparedChildConstraints, childMeasured, childRequest, sizeCache);
 
             // positioning adjustments
-            if (std::holds_alternative<float>(childOutput.sizeResult.outerSize.width)) {
-                float outerSize = std::get<float>(childOutput.sizeResult.outerSize.width);
+            if (std::holds_alternative<float>(childSizing.outerSize.width)) {
+                float outerSize = std::get<float>(childSizing.outerSize.width);
                 float dx = 0.0f;
                 if (effectiveJustify == JustifyItems::Center) {
                     dx = (cellW - outerSize) / 2.0f;
@@ -2118,8 +2107,8 @@ namespace layout {
                 preparedChildConstraints.cursor.x += dx;
             }
 
-            if (std::holds_alternative<float>(childOutput.sizeResult.outerSize.height)) {
-                float outerSize = std::get<float>(childOutput.sizeResult.outerSize.height);
+            if (std::holds_alternative<float>(childSizing.outerSize.height)) {
+                float outerSize = std::get<float>(childSizing.outerSize.height);
                 float dy = 0.0f;
                 if (effectiveAlign == AlignItems::Center) {
                     dy = (cellH - outerSize) / 2.0f;
@@ -2131,22 +2120,10 @@ namespace layout {
                 preparedChildConstraints.cursor.y += dy;
             }
             
-            // interesting? why not just pass... mutate?
-            childOutput = tree.layoutRecursive(
-                childAsPtr, frameInfo, preparedChildConstraints,
+            LayoutResult childOutput = tree.layoutRecursive(
+                childNode, frameInfo, preparedChildConstraints,
                 childMeasured, mutate, childRequest
             );
-            // if (mutate) {
-            //     childOutput = tree.layoutRecursive(
-            //         childAsPtr, frameInfo, preparedChildConstraints,
-            //         childMeasured, true, childRequest
-            //     );
-            // } else if (dx != 0.0f || dy != 0.0f) {
-            //     childOutput = tree.layoutRecursive(
-            //         childAsPtr, frameInfo, preparedChildConstraints,
-            //         childMeasured, false, childRequest
-            //     );
-            // }
 
             std::visit([&](const auto& childLayout) {
                 maxX = std::max(maxX, childLayout.computedBox.x + childLayout.computedBox.width);

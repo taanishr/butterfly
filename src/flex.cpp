@@ -146,7 +146,6 @@ namespace layout {
                                           ),
                 .intrinsicWidthRequest = flex.axis.isRow ? std::optional{IntrinsicRequest::Both} : std::nullopt,
                 .intrinsicHeightRequest = flex.axis.isRow ? std::nullopt : std::optional{IntrinsicRequest::Both},
-
                 .tag = "flex phase B, main size"
             };
 
@@ -194,19 +193,10 @@ namespace layout {
             totalFlexBaseSize += line.totalWithGap(resolvedGap);
         }
 
-        if (node->id == 31) {
-            std::println("available size: {}", describeSizeState(availableSize.height));
-        }
-        
         availableMain = std::visit(Overloaded {
             [](float value) { return value; },
             [&](const auto&) { return totalFlexBaseSize; },
         }, flex.axis.mainSize(availableSize));
-
-        // if (node-> id == 31) {
-        //     availableMain = 128;
-        // }
-        
 
         if (node->shared.overflow == Overflow::Scroll) {
             availableMain = std::max(availableMain, totalFlexBaseSize);
@@ -277,33 +267,11 @@ namespace layout {
 
 
                 flex.axis.mainSize(childRequest.override) = item.usedMainSize;
+                
+                SizeResult childSizing = evaluateSize(tree, childNode, frameInfo, preparedChildConstraints, childMeasured, childRequest, sizeCache);
 
-
-                LayoutResult childOutput = tree.layoutRecursive(childNode, frameInfo, preparedChildConstraints, childMeasured, false, childRequest);
-                const SizeResult& sizeResult = childOutput.sizeResult;
-
-                // if (std::holds_alternative<float>(flex.axis.crossSize(sizeResult.outerSize))) {
-                //     item.hypotheticalCrossSize = std::get<float>(flex.axis.crossSize(sizeResult.outerSize));
-                // }else {
-                //     item.hypotheticalCrossSize = 0.0f;
-                // }
-
-                // const auto& measuredCrossIntrinsicSizes = flex.axis.isRow ? sizeResult.heightIntrinsicSizes : sizeResult.widthIntrinsicSizes;
-
-                // // unresolved intrinsic sizes; skip
-                // if (!std::holds_alternative<float>(measuredCrossIntrinsicSizes->minimum) || !std::holds_alternative<float>(measuredCrossIntrinsicSizes->maximum)) {
-                //     continue;
-                // }
-
-                // float childMinimumCrossContribution = std::get<float>(measuredCrossIntrinsicSizes->minimum);
-                // float childMaximumCrossContribution = std::get<float>(measuredCrossIntrinsicSizes->maximum);
-
-                // lineMinimumCrossContribution = std::max(lineMinimumCrossContribution, childMinimumCrossContribution);
-                // lineMaximumCrossContribution = std::max(lineMaximumCrossContribution, childMaximumCrossContribution);
-                // line.maxCrossSize = std::max(line.maxCrossSize, item.hypotheticalCrossSize);
-
-                if (std::holds_alternative<float>(flex.axis.crossSize(sizeResult.outerSize))) {
-                    item.hypotheticalCrossSize = std::get<float>(flex.axis.crossSize(sizeResult.outerSize));
+                if (std::holds_alternative<float>(flex.axis.crossSize(childSizing.outerSize))) {
+                    item.hypotheticalCrossSize = std::get<float>(flex.axis.crossSize(childSizing.outerSize));
                     lineMinimumCrossContribution = std::max(lineMinimumCrossContribution, item.hypotheticalCrossSize);
                     lineMaximumCrossContribution = std::max(lineMaximumCrossContribution, item.hypotheticalCrossSize);
                     line.maxCrossSize = std::max(line.maxCrossSize, item.hypotheticalCrossSize);
@@ -312,7 +280,7 @@ namespace layout {
                     item.hypotheticalCrossSize = 0.0f;
                 }
 
-                const auto& measuredCrossIntrinsicSizes = flex.axis.isRow ? sizeResult.heightIntrinsicSizes : sizeResult.widthIntrinsicSizes;
+                const auto& measuredCrossIntrinsicSizes = flex.axis.isRow ? childSizing.heightIntrinsicSizes : childSizing.widthIntrinsicSizes;
 
                 // unresolved intrinsic sizes; skip
                 if (!std::holds_alternative<float>(measuredCrossIntrinsicSizes->minimum) || !std::holds_alternative<float>(measuredCrossIntrinsicSizes->maximum)) {
@@ -348,7 +316,6 @@ namespace layout {
             [](float value) { return value; },
             [&](const auto&) { return contentCrossSize; },
         }, flex.axis.crossSize(availableSize));
-        // float availableCross = contentCrossSize;
 
         auto placements = flex.computePlacements(
             resolvedMainSizes,
