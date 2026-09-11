@@ -459,9 +459,6 @@ namespace layout {
         float maxX;
         float maxY;
 
-        std::optional<IntrinsicRequest> intrinsicWidthRequest;
-        std::optional<IntrinsicRequest> intrinsicHeightRequest;
-
         float resolvedGap{};
         float availableMain{};
         FlexLayout::ResolveResult resolvedMainSizes;
@@ -485,8 +482,7 @@ namespace layout {
             : tree{tree}, node{node}, parentConstraints{parentConstraints},
                 childConstraints{childConstraints}, flex{flex},
                 frameInfo{frameInfo}, availableSize{availableSize}, mutate{mutate}, sizeCache{sizeCache},
-                minX{minX}, minY{minY}, maxX{maxX}, maxY{maxY},
-                intrinsicWidthRequest{intrinsicWidthRequest}, intrinsicHeightRequest{intrinsicHeightRequest}
+                minX{minX}, minY{minY}, maxX{maxX}, maxY{maxY}
         {}
 
         Constraints prepareChildConstraints();

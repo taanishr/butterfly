@@ -296,6 +296,8 @@ auto resolveBorderWidth(const SizeRequest& req) -> SizeState;
 auto resolveInnerWidth(const SizeState& size, const PaddingResult& padding, const SizeState& borderWidth) -> SizeState;
 auto resolveInnerHeight(const SizeState& size, const PaddingResult& padding, const SizeState& borderWidth) -> SizeState;
 
+auto hashSizeRequest(const SizeRequest& sizeRequest, std::size_t& key) -> void;
+
 auto evaluateSize(
     tree::RenderTree& tree,
     tree::TreeNode* node,

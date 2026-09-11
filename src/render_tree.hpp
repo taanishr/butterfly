@@ -111,7 +111,7 @@ namespace tree {
         std::unique_ptr<TreeNode> elementTree;
         LayoutEngine layoutEngine;
 
-        std::unordered_map<ConstraintsKey, layout::LayoutResult> speculativeLayoutCache;
+        std::unordered_map<ConstraintsKey, layout::LayoutResult> layoutCache;
         std::unordered_map<size_t, SizeResult> sizeCache;
     };
 }

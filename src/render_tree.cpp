@@ -407,11 +407,17 @@ namespace tree {
         }
         // initial layout pass
         if (needsLayoutPass) {
+            layoutCache.clear();
             sizeCache.clear();
             instrumentation::PhaseTimer timer{instrumentation::Phase::Layout};
+            auto layoutStart = std::chrono::steady_clock::now();
             layoutPhase(root, frameInfo, rootConstraints, *root->measured);
+            auto layoutEnd = std::chrono::steady_clock::now();
+            std::println("layout pass: {:.3f} ms",
+                std::chrono::duration<double, std::milli>(layoutEnd - layoutStart).count());
             root->calculateGlobalZIndex(0);
         }
+
         sortedRenderOrder();
         // postLayout: resolve global positions (serial, top-down) + reconcile atoms
         if (subtreeHasDirty(root, DirtyBits::PostLayout) || !root->layout.has_value()) {
@@ -722,6 +728,20 @@ namespace tree {
             sizeRequest.resolvingIntrinsicHeight = true;
         }
 
+        ConstraintsKey layoutKey = key;
+        hash_combine(layoutKey.value, node->id);
+        hashSizeRequest(sizeRequest, layoutKey.value);
+
+        auto cachedLayout = layoutCache.find(layoutKey);
+        // we dont need a mutation; just fetch the cached result
+        // that being said idk if I care about this cache existing
+        if (!mutate) {
+            instrumentation::recordSpeculativeLayoutCache(cachedLayout != layoutCache.end());
+            if (cachedLayout != layoutCache.end()) {
+                return cachedLayout->second;
+            }
+        }
+
         auto sizeResult = evaluateSize(*this, node, frameInfo, constraints, measured, sizeRequest, sizeCache);
 
 
@@ -809,22 +829,6 @@ namespace tree {
                     intrinsicResult = *inlineState.heightIntrinsicSizes;
                 }
             }
-        }
-
-        InlineSizingInput inlineSizing {
-            .availableWidth = childConstraints.availableWidth,
-            .widthRequest = sizeRequest.intrinsicWidthRequest,
-            .trackIntrinsicWidth = sizeRequest.resolvingIntrinsicWidth,
-        };
-        
-        // right now, minimum & maximum content dont really get set?
-        // it only changes for flex/grid/etc...
-        // which provide different contributions not based on intrinsic size collection but
-        // min and max bounds; this needs to be fixed
-        auto inlineFormatting = buildInlineBoxes(node, inlineSizing);
-
-        if (inlineFormatting->intrinsicSizes) {
-            intrinsicResult = *inlineFormatting->intrinsicSizes;
         }
 
 
@@ -952,7 +956,21 @@ namespace tree {
         };
 
         auto normalPass = [&](const SizeResult& sr) {
+            InlineSizingInput inlineSizing {
+                .availableWidth = childConstraints.availableWidth,
+                .widthRequest = sizeRequest.intrinsicWidthRequest,
+                .trackIntrinsicWidth = sizeRequest.resolvingIntrinsicWidth,
+            };
+            
+            // right now, minimum & maximum content dont really get set?
+            // it only changes for flex/grid/etc...
+            // which provide different contributions not based on intrinsic size collection but
+            // min and max bounds; this needs to be fixed
+            auto inlineFormatting = buildInlineBoxes(node, inlineSizing);
 
+            if (inlineFormatting->intrinsicSizes) {
+                intrinsicResult = *inlineFormatting->intrinsicSizes;
+            }
 
             // if (node->id == 32) {
             //     std::println("red req: {} red h: {}", describeSizeState(sizeRequest.specified.height), describeSizeState(sr.outerSize.height));
@@ -1050,11 +1068,17 @@ namespace tree {
             .intrinsicSizes = intrinsicResult
         };
 
+        // if (mutate) {
+        //     node->layout = output;
+        //     node->constraintsKey = key;
+        //     node->dirtySelf |= DirtyBits::PostLayout | DirtyBits::Place | DirtyBits::Finalize;
+        // }
+
         if (mutate) {
             node->layout = output;
-            node->constraintsKey = key;
-            node->dirtySelf |= DirtyBits::PostLayout | DirtyBits::Place | DirtyBits::Finalize;
         }
+
+        layoutCache[layoutKey] = output;
 
         return output;
     }

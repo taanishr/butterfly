@@ -372,7 +372,7 @@ namespace tree {
 
         while (idx < shapedRun.clusters.size()) {
             const auto& cluster = shapedRun.clusters[idx];
-            char32_t ch = cluster.codepoint();
+            char32_t ch = cluster.leadCodepoint;
             const auto& firstAtom = atoms[cluster.glyphStart];
             float width = 0.0f;
             for (size_t i = 0; i < cluster.glyphCount; ++i) {
@@ -465,7 +465,7 @@ namespace tree {
             }
 
             while (idx < shapedRun.clusters.size() &&
-                   isTextWhitespace(shapedRun.clusters[idx].codepoint())) {
+                   isTextWhitespace(shapedRun.clusters[idx].leadCodepoint)) {
                 const auto& whitespace = shapedRun.clusters[idx];
                 for (size_t i = 0; i < whitespace.glyphCount; ++i) {
                     runningWidth += atoms[whitespace.glyphStart + i].width;
