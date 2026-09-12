@@ -527,10 +527,6 @@ namespace layout {
         float prevInlineHeight{};
         std::vector<ClipUniform> clipUniforms {};
         std::optional<TextOverflow&> textOverflow;
-        
-        std::optional<AxisResolution> widthResolution;
-        std::optional<AxisResolution> heightResolution;
-        std::optional<Axis> intrinsicSizesAxis;
     };
 
     struct LayoutInput {

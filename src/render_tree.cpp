@@ -163,9 +163,7 @@ namespace tree {
         return hasDirty(node->dirtySelf | node->dirtySubtree, bits);
     }
 
-    ConstraintsKey RenderTree::makeConstraintsKey(const Constraints& constraints,
-                                                  simd_float2 extraOriginA,
-                                                  simd_float2 extraOriginB) const {
+    ConstraintsKey RenderTree::makeConstraintsKey(const Constraints& constraints, simd_float2 extraOriginA, simd_float2 extraOriginB) const {
         std::size_t hash = 0;
         hash_combine(hash, constraints.origin.x);
         hash_combine(hash, constraints.origin.y);
@@ -199,27 +197,7 @@ namespace tree {
         };
         hashOptionalSize(constraints.replacedAttributes.marginTop);
         hashOptionalSize(constraints.replacedAttributes.marginBottom);
-        hash_combine(hash, constraints.widthResolution.has_value());
-        if (constraints.widthResolution.has_value()) hash_combine(hash, static_cast<int>(*constraints.widthResolution));
-        hash_combine(hash, constraints.heightResolution.has_value());
-        if (constraints.heightResolution.has_value()) hash_combine(hash, static_cast<int>(*constraints.heightResolution));
-        hash_combine(hash, constraints.intrinsicSizesAxis.has_value());
-        if (constraints.intrinsicSizesAxis.has_value()) hash_combine(hash, static_cast<int>(*constraints.intrinsicSizesAxis));
-        auto lineFragments = constraints.inlineFormatting.lineFragments();
-        auto lineBoxes = constraints.inlineFormatting.lineBoxes();
-        hash_combine(hash, lineFragments.size());
-        hash_combine(hash, lineBoxes.size());
-        hash_combine(hash, constraints.textBidiInput.has_value());
-        if (constraints.textBidiInput.has_value()) {
-            const auto& bidi = *constraints.textBidiInput;
-            hash_combine(hash, bidi.paragraphByteStart);
-            hash_combine(hash, bidi.byteLength);
-            for (const auto& run : bidi.runs) {
-                hash_combine(hash, run.byteStart);
-                hash_combine(hash, run.byteLength);
-                hash_combine(hash, run.level);
-            }
-        }
+        
         hash_combine(hash, constraints.textOverflow.has_value());
         if (constraints.textOverflow.has_value()) {
             hash_combine(hash, static_cast<int>(constraints.textOverflow->mode));
@@ -235,21 +213,6 @@ namespace tree {
             hash_combine(hash, clip.halfExtent.y);
             hash_combine(hash, clip.cornerRadius.x);
             hash_combine(hash, clip.cornerRadius.y);
-        }
-
-        for (auto& fragment : lineFragments) {
-            hash_combine(hash, fragment.width);
-            hash_combine(hash, fragment.atomStart);
-            hash_combine(hash, fragment.atomCount);
-            hash_combine(hash, fragment.lineBoxIndex);
-            hash_combine(hash, fragment.fragmentIndex);
-            hash_combine(hash, fragment.offset);
-        }
-        for (auto& lineBox : lineBoxes) {
-            hash_combine(hash, lineBox.fragmentStart);
-            hash_combine(hash, lineBox.fragmentCount);
-            hash_combine(hash, lineBox.width);
-            hash_combine(hash, lineBox.currentFragmentOffset);
         }
 
         hash_combine(hash, extraOriginA.x);

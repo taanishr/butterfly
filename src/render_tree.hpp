@@ -75,9 +75,7 @@ namespace tree {
         );
     private:
         bool isFrameInfoChanged(const FrameInfo& frameInfo) const;
-        ConstraintsKey makeConstraintsKey(const Constraints& constraints,
-                                          simd_float2 extraOriginA = {0.0f, 0.0f},
-                                          simd_float2 extraOriginB = {0.0f, 0.0f}) const;
+        ConstraintsKey makeConstraintsKey(const Constraints& constraints, simd_float2 extraOriginA = {0.0f, 0.0f}, simd_float2 extraOriginB = {0.0f, 0.0f}) const;
         ConstraintsKey makeSpeculativeKey(
             const TreeNode* node,
             const Constraints& constraints,
