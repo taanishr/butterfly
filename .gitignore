@@ -14,3 +14,5 @@ gui/bin/
 
 AppKit-Extensions-Library/
 MTK-Extensions-Library/
+
+tests/
