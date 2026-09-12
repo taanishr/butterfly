@@ -82,7 +82,7 @@ elif [[ $ENABLE_PROFILE -eq 1 || $COMMAND == compare ]]; then
 elif [[ $ENABLE_DEBUG_UI -eq 1 ]]; then
     PRESET=inspector
 else
-    PRESET=debug
+    PRESET=release
 fi
 
 configure() {
