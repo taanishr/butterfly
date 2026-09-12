@@ -177,6 +177,8 @@ Done (sizing refactor).
 - `max-content`
 - `aspectRatio(...)`
 
+not done: Kill measured?
+
 ### 2. Better positioning
 
 - Refactor sizing requests.
