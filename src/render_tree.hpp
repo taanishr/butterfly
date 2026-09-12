@@ -76,11 +76,6 @@ namespace tree {
     private:
         bool isFrameInfoChanged(const FrameInfo& frameInfo) const;
         ConstraintsKey makeConstraintsKey(const Constraints& constraints, simd_float2 extraOriginA = {0.0f, 0.0f}, simd_float2 extraOriginB = {0.0f, 0.0f}) const;
-        ConstraintsKey makeSpeculativeKey(
-            const TreeNode* node,
-            const Constraints& constraints,
-            const layout::Measured& measured
-        ) const;
         instrumentation::RecomputeReason recomputeReason(
             TreeNode* node,
             DirtyBits bit,
@@ -107,7 +102,6 @@ namespace tree {
         ChainID nextChainId = 0;
 
         std::unique_ptr<TreeNode> elementTree;
-        LayoutEngine layoutEngine;
 
         std::unordered_map<ConstraintsKey, layout::LayoutResult> layoutCache;
         std::unordered_map<size_t, SizeResult> sizeCache;

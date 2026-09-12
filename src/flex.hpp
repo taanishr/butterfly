@@ -62,12 +62,10 @@ namespace layout {
 
     struct FlexItem {
         size_t childIndex;
-        uint64_t childId;
         SizeState flexBaseSize;
         float hypotheticalMainSize;
         SizeState minimumMainSize;
         SizeState maximumMainSize;
-        IntrinsicResult mainIntrinsicSizes;
         float maximumMainContribution;
         float flexGrow;
         float scaledFlexShrink;
@@ -119,7 +117,6 @@ namespace layout {
 
         struct ResolveResult {
             float totalAfter{};
-            float remainingSpace{};
         };
 
         ResolveResult resolve(float availableMain) {
@@ -178,8 +175,6 @@ namespace layout {
                         clamped = std::min(clamped, std::get<float>(item.maximumMainSize));
                     }
 
-                    float minMainSize = std::get<float>(item.minimumMainSize);
-
                     clamped = std::max(clamped, std::get<float>(item.minimumMainSize));
                     
                     if (clamped != item.usedMainSize) { 
@@ -211,7 +206,6 @@ namespace layout {
             }
 
             for (const auto& item : items) result.totalAfter += item.usedMainSize;
-            result.remainingSpace = availableMain - result.totalAfter;
             return result;
         }
     };
@@ -308,12 +302,10 @@ namespace layout {
 
             currentLine.addItem({
                 .childIndex = childIndex,
-                .childId = child->id,
                 .flexBaseSize = flexBaseSize,
                 .hypotheticalMainSize = hypotheticalMainSize,
                 .minimumMainSize = minimumMainSize,
                 .maximumMainSize = maximumMainSize,
-                .mainIntrinsicSizes = mainIntrinsicSizes,
                 .maximumMainContribution = maximumMainContribution,
                 .flexGrow = grow > 0.0f ? grow : 0.0f,
                 .scaledFlexShrink = scaledFlexShrink,
@@ -325,7 +317,6 @@ namespace layout {
 
         struct ResolveResult {
             std::vector<float> lineTotalsAfter;       
-            float overallTotalAfter{};
         };
 
         ResolveResult resolveSizes(float avMain, float gap = 0.0f) {
@@ -333,7 +324,6 @@ namespace layout {
             for (auto& line : lines) {
                 float lineGap = line.count() > 1 ? gap * (line.count() - 1) : 0.0f;
                 auto lr = line.resolve(avMain - lineGap);
-                result.overallTotalAfter += lr.totalAfter;
                 result.lineTotalsAfter.push_back(lr.totalAfter);
             }
             return result;
@@ -454,35 +444,21 @@ namespace layout {
         std::unordered_map<size_t, SizeResult>& sizeCache;
 
 
-        float minX;
-        float minY;
-        float maxX;
-        float maxY;
-
         float resolvedGap{};
         float availableMain{};
         FlexLayout::ResolveResult resolvedMainSizes;
 
-        struct Bounds {
-            float maxX;
-            float maxY;
-        };
-
         struct FlexResult {
-            Bounds bounds;
             IntrinsicResult mainIntrinsicSizes;
             IntrinsicResult crossIntrinsicSizes;
         };
 
         FlexResolver(RenderTree& tree, TreeNode* node, const Constraints& parentConstraints,
                         const Constraints& childConstraints, FlexLayout flex, const FrameInfo& frameInfo,
-                        const SizePair& availableSize, bool mutate, std::unordered_map<size_t, SizeResult>& sizeCache,
-                        float minX, float minY, float maxX, float maxY,
-                        std::optional<IntrinsicRequest> intrinsicWidthRequest, std::optional<IntrinsicRequest> intrinsicHeightRequest)
+                        const SizePair& availableSize, bool mutate, std::unordered_map<size_t, SizeResult>& sizeCache)
             : tree{tree}, node{node}, parentConstraints{parentConstraints},
                 childConstraints{childConstraints}, flex{flex},
-                frameInfo{frameInfo}, availableSize{availableSize}, mutate{mutate}, sizeCache{sizeCache},
-                minX{minX}, minY{minY}, maxX{maxX}, maxY{maxY}
+                frameInfo{frameInfo}, availableSize{availableSize}, mutate{mutate}, sizeCache{sizeCache}
         {}
 
         Constraints prepareChildConstraints();

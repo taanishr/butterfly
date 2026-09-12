@@ -385,11 +385,7 @@ namespace layout {
                 childRequest.automaticWidth = placement.alignment == AlignItems::Stretch ? AutomaticSizing::UseAvailable : AutomaticSizing::UseContent;
             }
 
-            LayoutResult childOutput = tree.layoutRecursive(childNode, frameInfo, std::move(preparedChildConstraints), childMeasured, mutate, std::move(childRequest));
-            std::visit([&](const auto& childLayout) {
-                maxX = std::max(maxX, childLayout.computedBox.x + childLayout.computedBox.width);
-                maxY = std::max(maxY, childLayout.computedBox.y + childLayout.computedBox.height);
-            }, childOutput.layout);
+            tree.layoutRecursive(childNode, frameInfo, std::move(preparedChildConstraints), childMeasured, mutate, std::move(childRequest));
         }
 
         float minimumMainContribution = 0.0f;
@@ -402,7 +398,6 @@ namespace layout {
 
 
         return {
-            .bounds = {.maxX = maxX, .maxY = maxY},
             .mainIntrinsicSizes = {.minimum = minimumMainContribution, .maximum = maximumMainContribution},
             .crossIntrinsicSizes = {.minimum = minimumCrossContribution, .maximum = maximumCrossContribution},
         };

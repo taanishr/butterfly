@@ -126,27 +126,16 @@ namespace layout {
         bool              mutate;
         std::unordered_map<size_t, SizeResult>& sizeCache;
 
-        float minX;
-        float minY;
-        float maxX;
-        float maxY;
-
-        struct Bounds {
-            float maxX;
-            float maxY;
-        };
-
         GridResolver(RenderTree& tree, TreeNode* node,
                      const Constraints& parentConstraints,
                      const Constraints& childConstraints,
                      const FrameInfo& frameInfo,
                      const SizeResult& containerSize, bool mutate,
-                     std::unordered_map<size_t, SizeResult>& sizeCache,
-                     float minX, float minY, float maxX, float maxY);
+                     std::unordered_map<size_t, SizeResult>& sizeCache);
 
         Constraints prepareChildConstraints();
 
         void phaseB();
-        Bounds phaseC();
+        void phaseC();
     };
 }

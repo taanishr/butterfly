@@ -1476,15 +1476,13 @@ namespace layout {
                                const Constraints& childConstraints,
                                const FrameInfo& frameInfo,
                                const SizeResult& containerSize, bool mutate,
-                               std::unordered_map<size_t, SizeResult>& sizeCache,
-                               float minX, float minY, float maxX, float maxY)
+                               std::unordered_map<size_t, SizeResult>& sizeCache)
         : tree{tree}, node{node}, parentConstraints{parentConstraints},
           childConstraints{childConstraints},
           alignItems{node->getAlignItems()},
           justifyItems{node->getJustifyItems()},
           frameInfo{frameInfo}, containerSize{containerSize}, mutate{mutate},
-          sizeCache{sizeCache},
-          minX{minX}, minY{minY}, maxX{maxX}, maxY{maxY}
+          sizeCache{sizeCache}
     {}
 
     Constraints GridResolver::prepareChildConstraints() {
@@ -1600,7 +1598,7 @@ namespace layout {
     }
 
     // resolve rows fully
-    GridResolver::Bounds GridResolver::phaseC() {
+    void GridResolver::phaseC() {
         float rowGap = std::visit(Overloaded {
             [&](float height) { return node->getGridRowGap().resolve(Size::px(height)).value_or(0.0f); },
             [&](const auto&) { return node->getGridRowGap().resolve(Size::autoSize()).value_or(0.0f); },
@@ -1871,17 +1869,10 @@ namespace layout {
                 preparedChildConstraints.cursor.y += dy;
             }
             
-            LayoutResult childOutput = tree.layoutRecursive(
+            tree.layoutRecursive(
                 childNode, frameInfo, preparedChildConstraints,
                 childMeasured, mutate, childRequest
             );
-
-            std::visit([&](const auto& childLayout) {
-                maxX = std::max(maxX, childLayout.computedBox.x + childLayout.computedBox.width);
-                maxY = std::max(maxY, childLayout.computedBox.y + childLayout.computedBox.height);
-            }, childOutput.layout);
         }
-
-        return {maxX, maxY};
     }
 }

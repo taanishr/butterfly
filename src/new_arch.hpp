@@ -496,16 +496,6 @@ namespace layout {
         Size height{Size::autoSize()};
     };
 
-    enum class Axis {
-        Width,
-        Height
-    };
-
-    enum class AxisResolution {
-        MinContent,
-        MaxContent
-    };
-
     struct Constraints {
         simd_float2 origin{};
         simd_float2 cursor{};
@@ -533,16 +523,6 @@ namespace layout {
         Position position;
         Display display;
 
-        std::expected<float, style::SizeError> width{
-            std::unexpected(style::SizeError::Auto)
-        };
-        std::expected<float, style::SizeError> height{
-            std::unexpected(style::SizeError::Auto)
-        };
-        Size minWidth{Size::autoSize()};
-        Size minHeight{Size::autoSize()};
-        std::optional<Size> maxWidth, maxHeight;
-        
         std::optional<Size> top, left, bottom, right;
 
         std::optional<Direction> direction; // overwrites inherited if specified
@@ -550,32 +530,17 @@ namespace layout {
 
         Size marginTop, marginRight, marginBottom, marginLeft;
 
-        Size paddingTop, paddingRight, paddingBottom, paddingLeft;
-
-        bool hasHorizontalAutoMargins() const {
-            return marginLeft.isAuto() && marginRight.isAuto();
-        }
     };
 
-    inline LayoutInput toLayoutInput(const SharedDescriptor& s, const Measured& m) {
+    inline LayoutInput toLayoutInput(const SharedDescriptor& s) {
         LayoutInput li;
         li.position = s.position;
         li.display = s.display;
-        li.width = m.explicitWidth;
-        li.height = m.explicitHeight;
-        li.minWidth = s.minWidth;
-        li.minHeight = s.minHeight;
-        li.maxWidth = s.maxWidth;
-        li.maxHeight = s.maxHeight;
         li.top = s.top;
         li.left = s.left;
         li.bottom = s.bottom;
         li.right = s.right;
         li.textAlign = s.textAlign;
-        li.paddingTop = s.paddingTop.value_or(s.padding);
-        li.paddingRight = s.paddingRight.value_or(s.padding);
-        li.paddingBottom = s.paddingBottom.value_or(s.padding);
-        li.paddingLeft = s.paddingLeft.value_or(s.padding);
         li.marginTop = s.marginTop.value_or(s.margin);
         li.marginRight = s.marginRight.value_or(s.margin);
         li.marginBottom = s.marginBottom.value_or(s.margin);
@@ -585,7 +550,6 @@ namespace layout {
 
     struct SizeResolutionContext {
         Position position;
-        Constraints& parentConstraints;
         const std::optional<Size>&  top;
         const std::optional<Size>&  right;
         const std::optional<Size>&  bottom;
@@ -616,11 +580,6 @@ namespace layout {
     
     simd_float2 resolvePosition(const PositionResolutionContext& ctx);
     ResolvedSize resolveSize(const SizeResolutionContext& sizeContext);
-    void transferAspectRatio(
-        std::expected<float, style::SizeError>& width,
-        std::expected<float, style::SizeError>& height,
-        float ratio
-    );
 
 
     using ChainID = uint64_t;

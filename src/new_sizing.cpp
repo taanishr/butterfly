@@ -163,7 +163,7 @@ auto calculateSize(const SizeState& size, const SizeState& available) -> SizeSta
 //   - automatic using available size
 //   - automatic using outer size
 // needs to be imbued with ctx
-auto resolveWidth(tree::TreeNode* node, const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic, const PaddingResult& padding, const SizeState& borderWidth) -> SizeState {
+auto resolveWidth(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic, const PaddingResult& padding, const SizeState& borderWidth) -> SizeState {
     // run size through a calculate size pass (maybe avail too)
     SizeState resolved = calculateSize(size, req.available.width);
 
@@ -635,11 +635,8 @@ auto measureIntrinsicWidth(
     const FrameInfo& frameInfo,
     const layout::Constraints& constraints,
     layout::Measured measured,
-    const SizeState& antiSize,
     SizeRequest req
 ) -> IntrinsicResult {
-    // antiSize: not used here
-
     if (req.resolvingIntrinsicWidth || req.resolvingIntrinsicHeight) {
         return {
             .minimum = SizeError::ContentDependent,
@@ -966,7 +963,7 @@ auto evaluateSize(
     SizeState borderWidth = resolveBorderWidth(req);
 
     SizePair size {
-        .width = resolveWidth(node, requestedWidth, req, std::nullopt, padding, borderWidth),
+        .width = resolveWidth(requestedWidth, req, std::nullopt, padding, borderWidth),
         .height = resolveHeight(requestedHeight, req, std::nullopt, padding, borderWidth),
     };
 
@@ -1019,10 +1016,10 @@ auto evaluateSize(
 
     // how do I measure both sizing modes?
     if (widthIntrinsicError || minWidthIntrinsicError || maxWidthIntrinsicError) {
-        widthIntrinsic = measureIntrinsicWidth(tree, node, frameInfo, constraints, measured, size.height, req);
+        widthIntrinsic = measureIntrinsicWidth(tree, node, frameInfo, constraints, measured, req);
 
         if (widthIntrinsicError) {
-            size.width = resolveWidth(node, requestedWidth, req, widthIntrinsic, padding, borderWidth);
+            size.width = resolveWidth(requestedWidth, req, widthIntrinsic, padding, borderWidth);
         }
         if (minWidthIntrinsicError) {
             minimum.width = resolveMinWidth(req.minimum.width, req, widthIntrinsic);

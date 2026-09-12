@@ -217,7 +217,7 @@ struct SizeResult {
 //   - automatic using available size
 //   - automatic using content size
 // needs to be imbued with ctx
-auto resolveWidth(tree::TreeNode* node, const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic, const PaddingResult& padding, const SizeState& borderWidth) -> SizeState;
+auto resolveWidth(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic, const PaddingResult& padding, const SizeState& borderWidth) -> SizeState;
 auto resolveHeight(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic, const PaddingResult& padding, const SizeState& borderWidth) -> SizeState;
 
 // these ONLY exist because of different auto behavior fo min/max widht and height
@@ -243,7 +243,6 @@ auto measureIntrinsicWidth(
     const FrameInfo& frameInfo,
     const layout::Constraints&,
     layout::Measured measured,
-    const SizeState& antiSize,
     SizeRequest req
 ) -> IntrinsicResult;
 auto measureIntrinsicHeight(

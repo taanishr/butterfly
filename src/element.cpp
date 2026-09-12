@@ -607,10 +607,6 @@ namespace tree {
             LayoutInput li{
                 .position = position,
                 .display = display,
-                .width = resolvedWidth,
-                .height = std::unexpected(
-                    style::SizeError::Auto
-                ),
                 .marginTop = marginTop,
                 .marginRight = marginRight,
                 .marginBottom = marginBottom,

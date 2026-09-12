@@ -491,7 +491,7 @@ namespace elements {
         }
 
         LayoutState layout(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, TextDescriptor& desc, Measured& measured, Atomized& atomized, const SizeResult& sizeResult) {
-            auto li = toLayoutInput(shared, measured);
+            auto li = toLayoutInput(shared);
             auto lr = ctx.layoutEngine.resolve(constraints, li, atomized, sizeResult);
             std::visit([&](auto& state) { state.inlineFormatting = constraints.inlineFormatting; }, lr);
             return lr;

@@ -707,16 +707,6 @@ namespace tree {
         auto sizeResult = evaluateSize(*this, node, frameInfo, constraints, measured, sizeRequest, sizeCache);
 
 
-        const auto* resolvedOuterWidth = std::get_if<float>(&sizeResult.outerSize.width);
-        if (resolvedOuterWidth) {
-            measured.explicitWidth = *resolvedOuterWidth;
-        }
-
-        const auto* resolvedOuterHeight = std::get_if<float>(&sizeResult.outerSize.height);
-        if (resolvedOuterHeight) {
-            measured.explicitHeight = *resolvedOuterHeight;
-        }
-        
         constraints.resolvedMargins = prelayout.resolvedMargins;
 
         // what i should do now:
@@ -741,12 +731,6 @@ namespace tree {
             childConstraints.absoluteContainingBlock = constraints.absoluteContainingBlock;
         }
 
-        float minX = childConstraints.origin.x;
-        float maxX = childConstraints.origin.x;
-        float minY = childConstraints.origin.y;
-        float maxY = childConstraints.origin.y;
-        float contentWidth = 0.0f;
-        float contentHeight = 0.0f;
         std::optional<IntrinsicSizes> intrinsicResult;
 
         if (sizeRequest.resolvingIntrinsicWidth || sizeRequest.resolvingIntrinsicHeight) {
@@ -756,7 +740,6 @@ namespace tree {
         if (std::holds_alternative<layout::BlockState>(layout)) {
             if (std::holds_alternative<float>(sizeResult.outerSize.width)) {
                 float outerWidth = std::get<float>(sizeResult.outerSize.width);
-                contentWidth = outerWidth;
 
                 if (sizeRequest.resolvingIntrinsicWidth) {
                     intrinsicResult = IntrinsicSizes {.minimum = outerWidth, .maximum = outerWidth};
@@ -765,7 +748,6 @@ namespace tree {
 
             if (std::holds_alternative<float>(sizeResult.outerSize.height)) {
                 float outerHeight = std::get<float>(sizeResult.outerSize.height);
-                contentHeight = outerHeight;
 
                 if (sizeRequest.resolvingIntrinsicHeight) {
                     intrinsicResult = IntrinsicSizes {.minimum = outerHeight, .maximum = outerHeight};
@@ -777,16 +759,12 @@ namespace tree {
             const auto& inlineState = std::get<layout::InlineState>(layout);
 
             if (inlineState.widthIntrinsicSizes) {
-                contentWidth = inlineState.widthIntrinsicSizes->maximum;
-
                 if (sizeRequest.resolvingIntrinsicWidth) {
                     intrinsicResult = *inlineState.widthIntrinsicSizes;
                 }
             }
 
             if (inlineState.heightIntrinsicSizes) {
-                contentHeight = inlineState.heightIntrinsicSizes->maximum;
-
                 if (sizeRequest.resolvingIntrinsicHeight) {
                     intrinsicResult = *inlineState.heightIntrinsicSizes;
                 }
@@ -867,17 +845,11 @@ namespace tree {
 
             FlexResolver fr {
                 *this, node, constraints, childConstraints, flexContext, frameInfo, sr.innerSize, 
-                mutate, sizeCache, minX, minY, maxX, maxY,
-                sizeRequest.intrinsicWidthRequest,
-                sizeRequest.intrinsicHeightRequest
+                mutate, sizeCache
             };
 
             fr.phaseB();
             auto result = fr.phaseC();
-
-            maxX = result.bounds.maxX;
-            maxY = result.bounds.maxY;
-            
 
             if (sizeRequest.resolvingIntrinsicWidth || sizeRequest.resolvingIntrinsicHeight) {
                 const IntrinsicResult& intrinsicSizes = sizeRequest.resolvingIntrinsicWidth
@@ -899,16 +871,12 @@ namespace tree {
         auto gridPass = [&](const SizeResult& sr) {
             GridResolver gr {
                 *this, node, constraints, childConstraints, frameInfo, sr,
-                mutate, sizeCache,
-                minX, minY, maxX, maxY
+                mutate, sizeCache
             };
 
             gr.phaseB();
 
-            auto bounds = gr.phaseC();
-
-            maxX = bounds.maxX;
-            maxY = bounds.maxY;
+            gr.phaseC();
             if (sizeRequest.resolvingIntrinsicWidth || sizeRequest.resolvingIntrinsicHeight) {
                 const IntrinsicSizes& intrinsicSizes = sizeRequest.resolvingIntrinsicWidth
                     ? gr.gridLayout.columnIntrinsicSizes
@@ -958,11 +926,6 @@ namespace tree {
                 auto childOutput = layoutRecursive(child, frameInfo, childConstraints, *child->measured, mutate, std::nullopt, sizeRequest.intrinsicWidthRequest, sizeRequest.intrinsicHeightRequest);
 
                 std::visit([&](const auto& childLayout) {
-                // track:
-                // childOutput.intrinsicSizes-> min and max as min/max content
-                // simultaneously, track the computed box content size
-                // so we will get three things. not very hard.
-
                 if (!childLayout.outOfFlow) {
                     if (sizeRequest.resolvingIntrinsicWidth || sizeRequest.resolvingIntrinsicHeight) {
                         intrinsicResult->minimum = std::max(intrinsicResult->minimum, childOutput.intrinsicSizes->minimum);
@@ -973,30 +936,6 @@ namespace tree {
                     childConstraints.edgeIntent = childLayout.edgeIntent;
                     childConstraints.prevInlineHeight = childLayout.prevInlineHeight;
 
-                    /*
-                        problem:
-                        what if there *isn't* a computed box?
-                        you can obviously just edge case check or whatever nonsense but thats fucking stupid and
-                        obviously the larger problem is the the representation issue
-                    */
-
-
-                    // 30 -> grey
-                    // 31 -> blue
-                    // 32 -> red
-                    // 33 -> yellow
-                    if (std::holds_alternative<float>(childOutput.sizeResult.outerSize.width)) {
-                        maxX = std::max(maxX, std::get<float>(childOutput.sizeResult.outerSize.width));
-                    }else if (sizeRequest.resolvingIntrinsicWidth) { 
-                        maxX = std::max(maxX, childOutput.intrinsicSizes->maximum);
-                    }
-
-                    if (std::holds_alternative<float>(childOutput.sizeResult.outerSize.height)) {
-                        maxY = std::max(maxY, std::get<float>(childOutput.sizeResult.outerSize.height));
-                    }else if (sizeRequest.resolvingIntrinsicHeight) { 
-                        maxY = std::max(maxY, childOutput.intrinsicSizes->maximum);
-                    }
-                    
                 }
                 }, childOutput.layout);
             }

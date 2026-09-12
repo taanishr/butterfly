@@ -199,20 +199,6 @@ namespace layout {
         return resolvedSize;
     }
 
-    void transferAspectRatio(
-        std::expected<float, style::SizeError>& width,
-        std::expected<float, style::SizeError>& height,
-        float ratio
-    ) {
-        if (ratio <= 0.0f) return;
-
-        if (width && !height) {
-            height = *width / ratio;
-        } else if (height && !width) {
-            width = *height * ratio;
-        }
-    }
-
     // Resolve auto margins for centering
     ResolvedMargins LayoutEngine::resolveAutoMargins(
         const LayoutInput& li,
@@ -273,25 +259,6 @@ namespace layout {
         }
 
         return margins;
-    }
-
-    ResolvedMargins resolveMargins(
-        const LayoutInput& li
-    ) {
-
-        float marginTop = li.marginTop.resolveOr(Size::px(0.0f), 0.0f);
-        float marginRight = li.marginRight.resolveOr(Size::px(0.0f), 0.0f);
-        float marginBottom = li.marginBottom.resolveOr(Size::px(0.0f), 0.0f);
-        float marginLeft = li.marginLeft.resolveOr(Size::px(0.0f), 0.0f);
-
-        ResolvedMargins resolvedMargins {
-            .top = marginTop,
-            .right = marginRight,
-            .bottom = marginBottom,
-            .left = marginLeft,
-        };
-
-        return resolvedMargins;
     }
 
 }
@@ -703,10 +670,6 @@ namespace layout {
         lr.heightIntrinsicSizes = IntrinsicSizes {.minimum = totalHeight, .maximum = totalHeight};
 
         // padding / nor child available space is really relevant or correct for inline contaienrs
-        // float paddingLeft = layoutInput.paddingLeft.resolveOr(constraints.availableWidth);
-        // float paddingTop = layoutInput.paddingTop.resolveOr(constraints.availableHeight);
-        // float paddingRight = layoutInput.paddingRight.resolveOr(constraints.availableWidth);
-        // float paddingBottom = layoutInput.paddingBottom.resolveOr(constraints.availableHeight);
 
         // lr.childConstraints.cursor = {0, 0};
         // lr.childConstraints.availableWidth = Size::px(totalWidth - paddingLeft - paddingRight);
@@ -831,10 +794,6 @@ namespace layout {
 
         // i dont think any of these are really relevant for inline containers
         // children get lifted up; so these dont need to be set whatsoever
-        // float paddingLeft = layoutInput.paddingLeft.resolveOr(constraints.availableWidth);
-        // float paddingTop = layoutInput.paddingTop.resolveOr(constraints.availableHeight);
-        // float paddingRight = layoutInput.paddingRight.resolveOr(constraints.availableWidth);
-        // float paddingBottom = layoutInput.paddingBottom.resolveOr(constraints.availableHeight);
 
         // lr.childConstraints.cursor = {0, 0};
         // dont set available widths?
