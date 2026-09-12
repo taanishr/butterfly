@@ -235,8 +235,12 @@ namespace tree {
                 .fragmentIndex = lineBox.fragmentCount
             };
 
-            fragments.push_back(fragment);
+            if (lineBox.fragmentCount == 0) {
+                lineBox.fragmentStart = fragments.size();
+            }
+
             lineBox.pushFragment(fragment);
+            fragments.push_back(fragment);
         }
     }
 
@@ -250,8 +254,8 @@ namespace tree {
             int maximumLevel = 0;
             int minimumOddLevel = -1;
 
-            for (auto& fragment : context.fragments) {
-                if (fragment.lineBoxIndex != lineIndex) continue;
+            for (size_t i = 0; i < lineBox.fragmentCount; ++i) {
+                auto& fragment = context.fragments[lineBox.fragmentStart + i];
                 fragments.push_back(&fragment);
                 maximumLevel = std::max(maximumLevel, static_cast<int>(fragment.bidiLevel));
                 if ((fragment.bidiLevel & 1u) != 0 &&
@@ -285,8 +289,8 @@ namespace tree {
             }
 
             float offset = 0.0f;
-            for (const auto* fragment : fragments) {
-                lineBox.fragmentOffsets[fragment->fragmentIndex] = offset;
+            for (auto* fragment : fragments) {
+                fragment->offset = offset;
                 offset += fragment->width;
             }
             assert(std::abs(offset - lineBox.width) < 0.001f);
@@ -348,8 +352,12 @@ namespace tree {
             .lineBoxIndex = currentLineBoxIndex,
             .fragmentIndex = currentLineBox.fragmentCount
         };
-        fragments.push_back(fragment);
+        if (currentLineBox.fragmentCount == 0) {
+            currentLineBox.fragmentStart = fragments.size();
+        }
+
         currentLineBox.pushFragment(fragment);
+        fragments.push_back(fragment);
         lastFragmentHasBreakOpportunity = true;
     }
 

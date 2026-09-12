@@ -243,14 +243,13 @@ namespace tree {
             hash_combine(hash, fragment.atomCount);
             hash_combine(hash, fragment.lineBoxIndex);
             hash_combine(hash, fragment.fragmentIndex);
+            hash_combine(hash, fragment.offset);
         }
         for (auto& lineBox : lineBoxes) {
+            hash_combine(hash, lineBox.fragmentStart);
             hash_combine(hash, lineBox.fragmentCount);
             hash_combine(hash, lineBox.width);
             hash_combine(hash, lineBox.currentFragmentOffset);
-            for (auto offset : lineBox.fragmentOffsets) {
-                hash_combine(hash, offset);
-            }
         }
 
         hash_combine(hash, extraOriginA.x);

@@ -497,8 +497,8 @@ namespace layout {
         return lr;
     }
 
-    void LineBox::pushFragment(const LineFragment& fragment) {
-        fragmentOffsets.push_back(currentFragmentOffset);
+    void LineBox::pushFragment(LineFragment& fragment) {
+        fragment.offset = currentFragmentOffset;
         currentFragmentOffset += fragment.width;
         width += fragment.width;
         fragmentCount += 1;
@@ -568,7 +568,7 @@ namespace layout {
             const LineFragment& fragment = *it;
 
             const auto& lineBox = lineBoxes[fragment.lineBoxIndex];
-            float offset = lineBox.fragmentOffsets[fragment.fragmentIndex];
+            float offset = fragment.offset;
             float lineOffset = 0.0f;
             switch (constraints.inheritedProperties.textAlign) {
                 case TextAlign::Start:
@@ -764,7 +764,7 @@ namespace layout {
             const LineFragment& fragment = *it;
 
             const auto& lineBox = lineBoxes[fragment.lineBoxIndex];
-            float offset = lineBox.fragmentOffsets[fragment.fragmentIndex];
+            float offset = fragment.offset;
             float lineOffset = 0.0f;
             switch (constraints.inheritedProperties.textAlign) {
                 case TextAlign::Start:

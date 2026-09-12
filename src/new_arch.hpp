@@ -66,16 +66,17 @@ namespace layout {
         size_t textByteLength{};
         uint8_t bidiLevel{};
         size_t lineBoxIndex{};
-        size_t fragmentIndex{};  // index within lineBox.fragmentOffsets
+        size_t fragmentIndex{};  // index within the owning line box
+        float offset{}; // relative x where fragment is placed in line box
     };
 
     struct LineBox {
+        size_t fragmentStart{}; // index of the first fragment in the owning fragment vector
         size_t fragmentCount{}; // number of fragments
-        std::vector<float> fragmentOffsets{}; // relative x where fragment is placed in line box
         float width{}; // width of line box (width of all fragments)
         float currentFragmentOffset{};
 
-        void pushFragment(const LineFragment& fragment);
+        void pushFragment(LineFragment& fragment);
     };
 
     struct InlineFragmentRange {
