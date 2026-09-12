@@ -711,7 +711,7 @@ namespace tree {
                 .borderWidth = node->shared.borderWidth,
                 .margins = prelayout.resolvedMargins,
                 .aspectRatio = node->shared.aspectRatio,
-                .automaticWidth = node->getPosition() == Position::Absolute ? AutomaticSizing::UseContent : AutomaticSizing::UseAvailable,
+                .automaticWidth = (node->getPosition() == Position::Absolute || node->getPosition() == Position::Fixed) ? AutomaticSizing::UseContent : AutomaticSizing::UseAvailable,
                 .automaticHeight = AutomaticSizing::UseContent,
                 .automaticMinimumWidth = AutomaticMinimum::Zero,
                 .automaticMinimumHeight = AutomaticMinimum::Zero,
