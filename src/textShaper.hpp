@@ -32,6 +32,8 @@ struct ShapedSubRun {
     size_t byteLength{};
     size_t glyphStart{};
     size_t glyphCount{};
+    size_t clusterStart{};
+    size_t clusterCount{};
     uint8_t bidiLevel{};
 };
 

@@ -177,7 +177,9 @@ namespace tree {
         LineBox& lineBox,
         size_t lineBoxIndex
     ) {
-        if (clusterStart == clusterEnd) return;
+        if (clusterStart == clusterEnd) {
+            return;
+        }
 
         float glyphWidth = 0.0f;
         for (size_t i = clusterStart; i < clusterEnd; ++i) {
@@ -190,26 +192,21 @@ namespace tree {
         const auto& finalCluster = shapedRun.clusters[clusterEnd - 1];
         const size_t finalByteEnd = finalCluster.byteOffset + finalCluster.byteLength;
 
+        // what is the crux of this problem?
         for (const auto& run : shapedRun.runs) {
-            const size_t runEnd = run.byteStart + run.byteLength;
+            const size_t runStart = std::max(clusterStart, run.clusterStart);
+            const size_t runEnd = std::min(clusterEnd, run.clusterStart + run.clusterCount);
+
+            if (runStart >= runEnd) {
+                continue;
+            }
+
             size_t atomStart = atoms.size();
             size_t atomEnd = 0;
-            size_t byteStart = 0;
-            size_t byteEnd = 0;
             float width = 0.0f;
-            bool foundCluster = false;
 
-            for (size_t i = clusterStart; i < clusterEnd; ++i) {
+            for (size_t i = runStart; i < runEnd; ++i) {
                 const auto& cluster = shapedRun.clusters[i];
-                if (cluster.byteOffset < run.byteStart || cluster.byteOffset >= runEnd) {
-                    continue;
-                }
-
-                if (!foundCluster) {
-                    byteStart = cluster.byteOffset;
-                    foundCluster = true;
-                }
-                byteEnd = cluster.byteOffset + cluster.byteLength;
                 atomStart = std::min(atomStart, cluster.glyphStart);
                 atomEnd = std::max(atomEnd, cluster.glyphStart + cluster.glyphCount);
                 for (size_t glyph = 0; glyph < cluster.glyphCount; ++glyph) {
@@ -217,8 +214,14 @@ namespace tree {
                 }
             }
 
-            if (!foundCluster) continue;
-            if (byteEnd == finalByteEnd) width += trailingWidth;
+            const auto& firstCluster = shapedRun.clusters[runStart];
+            const auto& lastCluster = shapedRun.clusters[runEnd - 1];
+            const size_t byteStart = firstCluster.byteOffset;
+            const size_t byteEnd = lastCluster.byteOffset + lastCluster.byteLength;
+
+            if (byteEnd == finalByteEnd) {
+                width += trailingWidth;
+            }
 
             LineFragment fragment{
                 .width = width,
@@ -230,6 +233,7 @@ namespace tree {
                 .lineBoxIndex = lineBoxIndex,
                 .fragmentIndex = lineBox.fragmentCount
             };
+
             fragments.push_back(fragment);
             lineBox.pushFragment(fragment);
         }

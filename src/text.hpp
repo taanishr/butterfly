@@ -334,6 +334,7 @@ namespace elements {
                     .byteLength = run.byteLength,
                     .glyphStart = atomBase,
                     .glyphCount = sourceRun.glyphs.size(),
+                    .clusterCount = sourceRun.clusters.size(),
                     .bidiLevel = run.level
                 });
 
@@ -434,6 +435,17 @@ namespace elements {
                 }
             }
             std::ranges::sort(shapedRun.clusters, {}, &ShapedCluster::byteOffset);
+
+            for (auto& run : shapedRun.runs) {
+                size_t clusterStart = 0;
+                for (const auto& other : shapedRun.runs) {
+                    if (other.byteStart < run.byteStart) {
+                        clusterStart += other.clusterCount;
+                    }
+                }
+                run.clusterStart = clusterStart;
+            }
+
             return shapedRun;
         }
 
