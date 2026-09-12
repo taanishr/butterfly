@@ -363,7 +363,7 @@ namespace tree {
 
 
         rootCursor = simd_float2{0,0};
-        rootConstraints = Constraints{
+        rootConstraints = Constraints {
             .origin = simd_float2{0,0},
             .cursor = rootCursor,
             .availableWidth = Size::px(frameInfo.width),
@@ -695,7 +695,6 @@ namespace tree {
             : SizeRequest {
                 .position = node->shared.position,
                 .specified = {.width = node->shared.width, .height = node->shared.height},
-                .override = constraints.parentOverride,
                 .minimum = {.width = node->shared.minWidth, .height = node->shared.minHeight},
                 .maximum = {
                     .width = node->shared.maxWidth ? SizeState{*node->shared.maxWidth} : SizeState{std::monostate{}},

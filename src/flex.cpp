@@ -94,14 +94,15 @@ namespace layout {
         }, flex.axis.mainSize(availableSize));
 
 
+        auto preparedChildConstraints = prepareChildConstraints();
+
         for (uint64_t i = 0; i < node->children.size(); ++i) {
             auto childAsPtr = node->children[i].get();
             auto position = childAsPtr->getPosition();
-            if (position == Position::Absolute || position == Position::Fixed) 
+            if (position == Position::Absolute || position == Position::Fixed)
                 continue;
 
             auto selfAlign = childAsPtr->getAlignSelf();
-            auto preparedChildConstraints = prepareChildConstraints();
             Measured childMeasured = *childAsPtr->measured;
 
             SizeRequest childRequest {

@@ -525,10 +525,8 @@ namespace layout {
         ResolvedMargins resolvedMargins {};
         float prevInlineHeight{};
         std::vector<ClipUniform> clipUniforms {};
-        std::optional<TextOverflow> textOverflow{};
-
-        SizePair parentOverride;
-
+        std::optional<TextOverflow&> textOverflow;
+        
         std::optional<AxisResolution> widthResolution;
         std::optional<AxisResolution> heightResolution;
         std::optional<Axis> intrinsicSizesAxis;

@@ -1754,14 +1754,15 @@ namespace layout {
             [&](const auto&) { return node->getGridColumnGap().resolve(Size::autoSize()).value_or(0.0f); },
         }, containerSize.innerSize.width);
 
+        auto preparedChildConstraints = prepareChildConstraints();
+
         for (size_t i = 0; i < node->children.size(); ++i) {
             auto childNode = node->children[i].get();
             auto childPos = childNode->getPosition();
-            if (childPos == Position::Absolute || childPos == Position::Fixed) 
+            if (childPos == Position::Absolute || childPos == Position::Fixed)
                 continue;
 
             Measured childMeasured = *childNode->measured;
-            auto preparedChildConstraints = prepareChildConstraints();
             SizeRequest childRequest {
                 .position = childNode->shared.position,
                 .specified = {.width = childNode->shared.width, .height = childNode->shared.height},
@@ -1854,13 +1855,14 @@ namespace layout {
             [&](const auto&) { return node->getGridRowGap().resolve(Size::autoSize()).value_or(0.0f); },
         }, containerSize.innerSize.height);
 
+        auto preparedChildConstraints = prepareChildConstraints();
+
         for (auto& item : gridLayout.items) {
             auto childNode = node->children[item.childIndex].get();
             auto& placement = item.placement;
             float cellX = gridLayout.colTracks[*placement.colStart].offset;
             float cellW = gridLayout.colTracks[*placement.colEnd - 1].offset + gridLayout.colTracks[*placement.colEnd - 1].size - cellX;
             Measured childMeasured = *childNode->measured;
-            auto preparedChildConstraints = prepareChildConstraints();
 
             JustifyItems effectiveJustify = justifyItems;
             auto selfJustify = childNode->getJustifySelf();
@@ -1976,6 +1978,8 @@ namespace layout {
             + (rowSizes.size() > 1 ? rowGap * (rowSizes.size() - 1) : 0.0f);
         gridLayout.rowIntrinsicSizes = {.minimum = rowContentSize, .maximum = rowContentSize};
 
+        preparedChildConstraints = prepareChildConstraints();
+
         for (auto& item : gridLayout.items) {
             auto childNode = node->children[item.childIndex].get();
             auto& placement = item.placement;
@@ -1990,7 +1994,6 @@ namespace layout {
             float cellW = colTracks[*placement.colEnd - 1].offset + colTracks[*placement.colEnd - 1].size - cellX;
             float cellH = rowTracks[*placement.rowEnd - 1].offset + rowTracks[*placement.rowEnd - 1].size - cellY;
 
-            auto preparedChildConstraints = prepareChildConstraints();
             preparedChildConstraints.origin = {cellX, cellY};
             preparedChildConstraints.cursor = {cellX, cellY};
 

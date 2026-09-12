@@ -488,7 +488,7 @@ namespace elements {
         template <LayoutStateType L>
         Atomized postLayout(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, TextDescriptor& desc, Measured& measured, Atomized& atomized, L& layout) {
             atomized.usesDrawableAtoms = false;
-            if (!constraints.textOverflow->drawsEnding()) return atomized;
+            if (!constraints.textOverflow || !constraints.textOverflow->drawsEnding()) return atomized;
 
             const auto& overflowClip = constraints.clipUniforms.back();
             float visibleLeft = overflowClip.rectCenter.x - overflowClip.halfExtent.x;
@@ -534,6 +534,7 @@ namespace elements {
                         ? bidi::BidiBaseDirection::Rtl
                         : bidi::BidiBaseDirection::Ltr
                 );
+                
                 std::vector<bidi::TextShapingRun> endingRuns;
                 if (endingBidi) {
                     auto resolvedRuns = endingBidi->runs();

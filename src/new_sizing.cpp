@@ -633,7 +633,7 @@ auto measureIntrinsicWidth(
     tree::RenderTree& tree,
     tree::TreeNode* node,
     const FrameInfo& frameInfo,
-    layout::Constraints constraints,
+    const layout::Constraints& constraints,
     layout::Measured measured,
     const SizeState& antiSize,
     SizeRequest req
@@ -692,7 +692,7 @@ auto measureIntrinsicHeight(
     tree::RenderTree& tree,
     tree::TreeNode* node,
     const FrameInfo& frameInfo,
-    layout::Constraints constraints,
+    const layout::Constraints& constraints,
     layout::Measured measured,
     const SizeState& antiSize,
     SizeRequest req
@@ -904,7 +904,7 @@ auto evaluateSize(
     tree::RenderTree& tree,
     tree::TreeNode* node,
     const FrameInfo& frameInfo,
-    layout::Constraints constraints,
+    const layout::Constraints& constraints,
     layout::Measured measured,
     SizeRequest req,
     std::optional<std::unordered_map<size_t, SizeResult>&> sizeCache
