@@ -192,7 +192,8 @@ namespace tree {
         const auto& finalCluster = shapedRun.clusters[clusterEnd - 1];
         const size_t finalByteEnd = finalCluster.byteOffset + finalCluster.byteLength;
 
-        // what is the crux of this problem?
+        // here we basically search for where this specific run (a bidi run) intersects with the cluster
+        // range we specified
         for (const auto& run : shapedRun.runs) {
             const size_t runStart = std::max(clusterStart, run.clusterStart);
             const size_t runEnd = std::min(clusterEnd, run.clusterStart + run.clusterCount);

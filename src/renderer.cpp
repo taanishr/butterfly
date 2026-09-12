@@ -85,10 +85,17 @@ void Renderer::draw() {
 
     NS::AutoreleasePool* autoreleasePool = NS::AutoreleasePool::alloc()->init();
     
-    this->frameSemaphore.acquire();
-    
+    {
+        instrumentation::PhaseTimer timer{instrumentation::Phase::GpuWait};
+        this->frameSemaphore.acquire();
+    }
+
     MTL::CommandBuffer* commandBuffer = commandQueue->commandBuffer();
-    MTL::RenderPassDescriptor* renderPassDescriptor = view->currentRenderPassDescriptor();
+    MTL::RenderPassDescriptor* renderPassDescriptor = nullptr;
+    {
+        instrumentation::PhaseTimer timer{instrumentation::Phase::DrawableWait};
+        renderPassDescriptor = view->currentRenderPassDescriptor();
+    }
     MTL::RenderCommandEncoder* renderCommandEncoder = commandBuffer->renderCommandEncoder(renderPassDescriptor);
     // renderCommandEncoder->setDepthStencilState(getDefaultDepthStencilState());
     uint64_t frameIndex = ctx.frameIndex;

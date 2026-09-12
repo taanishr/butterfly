@@ -414,8 +414,6 @@ namespace tree {
             auto layoutStart = std::chrono::steady_clock::now();
             layoutPhase(root, frameInfo, rootConstraints, *root->measured);
             auto layoutEnd = std::chrono::steady_clock::now();
-            // std::println("layout pass: {:.3f} ms",
-            //     std::chrono::duration<double, std::milli>(layoutEnd - layoutStart).count());
             root->calculateGlobalZIndex(0);
         }
 

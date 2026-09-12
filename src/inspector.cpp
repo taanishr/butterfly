@@ -55,6 +55,8 @@ namespace Inspector {
                 case Phase::Place: return "place";
                 case Phase::Finalize: return "finalize";
                 case Phase::Render: return "render";
+                case Phase::GpuWait: return "gpu wait";
+                case Phase::DrawableWait: return "drawable";
                 case Phase::Count: return "unknown";
             }
         }
