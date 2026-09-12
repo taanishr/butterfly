@@ -514,6 +514,7 @@ namespace layout {
 
         ReplacedAttributes replacedAttributes {};
         ResolvedMargins resolvedMargins {};
+        std::optional<Display> computedDisplay;
         float prevInlineHeight{};
         std::vector<ClipUniform> clipUniforms {};
         std::optional<TextOverflow&> textOverflow;
@@ -532,10 +533,10 @@ namespace layout {
 
     };
 
-    inline LayoutInput toLayoutInput(const SharedDescriptor& s) {
+    inline LayoutInput toLayoutInput(const SharedDescriptor& s, const std::optional<Display>& computedDisplay = std::nullopt) {
         LayoutInput li;
         li.position = s.position;
-        li.display = s.display;
+        li.display = computedDisplay.value_or(s.display);
         li.top = s.top;
         li.left = s.left;
         li.bottom = s.bottom;

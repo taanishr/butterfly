@@ -396,7 +396,7 @@ namespace elements {
         }
 
         LayoutState layout(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, SVGDescriptor& desc, Measured& measured, Atomized& atomized, const SizeResult& sizeResult) {
-            auto li = toLayoutInput(shared);
+            auto li = toLayoutInput(shared, constraints.computedDisplay);
             auto lr = ctx.layoutEngine.resolve(constraints, li, atomized, sizeResult);
             return lr;
         }

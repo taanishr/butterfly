@@ -491,7 +491,11 @@ namespace tree {
     void resolveComputedDisplays(TreeNode* node)
     {
         node->computedDisplay = node->shared.display;
-        if (node->parent && node->parent->getDisplay() == Display::Flex && node->element->isReplaced() && node->shared.display == Display::Inline) {
+
+        bool blockifyingParent = node->parent
+            && (node->parent->getDisplay() == Display::Flex || node->parent->getDisplay() == Display::Grid);
+
+        if (blockifyingParent && node->element->isReplaced() && node->shared.display == Display::Inline) {
             node->computedDisplay = Display::Block;
         }
 
@@ -708,6 +712,7 @@ namespace tree {
 
 
         constraints.resolvedMargins = prelayout.resolvedMargins;
+        constraints.computedDisplay = node->getDisplay();
 
         // what i should do now:
         // make this take in a size result instead of doing the computation separately
@@ -722,10 +727,14 @@ namespace tree {
         }
 
         if (node->getPosition() != Position::Static) {
+            float borderWidth = std::holds_alternative<float>(sizeResult.borderWidth)
+                ? std::get<float>(sizeResult.borderWidth)
+                : 0.0f;
+
             childConstraints.absoluteContainingBlock = {
                 .origin = {0.0f, 0.0f},
-                .width = std::holds_alternative<float>(sizeResult.outerSize.width) ? Size::px(std::get<float>(sizeResult.outerSize.width)) : Size::autoSize(),
-                .height = std::holds_alternative<float>(sizeResult.outerSize.height) ? Size::px(std::get<float>(sizeResult.outerSize.height)) : Size::autoSize(),
+                .width = std::holds_alternative<float>(sizeResult.outerSize.width) ? Size::px(std::get<float>(sizeResult.outerSize.width) - 2 * borderWidth) : Size::autoSize(),
+                .height = std::holds_alternative<float>(sizeResult.outerSize.height) ? Size::px(std::get<float>(sizeResult.outerSize.height) - 2 * borderWidth) : Size::autoSize(),
             };
         } else {
             childConstraints.absoluteContainingBlock = constraints.absoluteContainingBlock;
@@ -1000,6 +1009,9 @@ namespace tree {
         float paddingBottom = std::holds_alternative<float>(padding.bottom) ? std::get<float>(padding.bottom) : 0.0f;
         float paddingLeft = std::holds_alternative<float>(padding.left) ? std::get<float>(padding.left) : 0.0f;
 
+        const auto& border = result.sizeResult.borderWidth;
+        float borderWidth = std::holds_alternative<float>(border) ? std::get<float>(border) : 0.0f;
+
         std::visit([&](auto& layout) {
             layout.computedBox = layout.localComputedBox;
             layout.atomOffsets = layout.localAtomOffsets;
@@ -1075,20 +1087,29 @@ namespace tree {
                                                         *node->atomized, result.layout);
 
             simd_float2 currContentOrigin = {
-                layout.computedBox.x + paddingLeft,
-                layout.computedBox.y + paddingTop
+                layout.computedBox.x + borderWidth + paddingLeft,
+                layout.computedBox.y + borderWidth + paddingTop
+            };
+
+            simd_float2 currPaddingOrigin = {
+                layout.computedBox.x + borderWidth,
+                layout.computedBox.y + borderWidth
             };
 
             if (node->shared.overflow == Overflow::Scroll) {
-                currContentOrigin.x += constraints.inheritedProperties.direction == layout::Direction::rtl
+                float scrollX = constraints.inheritedProperties.direction == layout::Direction::rtl
                     ? node->scrollOffset.x
                     : -node->scrollOffset.x;
+
+                currContentOrigin.x += scrollX;
                 currContentOrigin.y -= node->scrollOffset.y;
+                currPaddingOrigin.x += scrollX;
+                currPaddingOrigin.y -= node->scrollOffset.y;
             }
 
             simd_float2 childAbsBlockOrigin = absBlockGlobalOrigin;
             if (position != Position::Static) {
-                childAbsBlockOrigin = currContentOrigin;
+                childAbsBlockOrigin = currPaddingOrigin;
             }
 
             auto childConstraints = constraints;

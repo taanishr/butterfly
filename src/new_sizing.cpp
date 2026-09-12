@@ -186,8 +186,13 @@ auto resolveWidth(const SizeState& size, SizeRequest& req, const std::optional<I
 
     // if our resulting size is automatic
     if (*error == SizeError::Auto) {
+        // then, branch from here
+        // are we *out of flow* and do we have insets?
+        bool outOfFlow = req.position == style::Position::Absolute || req.position == style::Position::Fixed;
+        bool opposingInsets = req.left.has_value() && req.right.has_value();
+
         // are we content sizing?
-        if (req.automaticWidth == AutomaticSizing::UseContent) {
+        if (req.automaticWidth == AutomaticSizing::UseContent && !(outOfFlow && opposingInsets)) {
             if (!intrinsic || !std::holds_alternative<float>(intrinsic->maximum)) {
                 return SizeError::ContentDependent;
             }
@@ -249,11 +254,6 @@ auto resolveWidth(const SizeState& size, SizeRequest& req, const std::optional<I
         float automaticWidth = *availableWidth
             - req.margins.left
             - req.margins.right;
-
-        // then, branch from here
-        // are we *out of flow* and do we have insets?
-        bool outOfFlow = req.position == style::Position::Absolute || req.position == style::Position::Fixed;
-        bool opposingInsets = req.left.has_value() && req.right.has_value();
 
         if (outOfFlow && opposingInsets) {
             SizeState left = calculateSize(*req.left, req.available.width);
@@ -377,8 +377,13 @@ auto resolveHeight(const SizeState& size, SizeRequest& req, const std::optional<
 
     // if our resulting size is automatic
     if (*error == SizeError::Auto) {
+        // then, branch from here
+        // are we *out of flow* and do we have insets?
+        bool outOfFlow = req.position == style::Position::Absolute || req.position == style::Position::Fixed;
+        bool opposingInsets = req.top.has_value() && req.bottom.has_value();
+
         // are we content sizing?
-        if (req.automaticHeight == AutomaticSizing::UseContent) {
+        if (req.automaticHeight == AutomaticSizing::UseContent && !(outOfFlow && opposingInsets)) {
             if (!intrinsic || !std::holds_alternative<float>(intrinsic->maximum)) {
                 return SizeError::ContentDependent;
             }
@@ -416,11 +421,6 @@ auto resolveHeight(const SizeState& size, SizeRequest& req, const std::optional<
         float automaticHeight = *availableHeight
             - req.margins.top
             - req.margins.bottom;
-
-        // then, branch from here
-        // are we *out of flow* and do we have insets?
-        bool outOfFlow = req.position == style::Position::Absolute || req.position == style::Position::Fixed;
-        bool opposingInsets = req.top.has_value() && req.bottom.has_value();
 
         if (outOfFlow && opposingInsets) {
             SizeState top = calculateSize(*req.top, req.available.height);
@@ -509,6 +509,14 @@ auto resolveMinWidth(const SizeState& size, SizeRequest& req, const std::optiona
             return SizeError::ContentDependent;
         }
 
+        SizeState specified = calculateSize(req.specified.width, req.available.width);
+        const auto* specifiedWidth = std::get_if<float>(&specified);
+        const auto* contentMinimum = std::get_if<float>(&intrinsic->minimum);
+
+        if (specifiedWidth && contentMinimum) {
+            return std::min(*specifiedWidth, *contentMinimum);
+        }
+
         return intrinsic->minimum;
     }
 
@@ -577,6 +585,14 @@ auto resolveMinHeight(const SizeState& size, SizeRequest& req, const std::option
 
         if (!intrinsic) {
             return SizeError::ContentDependent;
+        }
+
+        SizeState specified = calculateSize(req.specified.height, req.available.height);
+        const auto* specifiedHeight = std::get_if<float>(&specified);
+        const auto* contentMinimum = std::get_if<float>(&intrinsic->minimum);
+
+        if (specifiedHeight && contentMinimum) {
+            return std::min(*specifiedHeight, *contentMinimum);
         }
 
         return intrinsic->minimum;
@@ -1007,9 +1023,12 @@ auto evaluateSize(
                                     || req.intrinsicHeightRequest == IntrinsicRequest::Maximum
                                     || req.intrinsicHeightRequest == IntrinsicRequest::Both;
 
+    bool widthFromAspectRatio = false;
+
     if (req.aspectRatio && automaticWidth && !std::holds_alternative<float>(size.width) && std::holds_alternative<float>(size.height)) {
         SizePair transferred = transferAspectRatio(size, *req.aspectRatio);
         size.width = transferred.width;
+        widthFromAspectRatio = true;
     }
 
     std::optional<IntrinsicResult> widthIntrinsic;
@@ -1018,7 +1037,7 @@ auto evaluateSize(
     if (widthIntrinsicError || minWidthIntrinsicError || maxWidthIntrinsicError) {
         widthIntrinsic = measureIntrinsicWidth(tree, node, frameInfo, constraints, measured, req);
 
-        if (widthIntrinsicError) {
+        if (widthIntrinsicError && !widthFromAspectRatio) {
             size.width = resolveWidth(requestedWidth, req, widthIntrinsic, padding, borderWidth);
         }
         if (minWidthIntrinsicError) {
@@ -1031,9 +1050,12 @@ auto evaluateSize(
 
     size.width = clampSize(size.width, minimum.width, maximum.width);
 
+    bool heightFromAspectRatio = false;
+
     if (req.aspectRatio && automaticHeight && !std::holds_alternative<float>(size.height) && std::holds_alternative<float>(size.width)) {
         SizePair transferred = transferAspectRatio(size, *req.aspectRatio);
         size.height = transferred.height;
+        heightFromAspectRatio = true;
     }
 
     std::optional<IntrinsicResult> heightIntrinsic;
@@ -1041,7 +1063,7 @@ auto evaluateSize(
     if (heightIntrinsicError || minHeightIntrinsicError || maxHeightIntrinsicError) {
         heightIntrinsic = measureIntrinsicHeight(tree, node, frameInfo, constraints, measured, size.width, req);
 
-        if (heightIntrinsicError) {
+        if (heightIntrinsicError && !heightFromAspectRatio) {
             size.height = resolveHeight(requestedHeight, req, heightIntrinsic, padding, borderWidth);
         }
         if (minHeightIntrinsicError) {
