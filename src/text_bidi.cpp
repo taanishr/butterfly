@@ -6,7 +6,7 @@
 
 namespace bidi {
     TextBidiContext::TextBidiContext(std::string text, BidiBaseDirection direction):
-        source{std::move(text)},
+        source{text},
         direction{direction}
     {}
 
@@ -14,7 +14,7 @@ namespace bidi {
         std::string text,
         BidiBaseDirection direction
     ) {
-        TextBidiContext context{std::move(text), direction};
+        TextBidiContext context{text, direction};
         size_t paragraphStart = 0;
         for (size_t offset = 0; offset < context.source.size();) {
             const auto codepoint = utf8::at(context.source, offset);

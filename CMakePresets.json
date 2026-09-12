@@ -45,8 +45,8 @@
     },
     {
       "name": "inspector",
-      "displayName": "Debug with inspector",
-      "inherits": "debug",
+      "displayName": "Optimized with inspector",
+      "inherits": "release",
       "binaryDir": "${sourceDir}/build/inspector",
       "cacheVariables": {
         "GUI_ENABLE_INSPECTOR": true,

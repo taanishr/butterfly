@@ -21,12 +21,10 @@ struct ShapedGlyph {
 struct ShapedCluster {
     size_t byteOffset{};
     size_t byteLength{};
-    std::string text;
     size_t glyphStart{};
     size_t glyphCount{};
     float advance{};
-
-    char32_t codepoint() const;
+    char32_t leadCodepoint{};
 };
 
 struct ShapedSubRun {
@@ -34,6 +32,8 @@ struct ShapedSubRun {
     size_t byteLength{};
     size_t glyphStart{};
     size_t glyphCount{};
+    size_t clusterStart{};
+    size_t clusterCount{};
     uint8_t bidiLevel{};
 };
 

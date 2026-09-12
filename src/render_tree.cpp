@@ -1,67 +1,25 @@
 #include "render_tree.hpp"
 #include "hash_combine.hpp"
 #include "new_arch.hpp"
+#include "new_sizing.hpp"
+#include "overloaded.hpp"
+#include "sizing.hpp"
 #include <algorithm>
 #include <chrono>
+#include <optional>
 #include <print>
+#include <utility>
+#include <variant>
 
 namespace tree {
     using layout::FlexLayout;
     using layout::FlexResolver;
     using layout::GridResolver;
-    using layout::LayoutOutput;
+    using layout::LayoutResult;
     using layout::MarginMetadata;
     using layout::Measured;
-    using layout::SizeResolutionContext;
-    using layout::Axis;
-    using layout::AxisResolution;
     using layout::IntrinsicSizes;
     using style::ClipUniform;
-    using style::SizeResolveFailure;
-    using style::Unit;
-
-    void applyContentResolution(
-        std::expected<float, SizeResolveFailure>& explicitSize,
-        const style::Size& requestedSize,
-        AxisResolution resolution,
-        bool isInline
-    ) {
-        if (resolution != AxisResolution::MinContent && resolution != AxisResolution::MaxContent) {
-            return;
-        }
-
-        if (isInline) {
-            explicitSize = 0.0f;
-        } else if (requestedSize.unit == Unit::Auto) {
-            explicitSize = std::unexpected(SizeResolveFailure::Auto);
-        } else if (requestedSize.unit == Unit::Percent) {
-            explicitSize = std::unexpected(SizeResolveFailure::IndefiniteBasis);
-        } else if (requestedSize.unit == Unit::Fr) {
-            explicitSize = std::unexpected(SizeResolveFailure::FractionRequiresContext);
-        }
-    }
-
-    bool RenderTree::isFrameInfoChanged(const FrameInfo& frameInfo) const {
-        return !lastFrameInfo.has_value()
-            || lastFrameInfo->width != frameInfo.width
-            || lastFrameInfo->height != frameInfo.height
-            || lastFrameInfo->scale != frameInfo.scale;
-    }
-
-    bool RenderTree::requiresFrame(const FrameInfo& frameInfo) const {
-        uint32_t reasons = 0;
-        if (needsUpdate) {
-            reasons |= std::to_underlying(instrumentation::FrameReason::Mutation);
-        }
-        if (isFrameInfoChanged(frameInfo)) {
-            reasons |= std::to_underlying(instrumentation::FrameReason::FrameInfoChanged);
-        }
-        if (pendingFrameBufferWrites > 0) {
-            reasons |= std::to_underlying(instrumentation::FrameReason::PendingBufferWrites);
-        }
-        instrumentation::recordFrameDecision(reasons);
-        return reasons != 0;
-    }
 
     void RenderTree::markDirty(std::source_location source) {
         needsUpdate = true;
@@ -83,6 +41,36 @@ namespace tree {
             markSubtreeDirty(root, allPhaseDirtyBits());
         }
     }
+
+    bool RenderTree::isFrameInfoChanged(const FrameInfo& frameInfo) const {
+      return !lastFrameInfo.has_value()
+          || lastFrameInfo->width != frameInfo.width
+          || lastFrameInfo->height != frameInfo.height
+          || lastFrameInfo->scale != frameInfo.scale;
+  }
+
+  bool RenderTree::requiresFrame(const FrameInfo& frameInfo) const {
+      uint32_t reasons = 0;
+
+      if (needsUpdate) {
+          reasons |= std::to_underlying(
+              instrumentation::FrameReason::Mutation
+          );
+      }
+      if (isFrameInfoChanged(frameInfo)) {
+          reasons |= std::to_underlying(
+              instrumentation::FrameReason::FrameInfoChanged
+          );
+      }
+      if (pendingFrameBufferWrites > 0) {
+          reasons |= std::to_underlying(
+              instrumentation::FrameReason::PendingBufferWrites
+          );
+      }
+
+      instrumentation::recordFrameDecision(reasons);
+      return reasons != 0;
+  }
 
     void RenderTree::markDirty(TreeNode* node, DirtyBits bits, std::source_location source) {
         if (!node || bits == DirtyBits::None) return;
@@ -175,9 +163,7 @@ namespace tree {
         return hasDirty(node->dirtySelf | node->dirtySubtree, bits);
     }
 
-    ConstraintsKey RenderTree::makeConstraintsKey(const Constraints& constraints,
-                                                  simd_float2 extraOriginA,
-                                                  simd_float2 extraOriginB) const {
+    ConstraintsKey RenderTree::makeConstraintsKey(const Constraints& constraints, simd_float2 extraOriginA, simd_float2 extraOriginB) const {
         std::size_t hash = 0;
         hash_combine(hash, constraints.origin.x);
         hash_combine(hash, constraints.origin.y);
@@ -211,27 +197,7 @@ namespace tree {
         };
         hashOptionalSize(constraints.replacedAttributes.marginTop);
         hashOptionalSize(constraints.replacedAttributes.marginBottom);
-        hash_combine(hash, constraints.shrinkWidthToFit);
-        hash_combine(hash, constraints.shrinkHeightToFit);
-        hash_combine(hash, static_cast<int>(constraints.widthResolution));
-        hash_combine(hash, static_cast<int>(constraints.heightResolution));
-        hash_combine(hash, constraints.intrinsicSizesAxis.has_value());
-        if (constraints.intrinsicSizesAxis.has_value()) hash_combine(hash, static_cast<int>(*constraints.intrinsicSizesAxis));
-        auto lineFragments = constraints.inlineFormatting.lineFragments();
-        auto lineBoxes = constraints.inlineFormatting.lineBoxes();
-        hash_combine(hash, lineFragments.size());
-        hash_combine(hash, lineBoxes.size());
-        hash_combine(hash, constraints.textBidiInput.has_value());
-        if (constraints.textBidiInput.has_value()) {
-            const auto& bidi = *constraints.textBidiInput;
-            hash_combine(hash, bidi.paragraphByteStart);
-            hash_combine(hash, bidi.byteLength);
-            for (const auto& run : bidi.runs) {
-                hash_combine(hash, run.byteStart);
-                hash_combine(hash, run.byteLength);
-                hash_combine(hash, run.level);
-            }
-        }
+        
         hash_combine(hash, constraints.textOverflow.has_value());
         if (constraints.textOverflow.has_value()) {
             hash_combine(hash, static_cast<int>(constraints.textOverflow->mode));
@@ -249,50 +215,12 @@ namespace tree {
             hash_combine(hash, clip.cornerRadius.y);
         }
 
-        for (auto& fragment : lineFragments) {
-            hash_combine(hash, fragment.width);
-            hash_combine(hash, fragment.atomStart);
-            hash_combine(hash, fragment.atomCount);
-            hash_combine(hash, fragment.lineBoxIndex);
-            hash_combine(hash, fragment.fragmentIndex);
-        }
-        for (auto& lineBox : lineBoxes) {
-            hash_combine(hash, lineBox.fragmentCount);
-            hash_combine(hash, lineBox.width);
-            hash_combine(hash, lineBox.currentFragmentOffset);
-            for (auto offset : lineBox.fragmentOffsets) {
-                hash_combine(hash, offset);
-            }
-        }
-
         hash_combine(hash, extraOriginA.x);
         hash_combine(hash, extraOriginA.y);
         hash_combine(hash, extraOriginB.x);
         hash_combine(hash, extraOriginB.y);
 
         return ConstraintsKey{.value = hash};
-    }
-
-    ConstraintsKey RenderTree::makeSpeculativeKey(
-        const TreeNode* node,
-        const Constraints& constraints,
-        const Measured& measured
-    ) const {
-        auto key = makeConstraintsKey(constraints);
-        hash_combine(key.value, node->id);
-        hash_combine(key.value, measured.explicitWidth.has_value());
-        if (measured.explicitWidth.has_value()) {
-            hash_combine(key.value, *measured.explicitWidth);
-        } else {
-            hash_combine(key.value, static_cast<int>(measured.explicitWidth.error()));
-        }
-        hash_combine(key.value, measured.explicitHeight.has_value());
-        if (measured.explicitHeight.has_value()) {
-            hash_combine(key.value, *measured.explicitHeight);
-        } else {
-            hash_combine(key.value, static_cast<int>(measured.explicitHeight.error()));
-        }
-        return key;
     }
 
     instrumentation::RecomputeReason RenderTree::recomputeReason(
@@ -397,7 +325,7 @@ namespace tree {
 
 
         rootCursor = simd_float2{0,0};
-        rootConstraints = Constraints{
+        rootConstraints = Constraints {
             .origin = simd_float2{0,0},
             .cursor = rootCursor,
             .availableWidth = Size::px(frameInfo.width),
@@ -442,11 +370,17 @@ namespace tree {
         }
         // initial layout pass
         if (needsLayoutPass) {
-            speculativeLayoutCache.clear();
+            layoutCache.clear();
+            sizeCache.clear();
             instrumentation::PhaseTimer timer{instrumentation::Phase::Layout};
+            auto layoutStart = std::chrono::steady_clock::now();
             layoutPhase(root, frameInfo, rootConstraints, *root->measured);
+            auto layoutEnd = std::chrono::steady_clock::now();
+            std::println("layout pass time: {}",
+                std::chrono::duration<double, std::milli>(layoutEnd - layoutStart));
             root->calculateGlobalZIndex(0);
         }
+
         sortedRenderOrder();
         // postLayout: resolve global positions (serial, top-down) + reconcile atoms
         if (subtreeHasDirty(root, DirtyBits::PostLayout) || !root->layout.has_value()) {
@@ -508,8 +442,6 @@ namespace tree {
 
         Constraints childConstraints {};
 
-        // std::println("padidngLeft: {} paddingRight: {}", paddingLeft, paddingRight);
-    
         childConstraints.availableWidth = node->measured->explicitWidth
             ? Size::px(*node->measured->explicitWidth - paddingLeft - paddingRight)
             : Size::autoSize();
@@ -517,8 +449,6 @@ namespace tree {
             ? Size::px(*node->measured->explicitHeight - paddingTop - paddingBottom)
             : Size::autoSize();
         
-        // std::println("maxWidth: {}", childConstraints.availableWidth);
-
         for (auto& child : node->children) {
             measurePhase(child.get(), childConstraints);
         }
@@ -551,7 +481,7 @@ namespace tree {
         );
         if (!childBidiInputs) return std::unexpected{childBidiInputs.error()};
         for (size_t i = 0; i < node->children.size(); ++i) {
-            childConstraints.textBidiInput = std::move((*childBidiInputs)[i]);
+            childConstraints.textBidiInput = (*childBidiInputs)[i];
             auto result = atomizePhase(node->children[i].get(), childConstraints);
             if (!result) return result;
         }
@@ -561,7 +491,11 @@ namespace tree {
     void resolveComputedDisplays(TreeNode* node)
     {
         node->computedDisplay = node->shared.display;
-        if (node->parent && node->parent->getDisplay() == Display::Flex && node->element->isReplaced() && node->shared.display == Display::Inline) {
+
+        bool blockifyingParent = node->parent
+            && (node->parent->getDisplay() == Display::Flex || node->parent->getDisplay() == Display::Grid);
+
+        if (blockifyingParent && node->element->isReplaced() && node->shared.display == Display::Inline) {
             node->computedDisplay = Display::Block;
         }
 
@@ -697,263 +631,216 @@ namespace tree {
         precomputeMargins(node, constraints, collapsedChainMap);
     }
 
-    LayoutOutput RenderTree::layoutPhase(
+    // this should exist for entry pt reasons; makes sense
+    void RenderTree::layoutPhase(
         TreeNode* node,
         const FrameInfo& frameInfo,
         Constraints constraints,
         Measured measured
     ) {
-        return layoutRecursive(node, frameInfo, std::move(constraints), measured, true);
+        layoutRecursive(node, frameInfo, constraints, measured, true);
     }
 
-    const LayoutOutput& RenderTree::speculateLayout(
-        const FrameInfo& frameInfo,
-        TreeNode* node,
-        Constraints constraints,
-        Measured measured
-    ) {
-        auto key = makeSpeculativeKey(node, constraints, measured);
-        if (auto found = speculativeLayoutCache.find(key);
-            found != speculativeLayoutCache.end()) {
-            instrumentation::recordSpeculativeLayoutCache(true);
-            return found->second;
-        }
-
-        instrumentation::recordSpeculativeLayoutCache(false);
-
-        auto output = layoutRecursive(node, frameInfo, std::move(constraints), measured, false);
-        auto [inserted, _] = speculativeLayoutCache.emplace(key, std::move(output));
-        return inserted->second;
-    }
-
-    IntrinsicSizes RenderTree::measureIntrinsicSizes(TreeNode* node, const FrameInfo& frameInfo, Constraints constraints, Measured measured, Axis axis) {
-        constraints.intrinsicSizesAxis = axis;
-        if (axis == Axis::Width) {
-            constraints.widthResolution = AxisResolution::MaxContent;
-            measured.explicitWidth = std::unexpected(SizeResolveFailure::Auto);
-        } else {
-            constraints.heightResolution = AxisResolution::MaxContent;
-            measured.explicitHeight = std::unexpected(SizeResolveFailure::Auto);
-        }
-
-        const auto& output = speculateLayout(frameInfo, node, constraints, measured);
-        if (output.intrinsicSizes.has_value()) return *output.intrinsicSizes;
-        float size = axis == Axis::Width ? output.layout.computedBox.width : output.layout.computedBox.height;
-        return IntrinsicSizes{.minContent = Size::px(size), .maxContent = Size::px(size)};
-    }
-
-    LayoutOutput RenderTree::layoutRecursive(
+    LayoutResult RenderTree::layoutRecursive(
         TreeNode* node,
         const FrameInfo& frameInfo,
         Constraints constraints,
         Measured measured,
-        bool mutate
+        bool mutate,
+        std::optional<SizeRequest> sizeRequestOverride, // not a fan of these two sources of truth existing
+        std::optional<IntrinsicRequest> intrinsicWidthRequestOverride,
+        std::optional<IntrinsicRequest> intrinsicHeightRequestOverride
     ) {
         auto key = makeConstraintsKey(constraints);
-
-        if (mutate) {
-            auto reason = recomputeReason(node, DirtyBits::Layout, key);
-            if (reason == instrumentation::RecomputeReason::None) {
-                reason = instrumentation::RecomputeReason::AncestorRecomputed;
-            }
-            instrumentation::recordRecompute(node->id, instrumentation::Phase::Layout, reason);
-        }
 
         auto& atomized = *node->atomized;
         auto& prelayout = *node->preLayout;
 
-        bool outOfFlow = node->shared.position == Position::Absolute || node->shared.position == Position::Fixed;
-        bool hadExplicitWidth = measured.explicitWidth.has_value() && (node->shared.width.unit == Unit::Px || node->shared.width.unit == Unit::Pt || (outOfFlow && node->shared.left.has_value() && node->shared.right.has_value()));
-        bool hadExplicitHeight = measured.explicitHeight.has_value() && (node->shared.height.unit == Unit::Px || node->shared.height.unit == Unit::Pt || (outOfFlow && node->shared.top.has_value() && node->shared.bottom.has_value()));
-        auto display = node->getDisplay();
-        bool isInline = node->element->isInline() && display == Display::Inline;
-        bool isNormalFlow = display != Display::Flex && display != Display::Grid;
-        SharedDescriptor computedShared = node->shared;
-        computedShared.display = display;
-
-        applyContentResolution(
-            measured.explicitWidth,
-            node->shared.width,
-            constraints.widthResolution,
-            isInline
-        );
-
-        applyContentResolution(
-            measured.explicitHeight,
-            node->shared.height,
-            constraints.heightResolution,
-            isInline
-        );
-
-        constraints.resolvedMargins = prelayout.resolvedMargins;
-        bool intrinsicPreferredWidth = !measured.explicitWidth && measured.explicitWidth.error() == SizeResolveFailure::ContentDependent;
-        bool intrinsicPreferredHeight = !measured.explicitHeight && measured.explicitHeight.error() == SizeResolveFailure::ContentDependent;
-        bool intrinsicWidthBounds = constraints.widthResolution == AxisResolution::Final && (node->shared.minWidth.isContentDependent() || (node->shared.maxWidth.has_value() && node->shared.maxWidth->isContentDependent()));
-        bool intrinsicHeightBounds = constraints.heightResolution == AxisResolution::Final && (node->shared.minHeight.isContentDependent() || (node->shared.maxHeight.has_value() && node->shared.maxHeight->isContentDependent()));
-        std::optional<IntrinsicSizes> widthIntrinsicSizes;
-        std::optional<IntrinsicSizes> heightIntrinsicSizes;
-
-        Size intrinsicAvailableWidth = constraints.availableWidth;
-        Size intrinsicAvailableHeight = constraints.availableHeight;
-        if (auto availableWidth = intrinsicAvailableWidth.resolve(Size::autoSize())) 
-            intrinsicAvailableWidth = Size::px(std::max(0.0f, *availableWidth - constraints.resolvedMargins.left - constraints.resolvedMargins.right));
-        if (auto availableHeight = intrinsicAvailableHeight.resolve(Size::autoSize())) 
-            intrinsicAvailableHeight = Size::px(std::max(0.0f, *availableHeight - constraints.resolvedMargins.top - constraints.resolvedMargins.bottom));
-
-        if (intrinsicPreferredWidth || intrinsicWidthBounds) 
-            widthIntrinsicSizes = measureIntrinsicSizes(node, frameInfo, constraints, measured, Axis::Width);
-        if (intrinsicPreferredHeight) 
-            heightIntrinsicSizes = measureIntrinsicSizes(node, frameInfo, constraints, measured, Axis::Height);
-        if (intrinsicPreferredWidth && widthIntrinsicSizes.has_value()) 
-            measured.explicitWidth = layout::resolveIntrinsicSize(node->shared.width, *widthIntrinsicSizes, intrinsicAvailableWidth);
-        if (intrinsicPreferredHeight && heightIntrinsicSizes.has_value()) 
-            measured.explicitHeight = layout::resolveIntrinsicSize(node->shared.height, *heightIntrinsicSizes, intrinsicAvailableHeight);
-
-        // Re-resolve percent sizes from current constraints, but only in final layout
-        // passes that are not shrink-to-fit on the relevant axis.
-        // During intermediate measurements, percentage bases may be indefinite and
-        // maxWidth comes from an indefinite ancestor and would give wrong values.
-        bool shouldResolvePercentWidth = !constraints.shrinkWidthToFit &&
-                                            constraints.widthResolution == AxisResolution::Final &&
-                                            node->shared.width.unit == Unit::Percent;
-
-        bool shouldResolvePercentHeight = !constraints.shrinkHeightToFit &&
-                                            constraints.heightResolution == AxisResolution::Final &&
-                                            node->shared.height.unit == Unit::Percent;
-                                            
-        if (shouldResolvePercentWidth || shouldResolvePercentHeight) {
-            SizeResolutionContext sizeCtx {
+        SizeRequest sizeRequest = sizeRequestOverride
+            ? std::move(*sizeRequestOverride)
+            : SizeRequest {
                 .position = node->shared.position,
-                .parentConstraints = constraints,
+                .specified = {.width = node->shared.width, .height = node->shared.height},
+                .minimum = {.width = node->shared.minWidth, .height = node->shared.minHeight},
+                .maximum = {
+                    .width = node->shared.maxWidth ? SizeState{*node->shared.maxWidth} : SizeState{std::monostate{}},
+                    .height = node->shared.maxHeight ? SizeState{*node->shared.maxHeight} : SizeState{std::monostate{}},
+                },
+                .available = {.width = constraints.availableWidth, .height = constraints.availableHeight},
                 .top = node->shared.top,
                 .right = node->shared.right,
                 .bottom = node->shared.bottom,
                 .left = node->shared.left,
-                .requestedWidth = node->shared.width,
-                .requestedHeight = node->shared.height,
-                .availableWidth = constraints.availableWidth,
-                .availableHeight = constraints.availableHeight
+                .paddingTop = node->shared.paddingTop.value_or(node->shared.padding),
+                .paddingRight = node->shared.paddingRight.value_or(node->shared.padding),
+                .paddingBottom = node->shared.paddingBottom.value_or(node->shared.padding),
+                .paddingLeft = node->shared.paddingLeft.value_or(node->shared.padding),
+                .borderWidth = node->shared.borderWidth,
+                .margins = prelayout.resolvedMargins,
+                .aspectRatio = node->shared.aspectRatio,
+                .automaticWidth = (node->getPosition() == Position::Absolute || node->getPosition() == Position::Fixed) ? AutomaticSizing::UseContent : AutomaticSizing::UseAvailable,
+                .automaticHeight = AutomaticSizing::UseContent,
+                .automaticMinimumWidth = AutomaticMinimum::Zero,
+                .automaticMinimumHeight = AutomaticMinimum::Zero,
             };
 
-            auto newSize = resolveSize(sizeCtx);
-            
-            if (shouldResolvePercentWidth) {
-                measured.explicitWidth = newSize.width;
+        if (intrinsicWidthRequestOverride) {
+            sizeRequest.intrinsicWidthRequest = intrinsicWidthRequestOverride;
+            sizeRequest.resolvingIntrinsicWidth = true;
+        }
+
+        if (intrinsicHeightRequestOverride) {
+            sizeRequest.intrinsicHeightRequest = intrinsicHeightRequestOverride;
+            sizeRequest.resolvingIntrinsicHeight = true;
+        }
+
+        ConstraintsKey layoutKey = key;
+        hash_combine(layoutKey.value, node->id);
+        hashSizeRequest(sizeRequest, layoutKey.value);
+
+        auto cachedLayout = layoutCache.find(layoutKey);
+        // we dont need a mutation; just fetch the cached result
+        // that being said idk if I care about this cache existing
+        if (!mutate) {
+            instrumentation::recordSpeculativeLayoutCache(cachedLayout != layoutCache.end());
+            if (cachedLayout != layoutCache.end()) {
+                return cachedLayout->second;
             }
-            if (shouldResolvePercentHeight) {
-                measured.explicitHeight = newSize.height;
-            }
         }
 
+        auto sizeResult = evaluateSize(*this, node, frameInfo, constraints, measured, sizeRequest, sizeCache);
 
-        auto layout = node->element->layout(constraints, computedShared, measured, atomized);
 
-        auto childConstraints = layout.childConstraints;
-        childConstraints.intrinsicSizesAxis = constraints.intrinsicSizesAxis;
-        
-        if (constraints.shrinkWidthToFit && node->shared.width.isAuto()) {
-            childConstraints.shrinkWidthToFit = true;
-        }
+        constraints.resolvedMargins = prelayout.resolvedMargins;
+        constraints.computedDisplay = node->getDisplay();
 
-        if (constraints.shrinkHeightToFit && node->shared.height.isAuto()) {
-            childConstraints.shrinkHeightToFit = true;
-        }
+        // what i should do now:
+        // make this take in a size result instead of doing the computation separately
+        auto layout = node->element->layout(constraints, node->shared, measured, atomized, sizeResult);
 
-        if (constraints.widthResolution == AxisResolution::MinContent ||
-            constraints.widthResolution == AxisResolution::MaxContent) {
-            childConstraints.widthResolution = constraints.widthResolution;
-        }
-
-        if (constraints.heightResolution == AxisResolution::MinContent ||
-            constraints.heightResolution == AxisResolution::MaxContent) {
-            childConstraints.heightResolution = constraints.heightResolution;
-        }
-        
+        auto childConstraints = std::visit([](const auto& state) { return state.childConstraints; }, layout);
+        childConstraints.inheritedProperties = constraints.inheritedProperties;
         childConstraints.textOverflow = constraints.textOverflow;
+
         if (node->shared.overflow != Overflow::Visible) {
             childConstraints.textOverflow = node->shared.textOverflow;
         }
-        Size parentAvailableWidth = childConstraints.availableWidth;
-        Size parentAvailableHeight = childConstraints.availableHeight;
-        float originX = childConstraints.origin.x;
-        float originY = childConstraints.origin.y;
 
-        auto position = node->getPosition();
-        if (position != Position::Static) {
+        if (node->getPosition() != Position::Static) {
+            float borderWidth = std::holds_alternative<float>(sizeResult.borderWidth)
+                ? std::get<float>(sizeResult.borderWidth)
+                : 0.0f;
+
             childConstraints.absoluteContainingBlock = {
                 .origin = {0.0f, 0.0f},
-                .width = layout.resolvedSize.width ? Size::px(layout.computedBox.width) : Size::autoSize(),
-                .height = layout.resolvedSize.height ? Size::px(layout.computedBox.height) : Size::autoSize()
+                .width = std::holds_alternative<float>(sizeResult.outerSize.width) ? Size::px(std::get<float>(sizeResult.outerSize.width) - 2 * borderWidth) : Size::autoSize(),
+                .height = std::holds_alternative<float>(sizeResult.outerSize.height) ? Size::px(std::get<float>(sizeResult.outerSize.height) - 2 * borderWidth) : Size::autoSize(),
             };
         } else {
             childConstraints.absoluteContainingBlock = constraints.absoluteContainingBlock;
         }
 
-        float minY = originY;
-        float maxY = originY;
-        float minX = originX;
-        float maxX = originX;
+        std::optional<IntrinsicSizes> intrinsicResult;
 
-        auto inlineFormatting = buildInlineBoxes(node, childConstraints);
-        std::optional<IntrinsicSizes> intrinsicSizes;
-        float intrinsicMinHeightAdjustment = 0.0f;
-        float intrinsicMaxHeightAdjustment = 0.0f;
+        if (sizeRequest.resolvingIntrinsicWidth || sizeRequest.resolvingIntrinsicHeight) {
+            intrinsicResult = IntrinsicSizes{};
+        }
 
-        auto normalPass = [&](){
-            if (constraints.intrinsicSizesAxis == Axis::Width) {
-                auto intrinsicContext = node->element->isInline() ? constraints.inlineFormatting.context : inlineFormatting;
-                bool isolatedContext = intrinsicContext && constraints.inlineFormatting.fragments.start == 0 && constraints.inlineFormatting.fragments.count == intrinsicContext->fragments.size();
-                intrinsicSizes = intrinsicContext && intrinsicContext->intrinsicSizes.has_value() && (!node->element->isInline() || isolatedContext) ? intrinsicContext->intrinsicSizes : std::nullopt;
-                if (intrinsicSizes.has_value() && !isInline) {
-                    float horizontalPadding = layout.resolvedPadding.left + layout.resolvedPadding.right;
-                    intrinsicSizes->minContent = Size::px(intrinsicSizes->minContent.resolveOr(Size::autoSize()) + horizontalPadding);
-                    intrinsicSizes->maxContent = Size::px(intrinsicSizes->maxContent.resolveOr(Size::autoSize()) + horizontalPadding);
+        if (std::holds_alternative<layout::BlockState>(layout)) {
+            if (std::holds_alternative<float>(sizeResult.outerSize.width)) {
+                float outerWidth = std::get<float>(sizeResult.outerSize.width);
+
+                if (sizeRequest.resolvingIntrinsicWidth) {
+                    intrinsicResult = IntrinsicSizes {.minimum = outerWidth, .maximum = outerWidth};
                 }
             }
-            intrinsicMinHeightAdjustment = 0.0f;
-            intrinsicMaxHeightAdjustment = 0.0f;
 
-            for (uint64_t i = 0; i < node->children.size(); ++i) {
-                auto& child = node->children[i];
-                auto childAsPtr = child.get();
+            if (std::holds_alternative<float>(sizeResult.outerSize.height)) {
+                float outerHeight = std::get<float>(sizeResult.outerSize.height);
 
-                childConstraints.inlineFormatting = {
-                    .context = inlineFormatting,
-                    .fragments = inlineFormatting->childFragments[i]
-                };
-                childConstraints.inheritedProperties = constraints.inheritedProperties;
-                auto childOutput = layoutRecursive(
-                    childAsPtr,
-                    frameInfo,
-                    childConstraints,
-                    *childAsPtr->measured,
-                    mutate
-                );
-                auto& childLayout = childOutput.layout;
-                
-                if (!childLayout.outOfFlow) {
-                    if (constraints.intrinsicSizesAxis == Axis::Width && intrinsicSizes.has_value() && childAsPtr->getDisplay() != Display::Inline && childOutput.intrinsicSizes.has_value()) {
-                        float leadingMargin = constraints.inheritedProperties.direction == layout::Direction::ltr ? childAsPtr->preLayout->resolvedMargins.left : childAsPtr->preLayout->resolvedMargins.right;
-                        float childMinContent = childOutput.intrinsicSizes->minContent.resolveOr(Size::autoSize());
-                        float childMaxContent = childOutput.intrinsicSizes->maxContent.resolveOr(Size::autoSize());
-                        intrinsicSizes->minContent = Size::px(std::max(intrinsicSizes->minContent.resolveOr(Size::autoSize()), leadingMargin + childMinContent));
-                        intrinsicSizes->maxContent = Size::px(std::max(intrinsicSizes->maxContent.resolveOr(Size::autoSize()), leadingMargin + childMaxContent));
-                    } else if (constraints.intrinsicSizesAxis == Axis::Height && childAsPtr->getDisplay() != Display::Inline && childOutput.intrinsicSizes.has_value()) {
-                        intrinsicMinHeightAdjustment += childOutput.intrinsicSizes->minContent.resolveOr(Size::autoSize()) - childLayout.computedBox.height;
-                        intrinsicMaxHeightAdjustment += childOutput.intrinsicSizes->maxContent.resolveOr(Size::autoSize()) - childLayout.computedBox.height;
-                    }
-
-                    childConstraints.cursor = childLayout.siblingCursor;
-                    childConstraints.edgeIntent = childLayout.edgeIntent;
-                    childConstraints.prevInlineHeight = childLayout.prevInlineHeight;
-                
-                    maxX = std::max(maxX, childLayout.computedBox.x + childLayout.computedBox.width);
-                    maxY = std::max(maxY, childLayout.computedBox.y + childLayout.consumedHeight);
+                if (sizeRequest.resolvingIntrinsicHeight) {
+                    intrinsicResult = IntrinsicSizes {.minimum = outerHeight, .maximum = outerHeight};
                 }
             }
-        };
+        }
 
-        auto flexPass = [&]() {
+        if (std::holds_alternative<layout::InlineState>(layout)) {
+            const auto& inlineState = std::get<layout::InlineState>(layout);
+
+            if (inlineState.widthIntrinsicSizes) {
+                if (sizeRequest.resolvingIntrinsicWidth) {
+                    intrinsicResult = *inlineState.widthIntrinsicSizes;
+                }
+            }
+
+            if (inlineState.heightIntrinsicSizes) {
+                if (sizeRequest.resolvingIntrinsicHeight) {
+                    intrinsicResult = *inlineState.heightIntrinsicSizes;
+                }
+            }
+        }
+
+
+        /*
+            the arch problem
+            producers:
+                - computedBox (text)
+                - outerSize (divs)
+                - child contributions
+            when to collect:
+                - always?
+                - when requested
+
+            when to collect:
+                - I think the target is clear: when requested
+
+            what to collection:
+                I am fine with outer size and child contributions
+                I am NOT fine with the computed box
+
+                my plan to unify these would probably be:
+                    initialization:
+                    if outersize:
+                        use outersize
+                    else:
+                        use whatever the layout pass derived
+                    
+                    then during normal pass:
+                        collect child intrinsic contributions
+
+                    make intrinsic sizes truly optional: because they get initialized with 0.0f along both axes:
+                        minimumContent = 0.0f;
+                        maximumContent = 0.0f;
+
+                        these always resolve to a value; that is a *problem*
+
+                        gate initialization between a size request check
+
+                        by doing this; we can also get rid of the correction based on whether or not a node *has children*
+                    
+                problem: how does text communicate its intrinsic sizes?
+                    - evaluate size call: 
+                        - literally not possible; evaluate size has a different job
+                    - layout = node->element->layout(constraints, node->shared, measured, atomized, resizeResult);
+                        - this would only get *conditionally filled*
+                        - block has no meaningful value to populate here.
+
+                further design distnctions:
+                    I want to describe layout modes as first class vs second class
+
+                    first class: block and inline
+                        every node gets laid out by itself as block or inline
+                        these modes size their container AND define how to place children
+
+                    second class: so far, flex and grid
+                        these layout mdoes do not define how the container is sized; they define how the container places its children
+                        these are subsets of first class sizing modes
+
+            because of the new *centralized* sizing resolver
+            we dont need to actually run resize; it will run resize itself when it needs the values
+        */
+
+        auto flexPass = [&](const SizeResult& sr) {
             auto flexDirection = node->getFlexDirection();
             auto justifyContent = node->getJustifyContent();
             auto alignItems = node->getAlignItems();
@@ -963,253 +850,145 @@ namespace tree {
             FlexLayout flexContext {flexDirection, justifyContent, alignItems, alignContentVal, flexWrap};
             flexContext.axis.applyDirection(constraints.inheritedProperties.direction);
 
+            // temp variable for padding included available size
+
             FlexResolver fr {
-                *this, node, constraints, childConstraints, flexContext, frameInfo, measured,
-                mutate,
-                parentAvailableWidth, parentAvailableHeight, minX, minY, maxX, maxY
+                *this, node, constraints, childConstraints, flexContext, frameInfo, sr.innerSize, 
+                mutate, sizeCache
             };
 
             fr.phaseB();
-            auto bounds = fr.phaseC();
+            auto result = fr.phaseC();
 
-            maxX = bounds.maxX;
-            maxY = bounds.maxY;
-            intrinsicSizes = fr.intrinsicSizes;
-            if (intrinsicSizes.has_value()) {
-                float padding = constraints.intrinsicSizesAxis == Axis::Width ? layout.resolvedPadding.left + layout.resolvedPadding.right : layout.resolvedPadding.top + layout.resolvedPadding.bottom;
-                intrinsicSizes->minContent = Size::px(intrinsicSizes->minContent.resolveOr(Size::autoSize()) + padding);
-                intrinsicSizes->maxContent = Size::px(intrinsicSizes->maxContent.resolveOr(Size::autoSize()) + padding);
+            if (sizeRequest.resolvingIntrinsicWidth || sizeRequest.resolvingIntrinsicHeight) {
+                const IntrinsicResult& intrinsicSizes = sizeRequest.resolvingIntrinsicWidth
+                    ? (flexContext.axis.isRow ? result.mainIntrinsicSizes : result.crossIntrinsicSizes)
+                    : (flexContext.axis.isRow ? result.crossIntrinsicSizes : result.mainIntrinsicSizes);
+
+                // if (node->id == 32) {
+                //     std::println("intrinsic min: {} intrinsic max: {}", intrinsicResult->minimum, intrinsicResult->maximum);
+                // }   
+
+                intrinsicResult = IntrinsicSizes {
+                    .minimum = std::get<float>(intrinsicSizes.minimum),
+                    .maximum = std::get<float>(intrinsicSizes.maximum)
+                };
             }
         };
 
-        auto gridPass = [&]() {
+
+        auto gridPass = [&](const SizeResult& sr) {
             GridResolver gr {
-                *this, node, constraints, childConstraints, frameInfo, measured,
-                mutate,
-                parentAvailableWidth, parentAvailableHeight, minX, minY, maxX, maxY
+                *this, node, constraints, childConstraints, frameInfo, sr,
+                mutate, sizeCache
             };
 
             gr.phaseB();
 
-            auto bounds = gr.phaseC();
-
-
-            maxX = bounds.maxX;
-            maxY = bounds.maxY;
-            intrinsicSizes = gr.intrinsicSizes;
-            if (intrinsicSizes.has_value()) {
-                float padding = constraints.intrinsicSizesAxis == Axis::Width ? layout.resolvedPadding.left + layout.resolvedPadding.right : layout.resolvedPadding.top + layout.resolvedPadding.bottom;
-                intrinsicSizes->minContent = Size::px(intrinsicSizes->minContent.resolveOr(Size::autoSize()) + padding);
-                intrinsicSizes->maxContent = Size::px(intrinsicSizes->maxContent.resolveOr(Size::autoSize()) + padding);
+            gr.phaseC();
+            if (sizeRequest.resolvingIntrinsicWidth || sizeRequest.resolvingIntrinsicHeight) {
+                const IntrinsicSizes& intrinsicSizes = sizeRequest.resolvingIntrinsicWidth
+                    ? gr.gridLayout.columnIntrinsicSizes
+                    : gr.gridLayout.rowIntrinsicSizes;
+                intrinsicResult = intrinsicSizes;
             }
         };
 
-        if (display == Display::Flex) {
-            flexPass();
-        } else if (display == Display::Grid) {
-            gridPass();
-        } else if (isNormalFlow) {
-            normalPass();
-        }
-
-
-        float contentWidth = maxX - minX + layout.resolvedPadding.left + layout.resolvedPadding.right;
-        float contentHeight = maxY - minY + layout.resolvedPadding.top + layout.resolvedPadding.bottom;
-        if (constraints.intrinsicSizesAxis == Axis::Height && isNormalFlow) {
-            float intrinsicHeight = isInline || node->children.empty() ? layout.computedBox.height : contentHeight;
-            intrinsicSizes = IntrinsicSizes{.minContent = Size::px(intrinsicHeight + intrinsicMinHeightAdjustment), .maxContent = Size::px(intrinsicHeight + intrinsicMaxHeightAdjustment)};
-        }
-
-        if (!layout.resolvedSize.width) {
-            layout.computedBox.width = contentWidth;
-        }
-        if (!layout.resolvedSize.height) {
-            layout.computedBox.height = contentHeight;
-            if (!layout.outOfFlow) {
-                layout.consumedHeight = contentHeight;
-            }
-        }
-
-        float usedWidth = layout.computedBox.width;
-        float usedHeight = layout.computedBox.height;
-
-        if (constraints.widthResolution == AxisResolution::Final) {
-            if (node->shared.maxWidth.has_value()) {
-                const auto& requestedMaxWidth = *node->shared.maxWidth;
-                float maxWidth = requestedMaxWidth.isContentDependent() && widthIntrinsicSizes.has_value() ? layout::resolveIntrinsicSize(requestedMaxWidth, *widthIntrinsicSizes, intrinsicAvailableWidth) : requestedMaxWidth.resolveOr(constraints.availableWidth, usedWidth);
-                usedWidth = std::min(usedWidth, maxWidth);
-            }
-
-            float minWidth = node->shared.minWidth.isContentDependent() && widthIntrinsicSizes.has_value() ? layout::resolveIntrinsicSize(node->shared.minWidth, *widthIntrinsicSizes, intrinsicAvailableWidth) : node->shared.minWidth.resolveOr(constraints.availableWidth, usedWidth);
-            usedWidth = std::max(usedWidth, minWidth);
-        }
-
-        if (constraints.heightResolution == AxisResolution::Final) {
-            if (intrinsicHeightBounds) {
-                Measured intrinsicMeasured = measured;
-                intrinsicMeasured.explicitWidth = usedWidth;
-                heightIntrinsicSizes = measureIntrinsicSizes(node, frameInfo, constraints, intrinsicMeasured, Axis::Height);
-            }
-
-            if (node->shared.maxHeight.has_value()) {
-                const auto& requestedMaxHeight = *node->shared.maxHeight;
-                float maxHeight = requestedMaxHeight.isContentDependent() && heightIntrinsicSizes.has_value() ? layout::resolveIntrinsicSize(requestedMaxHeight, *heightIntrinsicSizes, intrinsicAvailableHeight) : requestedMaxHeight.resolveOr(constraints.availableHeight, usedHeight);
-                usedHeight = std::min(usedHeight, maxHeight);
-            }
-
-            float minHeight = node->shared.minHeight.isContentDependent() && heightIntrinsicSizes.has_value() ? layout::resolveIntrinsicSize(node->shared.minHeight, *heightIntrinsicSizes, intrinsicAvailableHeight) : node->shared.minHeight.resolveOr(constraints.availableHeight, usedHeight);
-            usedHeight = std::max(usedHeight, minHeight);
-        }
-
-        if (layout.resolvedSize.width)
-            layout.resolvedSize.width = usedWidth;
-        if (layout.resolvedSize.height)
-            layout.resolvedSize.height = usedHeight;
-
-        if (node->shared.aspectRatio)
-            layout::transferAspectRatio(
-                layout.resolvedSize.width,
-                layout.resolvedSize.height,
-                *node->shared.aspectRatio
-            );
-
-        usedWidth = layout.resolvedSize.width.value_or(usedWidth);
-        usedHeight = layout.resolvedSize.height.value_or(usedHeight);
-
-        // why do we retry only if width resolution or height resolution is final?
-        // consider flex using min content or max content or deferred
-        // it wants to know the potential computed box; there might be unresolved constraints
-        // as a result usedWidth != layout.computedBox.width || !layout.resolvedSize.width
-        // or usedHeight != layout.computedBox.height will drift as the computed box doesnt match the resolved size
-        // but we only care about the computed box in these passes 
-        bool retryWidth = (usedWidth != layout.computedBox.width || !layout.resolvedSize.width) && constraints.widthResolution == AxisResolution::Final;
-        bool retryHeight = usedHeight != layout.computedBox.height && constraints.heightResolution == AxisResolution::Final;
-
-
-        if (retryWidth || retryHeight) {
-
-            Measured retryMeasured = measured;
-            if (retryWidth) retryMeasured.explicitWidth = usedWidth;
-            if (retryHeight) retryMeasured.explicitHeight = usedHeight;
-
-            auto retryInput = layout::toLayoutInput(computedShared, retryMeasured);
-            constraints.resolvedMargins = layout::LayoutEngine::resolveAutoMargins(
-                retryInput,
-                constraints.replacedAttributes,
-                constraints.availableWidth,
-                usedWidth
-            );
-
-            layout = node->element->layout(constraints, computedShared, retryMeasured, atomized);
+        auto normalPass = [&](const SizeResult& sr) {
+            InlineSizingInput inlineSizing {
+                .availableWidth = childConstraints.availableWidth,
+                .widthRequest = sizeRequest.intrinsicWidthRequest,
+                .trackIntrinsicWidth = sizeRequest.resolvingIntrinsicWidth,
+            };
             
-            childConstraints = layout.childConstraints;
-            childConstraints.intrinsicSizesAxis = constraints.intrinsicSizesAxis;
-            if (constraints.shrinkWidthToFit && node->shared.width.isAuto()) {
-                childConstraints.shrinkWidthToFit = true;
-            }
-            if (constraints.shrinkHeightToFit && node->shared.height.isAuto()) {
-                childConstraints.shrinkHeightToFit = true;
-            }
-            if (constraints.widthResolution == AxisResolution::MinContent ||
-                constraints.widthResolution == AxisResolution::MaxContent) {
-                childConstraints.widthResolution = constraints.widthResolution;
-            }
-            if (constraints.heightResolution == AxisResolution::MinContent ||
-                constraints.heightResolution == AxisResolution::MaxContent) {
-                childConstraints.heightResolution = constraints.heightResolution;
-            }
-            childConstraints.textOverflow = constraints.textOverflow;
-            if (node->shared.overflow != Overflow::Visible) {
-                childConstraints.textOverflow = node->shared.textOverflow;
-            }
-            parentAvailableWidth  = childConstraints.availableWidth;
-            parentAvailableHeight = childConstraints.availableHeight;
+            // right now, minimum & maximum content dont really get set?
+            // it only changes for flex/grid/etc...
+            // which provide different contributions not based on intrinsic size collection but
+            // min and max bounds; this needs to be fixed
+            auto inlineFormatting = buildInlineBoxes(node, inlineSizing);
 
-            if (position != Position::Static) {
-                childConstraints.absoluteContainingBlock = {
-                    .origin = {0.0f, 0.0f},
-                    .width = layout.resolvedSize.width ? Size::px(layout.computedBox.width) : Size::autoSize(),
-                    .height = layout.resolvedSize.height ? Size::px(layout.computedBox.height) : Size::autoSize()
+            if (inlineFormatting->intrinsicSizes) {
+                intrinsicResult = *inlineFormatting->intrinsicSizes;
+            }
+
+            // if (node->id == 32) {
+            //     std::println("red req: {} red h: {}", describeSizeState(sizeRequest.specified.height), describeSizeState(sr.outerSize.height));
+            // }   
+
+            // if (node->id == 33) {
+            //     std::println("yellow req: {} yellow h: {}", describeSizeState(sizeRequest.specified.height), describeSizeState(sr.outerSize.height));
+            // }   
+            for (uint64_t i = 0; i < node->children.size(); ++i) {
+                auto child = node->children[i].get();
+
+                childConstraints.inlineFormatting = {
+                    .context = inlineFormatting,
+                    .fragments = inlineFormatting->childFragments[i],
+                    .minFragments = inlineFormatting->minChildFragments.empty()
+                        ? layout::InlineFragmentRange{}
+                        : inlineFormatting->minChildFragments[i],
+                    .maxFragments = inlineFormatting->maxChildFragments.empty()
+                        ? layout::InlineFragmentRange{}
+                        : inlineFormatting->maxChildFragments[i],
                 };
-            } else {
-                childConstraints.absoluteContainingBlock = constraints.absoluteContainingBlock;
-            }
 
-            originX = childConstraints.origin.x;
-            originY = childConstraints.origin.y;
-            minY = maxY = originY;
-            minX = maxX = originX;
+                auto childOutput = layoutRecursive(child, frameInfo, childConstraints, *child->measured, mutate, std::nullopt, sizeRequest.intrinsicWidthRequest, sizeRequest.intrinsicHeightRequest);
 
-            inlineFormatting = buildInlineBoxes(node, childConstraints);
-
-            if (display == Display::Flex) {
-                flexPass();
-            } else if (display == Display::Grid) {
-                gridPass();
-            } else if (isNormalFlow) {
-                normalPass();
-            }
-
-            float retryContentHeight = maxY - minY + layout.resolvedPadding.top + layout.resolvedPadding.bottom;
-            if (constraints.intrinsicSizesAxis == Axis::Height && isNormalFlow) {
-                float intrinsicHeight = isInline || node->children.empty() ? layout.computedBox.height : retryContentHeight;
-                intrinsicSizes = IntrinsicSizes{.minContent = Size::px(intrinsicHeight + intrinsicMinHeightAdjustment), .maxContent = Size::px(intrinsicHeight + intrinsicMaxHeightAdjustment)};
-            }
-
-            if (retryWidth) {
-                layout.computedBox.width = usedWidth;
-            } else if (!layout.resolvedSize.width) {
-                layout.computedBox.width = maxX - minX + layout.resolvedPadding.left + layout.resolvedPadding.right;
-            }
-
-            if (retryHeight) {
-                layout.computedBox.height = usedHeight;
-            } else if (!layout.resolvedSize.height) {
-                layout.computedBox.height = retryContentHeight;
-
-                if (constraints.heightResolution == AxisResolution::Final) {
-                    if (node->shared.maxHeight.has_value()) {
-                        const auto& requestedMaxHeight = *node->shared.maxHeight;
-                        float maxHeight = requestedMaxHeight.isContentDependent() && heightIntrinsicSizes.has_value() ? layout::resolveIntrinsicSize(requestedMaxHeight, *heightIntrinsicSizes, intrinsicAvailableHeight) : requestedMaxHeight.resolveOr(constraints.availableHeight, layout.computedBox.height);
-                        layout.computedBox.height = std::min(layout.computedBox.height, maxHeight);
+                std::visit([&](const auto& childLayout) {
+                if (!childLayout.outOfFlow) {
+                    if (sizeRequest.resolvingIntrinsicWidth || sizeRequest.resolvingIntrinsicHeight) {
+                        intrinsicResult->minimum = std::max(intrinsicResult->minimum, childOutput.intrinsicSizes->minimum);
+                        intrinsicResult->maximum = std::max(intrinsicResult->maximum, childOutput.intrinsicSizes->maximum);
                     }
 
-                    float minHeight = node->shared.minHeight.isContentDependent() && heightIntrinsicSizes.has_value() ? layout::resolveIntrinsicSize(node->shared.minHeight, *heightIntrinsicSizes, intrinsicAvailableHeight) : node->shared.minHeight.resolveOr(constraints.availableHeight, layout.computedBox.height);
-                    layout.computedBox.height = std::max(layout.computedBox.height, minHeight);
+                    childConstraints.cursor = childLayout.siblingCursor;
+                    childConstraints.edgeIntent = childLayout.edgeIntent;
+                    childConstraints.prevInlineHeight = childLayout.prevInlineHeight;
+
                 }
+                }, childOutput.layout);
             }
-
-            if (!layout.outOfFlow) {
-                layout.consumedHeight = layout.computedBox.height;
-            }
-        }
-
-        if (!layout.outOfFlow && display == Display::Block) {
-            layout.siblingCursor.y = layout.computedBox.y + layout.consumedHeight;
-        }
-
-        // finalize layout of node
-        layout.localComputedBox = layout.computedBox;
-        layout.localAtomOffsets = layout.atomOffsets;
-        LayoutOutput output {
-            .measured = measured,
-            .layout = std::move(layout),
-            .intrinsicSizes = std::nullopt
         };
 
-        if (constraints.intrinsicSizesAxis.has_value()) {
-            Axis axis = *constraints.intrinsicSizesAxis;
-            float maxContent = axis == Axis::Width ? output.layout.computedBox.width : output.layout.computedBox.height;
-            bool hadExplicitSize = axis == Axis::Width ? hadExplicitWidth : hadExplicitHeight;
-            if (hadExplicitSize || !intrinsicSizes.has_value()) intrinsicSizes = IntrinsicSizes{.minContent = Size::px(maxContent), .maxContent = Size::px(maxContent)};
-            output.intrinsicSizes = intrinsicSizes;
+        auto display = node->getDisplay();
+
+        switch (display) {
+            case style::Display::Flex: {
+                flexPass(sizeResult);
+                break;
+            }
+            case style::Display::Grid: {
+                gridPass(sizeResult);
+                break;
+            }
+            default: {
+                normalPass(sizeResult);
+                break;
+            }
         }
 
+        std::visit([](auto& state) {
+            state.localComputedBox = state.computedBox;
+            state.localAtomOffsets = state.atomOffsets;
+        }, layout);
+
+        LayoutResult output {
+            .layout = std::move(layout),
+            .sizeResult = sizeResult,
+            .intrinsicSizes = intrinsicResult
+        };
+
+        // if (mutate) {
+        //     node->layout = output;
+        //     node->constraintsKey = key;
+        //     node->dirtySelf |= DirtyBits::PostLayout | DirtyBits::Place | DirtyBits::Finalize;
+        // }
+
         if (mutate) {
-            node->layout = output.layout;
-            node->constraintsKey = key;
-            node->dirtySelf |= DirtyBits::PostLayout | DirtyBits::Place | DirtyBits::Finalize;
+            node->layout = output;
         }
+
+        layoutCache[layoutKey] = output;
 
         return output;
     }
@@ -1223,155 +1002,179 @@ namespace tree {
         }
         instrumentation::recordRecompute(node->id, instrumentation::Phase::PostLayout, reason);
 
-        auto& layout = *node->layout;
-        layout.computedBox = layout.localComputedBox;
-        layout.atomOffsets = layout.localAtomOffsets;
+        auto& result = *node->layout;
+        const auto& padding = result.sizeResult.padding;
+        float paddingTop = std::holds_alternative<float>(padding.top) ? std::get<float>(padding.top) : 0.0f;
+        float paddingRight = std::holds_alternative<float>(padding.right) ? std::get<float>(padding.right) : 0.0f;
+        float paddingBottom = std::holds_alternative<float>(padding.bottom) ? std::get<float>(padding.bottom) : 0.0f;
+        float paddingLeft = std::holds_alternative<float>(padding.left) ? std::get<float>(padding.left) : 0.0f;
 
-        auto position = node->getPosition();
+        const auto& border = result.sizeResult.borderWidth;
+        float borderWidth = std::holds_alternative<float>(border) ? std::get<float>(border) : 0.0f;
 
-        auto& dp = layout.deferredPosition;
-        if (dp.right) {
-            auto containingBlockWidth = dp.containingBlockWidth.resolve(Size::autoSize());
-            auto right = dp.right->resolve(dp.containingBlockWidth);
-            if (containingBlockWidth && right) {
-                float newX = *containingBlockWidth - dp.marginRight - layout.computedBox.width - *right;
-                float deltaX = newX - layout.computedBox.x;
-                layout.computedBox.x = newX;
-                for (auto& offset : layout.atomOffsets) offset.x += deltaX;
-            }
-        }
+        std::visit([&](auto& layout) {
+            layout.computedBox = layout.localComputedBox;
+            layout.atomOffsets = layout.localAtomOffsets;
 
-        if (dp.bottom) {
-            auto containingBlockHeight = dp.containingBlockHeight.resolve(Size::autoSize());
-            auto bottom = dp.bottom->resolve(dp.containingBlockHeight);
-            if (containingBlockHeight && bottom) {
-                float newY = *containingBlockHeight - dp.marginBottom - layout.computedBox.height - *bottom;
-                float deltaY = newY - layout.computedBox.y;
-                layout.computedBox.y = newY;
-                for (auto& offset : layout.atomOffsets) offset.y += deltaY;
-            }
-        }
+            auto position = node->getPosition();
 
-        simd_float2 baseOrigin;
-        if (position == Position::Fixed) {
-            baseOrigin = {0.0f, 0.0f};
-        } else if (position == Position::Absolute) {
-            baseOrigin = absBlockGlobalOrigin;
-        } else {
-            baseOrigin = parentGlobalOrigin;
-        }
-
-        layout.computedBox.x += baseOrigin.x;
-        layout.computedBox.y += baseOrigin.y;
-        for (auto& offset : layout.atomOffsets) {
-            offset.x += baseOrigin.x;
-            offset.y += baseOrigin.y;
-        }
-        node->globalOffset = baseOrigin;
-        layout.clipUniforms = constraints.clipUniforms;
-
-        if (node->shared.overflow == Overflow::Scroll) {
-            float viewportLeft = layout.computedBox.x;
-            float viewportRight = layout.computedBox.x + layout.computedBox.width;
-            float viewportTop = layout.computedBox.y;
-            float viewportBottom = layout.computedBox.y + layout.computedBox.height;
-
-            for (auto& clip : constraints.clipUniforms) {
-                viewportLeft = std::max(viewportLeft, clip.rectCenter.x - clip.halfExtent.x);
-                viewportRight = std::min(viewportRight, clip.rectCenter.x + clip.halfExtent.x);
-                viewportTop = std::max(viewportTop, clip.rectCenter.y - clip.halfExtent.y);
-                viewportBottom = std::min(viewportBottom, clip.rectCenter.y + clip.halfExtent.y);
-            }
-
-            viewportLeft += layout.resolvedPadding.left;
-            viewportRight -= layout.resolvedPadding.right;
-            viewportTop += layout.resolvedPadding.top;
-            viewportBottom -= layout.resolvedPadding.bottom;
-
-            node->scrollViewportSize = {
-                std::max(0.0f, viewportRight - viewportLeft),
-                std::max(0.0f, viewportBottom - viewportTop)
-            };
-        }
-
-        node->atomized = node->element->postLayout(constraints, node->shared, *node->measured,
-                                                    *node->atomized, layout);
-
-        simd_float2 currContentOrigin = {
-            layout.computedBox.x + layout.resolvedPadding.left,
-            layout.computedBox.y + layout.resolvedPadding.top
-        };
-
-        if (node->shared.overflow == Overflow::Scroll) {
-            currContentOrigin.x += constraints.inheritedProperties.direction == layout::Direction::rtl
-                ? node->scrollOffset.x
-                : -node->scrollOffset.x;
-            currContentOrigin.y -= node->scrollOffset.y;
-        }
-
-        simd_float2 childAbsBlockOrigin = absBlockGlobalOrigin;
-        if (position != Position::Static) {
-            childAbsBlockOrigin = currContentOrigin;
-        }
-
-        auto childConstraints = constraints;
-        childConstraints.availableWidth = layout.childConstraints.availableWidth;
-        if (node->shared.overflow != Overflow::Visible) {
-            childConstraints.textOverflow = node->shared.textOverflow;
-        }
-        if (node->shared.overflow != Overflow::Visible) {
-            float cornerRadius = node->shared.cornerRadius.resolveOr(
-                Size::px(std::min(layout.computedBox.width, layout.computedBox.height))
-            );
-
-            simd_float2 halfExtent {
-                layout.computedBox.width * 0.5f,
-                layout.computedBox.height * 0.5f
-            };
-
-            childConstraints.clipUniforms.push_back({
-                .rectCenter = {
-                    layout.computedBox.x + halfExtent.x,
-                    layout.computedBox.y + halfExtent.y
-                },
-                .halfExtent = halfExtent,
-                .cornerRadius = {cornerRadius, cornerRadius}
-            });
-
-        }
-
-        for (auto& child : node->children) {
-            postLayoutPhase(child.get(), frameInfo, childConstraints,
-                           currContentOrigin, childAbsBlockOrigin);
-        }
-
-        if (node->shared.overflow == Overflow::Scroll) {
-            simd_float2 contentSize {0.0f, 0.0f};
-            std::function<void(TreeNode*)> includeChildOverflow;
-            includeChildOverflow = [&](TreeNode* child) {
-                if (!child->layout.has_value() || child->layout->outOfFlow) return;
-                auto& childBox = child->layout->computedBox;
-                if (constraints.inheritedProperties.direction == layout::Direction::rtl) {
-                    contentSize.x = std::max(
-                        contentSize.x,
-                        currContentOrigin.x + node->scrollViewportSize.x - childBox.x
-                    );
-                } else {
-                    contentSize.x = std::max(contentSize.x, childBox.x + childBox.width - currContentOrigin.x);
+            auto& dp = layout.deferredPosition;
+            if (dp.right) {
+                auto containingBlockWidth = dp.containingBlockWidth.resolve(Size::autoSize());
+                auto right = dp.right->resolve(dp.containingBlockWidth);
+                if (containingBlockWidth && right) {
+                    float newX = *containingBlockWidth - dp.marginRight - layout.computedBox.width - *right;
+                    float deltaX = newX - layout.computedBox.x;
+                    layout.computedBox.x = newX;
+                    for (auto& offset : layout.atomOffsets) offset.x += deltaX;
                 }
-                contentSize.y = std::max(contentSize.y, childBox.y + childBox.height - currContentOrigin.y);
+            }
 
-                if (child->shared.overflow != Overflow::Visible) return;
-                for (auto& grandchild : child->children) {
-                    includeChildOverflow(grandchild.get());
+            if (dp.bottom) {
+                auto containingBlockHeight = dp.containingBlockHeight.resolve(Size::autoSize());
+                auto bottom = dp.bottom->resolve(dp.containingBlockHeight);
+                if (containingBlockHeight && bottom) {
+                    float newY = *containingBlockHeight - dp.marginBottom - layout.computedBox.height - *bottom;
+                    float deltaY = newY - layout.computedBox.y;
+                    layout.computedBox.y = newY;
+                    for (auto& offset : layout.atomOffsets) offset.y += deltaY;
                 }
+            }
+
+            simd_float2 baseOrigin;
+            if (position == Position::Fixed) {
+                baseOrigin = {0.0f, 0.0f};
+            } else if (position == Position::Absolute) {
+                baseOrigin = absBlockGlobalOrigin;
+            } else {
+                baseOrigin = parentGlobalOrigin;
+            }
+
+            layout.computedBox.x += baseOrigin.x;
+            layout.computedBox.y += baseOrigin.y;
+            for (auto& offset : layout.atomOffsets) {
+                offset.x += baseOrigin.x;
+                offset.y += baseOrigin.y;
+            }
+            node->globalOffset = baseOrigin;
+            layout.clipUniforms = constraints.clipUniforms;
+
+            if (node->shared.overflow == Overflow::Scroll) {
+                float viewportLeft = layout.computedBox.x;
+                float viewportRight = layout.computedBox.x + layout.computedBox.width;
+                float viewportTop = layout.computedBox.y;
+                float viewportBottom = layout.computedBox.y + layout.computedBox.height;
+
+                for (auto& clip : constraints.clipUniforms) {
+                    viewportLeft = std::max(viewportLeft, clip.rectCenter.x - clip.halfExtent.x);
+                    viewportRight = std::min(viewportRight, clip.rectCenter.x + clip.halfExtent.x);
+                    viewportTop = std::max(viewportTop, clip.rectCenter.y - clip.halfExtent.y);
+                    viewportBottom = std::min(viewportBottom, clip.rectCenter.y + clip.halfExtent.y);
+                }
+
+                viewportLeft += paddingLeft;
+                viewportRight -= paddingRight;
+                viewportTop += paddingTop;
+                viewportBottom -= paddingBottom;
+
+                node->scrollViewportSize = {
+                    std::max(0.0f, viewportRight - viewportLeft),
+                    std::max(0.0f, viewportBottom - viewportTop)
+                };
+            }
+
+            node->atomized = node->element->postLayout(constraints, node->shared, *node->measured,
+                                                        *node->atomized, result.layout);
+
+            simd_float2 currContentOrigin = {
+                layout.computedBox.x + borderWidth + paddingLeft,
+                layout.computedBox.y + borderWidth + paddingTop
             };
+
+            simd_float2 currPaddingOrigin = {
+                layout.computedBox.x + borderWidth,
+                layout.computedBox.y + borderWidth
+            };
+
+            if (node->shared.overflow == Overflow::Scroll) {
+                float scrollX = constraints.inheritedProperties.direction == layout::Direction::rtl
+                    ? node->scrollOffset.x
+                    : -node->scrollOffset.x;
+
+                currContentOrigin.x += scrollX;
+                currContentOrigin.y -= node->scrollOffset.y;
+                currPaddingOrigin.x += scrollX;
+                currPaddingOrigin.y -= node->scrollOffset.y;
+            }
+
+            simd_float2 childAbsBlockOrigin = absBlockGlobalOrigin;
+            if (position != Position::Static) {
+                childAbsBlockOrigin = currPaddingOrigin;
+            }
+
+            auto childConstraints = constraints;
+            childConstraints.availableWidth = layout.childConstraints.availableWidth;
+            if (node->shared.overflow != Overflow::Visible) {
+                childConstraints.textOverflow = node->shared.textOverflow;
+            }
+            if (node->shared.overflow != Overflow::Visible) {
+                float cornerRadius = node->shared.cornerRadius.resolveOr(
+                    Size::px(std::min(layout.computedBox.width, layout.computedBox.height))
+                );
+
+                simd_float2 halfExtent {
+                    layout.computedBox.width * 0.5f,
+                    layout.computedBox.height * 0.5f
+                };
+
+                childConstraints.clipUniforms.push_back({
+                    .rectCenter = {
+                        layout.computedBox.x + halfExtent.x,
+                        layout.computedBox.y + halfExtent.y
+                    },
+                    .halfExtent = halfExtent,
+                    .cornerRadius = {cornerRadius, cornerRadius}
+                });
+
+            }
 
             for (auto& child : node->children) {
-                includeChildOverflow(child.get());
+                postLayoutPhase(child.get(), frameInfo, childConstraints,
+                               currContentOrigin, childAbsBlockOrigin);
             }
-            node->scrollContentSize = contentSize;
-        }
+
+            if (node->shared.overflow == Overflow::Scroll) {
+                simd_float2 contentSize {0.0f, 0.0f};
+                std::function<void(TreeNode*)> includeChildOverflow;
+                includeChildOverflow = [&](TreeNode* child) {
+                    if (!child->layout.has_value()) return;
+
+                    std::visit([&](const auto& childLayout) {
+                        if (childLayout.outOfFlow) return;
+                        const auto& childBox = childLayout.computedBox;
+                        if (constraints.inheritedProperties.direction == layout::Direction::rtl) {
+                            contentSize.x = std::max(
+                                contentSize.x,
+                                currContentOrigin.x + node->scrollViewportSize.x - childBox.x
+                            );
+                        } else {
+                            contentSize.x = std::max(contentSize.x, childBox.x + childBox.width - currContentOrigin.x);
+                        }
+                        contentSize.y = std::max(contentSize.y, childBox.y + childBox.height - currContentOrigin.y);
+
+                        if (child->shared.overflow != Overflow::Visible) return;
+                        for (auto& grandchild : child->children) {
+                            includeChildOverflow(grandchild.get());
+                        }
+                    }, child->layout->layout);
+                };
+
+                for (auto& child : node->children) {
+                    includeChildOverflow(child.get());
+                }
+                node->scrollContentSize = contentSize;
+            }
+        }, result.layout);
 
         node->constraintsKey = key;
         node->dirtySelf |= DirtyBits::Place | DirtyBits::Finalize;
@@ -1384,7 +1187,7 @@ namespace tree {
             instrumentation::recordRecompute(node->id, instrumentation::Phase::Place, reason);
             auto& measured = *node->measured;
             auto& atomized = *node->atomized;
-            auto& layout = *node->layout;
+            auto& layout = node->layout->layout;
 
             auto placed = node->element->place(constraints, node->shared, measured, atomized, layout);
             node->placed = placed;
@@ -1404,7 +1207,7 @@ namespace tree {
             instrumentation::recordRecompute(node->id, instrumentation::Phase::Finalize, reason);
             auto& measured =  *node->measured;
             auto& atomized = *node->atomized;
-            auto& layout = *node->layout;
+            auto& layout = node->layout->layout;
             auto& placed = *node->placed;
             auto finalized = node->element->finalize(constraints, node->shared, measured, atomized, layout, placed);
             node->finalized = finalized;

@@ -228,7 +228,9 @@ tree::TreeNode* AppDelegate::hitTest(float x, float y, simd_float2& testPoint) {
 
 void AppDelegate::applicationDidFinishLaunching(NS::Notification* notification)
 {
-    CGRect frame = CGRect{{100.0, 100.0}, {512.0, 512.0}};
+    constexpr CGFloat frameWidth = GUI_FRAME_WIDTH;
+    constexpr CGFloat frameHeight = GUI_FRAME_HEIGHT;
+    CGRect frame = CGRect{{0.0, 0.0}, {frameWidth, frameHeight}};
     
     window = NS::Window::alloc()->init(
                 frame,

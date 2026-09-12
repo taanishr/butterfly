@@ -50,43 +50,32 @@ namespace tree {
         void preLayoutPhase(TreeNode* node, const FrameInfo& frameInfo, Constraints& constraints);
 
         
-        layout::LayoutOutput layoutPhase(
+        void layoutPhase(
             TreeNode* node,
             const FrameInfo& frameInfo,
             Constraints constraints,
             layout::Measured measured
         );
-        const layout::LayoutOutput& speculateLayout(
-            const FrameInfo& frameInfo,
-            TreeNode* node,
-            Constraints constraints,
-            layout::Measured measured
-        );
+    
         void postLayoutPhase(TreeNode* node, const FrameInfo& frameInfo, Constraints& constraints,
                              simd_float2 parentGlobalOrigin, simd_float2 absBlockGlobalOrigin);
 
         void placePhase(TreeNode* node, const FrameInfo& frameInfo, Constraints& constraints);
         void finalizePhase(TreeNode* node, Constraints& constraints);
-    private:
-        layout::IntrinsicSizes measureIntrinsicSizes(TreeNode* node, const FrameInfo& frameInfo, Constraints constraints, layout::Measured measured, layout::Axis axis);
 
-        layout::LayoutOutput layoutRecursive(
+        layout::LayoutResult layoutRecursive(
             TreeNode* node,
             const FrameInfo& frameInfo,
             Constraints constraints,
             layout::Measured measured,
-            bool mutate
+            bool mutate,
+            std::optional<SizeRequest> sizeRequestOverride = std::nullopt,
+            std::optional<IntrinsicRequest> intrinsicWidthRequestOverride = std::nullopt,
+            std::optional<IntrinsicRequest> intrinsicHeightRequestOverride = std::nullopt
         );
-
+    private:
         bool isFrameInfoChanged(const FrameInfo& frameInfo) const;
-        ConstraintsKey makeConstraintsKey(const Constraints& constraints,
-                                          simd_float2 extraOriginA = {0.0f, 0.0f},
-                                          simd_float2 extraOriginB = {0.0f, 0.0f}) const;
-        ConstraintsKey makeSpeculativeKey(
-            const TreeNode* node,
-            const Constraints& constraints,
-            const layout::Measured& measured
-        ) const;
+        ConstraintsKey makeConstraintsKey(const Constraints& constraints, simd_float2 extraOriginA = {0.0f, 0.0f}, simd_float2 extraOriginB = {0.0f, 0.0f}) const;
         instrumentation::RecomputeReason recomputeReason(
             TreeNode* node,
             DirtyBits bit,
@@ -113,8 +102,8 @@ namespace tree {
         ChainID nextChainId = 0;
 
         std::unique_ptr<TreeNode> elementTree;
-        LayoutEngine layoutEngine;
 
-        std::unordered_map<ConstraintsKey, layout::LayoutOutput> speculativeLayoutCache;
+        std::unordered_map<ConstraintsKey, layout::LayoutResult> layoutCache;
+        std::unordered_map<size_t, SizeResult> sizeCache;
     };
 }

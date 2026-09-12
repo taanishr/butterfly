@@ -28,6 +28,8 @@ namespace instrumentation {
         Place,
         Finalize,
         Render,
+        GpuWait,
+        DrawableWait,
         Count
     };
 

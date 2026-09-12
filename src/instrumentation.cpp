@@ -26,7 +26,7 @@ namespace instrumentation {
     }
 
     void Diagnostics::beginFrame(uint64_t frameIndex) {
-        currentFrame = std::move(pendingFrame);
+        currentFrame = pendingFrame;
         pendingFrame = {};
         currentFrame.frameIndex = frameIndex;
         currentFrame.reasons = pendingFrameReasons;
@@ -36,7 +36,7 @@ namespace instrumentation {
 
     void Diagnostics::endFrame(std::chrono::nanoseconds elapsed) {
         currentFrame.elapsed = elapsed;
-        frameHistory.push_back(std::move(currentFrame));
+        frameHistory.push_back(currentFrame);
         if (frameHistory.size() > FrameHistoryCapacity) {
             frameHistory.pop_front();
         }
@@ -88,7 +88,7 @@ namespace instrumentation {
         nodeDiagnostics[sourceNodeId].lastMutation = mutation;
 
         auto& mutations = targetFrame().mutations;
-        mutations.push_back(std::move(mutation));
+        mutations.push_back(mutation);
         if (mutations.size() > MutationHistoryCapacity) {
             mutations.pop_front();
         }

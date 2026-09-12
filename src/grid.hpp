@@ -1,7 +1,10 @@
 #pragma once
 
 #include "element.hpp"
+#include "new_arch.hpp"
+#include "new_sizing.hpp"
 #include <optional>
+#include <unordered_map>
 #include <vector>
 
 namespace tree {
@@ -9,11 +12,12 @@ namespace tree {
 }
 
 namespace layout {
+    using style::AlignContent;
     using style::AlignItems;
+    using style::JustifyContent;
     using style::JustifyItems;
     using style::JustifySelf;
     using style::Size;
-    using style::SizeResolveFailure;
     using tree::RenderTree;
     using tree::TreeNode;
 
@@ -89,17 +93,24 @@ namespace layout {
 
         // helpers
         void resolveStructure(size_t templateRows, size_t templateCols);
-        std::vector<Track> resolveTracks(
-            std::vector<Size>& templateTracks,
-            float available,
-            float gap,
-            bool isCol,
-            bool axisDefinite,
-            IntrinsicSizes* intrinsicSizes = nullptr
-        );
 
-        void resolveColumns(size_t numRows, size_t numCols, const std::vector<Size>& templateCols, float availableWidth, float colGap, bool widthDefinite);
-        void resolveRows(const std::vector<Size>& templateRows, float availableHeight, float rowGap, bool heightDefinite);
+        auto sizeTracks(
+            const std::vector<SizeState>& sizingFunctionReqs, 
+            const SizeResult& containerSize, 
+            bool isCol,
+            float gap, 
+            JustifyContent justifyContent, 
+            AlignContent alignContent
+        ) -> std::vector<float>;
+
+        auto positionTracks(
+            const SizeResult& containerSize,
+            const std::vector<float>& trackSizes, 
+            bool isCol,
+            float gap,
+            JustifyContent justifyContent,
+            AlignContent alignContent
+        ) -> std::vector<float>;
     };
 
     struct GridResolver {
@@ -111,34 +122,20 @@ namespace layout {
         AlignItems        alignItems;
         JustifyItems      justifyItems;
         const FrameInfo&  frameInfo;
-        Measured          measured;
+        const SizeResult& containerSize;
         bool              mutate;
-        std::optional<IntrinsicSizes> intrinsicSizes;
-        Size              childAvailableWidth;
-        Size              parentAvailableWidth;
-        Size              parentAvailableHeight;
-
-        float minX;
-        float minY;
-        float maxX;
-        float maxY;
-
-        struct Bounds {
-            float maxX;
-            float maxY;
-        };
+        std::unordered_map<size_t, SizeResult>& sizeCache;
 
         GridResolver(RenderTree& tree, TreeNode* node,
                      const Constraints& parentConstraints,
                      const Constraints& childConstraints,
                      const FrameInfo& frameInfo,
-                     Measured measured, bool mutate,
-                     Size parentAvailableWidth, Size parentAvailableHeight,
-                     float minX, float minY, float maxX, float maxY);
+                     const SizeResult& containerSize, bool mutate,
+                     std::unordered_map<size_t, SizeResult>& sizeCache);
 
-        Constraints prepareChildConstraints(TreeNode* child);
+        Constraints prepareChildConstraints();
 
         void phaseB();
-        Bounds phaseC();
+        void phaseC();
     };
 }

@@ -19,32 +19,30 @@
 #include <span>
 #include <memory>
 #include <format>
+#include "margins.hpp"
 #include "AppKit_Extensions.hpp"
 #include <any>
 #include <unordered_map>
 #include <string>
+#include "new_sizing.hpp"
 #include <utility>
+#include <variant>
 #include <vector>
 
 class Renderer;
 
 namespace layout {
 
-
-    struct ResolvedMargins {
-        float top, right, bottom, left;
-    };
-
     
     using FragmentID = uint64_t;
 
     struct Measured {
         FragmentID id;
-        std::expected<float, style::SizeResolveFailure> explicitWidth{
-            std::unexpected(style::SizeResolveFailure::Auto)
+        std::expected<float, style::SizeError> explicitWidth{
+            std::unexpected(style::SizeError::Auto)
         };
-        std::expected<float, style::SizeResolveFailure> explicitHeight{
-            std::unexpected(style::SizeResolveFailure::Auto)
+        std::expected<float, style::SizeError> explicitHeight{
+            std::unexpected(style::SizeError::Auto)
         };
     };
 
@@ -68,16 +66,17 @@ namespace layout {
         size_t textByteLength{};
         uint8_t bidiLevel{};
         size_t lineBoxIndex{};
-        size_t fragmentIndex{};  // index within lineBox.fragmentOffsets
+        size_t fragmentIndex{};  // index within the owning line box
+        float offset{}; // relative x where fragment is placed in line box
     };
 
     struct LineBox {
+        size_t fragmentStart{}; // index of the first fragment in the owning fragment vector
         size_t fragmentCount{}; // number of fragments
-        std::vector<float> fragmentOffsets{}; // relative x where fragment is placed in line box
         float width{}; // width of line box (width of all fragments)
         float currentFragmentOffset{};
 
-        void pushFragment(const LineFragment& fragment);
+        void pushFragment(LineFragment& fragment);
     };
 
     struct InlineFragmentRange {
@@ -85,30 +84,27 @@ namespace layout {
         size_t count{};
     };
 
-    struct IntrinsicSizes {
-        style::Size minContent;
-        style::Size maxContent;
-    };
-
-    inline float resolveIntrinsicSize(const style::Size& request, const IntrinsicSizes& intrinsicSizes, style::Size availableSize) {
-        float minContent = intrinsicSizes.minContent.resolveOr(style::Size::autoSize());
-        float maxContent = intrinsicSizes.maxContent.resolveOr(style::Size::autoSize());
-        if (request.unit == style::Unit::MinContent) return minContent;
-        if (request.unit == style::Unit::MaxContent) return maxContent;
-        float stretch = availableSize.resolve(style::Size::autoSize()).value_or(maxContent);
-        return std::min(maxContent, std::max(minContent, stretch));
-    }
-
     struct InlineFormattingContext {
         std::vector<LineFragment> fragments;
         std::vector<LineBox> lineBoxes;
         std::vector<InlineFragmentRange> childFragments;
+
+        std::vector<LineFragment> minFragments;
+        std::vector<LineBox> minLineBoxes;
+        std::vector<InlineFragmentRange> minChildFragments;
+
+        std::vector<LineFragment> maxFragments;
+        std::vector<LineBox> maxLineBoxes;
+        std::vector<InlineFragmentRange> maxChildFragments;
+
         std::optional<IntrinsicSizes> intrinsicSizes;
     };
 
     struct InlineFormattingInput {
         std::shared_ptr<const InlineFormattingContext> context;
         InlineFragmentRange fragments;
+        InlineFragmentRange minFragments;
+        InlineFragmentRange maxFragments;
 
         std::span<const LineFragment> lineFragments() const {
             if (!context || fragments.count == 0) return {};
@@ -118,6 +114,16 @@ namespace layout {
         std::span<const LineBox> lineBoxes() const {
             if (!context) return {};
             return context->lineBoxes;
+        }
+
+        std::span<const LineFragment> minLineFragments() const {
+            if (!context || minFragments.count == 0) return {};
+            return std::span{context->minFragments}.subspan(minFragments.start, minFragments.count);
+        }
+
+        std::span<const LineFragment> maxLineFragments() const {
+            if (!context || maxFragments.count == 0) return {};
+            return std::span{context->maxFragments}.subspan(maxFragments.start, maxFragments.count);
         }
     };
 
@@ -270,7 +276,11 @@ namespace style {
         Center,
         SpaceBetween,
         SpaceAround,
-        SpaceEvenly
+        SpaceEvenly,
+        Normal,
+        Stretch,
+        Start,
+        End
     };
 
     enum class AlignItems {
@@ -293,7 +303,10 @@ namespace style {
         Center,
         SpaceBetween,
         SpaceAround,
-        SpaceEvenly
+        SpaceEvenly,
+        Normal,
+        Start,
+        End
     };
 
     enum class AlignSelf {
@@ -368,7 +381,7 @@ namespace style {
         }
 
         static TextOverflow custom(std::string ending) {
-            return {.mode = Mode::Custom, .ending = std::move(ending)};
+            return {.mode = Mode::Custom, .ending = ending};
         }
 
         bool drawsEnding() const {
@@ -483,18 +496,6 @@ namespace layout {
         Size height{Size::autoSize()};
     };
 
-    enum class Axis {
-        Width,
-        Height
-    };
-
-    enum class AxisResolution {
-        Final,
-        MinContent,
-        MaxContent,
-        Deferred
-    };
-
     struct Constraints {
         simd_float2 origin{};
         simd_float2 cursor{};
@@ -513,31 +514,16 @@ namespace layout {
 
         ReplacedAttributes replacedAttributes {};
         ResolvedMargins resolvedMargins {};
+        std::optional<Display> computedDisplay;
         float prevInlineHeight{};
         std::vector<ClipUniform> clipUniforms {};
-        std::optional<TextOverflow> textOverflow{};
-
-        bool shrinkWidthToFit{false};
-        bool shrinkHeightToFit{false};
-        AxisResolution widthResolution{AxisResolution::Final};
-        AxisResolution heightResolution{AxisResolution::Final};
-        std::optional<Axis> intrinsicSizesAxis;
+        std::optional<TextOverflow&> textOverflow;
     };
 
     struct LayoutInput {
         Position position;
         Display display;
 
-        std::expected<float, style::SizeResolveFailure> width{
-            std::unexpected(style::SizeResolveFailure::Auto)
-        };
-        std::expected<float, style::SizeResolveFailure> height{
-            std::unexpected(style::SizeResolveFailure::Auto)
-        };
-        Size minWidth{Size::autoSize()};
-        Size minHeight{Size::autoSize()};
-        std::optional<Size> maxWidth, maxHeight;
-        
         std::optional<Size> top, left, bottom, right;
 
         std::optional<Direction> direction; // overwrites inherited if specified
@@ -545,32 +531,17 @@ namespace layout {
 
         Size marginTop, marginRight, marginBottom, marginLeft;
 
-        Size paddingTop, paddingRight, paddingBottom, paddingLeft;
-
-        bool hasHorizontalAutoMargins() const {
-            return marginLeft.isAuto() && marginRight.isAuto();
-        }
     };
 
-    inline LayoutInput toLayoutInput(const SharedDescriptor& s, const Measured& m) {
+    inline LayoutInput toLayoutInput(const SharedDescriptor& s, const std::optional<Display>& computedDisplay = std::nullopt) {
         LayoutInput li;
         li.position = s.position;
-        li.display = s.display;
-        li.width = m.explicitWidth;
-        li.height = m.explicitHeight;
-        li.minWidth = s.minWidth;
-        li.minHeight = s.minHeight;
-        li.maxWidth = s.maxWidth;
-        li.maxHeight = s.maxHeight;
+        li.display = computedDisplay.value_or(s.display);
         li.top = s.top;
         li.left = s.left;
         li.bottom = s.bottom;
         li.right = s.right;
         li.textAlign = s.textAlign;
-        li.paddingTop = s.paddingTop.value_or(s.padding);
-        li.paddingRight = s.paddingRight.value_or(s.padding);
-        li.paddingBottom = s.paddingBottom.value_or(s.padding);
-        li.paddingLeft = s.paddingLeft.value_or(s.padding);
         li.marginTop = s.marginTop.value_or(s.margin);
         li.marginRight = s.marginRight.value_or(s.margin);
         li.marginBottom = s.marginBottom.value_or(s.margin);
@@ -580,7 +551,6 @@ namespace layout {
 
     struct SizeResolutionContext {
         Position position;
-        Constraints& parentConstraints;
         const std::optional<Size>&  top;
         const std::optional<Size>&  right;
         const std::optional<Size>&  bottom;
@@ -595,26 +565,22 @@ namespace layout {
         simd_float2 currentCursor;
         const Constraints& constraints;
         const LayoutInput& layoutInput;
+        const SizeResult& sizeResult;
         const ResolvedMargins& margins;
     };
 
 
     struct ResolvedSize {
-        std::expected<float, style::SizeResolveFailure> width{
-            std::unexpected(style::SizeResolveFailure::Auto)
+        std::expected<float, style::SizeError> width{
+            std::unexpected(style::SizeError::Auto)
         };
-        std::expected<float, style::SizeResolveFailure> height{
-            std::unexpected(style::SizeResolveFailure::Auto)
+        std::expected<float, style::SizeError> height{
+            std::unexpected(style::SizeError::Auto)
         };
     };
     
     simd_float2 resolvePosition(const PositionResolutionContext& ctx);
     ResolvedSize resolveSize(const SizeResolutionContext& sizeContext);
-    void transferAspectRatio(
-        std::expected<float, style::SizeResolveFailure>& width,
-        std::expected<float, style::SizeResolveFailure>& height,
-        float ratio
-    );
 
 
     using ChainID = uint64_t;
@@ -645,18 +611,19 @@ namespace layout {
         float width, height;
     };
 
-    struct LayoutResult {
+    // first class layout modes: every node is laid out as block or inline
+    struct BlockState {
+        // atom geometry
         std::vector<simd_float2> atomOffsets;
         std::vector<simd_float2> localAtomOffsets;
         std::vector<simd_float2> drawableAtomOffsets;
+
+        // inline results
         InlineFormattingInput inlineFormatting;
-
-        ResolvedSize resolvedSize;
-        LayoutBox computedBox;
-        LayoutBox localComputedBox;
-
-        float consumedHeight; // how much height consumed
         float prevInlineHeight{};
+
+        LayoutBox computedBox;
+        LayoutBox localComputedBox; // fine
 
         Constraints childConstraints; // child constraints
 
@@ -664,21 +631,63 @@ namespace layout {
         bool outOfFlow; // don't change siblings
         EdgeIntent edgeIntent;
 
-        struct {
-            float top{}, right{}, bottom{}, left{};
-        } resolvedPadding;
-
         DeferredPositionInfo deferredPosition;
         std::vector<ClipUniform> clipUniforms {};
     };
 
-    struct LayoutOutput {
-        Measured measured;
-        LayoutResult layout;
+    struct InlineState {
+        // atom geometry
+        std::vector<simd_float2> atomOffsets;
+        std::vector<simd_float2> localAtomOffsets;
+        std::vector<simd_float2> drawableAtomOffsets;
+
+        // inline results
+        InlineFormattingInput inlineFormatting;
+        float prevInlineHeight{};
+
+        LayoutBox computedBox;
+        LayoutBox localComputedBox; // fine
+
+        Constraints childConstraints; // child constraints
+
+        simd_float2 siblingCursor;
+        bool outOfFlow; // don't change siblings
+        EdgeIntent edgeIntent;
+
+        DeferredPositionInfo deferredPosition;
+        std::vector<ClipUniform> clipUniforms {};
+
+        // inline formatting knows these while it lays the fragments out
+        std::optional<IntrinsicSizes> widthIntrinsicSizes;
+        std::optional<IntrinsicSizes> heightIntrinsicSizes;
+    };
+
+    template <typename S>
+    concept LayoutStateType = requires(S state) {
+        { state.atomOffsets } -> std::same_as<std::vector<simd_float2>&>;
+        { state.localAtomOffsets } -> std::same_as<std::vector<simd_float2>&>;
+        { state.drawableAtomOffsets } -> std::same_as<std::vector<simd_float2>&>;
+        { state.inlineFormatting } -> std::same_as<InlineFormattingInput&>;
+        { state.prevInlineHeight } -> std::same_as<float&>;
+        { state.computedBox } -> std::same_as<LayoutBox&>;
+        { state.localComputedBox } -> std::same_as<LayoutBox&>;
+        { state.childConstraints } -> std::same_as<Constraints&>;
+        { state.siblingCursor } -> std::same_as<simd_float2&>;
+        { state.outOfFlow } -> std::same_as<bool&>;
+        { state.edgeIntent } -> std::same_as<EdgeIntent&>;
+        { state.deferredPosition } -> std::same_as<DeferredPositionInfo&>;
+        { state.clipUniforms } -> std::same_as<std::vector<ClipUniform>&>;
+    };
+
+    using LayoutState = std::variant<BlockState, InlineState>;
+
+    struct LayoutResult {
+        LayoutState layout;
+        SizeResult sizeResult;
         std::optional<IntrinsicSizes> intrinsicSizes;
     };
 
-    
+
     struct LayoutEngine {
         static ResolvedMargins resolveAutoMargins(
             const LayoutInput& li,
@@ -688,20 +697,16 @@ namespace layout {
         );
 
         // relative, block/inline
-        static LayoutResult layoutBlockNormalFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized);
-        static LayoutResult layoutInlineNormalFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized);
-        static LayoutResult resolveNormalFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized);
+        static BlockState layoutBlockNormalFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
+        static InlineState layoutInlineNormalFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
+        static LayoutState resolveNormalFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
 
         // fixed and absolute, block/inline
-        static LayoutResult layoutBlockOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized);
-        static LayoutResult layoutInlineOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized);
-        static LayoutResult resolveOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized);
+        static BlockState layoutBlockOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
+        static InlineState layoutInlineOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
+        static LayoutState resolveOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
 
-        // flex
-        static LayoutResult layoutFlex(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized);
-
-
-        static LayoutResult resolve(Constraints& constraints, LayoutInput& layoutInput, Atomized atomized);
+        static LayoutState resolve(Constraints& constraints, LayoutInput& layoutInput, Atomized atomized, const SizeResult& sizeResult);
     };
 }
 

@@ -6,10 +6,6 @@
 #include <algorithm>
 #include <memory>
 
-char32_t ShapedCluster::codepoint() const {
-    return utf8::at(text, 0).value;
-}
-
 TextShaper::TextShaper() {
     FT_Init_FreeType(&ft);
 }
@@ -105,10 +101,10 @@ ShapedRun TextShaper::shape(
         result.clusters.push_back({
             .byteOffset = byteOffset,
             .byteLength = byteLength,
-            .text = std::string{text.substr(byteOffset, byteLength)},
             .glyphStart = glyphStart,
             .glyphCount = glyphEnd - glyphStart,
-            .advance = advance
+            .advance = advance,
+            .leadCodepoint = utf8::at(text, byteOffset).value
         });
         glyphStart = glyphEnd;
     }

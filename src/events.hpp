@@ -142,7 +142,7 @@ struct Event {
 template <typename U>
 struct HitTestContext {
     const layout::Finalized<U>& finalized;
-    const layout::LayoutResult& layout;
+    const layout::LayoutState& layout;
 };
 
 }

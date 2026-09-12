@@ -27,7 +27,8 @@ namespace elements {
     using layout::Constraints;
     using layout::Direction;
     using layout::Finalized;
-    using layout::LayoutResult;
+    using layout::LayoutState;
+    using layout::LayoutStateType;
     using layout::Measured;
     using layout::Placed;
     using layout::toLayoutInput;
@@ -325,7 +326,7 @@ namespace elements {
                 const size_t atomBase = atoms.size();
                 for (auto cluster : sourceRun.clusters) {
                     cluster.glyphStart += atomBase;
-                    shapedRun.clusters.push_back(std::move(cluster));
+                    shapedRun.clusters.push_back(cluster);
                 }
 
                 shapedRun.runs.push_back({
@@ -333,6 +334,7 @@ namespace elements {
                     .byteLength = run.byteLength,
                     .glyphStart = atomBase,
                     .glyphCount = sourceRun.glyphs.size(),
+                    .clusterCount = sourceRun.clusters.size(),
                     .bidiLevel = run.level
                 });
 
@@ -433,6 +435,17 @@ namespace elements {
                 }
             }
             std::ranges::sort(shapedRun.clusters, {}, &ShapedCluster::byteOffset);
+
+            for (auto& run : shapedRun.runs) {
+                size_t clusterStart = 0;
+                for (const auto& other : shapedRun.runs) {
+                    if (other.byteStart < run.byteStart) {
+                        clusterStart += other.clusterCount;
+                    }
+                }
+                run.clusterStart = clusterStart;
+            }
+
             return shapedRun;
         }
 
@@ -477,16 +490,17 @@ namespace elements {
             return Atomized{ .id = fragment.id, .atoms = std::move(atoms) };
         }
 
-        LayoutResult layout(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, TextDescriptor& desc, Measured& measured, Atomized& atomized) {
-            auto li = toLayoutInput(shared, measured);
-            auto lr = ctx.layoutEngine.resolve(constraints, li, atomized);
-            lr.inlineFormatting = constraints.inlineFormatting;
+        LayoutState layout(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, TextDescriptor& desc, Measured& measured, Atomized& atomized, const SizeResult& sizeResult) {
+            auto li = toLayoutInput(shared, constraints.computedDisplay);
+            auto lr = ctx.layoutEngine.resolve(constraints, li, atomized, sizeResult);
+            std::visit([&](auto& state) { state.inlineFormatting = constraints.inlineFormatting; }, lr);
             return lr;
         }
 
-        Atomized postLayout(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, TextDescriptor& desc, Measured& measured, Atomized& atomized, LayoutResult& layout) {
+        template <LayoutStateType L>
+        Atomized postLayout(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, TextDescriptor& desc, Measured& measured, Atomized& atomized, L& layout) {
             atomized.usesDrawableAtoms = false;
-            if (!constraints.textOverflow->drawsEnding()) return atomized;
+            if (!constraints.textOverflow || !constraints.textOverflow->drawsEnding()) return atomized;
 
             const auto& overflowClip = constraints.clipUniforms.back();
             float visibleLeft = overflowClip.rectCenter.x - overflowClip.halfExtent.x;
@@ -532,6 +546,7 @@ namespace elements {
                         ? bidi::BidiBaseDirection::Rtl
                         : bidi::BidiBaseDirection::Ltr
                 );
+                
                 std::vector<bidi::TextShapingRun> endingRuns;
                 if (endingBidi) {
                     auto resolvedRuns = endingBidi->runs();
@@ -643,7 +658,8 @@ namespace elements {
             return atomized;
         };
 
-        Placed place(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, TextDescriptor& desc, Measured& measured, Atomized& atomized, LayoutResult& lr) {
+        template <LayoutStateType L>
+        Placed place(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, TextDescriptor& desc, Measured& measured, Atomized& atomized, L& lr) {
             std::vector<AtomPlacement> placements;
             
             const auto& offsets = atomized.usesDrawableAtoms
@@ -666,7 +682,8 @@ namespace elements {
             return Placed{ .id = fragment.id, .placements = placements };
         }
         
-        Finalized<U> finalize(Fragment<S>& fragment, Constraints&, SharedDescriptor& shared, TextDescriptor& desc, Measured& measured, Atomized& atomized, LayoutResult& layout, Placed& placed) {
+        template <LayoutStateType L>
+        Finalized<U> finalize(Fragment<S>& fragment, Constraints&, SharedDescriptor& shared, TextDescriptor& desc, Measured& measured, Atomized& atomized, L& layout, Placed& placed) {
             float fontSize;
 
             if (desc.fontSize.unit == Unit::Pt) {
