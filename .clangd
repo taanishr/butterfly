@@ -1,0 +1,25 @@
+CompileFlags:
+  Compiler: /opt/homebrew/opt/llvm/bin/clang++
+  Add:
+    # language
+    - -std=c++26
+
+    # project includes
+    - -Isrc
+    # - -I/Users/treja/projects/gui/build/apple-extensions
+    # - -I/Users/treja/projects/gui/build/apple-extensions
+
+    # metal-cpp
+    - -I/Users/treja/metal-cpp
+    - -I/Users/treja/metal-cpp-extensions
+
+    # freetype
+    - -I/opt/homebrew/opt/freetype/include/freetype2
+
+
+    # resvg
+    - -I/opt/homebrew/opt/resvg/include/resvg
+
+    # Apple SDK
+    - -isysroot
+    - /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk

@@ -1,0 +1,503 @@
+//
+//  image.hpp
+//  gui
+//
+//  Created by Taanish Reja on 12/19/25.
+//
+
+#pragma once
+#include "fragment_types.hpp"
+#include "frame_buffered_buffer.hpp"
+#include "element.hpp"
+#include "renderer_constants.hpp"
+#include "MTKTexture_loader.hpp"
+#include <cmath>
+#include <format>
+#include <map>
+#include <mutex>
+#include <optional>
+#include <shared_mutex>
+#include <simd/vector_types.h>
+#include "new_arch.hpp"
+#include <any>
+#include <unordered_map>
+
+namespace elements {
+    using layout::Atomized;
+    using layout::Constraints;
+    using layout::Finalized;
+    using layout::LayoutState;
+    using layout::LayoutStateType;
+    using layout::Measured;
+    using layout::Placed;
+    using layout::ResolvedSize;
+    using layout::SizeResolutionContext;
+    using layout::resolveSize;
+    using layout::toLayoutInput;
+    using runtime::HitTestContext;
+    using runtime::UIContext;
+    using style::ClipUniform;
+    using style::SharedDescriptor;
+    using style::Size;
+    using style::Unit;
+
+    struct ImagePoint {
+        simd_float2 position;
+        simd_float2 uv;
+        unsigned int id;
+    };
+
+    struct ImageDescriptor {
+        ImageDescriptor();
+
+        std::any request(std::any payload) {
+            return std::any{};
+        }
+
+        std::string path;
+    };
+
+    struct ImageStyleUniforms {
+        simd_float2 cornerRadius;
+        float borderWidth;
+        simd_float4 borderColor;
+    };
+
+    struct ImageGeometryUniforms {
+        simd_float2 rectCenter;
+        simd_float2 halfExtent;
+    };
+
+    struct ImageUniforms {
+        ImageStyleUniforms style;
+        ImageGeometryUniforms geometry;
+        uint32_t numClips;
+    };
+
+    using ImageRenditionKey = std::pair<uint32_t, uint32_t>;
+
+    struct ImageAsset {
+        std::string path;
+        std::mutex renditionMutex;
+        std::map<ImageRenditionKey, NS::SharedPtr<MTL::Texture>> renditions;
+    };
+
+    struct ImageCache {
+        std::shared_ptr<ImageAsset> retrieve(const std::string& path);
+        NS::SharedPtr<MTL::Texture> retrieveTexture(
+            const std::shared_ptr<ImageAsset>& asset,
+            ImageRenditionKey renditionKey,
+            const MTKTextures::MTKTextureLoader& textureLoader
+        );
+
+        static constexpr uint32_t BucketSize = 64;
+        static uint32_t quantize(float value);
+
+        std::shared_mutex mutex;
+        std::unordered_map<std::string, std::shared_ptr<ImageAsset>> assets;
+    };
+
+    struct ImageStorage {
+        ImageStorage(UIContext& ctx):
+            atomsBuffer{ctx.allocator, 6*sizeof(ImagePoint), MaxOutstandingFrameCount},
+            placementsBuffer{ctx.allocator, sizeof(simd_float2), MaxOutstandingFrameCount},
+            uniformsBuffer{ctx.allocator, 6*sizeof(ImageUniforms), MaxOutstandingFrameCount},
+            clipsBuffer{ctx.allocator, sizeof(ClipUniform) * 4, MaxOutstandingFrameCount}
+        {}
+
+        FrameBufferedBuffer<ImagePoint> atomsBuffer;
+        FrameBufferedBuffer<simd_float2> placementsBuffer;
+        FrameBufferedBuffer<ImageUniforms> uniformsBuffer;
+        FrameBufferedBuffer<ClipUniform> clipsBuffer;
+        std::shared_ptr<ImageAsset> asset;
+        NS::SharedPtr<MTL::Texture> activeTexture;
+        std::optional<ImageRenditionKey> activeRendition;
+    };
+
+    template <typename S = ImageStorage>
+    struct Image {
+        static constexpr std::string_view elementName = "Image";
+
+        Image(UIContext& ctx):
+            desc{},
+            fragment{ctx}
+        {}
+        
+        ImageDescriptor& getDescriptor()
+        {
+            return desc;
+        }
+        
+        Fragment<S>& getFragment()
+        {
+            return fragment;
+        }
+
+        bool isInline() const {
+            return true;
+        }
+
+        bool isReplaced() const {
+            return true;
+        }
+
+        std::any request(RequestTarget target, std::any payload) {
+            switch (target) {
+                case RequestTarget::Descriptor: 
+                {
+                    return desc.request(payload);
+                }
+                default: {
+                    return std::any{};
+                }
+            }
+        }
+
+        ImageDescriptor desc;
+        Fragment<S> fragment;
+
+        using StorageType = S;
+        using UniformsType = ImageUniforms;
+        using DescriptorType = ImageDescriptor;
+    };
+
+    template <typename S = ImageStorage, typename U = ImageUniforms>
+    struct ImageProcessor {
+        ImageProcessor(UIContext& ctx):
+            ctx{ctx}
+        {}
+
+        void buildPipeline(MTL::RenderPipelineState*& pipeline)
+        {
+            MTL::Library* defaultLibrary = ctx.device->newDefaultLibrary();
+            MTL::RenderPipelineDescriptor* renderPipelineDescriptor =
+                MTL::RenderPipelineDescriptor::alloc()->init();
+
+            MTL::VertexDescriptor* vertexDescriptor = MTL::VertexDescriptor::alloc()->init();
+
+            vertexDescriptor->attributes()->object(0)->setFormat(MTL::VertexFormatFloat2);
+            vertexDescriptor->attributes()->object(0)->setOffset(0);
+            vertexDescriptor->attributes()->object(0)->setBufferIndex(0);
+
+            vertexDescriptor->attributes()->object(1)->setFormat(MTL::VertexFormatFloat2);
+            vertexDescriptor->attributes()->object(1)->setOffset(sizeof(simd_float2));
+            vertexDescriptor->attributes()->object(1)->setBufferIndex(0);
+
+            vertexDescriptor->attributes()->object(2)->setFormat(MTL::VertexFormatUInt);
+            vertexDescriptor->attributes()->object(2)->setOffset(sizeof(simd_float2) * 2);
+            vertexDescriptor->attributes()->object(2)->setBufferIndex(0);
+
+            vertexDescriptor->layouts()->object(0)->setStride(sizeof(ImagePoint));
+            renderPipelineDescriptor->setVertexDescriptor(vertexDescriptor);
+
+            MTL::Function* vertexFunction =
+                defaultLibrary->newFunction(NS::String::string("vertex_image", NS::UTF8StringEncoding));
+            renderPipelineDescriptor->setVertexFunction(vertexFunction);
+
+            MTL::Function* fragmentFunction =
+                defaultLibrary->newFunction(NS::String::string("fragment_image", NS::UTF8StringEncoding));
+            renderPipelineDescriptor->setFragmentFunction(fragmentFunction);
+
+            renderPipelineDescriptor->colorAttachments()->object(0)->setPixelFormat(ctx.view->colorPixelFormat());
+            renderPipelineDescriptor->colorAttachments()->object(0)->setBlendingEnabled(true);
+            renderPipelineDescriptor->colorAttachments()->object(0)->setAlphaBlendOperation(MTL::BlendOperationAdd);
+            renderPipelineDescriptor->colorAttachments()->object(0)->setSourceRGBBlendFactor(MTL::BlendFactorSourceAlpha);
+            renderPipelineDescriptor->colorAttachments()->object(0)->setDestinationRGBBlendFactor(MTL::BlendFactorOneMinusSourceAlpha);
+            renderPipelineDescriptor->colorAttachments()->object(0)->setSourceAlphaBlendFactor(MTL::BlendFactorSourceAlpha);
+            renderPipelineDescriptor->colorAttachments()->object(0)->setDestinationAlphaBlendFactor(MTL::BlendFactorOneMinusSourceAlpha);
+
+            renderPipelineDescriptor->setDepthAttachmentPixelFormat(ctx.view->depthStencilPixelFormat());
+
+            NS::Error* error = nullptr;
+            pipeline = ctx.device->newRenderPipelineState(renderPipelineDescriptor, &error);
+            if (error != nullptr)
+                std::println("error in image pipeline creation: {}", error->localizedDescription()->utf8String());
+
+            defaultLibrary->release();
+            renderPipelineDescriptor->release();
+            vertexDescriptor->release();
+            vertexFunction->release();
+            fragmentFunction->release();
+        }
+
+        MTL::RenderPipelineState* getPipeline() {
+            static std::once_flag initFlag;
+            static MTL::RenderPipelineState* pipeline = nullptr;
+        
+            std::call_once(initFlag, [&](){
+                buildPipeline(pipeline);
+            });
+        
+            return pipeline;
+        }
+
+        void buildSampler(MTL::SamplerState*& samplerState) {
+            MTL::SamplerDescriptor* samplerDescriptor = MTL::SamplerDescriptor::alloc()->init();
+            samplerDescriptor->setNormalizedCoordinates(true);
+            samplerDescriptor->setMagFilter(MTL::SamplerMinMagFilterLinear);
+            samplerDescriptor->setMinFilter(MTL::SamplerMinMagFilterLinear);
+            samplerDescriptor->setSAddressMode(MTL::SamplerAddressMode::SamplerAddressModeClampToZero);
+            samplerDescriptor->setTAddressMode(MTL::SamplerAddressMode::SamplerAddressModeClampToZero);
+            samplerState = ctx.device->newSamplerState(samplerDescriptor);
+            samplerDescriptor->release();
+        }
+
+        MTL::SamplerState* getSampler() {
+            static MTL::SamplerState* sampler = nullptr;
+            if (!sampler) buildSampler(sampler);
+            return sampler;
+        }
+        
+        MTKTextures::MTKTextureLoader& getTextureLoader() {
+            static auto textureLoader = MTKTextures::MTKTextureLoader{ctx.device};
+            return textureLoader;
+        }
+
+
+        void initializeAsset(Fragment<S>& fragment, const std::string& path) {
+            auto& storage = fragment.fragmentStorage;
+
+            if (storage.asset && storage.asset->path == path) return;
+            storage.asset = imageCache.retrieve(path);
+            storage.activeTexture.reset();
+            storage.activeRendition.reset();
+        }
+
+        void activateTexture(Fragment<S>& fragment, ImageRenditionKey renditionKey) {
+            auto& storage = fragment.fragmentStorage;
+            if (!storage.asset) return;
+            if (storage.activeRendition == renditionKey && storage.activeTexture) return;
+
+            storage.activeTexture = imageCache.retrieveTexture(
+                storage.asset,
+                renditionKey,
+                getTextureLoader()
+            );
+            storage.activeRendition = renditionKey;
+        }
+
+        Measured measure(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, ImageDescriptor& desc) {
+            Measured measured;
+            measured.id = fragment.id;
+
+            if (!desc.path.empty()) {
+                initializeAsset(fragment, desc.path);
+            }
+
+            SizeResolutionContext sizeCtx {
+                .position = shared.position,
+                .top = shared.top,
+                .right = shared.right,
+                .bottom = shared.bottom,
+                .left = shared.left,
+                .requestedWidth = shared.width,
+                .requestedHeight = shared.height,
+                .availableWidth = constraints.availableWidth,
+                .availableHeight = constraints.availableHeight
+            };
+
+            ResolvedSize resolvedSize = resolveSize(sizeCtx);
+
+            auto resolvedWidth = resolvedSize.width;
+            auto resolvedHeight = resolvedSize.height;
+
+            measured.explicitWidth = resolvedWidth;
+            measured.explicitHeight = resolvedHeight;
+
+            return measured;
+        }
+
+        Atomized atomize(Fragment<S>& fragment, Constraints&, SharedDescriptor& shared, ImageDescriptor& desc, Measured& measured) {
+            std::vector<Atom> atoms;
+
+            float width = measured.explicitWidth.value_or(0.0);
+            float height = measured.explicitHeight.value_or(0.0);
+
+            // auto atomsBuffer = fragment.fragmentStorage.atomsBuffer.get();
+            size_t bufferLen = 6 * sizeof(ImagePoint);
+
+            std::array<ImagePoint, 6> points {{
+                {{0, 0},                {0, 0}, 0},
+                {{width, 0},            {1, 0}, 0},
+                {{0, height},           {0, 1}, 0},
+                {{0, height},           {0, 1}, 0},
+                {{width, 0},            {1, 0}, 0},
+                {{width, height},       {1, 1}, 0}
+            }};
+
+            // std::memcpy(atomsBuffer->contents(), points.data(), bufferLen);
+            fragment.fragmentStorage.atomsBuffer.write(ctx.frameIndex, points.data(), bufferLen);
+
+            Atom atom;
+            atom.atomBufferHandle = fragment.fragmentStorage.atomsBuffer.getBufferHandle(ctx.frameIndex);
+            atom.offset = 0;
+            atom.length = bufferLen;
+            atom.width = width;
+            atom.height = height;
+            atoms.push_back(atom);
+
+            return Atomized{ .id = fragment.id, .atoms = atoms };
+        }
+
+        LayoutState layout(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, ImageDescriptor& desc, Measured& measured, Atomized& atomized, const SizeResult& sizeResult) {
+            auto li = toLayoutInput(shared, constraints.computedDisplay);
+            auto lr = ctx.layoutEngine.resolve(constraints, li, atomized, sizeResult);
+            return lr;
+        }
+
+        template <LayoutStateType L>
+        Atomized postLayout(Fragment<S>& fragment, Constraints&, SharedDescriptor& shared, ImageDescriptor& desc, Measured& measured, Atomized& atomized, L& layout) {
+                        std::vector<Atom> atoms {};
+            
+            float width = layout.computedBox.width;
+            float height = layout.computedBox.height;
+
+            if (width > 0.0f && height > 0.0f) {
+                uint32_t logicalWidth = ImageCache::quantize(width);
+                uint32_t logicalHeight = ImageCache::quantize(height);
+                ImageRenditionKey renditionKey {
+                    static_cast<uint32_t>(std::ceil(logicalWidth * ctx.frameInfo.scale)),
+                    static_cast<uint32_t>(std::ceil(logicalHeight * ctx.frameInfo.scale))
+                };
+                activateTexture(fragment, renditionKey);
+            }
+
+            size_t bufferLen = 6*sizeof(ImagePoint);
+            
+            std::array<ImagePoint, 6> atomPoints {{
+                {{0, 0},           {0, 0}, 0},
+                {{width, 0},       {1, 0}, 0},
+                {{0, height},      {0, 1}, 0},
+                {{0, height},      {0, 1}, 0},
+                {{width, 0},       {1, 0}, 0},
+                {{width, height},  {1, 1}, 0}
+            }};
+            
+            fragment.fragmentStorage.atomsBuffer.write(ctx.frameIndex, atomPoints.data(), bufferLen);
+            
+            Atom atom;
+            atom.atomBufferHandle = fragment.fragmentStorage.atomsBuffer.getBufferHandle(ctx.frameIndex);
+            atom.offset = 0;
+            atom.length = bufferLen;
+            atom.width = width;
+            atom.height = height;
+            
+            atoms.push_back(atom);
+            
+            return Atomized{
+                .id = fragment.id,
+                .atoms = atoms
+            };
+        };
+
+        template <LayoutStateType L>
+        Placed place(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, ImageDescriptor& desc, Measured&, Atomized& atomized, L& lr) {
+            std::vector<AtomPlacement> placements;
+
+            auto offsets = lr.atomOffsets;
+        
+            size_t bufferLen = offsets.size() * sizeof(simd_float2);
+            if (bufferLen > 0) {
+                fragment.fragmentStorage.placementsBuffer.write(ctx.frameIndex, offsets.data(), bufferLen);
+            }
+
+            for (int i = 0; i < offsets.size(); ++i) {
+                placements.push_back({
+                    .placementBufferHandle = fragment.fragmentStorage.placementsBuffer.getBufferHandle(ctx.frameIndex),
+                    .x = offsets[i].x,
+                    .y = offsets[i].y
+                });
+            }
+
+            return Placed{ .id = fragment.id, .placements = placements };
+        }
+
+        template <LayoutStateType L>
+        Finalized<U> finalize(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, ImageDescriptor& desc, Measured& measured, Atomized& atomized, L& layout, Placed& placed) {
+            float borderWidth = 0.0;
+
+            if (shared.borderWidth.unit == Unit::Px) {
+                borderWidth = shared.borderWidth.resolveOr(constraints.availableWidth);
+            }
+
+            simd_float2 cornerRadius {
+                shared.cornerRadius.resolveOr(Size::px(layout.computedBox.width)),
+                shared.cornerRadius.resolveOr(Size::px(layout.computedBox.height))
+            };
+
+            ImageStyleUniforms styleUniforms {
+                .cornerRadius = cornerRadius,
+                .borderWidth = borderWidth,
+                .borderColor = shared.borderColor
+            };
+
+            ImageGeometryUniforms geometryUniforms;
+            
+            if (placed.placements.size() > 0) {
+                auto offset = placed.placements.front();
+                simd_float2 halfExtent { layout.computedBox.width / 2.0f, layout.computedBox.height / 2.0f };
+                simd_float2 rectCenter { offset.x + halfExtent.x, offset.y + halfExtent.y };
+                
+                geometryUniforms.rectCenter = rectCenter;
+                geometryUniforms.halfExtent = halfExtent;
+            }
+
+            ImageUniforms uniforms {
+                .style = styleUniforms,
+                .geometry = geometryUniforms,
+                .numClips = static_cast<uint32_t>(layout.clipUniforms.size())
+            };
+
+            fragment.fragmentStorage.uniformsBuffer.write(ctx.frameIndex, &uniforms, sizeof(ImageUniforms));
+            fragment.fragmentStorage.clipsBuffer.write(
+                ctx.frameIndex,
+                layout.clipUniforms.data(),
+                sizeof(ClipUniform) * layout.clipUniforms.size()
+            );
+            return Finalized<U> {
+                .id = fragment.id,
+                .atomized = atomized,
+                .placed = placed,
+                .uniforms = uniforms
+            };
+        }
+
+        void encode(MTL::RenderCommandEncoder* encoder, Fragment<S>& fragment, Finalized<U>& finalized) {
+            auto pipeline = getPipeline();
+            encoder->setRenderPipelineState(pipeline);
+
+            auto sampler = getSampler();
+
+            auto atomBuf = fragment.fragmentStorage.atomsBuffer.getBuffer(ctx.frameIndex);
+            auto atomPlacementBuf = fragment.fragmentStorage.placementsBuffer.getBuffer(ctx.frameIndex);
+            auto frameInfoBuf = ctx.frameInfoBuffer.get();
+            auto uniformsBuf = fragment.fragmentStorage.uniformsBuffer.getBuffer(ctx.frameIndex);
+            auto clipsBuf = fragment.fragmentStorage.clipsBuffer.getBuffer(ctx.frameIndex);
+
+            encoder->setVertexBuffer(atomBuf, 0, 0);
+            encoder->setVertexBuffer(atomPlacementBuf, 0, 1);
+            encoder->setVertexBuffer(frameInfoBuf, 0, 2);
+
+            encoder->setFragmentBuffer(uniformsBuf, 0, 0);
+            encoder->setFragmentBuffer(clipsBuf, 0, 1);
+
+            if (fragment.fragmentStorage.activeTexture) {
+                encoder->setFragmentTexture(fragment.fragmentStorage.activeTexture.get(), 0);
+            }
+            
+            encoder->setFragmentSamplerState(sampler, 0);
+            encoder->drawPrimitives(MTL::PrimitiveTypeTriangle, NS::UInteger(0), 6);
+        }
+
+        std::function<bool(HitTestContext<U>& context, simd_float2 testPoint)> setupHitTestFunction() {
+            auto hitTestFunction = [](HitTestContext<U>& context, simd_float2 testPoint){
+                return true;
+            };
+
+            return hitTestFunction;
+        }
+
+        ImageCache imageCache;
+        UIContext& ctx;
+    };
+}

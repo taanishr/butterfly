@@ -1,0 +1,94 @@
+#include "node_builder.hpp"
+#include "div.hpp"
+#include "tree_manager.hpp"
+#include <print>
+
+namespace elements {
+    using runtime::ContextManager;
+    using runtime::getDivProcessor;
+    using runtime::getImageProcessor;
+    using runtime::getSVGProcessor;
+    using runtime::getTextProcessor;
+    using style::Display;
+    using style::Size;
+    using tree::TreeStack;
+
+    NodeBuilder<Div<DivStorage>, DivProcessor<DivStorage, DivUniforms>> div()
+    {
+        auto& ctx = ContextManager::getContext();
+        auto& proc = getDivProcessor(ctx);
+        Div elem {ctx};
+
+        auto currTree = TreeStack::getCurrentTree();
+
+        return NodeBuilder(ctx, *currTree, std::move(elem), proc);
+    }
+
+    NodeBuilder<Div<DivStorage>, DivProcessor<DivStorage, DivUniforms>> div(Size width, Size height, simd_float4 color)
+    {
+        auto& ctx = ContextManager::getContext();
+        auto& proc = getDivProcessor(ctx);
+        Div elem {ctx};
+        elem.getDescriptor().color = color;
+
+        auto currTree = TreeStack::getCurrentTree();
+
+        auto builder = NodeBuilder(ctx, *currTree, std::move(elem), proc);
+        builder.width(width);
+        builder.height(height);
+        return builder;
+    }
+
+    NodeBuilder<Text<TextStorage>, TextProcessor<TextStorage, TextUniforms>> text(const std::string& text,
+                 Size fontSize, simd_float4 color,
+                 const std::string& font)
+    {
+        auto& ctx = ContextManager::getContext();
+        auto& proc = getTextProcessor(ctx);
+        Text elem{ctx};
+        auto& desc = elem.getDescriptor();
+        desc.text = text;
+        desc.fontSize = fontSize;
+        desc.color = color;
+        desc.font = font;
+
+        auto currTree = TreeStack::getCurrentTree();
+        auto builder = NodeBuilder(ctx, *currTree, std::move(elem), proc);
+        builder.display(Display::Inline);
+        return builder;
+    }
+
+    NodeBuilder<Image<ImageStorage>, ImageProcessor<ImageStorage, ImageUniforms>> image(const std::string& path,
+                    Size width, Size height)
+    {
+        auto& ctx = ContextManager::getContext();
+        auto& proc = getImageProcessor(ctx);
+        Image elem{ctx};
+        elem.getDescriptor().path = path;
+
+        auto currTree = TreeStack::getCurrentTree();
+
+        auto builder = NodeBuilder(ctx, *currTree, std::move(elem), proc);
+        builder.display(Display::Inline);
+        builder.width(width);
+        builder.height(height);
+        return builder;
+    }
+
+    NodeBuilder<SVG<SVGStorage>, SVGProcessor<SVGStorage, SVGUniforms>> svg(const std::string& path,
+                    Size width, Size height)
+    {
+        auto& ctx = ContextManager::getContext();
+        auto& proc = getSVGProcessor(ctx);
+        SVG elem{ctx};
+        elem.getDescriptor().path = path;
+
+        auto currTree = TreeStack::getCurrentTree();
+
+        auto builder = NodeBuilder(ctx, *currTree, std::move(elem), proc);
+        builder.display(Display::Inline);
+        builder.width(width);
+        builder.height(height);
+        return builder;
+    }
+}

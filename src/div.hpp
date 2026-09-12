@@ -1,0 +1,473 @@
+//
+//  div.hpp
+//  gui
+//
+//  Created by Taanish Reja on 12/19/25.
+//
+
+#pragma once
+
+#include "fragment_types.hpp"
+#include <format>
+#include <mutex>
+#include <optional>
+#include <print>
+#include "element.hpp"
+#include "events.hpp"
+#include "new_arch.hpp"
+#include "frame_buffered_buffer.hpp"
+#include "renderer_constants.hpp"
+#include "sizing.hpp"
+#include <any>
+#include <simd/vector_types.h>
+#include "overloaded.hpp"
+#include "sdf_helpers.hpp"
+
+namespace elements {
+    using layout::Atomized;
+    using layout::Constraints;
+    using layout::Finalized;
+    using layout::LayoutEngine;
+    using layout::LayoutInput;
+    using layout::LayoutState;
+    using layout::LayoutStateType;
+    using layout::Measured;
+    using layout::Placed;
+    using layout::SizeResolutionContext;
+    using layout::resolveSize;
+    using layout::toLayoutInput;
+    using runtime::HitTestContext;
+    using runtime::UIContext;
+    using style::ClipUniform;
+    using style::SharedDescriptor;
+    using style::Size;
+    using style::Unit;
+
+    struct DivPoint {
+        simd_float2 point;
+        unsigned int id;
+    };
+};
+
+
+template <>
+struct std::formatter<elements::DivPoint> : std::formatter<float>
+{
+    auto format(const elements::DivPoint& v, format_context& ctx) const
+    {
+        return std::format_to(ctx.out(), "({}, {})", v.point.x, v.point.y);
+    }
+};
+
+namespace elements {
+    struct DivDescriptor {
+        DivDescriptor();
+
+        std::any request(std::any const& payloadAny) {
+            if (!payloadAny.has_value()) return std::any{};
+            if (auto payloadPtr = std::any_cast<DescriptorPayload>(&payloadAny)) {
+                return std::visit(Overloaded{
+                    [this](GetFull const&) -> std::any { return std::any(*this); },
+                    [this](GetField const& f) -> std::any {
+                        if (f.name == "color") return std::any{this->color};
+                        return std::any{};
+                    }
+                }, *payloadPtr);
+            }
+            return std::any{};
+        }
+
+        simd_float4 color;
+    };
+
+    struct DivStyleUniforms {
+        simd_float4 color;
+        simd_float2 cornerRadius;
+        float borderWidth;
+        simd_float4 borderColor;
+    };
+
+    struct DivGeometryUniforms {
+        simd_float2 rectCenter;
+        simd_float2 halfExtent;
+        uint32_t numClips;
+    };
+
+    struct DivUniforms {
+        DivStyleUniforms style;
+        DivGeometryUniforms geometry;
+    };
+
+    struct DivStorage {
+        DivStorage(UIContext& ctx):
+            atomsBuffer{ctx.allocator, 6*sizeof(DivPoint), MaxOutstandingFrameCount},
+            placementsBuffer{ctx.allocator, sizeof(simd_float2), MaxOutstandingFrameCount},
+            uniformsBuffer{ctx.allocator, sizeof(DivUniforms), MaxOutstandingFrameCount},
+            clipsBuffer{ctx.allocator, sizeof(ClipUniform) * 4, MaxOutstandingFrameCount}
+        {}
+
+        FrameBufferedBuffer<DivPoint> atomsBuffer;
+        FrameBufferedBuffer<simd_float2> placementsBuffer;
+        FrameBufferedBuffer<DivUniforms> uniformsBuffer;
+        FrameBufferedBuffer<ClipUniform> clipsBuffer;
+    };
+
+    template <typename S = DivStorage>
+    struct Div {
+        static constexpr std::string_view elementName = "Div";
+
+        Div(UIContext& ctx):
+        desc{},
+        fragment{ctx}
+        {}
+        
+        DivDescriptor& getDescriptor()
+        {
+            return desc;
+        }
+        
+        Fragment<S>& getFragment()
+        {
+            return fragment;
+        }
+
+        std::any request(RequestTarget target, std::any payload) {
+            switch (target) {
+                case RequestTarget::Descriptor: 
+                {
+                    return desc.request(payload);
+                }
+                default: {
+                    return std::any{};
+                }
+            }
+        }
+
+        DivDescriptor desc;
+        Fragment<S> fragment;
+
+        using StorageType = S;
+        using UniformsType = DivUniforms;
+        using DescriptorType = DivDescriptor;
+    };
+
+    template <typename S = DivStorage, typename U = DivUniforms>
+    struct DivProcessor {
+        DivProcessor(UIContext& ctx):
+        ctx{ctx}
+        {}
+        
+        // pipeline specific
+        void buildPipeline(MTL::RenderPipelineState*& pipeline) {
+            MTL::Library* defaultLibrary = ctx.device->newDefaultLibrary();
+            MTL::RenderPipelineDescriptor* renderPipelineDescriptor = MTL::RenderPipelineDescriptor::alloc()->init();
+            
+            // set up vertex descriptor
+            MTL::VertexDescriptor* vertexDescriptor = MTL::VertexDescriptor::alloc()->init();
+            vertexDescriptor->attributes()->object(0)->setFormat(MTL::VertexFormat::VertexFormatFloat2);
+            vertexDescriptor->attributes()->object(0)->setOffset(0);
+            vertexDescriptor->attributes()->object(0)->setBufferIndex(0);
+            
+            vertexDescriptor->attributes()->object(1)->setFormat(MTL::VertexFormat::VertexFormatUInt);
+            vertexDescriptor->attributes()->object(1)->setOffset(sizeof(simd_float2));
+            vertexDescriptor->attributes()->object(1)->setBufferIndex(0);
+            
+            vertexDescriptor->layouts()->object(0)->setStride(sizeof(DivPoint));
+            
+            renderPipelineDescriptor->setVertexDescriptor(vertexDescriptor);
+            
+            
+            // set up vertex function
+            MTL::Function* vertexFunction = defaultLibrary->newFunction(NS::String::string("vertex_div", NS::UTF8StringEncoding));
+            renderPipelineDescriptor->setVertexFunction(vertexFunction);
+            
+            // color attachments
+            renderPipelineDescriptor->colorAttachments()->object(0)->setPixelFormat(ctx.view->colorPixelFormat());
+            renderPipelineDescriptor->colorAttachments()->object(0)->setBlendingEnabled(true);
+            renderPipelineDescriptor->colorAttachments()->object(0)->setAlphaBlendOperation(MTL::BlendOperationAdd);
+            renderPipelineDescriptor->colorAttachments()->object(0)->setSourceRGBBlendFactor(MTL::BlendFactorSourceAlpha);
+            renderPipelineDescriptor->colorAttachments()->object(0)->setDestinationRGBBlendFactor(MTL::BlendFactorOneMinusSourceAlpha);
+            renderPipelineDescriptor->colorAttachments()->object(0)->setSourceAlphaBlendFactor(MTL::BlendFactorSourceAlpha);
+            renderPipelineDescriptor->colorAttachments()->object(0)->setDestinationAlphaBlendFactor(MTL::BlendFactorOneMinusSourceAlpha);
+            
+            
+            renderPipelineDescriptor->setDepthAttachmentPixelFormat(ctx.view->depthStencilPixelFormat());
+            
+            
+            // set up fragment function
+            MTL::Function* fragmentFunction = defaultLibrary->newFunction(NS::String::string("fragment_div", NS::UTF8StringEncoding));
+            renderPipelineDescriptor->setFragmentFunction(fragmentFunction);
+            
+            
+            NS::Error* error = nullptr;
+            pipeline = ctx.device->newRenderPipelineState(renderPipelineDescriptor, &error);
+            
+            if (error != nullptr)
+                std::println("error in pipeline creation: {}", error->localizedDescription()->utf8String());
+            
+            
+            defaultLibrary->release();
+            renderPipelineDescriptor->release();
+            vertexDescriptor->release();
+            vertexFunction->release();
+        }
+        
+        
+        MTL::RenderPipelineState* getPipeline() {
+            static std::once_flag initFlag;
+            static MTL::RenderPipelineState* pipeline = nullptr;
+        
+            std::call_once(initFlag, [&](){
+                buildPipeline(pipeline);
+            });
+        
+            return pipeline;
+        }
+        
+        Measured measure(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, DivDescriptor& desc) {
+            Measured measured {};
+            measured.id = fragment.id;
+
+            SizeResolutionContext ctx {
+                .position = shared.position,
+                .top = shared.top,
+                .right = shared.right,
+                .bottom = shared.bottom,
+                .left = shared.left,
+                .requestedWidth = shared.width,
+                .requestedHeight = shared.height,
+                .availableWidth = constraints.availableWidth,
+                .availableHeight = constraints.availableHeight
+            };
+
+            auto resolvedSize = resolveSize(ctx);
+
+            measured.explicitWidth = resolvedSize.width;
+            measured.explicitHeight = resolvedSize.height;
+
+            return measured;
+        }
+        // resolve percents as explicit width/height, also resolve explicit width/height (like divs default 100% width?)
+        
+        // won't be problematic since we know constraints before hand... so percents can be resolved easily
+        // and also, we know 100% width so divs can be easily resolved. this makes sense
+        
+        // after we resolved the measurements, we can actually atomize... question is, do I need a new struct in between?
+        Atomized atomize(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, DivDescriptor& desc, Measured& measured) {
+            std::vector<Atom> atoms {};
+            
+            // get measurements
+            float width = measured.explicitWidth.value_or(0.0);
+            float height = measured.explicitHeight.value_or(0.0);
+            
+            // prepare buffer
+            size_t bufferLen = 6*sizeof(DivPoint);
+            
+            std::array<DivPoint, 6> atomPoints {{
+                {{0,0}, 0},
+                {{width,0}, 0},
+                {{0,height}, 0},
+                {{0,height}, 0},
+                {{width,0}, 0},
+                {{width,height}, 0},
+            }};
+            
+            // std::memcpy(atomsBuffer->contents(), atomPoints.data(), bufferLen);
+            fragment.fragmentStorage.atomsBuffer.write(ctx.frameIndex, atomPoints.data(), bufferLen);
+            
+            // finish allocating atom
+            Atom atom;
+            atom.atomBufferHandle = fragment.fragmentStorage.atomsBuffer.getBufferHandle(0);
+            atom.offset = 0;
+            atom.length = bufferLen;
+            atom.width = width;
+            atom.height = height;
+            
+            atoms.push_back(atom);
+            
+            return Atomized{
+                .id = fragment.id,
+                .atoms = atoms
+            };
+        }
+
+        LayoutState layout(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, DivDescriptor& desc, Measured& measured, Atomized& atomized, const SizeResult& sizeResult) {
+            auto li = toLayoutInput(shared, constraints.computedDisplay);
+            auto lr = ctx.layoutEngine.resolve(constraints, li, atomized, sizeResult);
+            return lr;
+        }
+        
+        // OHHH!  Do I need to alter my later passes to have a computed size? Computed width? Ok, makes sense.
+
+        template <LayoutStateType L>
+        Atomized postLayout(Fragment<S>& fragment, Constraints&, SharedDescriptor& shared, DivDescriptor& desc, Measured& measured, Atomized& atomized, L& layout) {
+            std::vector<Atom> atoms {};
+            
+            // get measurements
+            float width = layout.computedBox.width;
+            float height = layout.computedBox.height;
+
+            // prepare buffer
+            size_t bufferLen = 6*sizeof(DivPoint);
+            
+            std::array<DivPoint, 6> atomPoints {{
+                {{0,0}, 0},
+                {{width,0}, 0},
+                {{0,height}, 0},
+                {{0,height}, 0},
+                {{width,0}, 0},
+                {{width,height}, 0},
+            }};
+            
+            fragment.fragmentStorage.atomsBuffer.write(ctx.frameIndex, atomPoints.data(), bufferLen);
+            
+            // finish allocating atom
+            Atom atom;
+            atom.atomBufferHandle = fragment.fragmentStorage.atomsBuffer.getBufferHandle(0);
+            atom.offset = 0;
+            atom.length = bufferLen;
+            atom.width = width;
+            atom.height = height;
+            
+            atoms.push_back(atom);
+            
+            return Atomized{
+                .id = fragment.id,
+                .atoms = atoms
+            };
+        }
+        
+        template <LayoutStateType L>
+        Placed place(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, DivDescriptor& desc, Measured& measured, Atomized& atomized, L& lr)
+        {
+            std::vector<AtomPlacement> placements;
+            auto offsets = lr.atomOffsets;
+            
+            
+            // copy placements into buffer
+            size_t bufferLen = offsets.size()*sizeof(simd_float2);
+            fragment.fragmentStorage.placementsBuffer.write(ctx.frameIndex, offsets.data(), bufferLen);
+            
+            // make the actual placement
+            for (int i = 0; i < offsets.size(); ++i) {
+                placements.push_back({
+                    .placementBufferHandle = fragment.fragmentStorage.placementsBuffer.getBufferHandle(0),
+                    .x = offsets[i].x,
+                    .y = offsets[i].y
+                });
+            }
+            
+            return Placed{
+                .id = fragment.id,
+                .placements = placements
+            };
+        }
+
+        template <LayoutStateType L>
+        Finalized<U> finalize(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, DivDescriptor& desc, Measured& measured, Atomized& atomized, L& layout, Placed& placed)
+        {
+            float borderWidth = 0.0;
+
+            if (shared.borderWidth.unit == Unit::Px) {
+                borderWidth = shared.borderWidth.resolveOr(constraints.availableWidth);
+            }
+
+            float minDim = std::min(layout.computedBox.width, layout.computedBox.height);
+            simd_float2 cornerRadius {
+                shared.cornerRadius.resolveOr(Size::px(minDim)),
+                shared.cornerRadius.resolveOr(Size::px(minDim))
+            };
+
+            DivStyleUniforms styleUniforms{
+                .color = desc.color,
+                .cornerRadius = cornerRadius,
+                .borderWidth = borderWidth,
+                .borderColor = shared.borderColor
+            };
+            
+            // geometry uniforms
+            DivGeometryUniforms geometryUniforms {};
+            
+            if (placed.placements.size() > 0) {
+                auto offset = placed.placements.front();
+
+                simd_float2 halfExtent { layout.computedBox.width / 2.0f, layout.computedBox.height / 2.0f };
+                simd_float2 rectCenter { offset.x + halfExtent.x, offset.y + halfExtent.y };
+                
+                geometryUniforms.halfExtent = halfExtent;
+                geometryUniforms.rectCenter = rectCenter;
+            }
+
+            geometryUniforms.numClips = static_cast<uint32_t>(layout.clipUniforms.size());
+            
+            DivUniforms uniforms {
+                .style = styleUniforms,
+                .geometry = geometryUniforms
+            };
+
+            fragment.fragmentStorage.uniformsBuffer.write(ctx.frameIndex, &uniforms, sizeof(DivUniforms));
+            fragment.fragmentStorage.clipsBuffer.write(
+                ctx.frameIndex,
+                layout.clipUniforms.data(),
+                sizeof(ClipUniform) * layout.clipUniforms.size()
+            );
+            
+            return Finalized<U> {
+                .id = fragment.id,
+                .atomized = atomized,
+                .placed = placed,
+                .uniforms = uniforms
+            };
+        }
+        
+        void encode(MTL::RenderCommandEncoder* encoder, Fragment<S>& fragment, Finalized<U>& finalized) {
+            auto pipeline = getPipeline();
+            encoder->setRenderPipelineState(pipeline);
+            
+            // vertex buffers
+            auto atomBuf = fragment.fragmentStorage.atomsBuffer.getBuffer(ctx.frameIndex);
+            auto atomPlacementBuf = fragment.fragmentStorage.placementsBuffer.getBuffer(ctx.frameIndex);
+            auto frameInfoBuf = ctx.frameInfoBuffer.get();
+            
+            // fragment buffers
+            auto uniformsBuf = fragment.fragmentStorage.uniformsBuffer.getBuffer(ctx.frameIndex);
+            auto clipsBuf = fragment.fragmentStorage.clipsBuffer.getBuffer(ctx.frameIndex);
+            
+            encoder->setVertexBuffer(atomBuf, 0, 0);
+            encoder->setVertexBuffer(atomPlacementBuf, 0, 1);
+            encoder->setVertexBuffer(frameInfoBuf, 0, 2);
+            
+            encoder->setFragmentBuffer(uniformsBuf, 0, 0);
+            encoder->setFragmentBuffer(clipsBuf, 0, 1);
+            
+            encoder->drawPrimitives(MTL::PrimitiveTypeTriangle, NS::UInteger(0), 6);
+        }
+
+        std::function<bool(HitTestContext<U>& context, simd_float2 testPoint)> setupHitTestFunction() {
+            auto hitTestFunction = [](HitTestContext<U>& context, simd_float2 testPoint){
+                const auto& box = std::visit(
+                    [](const auto& state) -> const layout::LayoutBox& { return state.computedBox; },
+                    context.layout
+                );
+                simd_float2 halfExtent {box.width / 2.0f, box.height / 2.0f};
+                simd_float2 centerPoint {box.x + halfExtent.x, box.y + halfExtent.y};
+                simd_float2 localTestPoint = testPoint - centerPoint;
+                simd_float2 cr = context.finalized.uniforms.style.cornerRadius;
+
+                return rounded_rect_sdf(localTestPoint, halfExtent, cr) < 0.0;
+            };
+
+            return hitTestFunction;
+        }
+        
+        // Shared resources (optional)
+        using UniformsType = U;
+
+
+        // Shared context
+        UIContext& ctx;
+    };
+
+
+
+}
