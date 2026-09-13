@@ -103,7 +103,6 @@ namespace layout {
                 continue;
 
             auto selfAlign = childAsPtr->getAlignSelf();
-            Measured childMeasured = *childAsPtr->measured;
 
             SizeRequest childRequest {
                 .position = childAsPtr->shared.position,
@@ -156,7 +155,7 @@ namespace layout {
                 .trackIntrinsicWidth = flex.axis.isRow ? true : false,
             });
 
-            SizeResult childSizing = evaluateSize(tree, childAsPtr, frameInfo, preparedChildConstraints, childMeasured, childRequest, sizeCache);
+            SizeResult childSizing = evaluateSize(tree, childAsPtr, frameInfo, preparedChildConstraints, childRequest, sizeCache);
 
             const SizeState& preferredMainSize = flex.axis.mainSize(childSizing.outerSize);
             const auto& measuredMainIntrinsicSizes = flex.axis.isRow ? childSizing.widthIntrinsicSizes : childSizing.heightIntrinsicSizes;
@@ -219,7 +218,6 @@ namespace layout {
             for (auto& item : line.items) {
                 auto childNode = node->children[item.childIndex].get();
                 auto preparedChildConstraints = prepareChildConstraints();
-                Measured childMeasured = *childNode->measured;
 
                 SizePair childAvailableSize = availableSize;
                 flex.axis.mainSize(childAvailableSize) = item.usedMainSize;
@@ -269,7 +267,7 @@ namespace layout {
 
                 flex.axis.mainSize(childRequest.override) = item.usedMainSize;
                 
-                SizeResult childSizing = evaluateSize(tree, childNode, frameInfo, preparedChildConstraints, childMeasured, childRequest, sizeCache);
+                SizeResult childSizing = evaluateSize(tree, childNode, frameInfo, preparedChildConstraints, childRequest, sizeCache);
 
                 if (std::holds_alternative<float>(flex.axis.crossSize(childSizing.outerSize))) {
                     item.hypotheticalCrossSize = std::get<float>(flex.axis.crossSize(childSizing.outerSize));
@@ -328,7 +326,6 @@ namespace layout {
         for (auto& placement : placements) {
             size_t i = placement.childIndex;
             auto childNode = node->children[i].get();
-            Measured childMeasured = *childNode->measured;
 
             auto preparedChildConstraints = prepareChildConstraints();
 
@@ -385,7 +382,7 @@ namespace layout {
                 childRequest.automaticWidth = placement.alignment == AlignItems::Stretch ? AutomaticSizing::UseAvailable : AutomaticSizing::UseContent;
             }
 
-            tree.layoutRecursive(childNode, frameInfo, std::move(preparedChildConstraints), childMeasured, mutate, std::move(childRequest));
+            tree.layoutRecursive(childNode, frameInfo, std::move(preparedChildConstraints), mutate, std::move(childRequest));
         }
 
         float minimumMainContribution = 0.0f;

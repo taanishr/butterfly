@@ -10,7 +10,6 @@
 #include "fragment_types.hpp"
 #include <format>
 #include <mutex>
-#include <optional>
 #include <print>
 #include "element.hpp"
 #include "events.hpp"
@@ -31,10 +30,7 @@ namespace elements {
     using layout::LayoutInput;
     using layout::LayoutState;
     using layout::LayoutStateType;
-    using layout::Measured;
     using layout::Placed;
-    using layout::SizeResolutionContext;
-    using layout::resolveSize;
     using layout::toLayoutInput;
     using runtime::HitTestContext;
     using runtime::UIContext;
@@ -224,65 +220,35 @@ namespace elements {
             return pipeline;
         }
         
-        Measured measure(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, DivDescriptor& desc) {
-            Measured measured {};
-            measured.id = fragment.id;
-
-            SizeResolutionContext ctx {
-                .position = shared.position,
-                .top = shared.top,
-                .right = shared.right,
-                .bottom = shared.bottom,
-                .left = shared.left,
-                .requestedWidth = shared.width,
-                .requestedHeight = shared.height,
-                .availableWidth = constraints.availableWidth,
-                .availableHeight = constraints.availableHeight
-            };
-
-            auto resolvedSize = resolveSize(ctx);
-
-            measured.explicitWidth = resolvedSize.width;
-            measured.explicitHeight = resolvedSize.height;
-
-            return measured;
-        }
         // resolve percents as explicit width/height, also resolve explicit width/height (like divs default 100% width?)
         
         // won't be problematic since we know constraints before hand... so percents can be resolved easily
         // and also, we know 100% width so divs can be easily resolved. this makes sense
         
         // after we resolved the measurements, we can actually atomize... question is, do I need a new struct in between?
-        Atomized atomize(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, DivDescriptor& desc, Measured& measured) {
+        Atomized atomize(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, DivDescriptor& desc) {
             std::vector<Atom> atoms {};
-            
-            // get measurements
-            float width = measured.explicitWidth.value_or(0.0);
-            float height = measured.explicitHeight.value_or(0.0);
             
             // prepare buffer
             size_t bufferLen = 6*sizeof(DivPoint);
-            
+
             std::array<DivPoint, 6> atomPoints {{
                 {{0,0}, 0},
-                {{width,0}, 0},
-                {{0,height}, 0},
-                {{0,height}, 0},
-                {{width,0}, 0},
-                {{width,height}, 0},
+                {{0,0}, 0},
+                {{0,0}, 0},
+                {{0,0}, 0},
+                {{0,0}, 0},
+                {{0,0}, 0},
             }};
             
             // std::memcpy(atomsBuffer->contents(), atomPoints.data(), bufferLen);
             fragment.fragmentStorage.atomsBuffer.write(ctx.frameIndex, atomPoints.data(), bufferLen);
-            
+
             // finish allocating atom
             Atom atom;
             atom.atomBufferHandle = fragment.fragmentStorage.atomsBuffer.getBufferHandle(0);
             atom.offset = 0;
             atom.length = bufferLen;
-            atom.width = width;
-            atom.height = height;
-            
             atoms.push_back(atom);
             
             return Atomized{
@@ -291,7 +257,7 @@ namespace elements {
             };
         }
 
-        LayoutState layout(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, DivDescriptor& desc, Measured& measured, Atomized& atomized, const SizeResult& sizeResult) {
+        LayoutState layout(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, DivDescriptor& desc, Atomized& atomized, const SizeResult& sizeResult) {
             auto li = toLayoutInput(shared, constraints.computedDisplay);
             auto lr = ctx.layoutEngine.resolve(constraints, li, atomized, sizeResult);
             return lr;
@@ -300,7 +266,7 @@ namespace elements {
         // OHHH!  Do I need to alter my later passes to have a computed size? Computed width? Ok, makes sense.
 
         template <LayoutStateType L>
-        Atomized postLayout(Fragment<S>& fragment, Constraints&, SharedDescriptor& shared, DivDescriptor& desc, Measured& measured, Atomized& atomized, L& layout) {
+        Atomized postLayout(Fragment<S>& fragment, Constraints&, SharedDescriptor& shared, DivDescriptor& desc, Atomized& atomized, L& layout) {
             std::vector<Atom> atoms {};
             
             // get measurements
@@ -338,7 +304,7 @@ namespace elements {
         }
         
         template <LayoutStateType L>
-        Placed place(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, DivDescriptor& desc, Measured& measured, Atomized& atomized, L& lr)
+        Placed place(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, DivDescriptor& desc, Atomized& atomized, L& lr)
         {
             std::vector<AtomPlacement> placements;
             auto offsets = lr.atomOffsets;
@@ -364,12 +330,15 @@ namespace elements {
         }
 
         template <LayoutStateType L>
-        Finalized<U> finalize(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, DivDescriptor& desc, Measured& measured, Atomized& atomized, L& layout, Placed& placed)
+        Finalized<U> finalize(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, DivDescriptor& desc, Atomized& atomized, L& layout, Placed& placed)
         {
             float borderWidth = 0.0;
 
             if (shared.borderWidth.unit == Unit::Px) {
-                borderWidth = shared.borderWidth.resolveOr(constraints.availableWidth);
+                SizeState resolvedBorderWidth = calculateSize(shared.borderWidth, constraints.availableWidth);
+                if (std::holds_alternative<float>(resolvedBorderWidth)) {
+                    borderWidth = std::get<float>(resolvedBorderWidth);
+                }
             }
 
             float minDim = std::min(layout.computedBox.width, layout.computedBox.height);

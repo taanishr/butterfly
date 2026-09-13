@@ -1511,7 +1511,6 @@ namespace layout {
             if (childPos == Position::Absolute || childPos == Position::Fixed)
                 continue;
 
-            Measured childMeasured = *childNode->measured;
             SizeRequest childRequest {
                 .position = childNode->shared.position,
                 .specified = {.width = childNode->shared.width, .height = childNode->shared.height},
@@ -1548,7 +1547,7 @@ namespace layout {
                 .trackIntrinsicWidth = false,
             });
 
-            const SizeResult childSizing = evaluateSize(tree, childNode, frameInfo, preparedChildConstraints, childMeasured, childRequest, sizeCache);
+            const SizeResult childSizing = evaluateSize(tree, childNode, frameInfo, preparedChildConstraints, childRequest, sizeCache);
 
             const auto& intrinsicWidths = *childSizing.widthIntrinsicSizes;
             float minContent = std::get<float>(intrinsicWidths.minimum);
@@ -1611,7 +1610,6 @@ namespace layout {
             auto& placement = item.placement;
             float cellX = gridLayout.colTracks[*placement.colStart].offset;
             float cellW = gridLayout.colTracks[*placement.colEnd - 1].offset + gridLayout.colTracks[*placement.colEnd - 1].size - cellX;
-            Measured childMeasured = *childNode->measured;
 
             JustifyItems effectiveJustify = justifyItems;
             auto selfJustify = childNode->getJustifySelf();
@@ -1680,7 +1678,7 @@ namespace layout {
                 .trackIntrinsicWidth = false,
             });
 
-            SizeResult childSizing = evaluateSize( tree, childNode, frameInfo, preparedChildConstraints, childMeasured, childRequest, sizeCache);
+            SizeResult childSizing = evaluateSize( tree, childNode, frameInfo, preparedChildConstraints, childRequest, sizeCache);
 
             const auto& intrinsicHeights = *childSizing.heightIntrinsicSizes;
             float minContent = std::get<float>(intrinsicHeights.minimum);
@@ -1732,7 +1730,6 @@ namespace layout {
         for (auto& item : gridLayout.items) {
             auto childNode = node->children[item.childIndex].get();
             auto& placement = item.placement;
-            Measured childMeasured = *childNode->measured;
 
             auto& colTracks = gridLayout.colTracks;
             auto& rowTracks = gridLayout.rowTracks;
@@ -1840,7 +1837,7 @@ namespace layout {
                 .trackIntrinsicWidth = false,
             });
 
-            const SizeResult childSizing = evaluateSize(tree, childNode, frameInfo, preparedChildConstraints, childMeasured, childRequest, sizeCache);
+            const SizeResult childSizing = evaluateSize(tree, childNode, frameInfo, preparedChildConstraints, childRequest, sizeCache);
 
             // positioning adjustments
             if (std::holds_alternative<float>(childSizing.outerSize.width)) {
@@ -1871,7 +1868,7 @@ namespace layout {
             
             tree.layoutRecursive(
                 childNode, frameInfo, preparedChildConstraints,
-                childMeasured, mutate, childRequest
+                mutate, childRequest
             );
         }
     }

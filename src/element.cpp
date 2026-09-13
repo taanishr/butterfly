@@ -2,6 +2,7 @@
 #include "fragment_types.hpp"
 #include "sizing.hpp"
 #include "new_arch.hpp"
+#include "render_tree.hpp"
 #include "utf8.hpp"
 #include "textShaper.hpp"
 #include <algorithm>
@@ -550,7 +551,7 @@ namespace tree {
     }
     
 
-    void precomputeMargins(TreeNode* node, Constraints& constraints, std::unordered_map<ChainID, CollapsedChain>& collapsedChainMap) {
+    void precomputeMargins(RenderTree& tree, TreeNode* node, Constraints& constraints, std::unordered_map<ChainID, CollapsedChain>& collapsedChainMap) {
         constraints.replacedAttributes = {};
 
         if (node->preLayout->marginMetadata.topChainId.has_value()) {
@@ -595,13 +596,11 @@ namespace tree {
                 contentHeight = std::max(contentHeight, atom.height);
             }
 
-            auto resolvedWidth = node->shared.width.resolve(
-                constraints.availableWidth
-            );
-            if (resolvedWidth) {
-                contentWidth = *resolvedWidth;
-            } else if (!constraints.availableWidth.isAuto()) {
-                contentWidth = constraints.availableWidth.value;
+            SizeState resolvedWidth = calculateSize(node->shared.width, constraints.availableWidth);
+            if (std::holds_alternative<float>(resolvedWidth)) {
+                contentWidth = std::get<float>(resolvedWidth);
+            } else if (std::holds_alternative<float>(constraints.availableWidth)) {
+                contentWidth = std::get<float>(constraints.availableWidth);
             }
 
             LayoutInput li{
@@ -625,18 +624,43 @@ namespace tree {
 
         node->preLayout->resolvedMargins = margins;
 
-        auto& measured = *node->measured;
+        SizeRequest sizeRequest {
+            .position = node->shared.position,
+            .specified = {.width = node->shared.width, .height = node->shared.height},
+            .minimum = {.width = node->shared.minWidth, .height = node->shared.minHeight},
+            .maximum = {
+                .width = node->shared.maxWidth ? SizeState{*node->shared.maxWidth} : SizeState{std::monostate{}},
+                .height = node->shared.maxHeight ? SizeState{*node->shared.maxHeight} : SizeState{std::monostate{}},
+            },
+            .available = {.width = constraints.availableWidth, .height = constraints.availableHeight},
+            .top = node->shared.top,
+            .right = node->shared.right,
+            .bottom = node->shared.bottom,
+            .left = node->shared.left,
+            .paddingTop = node->shared.paddingTop.value_or(node->shared.padding),
+            .paddingRight = node->shared.paddingRight.value_or(node->shared.padding),
+            .paddingBottom = node->shared.paddingBottom.value_or(node->shared.padding),
+            .paddingLeft = node->shared.paddingLeft.value_or(node->shared.padding),
+            .borderWidth = node->shared.borderWidth,
+            .margins = margins,
+            .aspectRatio = node->shared.aspectRatio,
+            .automaticWidth = (position == Position::Absolute || position == Position::Fixed) ? AutomaticSizing::UseContent : AutomaticSizing::UseAvailable,
+            .automaticHeight = AutomaticSizing::UseContent,
+            .automaticMinimumWidth = AutomaticMinimum::Zero,
+            .automaticMinimumHeight = AutomaticMinimum::Zero,
+            .intrinsicWidthRequest = IntrinsicRequest::None,
+            .intrinsicHeightRequest = IntrinsicRequest::None,
+        };
+
+        SizeResult sizeResult = evaluateSize(tree, node, constraints.frameInfo, constraints, sizeRequest);
+
         Constraints childConstraints{};
-        childConstraints.availableWidth = measured.explicitWidth
-            ? Size::px(*measured.explicitWidth)
-            : Size::autoSize();
-        childConstraints.availableHeight = measured.explicitHeight
-            ? Size::px(*measured.explicitHeight)
-            : Size::autoSize();
+        childConstraints.availableWidth = sizeResult.innerSize.width;
+        childConstraints.availableHeight = sizeResult.innerSize.height;
         childConstraints.frameInfo = constraints.frameInfo;
 
         for (auto& child : node->children) {
-            precomputeMargins(child.get(), childConstraints, collapsedChainMap);
+            precomputeMargins(tree, child.get(), childConstraints, collapsedChainMap);
         }
     }
 

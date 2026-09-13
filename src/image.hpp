@@ -28,11 +28,7 @@ namespace elements {
     using layout::Finalized;
     using layout::LayoutState;
     using layout::LayoutStateType;
-    using layout::Measured;
     using layout::Placed;
-    using layout::ResolvedSize;
-    using layout::SizeResolutionContext;
-    using layout::resolveSize;
     using layout::toLayoutInput;
     using runtime::HitTestContext;
     using runtime::UIContext;
@@ -276,42 +272,15 @@ namespace elements {
             storage.activeRendition = renditionKey;
         }
 
-        Measured measure(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, ImageDescriptor& desc) {
-            Measured measured;
-            measured.id = fragment.id;
-
+        Atomized atomize(Fragment<S>& fragment, Constraints&, SharedDescriptor& shared, ImageDescriptor& desc) {
             if (!desc.path.empty()) {
                 initializeAsset(fragment, desc.path);
             }
 
-            SizeResolutionContext sizeCtx {
-                .position = shared.position,
-                .top = shared.top,
-                .right = shared.right,
-                .bottom = shared.bottom,
-                .left = shared.left,
-                .requestedWidth = shared.width,
-                .requestedHeight = shared.height,
-                .availableWidth = constraints.availableWidth,
-                .availableHeight = constraints.availableHeight
-            };
-
-            ResolvedSize resolvedSize = resolveSize(sizeCtx);
-
-            auto resolvedWidth = resolvedSize.width;
-            auto resolvedHeight = resolvedSize.height;
-
-            measured.explicitWidth = resolvedWidth;
-            measured.explicitHeight = resolvedHeight;
-
-            return measured;
-        }
-
-        Atomized atomize(Fragment<S>& fragment, Constraints&, SharedDescriptor& shared, ImageDescriptor& desc, Measured& measured) {
             std::vector<Atom> atoms;
 
-            float width = measured.explicitWidth.value_or(0.0);
-            float height = measured.explicitHeight.value_or(0.0);
+            float width = 0.0f;
+            float height = 0.0f;
 
             // auto atomsBuffer = fragment.fragmentStorage.atomsBuffer.get();
             size_t bufferLen = 6 * sizeof(ImagePoint);
@@ -339,14 +308,14 @@ namespace elements {
             return Atomized{ .id = fragment.id, .atoms = atoms };
         }
 
-        LayoutState layout(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, ImageDescriptor& desc, Measured& measured, Atomized& atomized, const SizeResult& sizeResult) {
+        LayoutState layout(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, ImageDescriptor& desc, Atomized& atomized, const SizeResult& sizeResult) {
             auto li = toLayoutInput(shared, constraints.computedDisplay);
             auto lr = ctx.layoutEngine.resolve(constraints, li, atomized, sizeResult);
             return lr;
         }
 
         template <LayoutStateType L>
-        Atomized postLayout(Fragment<S>& fragment, Constraints&, SharedDescriptor& shared, ImageDescriptor& desc, Measured& measured, Atomized& atomized, L& layout) {
+        Atomized postLayout(Fragment<S>& fragment, Constraints&, SharedDescriptor& shared, ImageDescriptor& desc, Atomized& atomized, L& layout) {
                         std::vector<Atom> atoms {};
             
             float width = layout.computedBox.width;
@@ -391,7 +360,7 @@ namespace elements {
         };
 
         template <LayoutStateType L>
-        Placed place(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, ImageDescriptor& desc, Measured&, Atomized& atomized, L& lr) {
+        Placed place(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, ImageDescriptor& desc, Atomized& atomized, L& lr) {
             std::vector<AtomPlacement> placements;
 
             auto offsets = lr.atomOffsets;
@@ -413,11 +382,14 @@ namespace elements {
         }
 
         template <LayoutStateType L>
-        Finalized<U> finalize(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, ImageDescriptor& desc, Measured& measured, Atomized& atomized, L& layout, Placed& placed) {
+        Finalized<U> finalize(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, ImageDescriptor& desc, Atomized& atomized, L& layout, Placed& placed) {
             float borderWidth = 0.0;
 
             if (shared.borderWidth.unit == Unit::Px) {
-                borderWidth = shared.borderWidth.resolveOr(constraints.availableWidth);
+                SizeState resolvedBorderWidth = calculateSize(shared.borderWidth, constraints.availableWidth);
+                if (std::holds_alternative<float>(resolvedBorderWidth)) {
+                    borderWidth = std::get<float>(resolvedBorderWidth);
+                }
             }
 
             simd_float2 cornerRadius {

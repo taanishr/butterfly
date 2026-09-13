@@ -29,7 +29,6 @@ namespace elements {
     using layout::Finalized;
     using layout::LayoutState;
     using layout::LayoutStateType;
-    using layout::Measured;
     using layout::Placed;
     using layout::toLayoutInput;
     using runtime::HitTestContext;
@@ -254,16 +253,6 @@ namespace elements {
             return pipeline;
         }
         
-        Measured measure(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, TextDescriptor& desc) {
-            Measured measured;
-
-            measured.id = fragment.id;
-            measured.explicitWidth  = 0.0;
-            measured.explicitHeight = 0.0;
-
-            return measured;
-        }
-
         std::array<TextPoint, 6> makeAtomPoints(const Quad& quad, int metadataIndex, int id, simd_float2 shapingOffset = {}) {
             return std::array<TextPoint,6>{
                 TextPoint{ .point = quad.topLeft, .shapingOffset = shapingOffset, .metadataIndex = metadataIndex, .id = id },
@@ -449,7 +438,7 @@ namespace elements {
             return shapedRun;
         }
 
-        Atomized atomize(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, TextDescriptor& desc, Measured&) {
+        Atomized atomize(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, TextDescriptor& desc) {
             std::vector<Atom> atoms;
             std::vector<TextPoint> allAtomPoints;
             std::vector<int> metadata;
@@ -490,7 +479,7 @@ namespace elements {
             return Atomized{ .id = fragment.id, .atoms = std::move(atoms) };
         }
 
-        LayoutState layout(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, TextDescriptor& desc, Measured& measured, Atomized& atomized, const SizeResult& sizeResult) {
+        LayoutState layout(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, TextDescriptor& desc, Atomized& atomized, const SizeResult& sizeResult) {
             auto li = toLayoutInput(shared, constraints.computedDisplay);
             auto lr = ctx.layoutEngine.resolve(constraints, li, atomized, sizeResult);
             std::visit([&](auto& state) { state.inlineFormatting = constraints.inlineFormatting; }, lr);
@@ -498,7 +487,7 @@ namespace elements {
         }
 
         template <LayoutStateType L>
-        Atomized postLayout(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, TextDescriptor& desc, Measured& measured, Atomized& atomized, L& layout) {
+        Atomized postLayout(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, TextDescriptor& desc, Atomized& atomized, L& layout) {
             atomized.usesDrawableAtoms = false;
             if (!constraints.textOverflow || !constraints.textOverflow->drawsEnding()) return atomized;
 
@@ -659,7 +648,7 @@ namespace elements {
         };
 
         template <LayoutStateType L>
-        Placed place(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, TextDescriptor& desc, Measured& measured, Atomized& atomized, L& lr) {
+        Placed place(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, TextDescriptor& desc, Atomized& atomized, L& lr) {
             std::vector<AtomPlacement> placements;
             
             const auto& offsets = atomized.usesDrawableAtoms
@@ -683,7 +672,7 @@ namespace elements {
         }
         
         template <LayoutStateType L>
-        Finalized<U> finalize(Fragment<S>& fragment, Constraints&, SharedDescriptor& shared, TextDescriptor& desc, Measured& measured, Atomized& atomized, L& layout, Placed& placed) {
+        Finalized<U> finalize(Fragment<S>& fragment, Constraints&, SharedDescriptor& shared, TextDescriptor& desc, Atomized& atomized, L& layout, Placed& placed) {
             float fontSize;
 
             if (desc.fontSize.unit == Unit::Pt) {

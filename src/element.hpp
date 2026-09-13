@@ -25,7 +25,6 @@ namespace elements {
     using layout::Constraints;
     using layout::Finalized;
     using layout::LayoutState;
-    using layout::Measured;
     using layout::Placed;
     using runtime::HitTestContext;
     using runtime::UIContext;
@@ -61,7 +60,6 @@ namespace elements {
         Constraints& constraints,
         SharedDescriptor& shared,
         D& desc,
-        Measured& measured,
         Atomized& atomized,
         const SizeResult& sizeResult,
         Placed& placed,
@@ -69,26 +67,24 @@ namespace elements {
         layout::BlockState blockState,
         MTL::RenderCommandEncoder* encoder
     ) {
-        { proc.measure(fragment, constraints, shared, desc) } -> std::same_as<Measured>;
-        { proc.atomize(fragment, constraints, shared, desc, measured) } -> std::same_as<Atomized>;
-        { proc.layout(fragment, constraints, shared, desc, measured, atomized, sizeResult) } -> std::same_as<LayoutState>;
+        { proc.atomize(fragment, constraints, shared, desc) } -> std::same_as<Atomized>;
+        { proc.layout(fragment, constraints, shared, desc, atomized, sizeResult) } -> std::same_as<LayoutState>;
 
-        { proc.postLayout(fragment, constraints, shared, desc, measured, atomized, blockState) } -> std::same_as<Atomized>;
+        { proc.postLayout(fragment, constraints, shared, desc, atomized, blockState) } -> std::same_as<Atomized>;
 
-        { proc.place(fragment, constraints, shared, desc, measured, atomized, blockState) } -> std::same_as<Placed>;
+        { proc.place(fragment, constraints, shared, desc, atomized, blockState) } -> std::same_as<Placed>;
 
-        { proc.finalize(fragment, constraints, shared, desc, measured, atomized, blockState, placed) } -> std::same_as<Finalized<U>>;
+        { proc.finalize(fragment, constraints, shared, desc, atomized, blockState, placed) } -> std::same_as<Finalized<U>>;
         { proc.setupHitTestFunction() } -> std::same_as<std::function<bool(HitTestContext<U>&, simd_float2)>>;
         proc.encode(encoder, fragment, finalized);
     };
 
     struct ElementBase {
-        virtual Measured measure(Constraints& constraints, SharedDescriptor& shared) = 0;
-        virtual Atomized atomize(Constraints& constraints, SharedDescriptor& shared, Measured& measured) = 0;
-        virtual LayoutState layout(Constraints& constraints, SharedDescriptor& shared, Measured& measured, Atomized& atomized, const SizeResult& sizeResult) = 0;
-        virtual Atomized postLayout(Constraints& constraints, SharedDescriptor& shared, Measured& measured, Atomized& atomized, LayoutState& layout) = 0;
-        virtual Placed place(Constraints& constraints, SharedDescriptor& shared, Measured& measured, Atomized& atomized, LayoutState& layout) = 0;
-        virtual std::any finalize(Constraints& constraints, SharedDescriptor& shared, Measured& measured, Atomized& atomized, LayoutState& layout, Placed& placed) = 0;
+        virtual Atomized atomize(Constraints& constraints, SharedDescriptor& shared) = 0;
+        virtual LayoutState layout(Constraints& constraints, SharedDescriptor& shared, Atomized& atomized, const SizeResult& sizeResult) = 0;
+        virtual Atomized postLayout(Constraints& constraints, SharedDescriptor& shared, Atomized& atomized, LayoutState& layout) = 0;
+        virtual Placed place(Constraints& constraints, SharedDescriptor& shared, Atomized& atomized, LayoutState& layout) = 0;
+        virtual std::any finalize(Constraints& constraints, SharedDescriptor& shared, Atomized& atomized, LayoutState& layout, Placed& placed) = 0;
         virtual std::any request(RequestTarget target, std::any& payload) = 0;
         virtual void encode(MTL::RenderCommandEncoder* encoder, std::any& finalized) = 0;
         virtual std::string_view elementTypeName() const = 0;
@@ -114,33 +110,29 @@ namespace elements {
             hitTestFunction = processor.setupHitTestFunction();
         }
 
-        Measured measure(Constraints& constraints, SharedDescriptor& shared) override {
-            return processor.measure(element.getFragment(), constraints, shared, element.getDescriptor());
+        Atomized atomize(Constraints& constraints, SharedDescriptor& shared) override {
+            return processor.atomize(element.getFragment(), constraints, shared, element.getDescriptor());
         }
 
-        Atomized atomize(Constraints& constraints, SharedDescriptor& shared, Measured& measured) override {
-            return processor.atomize(element.getFragment(), constraints, shared, element.getDescriptor(), measured);
+        LayoutState layout(Constraints& constraints, SharedDescriptor& shared, Atomized& atomized, const SizeResult& sizeResult) override {
+            return processor.layout(element.getFragment(), constraints, shared, element.getDescriptor(), atomized, sizeResult);
         }
 
-        LayoutState layout(Constraints& constraints, SharedDescriptor& shared, Measured& measured, Atomized& atomized, const SizeResult& sizeResult) override {
-            return processor.layout(element.getFragment(), constraints, shared, element.getDescriptor(), measured, atomized, sizeResult);
-        }
-
-        Atomized postLayout(Constraints& constraints, SharedDescriptor& shared, Measured& measured, Atomized& atomized, LayoutState& layout) override {
+        Atomized postLayout(Constraints& constraints, SharedDescriptor& shared, Atomized& atomized, LayoutState& layout) override {
             return std::visit([&](auto& state) {
-                return processor.postLayout(element.getFragment(), constraints, shared, element.getDescriptor(), measured, atomized, state);
+                return processor.postLayout(element.getFragment(), constraints, shared, element.getDescriptor(), atomized, state);
             }, layout);
         }
 
-        Placed place(Constraints& constraints, SharedDescriptor& shared, Measured& measured, Atomized& atomized, LayoutState& layout) override {
+        Placed place(Constraints& constraints, SharedDescriptor& shared, Atomized& atomized, LayoutState& layout) override {
             return std::visit([&](auto& state) {
-                return processor.place(element.getFragment(), constraints, shared, element.getDescriptor(), measured, atomized, state);
+                return processor.place(element.getFragment(), constraints, shared, element.getDescriptor(), atomized, state);
             }, layout);
         }
 
-        std::any finalize(Constraints& constraints, SharedDescriptor& shared, Measured& measured, Atomized& atomized, LayoutState& layout, Placed& placed) override {
+        std::any finalize(Constraints& constraints, SharedDescriptor& shared, Atomized& atomized, LayoutState& layout, Placed& placed) override {
             auto finalized = std::visit([&](auto& state) {
-                return processor.finalize(element.getFragment(), constraints, shared, element.getDescriptor(), measured, atomized, state, placed);
+                return processor.finalize(element.getFragment(), constraints, shared, element.getDescriptor(), atomized, state, placed);
             }, layout);
             auto finalizedErased = finalized;
             return finalizedErased;
@@ -199,6 +191,8 @@ namespace elements {
 }
 
 namespace tree {
+    struct RenderTree;
+
     using elements::Element;
     using elements::ElementBase;
     using elements::ElementType;
@@ -209,7 +203,6 @@ namespace tree {
     using layout::LayoutResult;
     using layout::LineBox;
     using layout::LineFragment;
-    using layout::Measured;
     using layout::Placed;
     using layout::PreLayoutResult;
     using runtime::Event;
@@ -423,7 +416,6 @@ namespace tree {
         uint64_t paintPreorderIndex;
         uint64_t paintPostorderIndex;
 
-        std::optional<Measured> measured;
         std::optional<Atomized> atomized;
         std::optional<PreLayoutResult> preLayout;
         std::optional<LayoutResult> layout;
@@ -454,7 +446,7 @@ namespace tree {
         layout::Direction baseDirection
     );
 
-    void precomputeMargins(TreeNode* node, Constraints& constraints, std::unordered_map<ChainID, CollapsedChain>& collapsedChainMap);
+    void precomputeMargins(RenderTree& tree, TreeNode* node, Constraints& constraints, std::unordered_map<ChainID, CollapsedChain>& collapsedChainMap);
     
     // full blown inline context
     std::shared_ptr<layout::InlineFormattingContext> buildInlineBoxes(TreeNode* node, const InlineSizingInput& sizing);

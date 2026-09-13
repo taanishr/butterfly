@@ -41,7 +41,6 @@ namespace tree {
         std::vector<TreeNode*> hitTestAll(simd_float2 point);
         
 
-        void measurePhase(TreeNode* node, Constraints& constraints);
         Result<void> atomizePhase(
             TreeNode* node,
             Constraints& constraints
@@ -53,8 +52,7 @@ namespace tree {
         void layoutPhase(
             TreeNode* node,
             const FrameInfo& frameInfo,
-            Constraints constraints,
-            layout::Measured measured
+            Constraints constraints
         );
     
         void postLayoutPhase(TreeNode* node, const FrameInfo& frameInfo, Constraints& constraints,
@@ -67,7 +65,6 @@ namespace tree {
             TreeNode* node,
             const FrameInfo& frameInfo,
             Constraints constraints,
-            layout::Measured measured,
             bool mutate,
             std::optional<SizeRequest> sizeRequestOverride = std::nullopt,
             std::optional<IntrinsicRequest> intrinsicWidthRequestOverride = std::nullopt,

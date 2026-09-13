@@ -36,16 +36,6 @@ namespace layout {
     
     using FragmentID = uint64_t;
 
-    struct Measured {
-        FragmentID id;
-        std::expected<float, style::SizeError> explicitWidth{
-            std::unexpected(style::SizeError::Auto)
-        };
-        std::expected<float, style::SizeError> explicitHeight{
-            std::unexpected(style::SizeError::Auto)
-        };
-    };
-
     struct Atomized {
         FragmentID id;
         std::vector<Atom> atoms;
@@ -492,15 +482,15 @@ namespace layout {
 
     struct ContainingBlock {
         simd_float2 origin{};
-        Size width{Size::autoSize()};
-        Size height{Size::autoSize()};
+        SizeState width{std::monostate{}};
+        SizeState height{std::monostate{}};
     };
 
     struct Constraints {
         simd_float2 origin{};
         simd_float2 cursor{};
-        Size availableWidth{Size::autoSize()};
-        Size availableHeight{Size::autoSize()};
+        SizeState availableWidth{std::monostate{}};
+        SizeState availableHeight{std::monostate{}};
 
         InheritedProperties inheritedProperties{};
 
@@ -549,18 +539,6 @@ namespace layout {
         return li;
     }
 
-    struct SizeResolutionContext {
-        Position position;
-        const std::optional<Size>&  top;
-        const std::optional<Size>&  right;
-        const std::optional<Size>&  bottom;
-        const std::optional<Size>&  left;
-        const Size& requestedWidth;
-        const Size& requestedHeight;
-        Size availableWidth;
-        Size availableHeight;
-    };
-
     struct PositionResolutionContext {
         simd_float2 currentCursor;
         const Constraints& constraints;
@@ -570,17 +548,7 @@ namespace layout {
     };
 
 
-    struct ResolvedSize {
-        std::expected<float, style::SizeError> width{
-            std::unexpected(style::SizeError::Auto)
-        };
-        std::expected<float, style::SizeError> height{
-            std::unexpected(style::SizeError::Auto)
-        };
-    };
-    
     simd_float2 resolvePosition(const PositionResolutionContext& ctx);
-    ResolvedSize resolveSize(const SizeResolutionContext& sizeContext);
 
 
     using ChainID = uint64_t;
@@ -598,8 +566,8 @@ namespace layout {
     // Info needed to resolve right/bottom positioning in postLayout
     // (deferred because element size may not be known during layout)
     struct DeferredPositionInfo {
-        Size containingBlockWidth{Size::autoSize()};
-        Size containingBlockHeight{Size::autoSize()};
+        SizeState containingBlockWidth{std::monostate{}};
+        SizeState containingBlockHeight{std::monostate{}};
         std::optional<Size> right;
         std::optional<Size> bottom;
         float marginRight{};
@@ -692,7 +660,7 @@ namespace layout {
         static ResolvedMargins resolveAutoMargins(
             const LayoutInput& li,
             const ReplacedAttributes& replacedAttributes,
-            Size availableWidth,
+            const SizeState& availableWidth,
             float contentWidth
         );
 

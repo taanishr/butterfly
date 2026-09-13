@@ -52,13 +52,17 @@ namespace layout {
 
                 std::optional<float> left;
                 if (ctx.layoutInput.left.has_value()) {
-                    auto resolvedLeft = ctx.layoutInput.left->resolve(cb.width);
-                    if (resolvedLeft) left = *resolvedLeft;
+                    SizeState resolvedLeft = calculateSize(*ctx.layoutInput.left, cb.width);
+                    if (std::holds_alternative<float>(resolvedLeft)) {
+                        left = std::get<float>(resolvedLeft);
+                    }
                 }
                 std::optional<float> top;
                 if (ctx.layoutInput.top.has_value()) {
-                    auto resolvedTop = ctx.layoutInput.top->resolve(cb.height);
-                    if (resolvedTop) top = *resolvedTop;
+                    SizeState resolvedTop = calculateSize(*ctx.layoutInput.top, cb.height);
+                    if (std::holds_alternative<float>(resolvedTop)) {
+                        top = std::get<float>(resolvedTop);
+                    }
                 }
 
                 resolvedPosition = {0.0f, 0.0f};
@@ -96,11 +100,12 @@ namespace layout {
                         if (ctx.constraints.inheritedProperties.direction == Direction::ltr) {
                             startingX += ctx.margins.left;
                         } else {
-                            if (!ctx.constraints.availableWidth.isAuto()) {
+                            if (std::holds_alternative<float>(ctx.constraints.availableWidth)) {
+                                float availableWidth = std::get<float>(ctx.constraints.availableWidth);
                                 float width = std::holds_alternative<float>(ctx.sizeResult.outerSize.width)
                                     ? std::get<float>(ctx.sizeResult.outerSize.width)
-                                    : ctx.constraints.availableWidth.value;
-                                startingX = ctx.constraints.origin.x + ctx.constraints.availableWidth.value - width - ctx.margins.right;
+                                    : availableWidth;
+                                startingX = ctx.constraints.origin.x + availableWidth - width - ctx.margins.right;
                             }
                         }
 
@@ -118,15 +123,27 @@ namespace layout {
                 // Relative: apply offsets after computing static position
                 if (ctx.layoutInput.position == Position::Relative) {
                     if (ctx.layoutInput.top.has_value()) {
-                        resolvedPosition.y += ctx.layoutInput.top->resolveOr(ctx.constraints.availableHeight, 0.0f);
+                        SizeState top = calculateSize(*ctx.layoutInput.top, ctx.constraints.availableHeight);
+                        if (std::holds_alternative<float>(top)) {
+                            resolvedPosition.y += std::get<float>(top);
+                        }
                     } else if (ctx.layoutInput.bottom.has_value()) {
-                        resolvedPosition.y -= ctx.layoutInput.bottom->resolveOr(ctx.constraints.availableHeight, 0.0f);
+                        SizeState bottom = calculateSize(*ctx.layoutInput.bottom, ctx.constraints.availableHeight);
+                        if (std::holds_alternative<float>(bottom)) {
+                            resolvedPosition.y -= std::get<float>(bottom);
+                        }
                     }
 
                     if (ctx.layoutInput.left.has_value()) {
-                        resolvedPosition.x += ctx.layoutInput.left->resolveOr(ctx.constraints.availableWidth, 0.0f);
+                        SizeState left = calculateSize(*ctx.layoutInput.left, ctx.constraints.availableWidth);
+                        if (std::holds_alternative<float>(left)) {
+                            resolvedPosition.x += std::get<float>(left);
+                        }
                     } else if (ctx.layoutInput.right.has_value()) {
-                        resolvedPosition.x -= ctx.layoutInput.right->resolveOr(ctx.constraints.availableWidth, 0.0f);
+                        SizeState right = calculateSize(*ctx.layoutInput.right, ctx.constraints.availableWidth);
+                        if (std::holds_alternative<float>(right)) {
+                            resolvedPosition.x -= std::get<float>(right);
+                        }
                     }
                 }
 
@@ -139,71 +156,11 @@ namespace layout {
         return resolvedPosition;
     }
 
-    ResolvedSize resolveSize(const SizeResolutionContext& ctx)
-    {
-        ResolvedSize resolvedSize;
-
-        switch (ctx.position) {
-            case layout::Position::Absolute:
-            case layout::Position::Fixed: {
-                resolvedSize.height =
-                    ctx.requestedHeight.resolve(ctx.availableHeight);
-                if (!resolvedSize.height &&
-                    resolvedSize.height.error() == style::SizeError::Auto) {
-                    std::optional<float> resolvedTop;
-                    std::optional<float> resolvedBottom;
-
-                    if (ctx.top.has_value() && !ctx.availableHeight.isAuto()) {
-                        resolvedTop = ctx.top->resolveOr(ctx.availableHeight, 0.0f);
-                    }
-
-                    if (ctx.bottom.has_value() && !ctx.availableHeight.isAuto()) {
-                        resolvedBottom = ctx.bottom->resolveOr(ctx.availableHeight, 0.0f);
-                    }
-
-                    if (resolvedTop.has_value() && resolvedBottom.has_value()) {
-                        resolvedSize.height = ctx.availableHeight.value - *resolvedTop - *resolvedBottom;
-                    }
-                }
-
-                resolvedSize.width =
-                    ctx.requestedWidth.resolve(ctx.availableWidth);
-                if (!resolvedSize.width &&
-                    resolvedSize.width.error() == style::SizeError::Auto) {
-                    std::optional<float> resolvedRight;
-                    std::optional<float> resolvedLeft;
-
-                    if (ctx.right.has_value() && !ctx.availableWidth.isAuto()) {
-                        resolvedRight = ctx.right->resolveOr(ctx.availableWidth, 0.0f);
-                    }
-
-                    if (ctx.left.has_value() && !ctx.availableWidth.isAuto()) {
-                        resolvedLeft = ctx.left->resolveOr(ctx.availableWidth, 0.0f);
-                    }
-
-                    if (resolvedRight.has_value() && resolvedLeft.has_value()) {
-                        resolvedSize.width = ctx.availableWidth.value - *resolvedRight - * resolvedLeft;
-                    }
-                }
-
-                break;
-            }
-            default: {
-                resolvedSize.height =
-                    ctx.requestedHeight.resolve(ctx.availableHeight);
-                resolvedSize.width =
-                    ctx.requestedWidth.resolve(ctx.availableWidth);
-            }
-        };
-
-        return resolvedSize;
-    }
-
     // Resolve auto margins for centering
     ResolvedMargins LayoutEngine::resolveAutoMargins(
         const LayoutInput& li,
         const ReplacedAttributes& replacedAttributes,
-        Size availableWidth,
+        const SizeState& availableWidth,
         float contentWidth
     ) {
         ResolvedMargins margins;
@@ -231,9 +188,23 @@ namespace layout {
         bool leftAuto = li.marginLeft.isAuto();
         bool rightAuto = li.marginRight.isAuto();
 
+        SizeState calculatedAvailableWidth = calculateSize(availableWidth, std::monostate{});
+        SizeState calculatedMarginLeft = calculateSize(li.marginLeft, availableWidth);
+        SizeState calculatedMarginRight = calculateSize(li.marginRight, availableWidth);
+
+        float resolvedAvailableWidth = std::holds_alternative<float>(calculatedAvailableWidth)
+            ? std::get<float>(calculatedAvailableWidth)
+            : 0.0f;
+        float resolvedMarginLeft = std::holds_alternative<float>(calculatedMarginLeft)
+            ? std::get<float>(calculatedMarginLeft)
+            : 0.0f;
+        float resolvedMarginRight = std::holds_alternative<float>(calculatedMarginRight)
+            ? std::get<float>(calculatedMarginRight)
+            : 0.0f;
+
         if (leftAuto && rightAuto) {
             // Both auto: center horizontally
-            float remainingSpace = availableWidth.isAuto() ? 0.0f : availableWidth.value - contentWidth;
+            float remainingSpace = resolvedAvailableWidth - contentWidth;
             if (remainingSpace > 0) {
                 float autoMargin = remainingSpace / 2.0f;
                 margins.left = autoMargin;
@@ -245,17 +216,17 @@ namespace layout {
             }
         } else if (leftAuto) {
             // Only left auto: push to right (absorb remaining space)
-            margins.right = li.marginRight.resolveOr(availableWidth, 0.0f);
-            float remainingSpace = availableWidth.isAuto() ? 0.0f : availableWidth.value - contentWidth - margins.right;
+            margins.right = resolvedMarginRight;
+            float remainingSpace = resolvedAvailableWidth - contentWidth - margins.right;
             margins.left = std::max(0.0f, remainingSpace);
         } else if (rightAuto) {
             // Only right auto: resolves to 0 (default left alignment)
-            margins.left = li.marginLeft.resolveOr(availableWidth, 0.0f);
+            margins.left = resolvedMarginLeft;
             margins.right = 0.0f;
         } else {
             // Neither auto: resolve normally
-            margins.left = li.marginLeft.resolveOr(availableWidth, 0.0f);
-            margins.right = li.marginRight.resolveOr(availableWidth, 0.0f);
+            margins.left = resolvedMarginLeft;
+            margins.right = resolvedMarginRight;
         }
 
         return margins;
@@ -308,8 +279,8 @@ namespace layout {
             layoutInput.position == Position::Fixed
                 ? ContainingBlock {
                     .origin = {0.0f, 0.0f},
-                    .width = Size::px(constraints.frameInfo.width),
-                    .height = Size::px(constraints.frameInfo.height)
+                    .width = constraints.frameInfo.width,
+                    .height = constraints.frameInfo.height
                 }
                 : constraints.absoluteContainingBlock;
 
@@ -347,14 +318,8 @@ namespace layout {
         lr.childConstraints = {
             .origin = {0, 0},
             .cursor = {0, 0},
-            .availableWidth = std::visit(Overloaded{
-                [&](float resolved){ return Size::px(resolved); },
-                [&](auto&) { return Size::autoSize(); }
-            }, sizeResult.innerSize.width),
-            .availableHeight = std::visit(Overloaded{
-                [&](float resolved){ return Size::px(resolved); },
-                [&](auto&) { return Size::autoSize(); }
-            }, sizeResult.innerSize.height),
+            .availableWidth = sizeResult.innerSize.width,
+            .availableHeight = sizeResult.innerSize.height,
             .frameInfo = constraints.frameInfo
         };
 
@@ -437,15 +402,8 @@ namespace layout {
             startingPos
         };
 
-        childConstraints.availableWidth = std::visit(Overloaded{
-            [&](float resolved){ return Size::px(resolved); },
-            [&](auto&) { return Size::autoSize(); }
-        }, sizeResult.innerSize.width);
-    
-        childConstraints.availableHeight = std::visit(Overloaded{
-            [&](float resolved){ return Size::px(resolved); },
-            [&](auto&) { return Size::autoSize(); }
-        }, sizeResult.innerSize.height);
+        childConstraints.availableWidth = sizeResult.innerSize.width;
+        childConstraints.availableHeight = sizeResult.innerSize.height;
         
         lr.childConstraints = childConstraints;
 
@@ -537,17 +495,21 @@ namespace layout {
             const auto& lineBox = lineBoxes[fragment.lineBoxIndex];
             float offset = fragment.offset;
             float lineOffset = 0.0f;
+            bool definiteAvailableWidth = std::holds_alternative<float>(constraints.availableWidth);
+            float availableWidth = definiteAvailableWidth
+                ? std::get<float>(constraints.availableWidth)
+                : 0.0f;
             switch (constraints.inheritedProperties.textAlign) {
                 case TextAlign::Start:
-                    lineOffset = isLtr || constraints.availableWidth.isAuto() ? 0.0f : constraints.availableWidth.value - lineBox.width;
+                    lineOffset = isLtr || !definiteAvailableWidth ? 0.0f : availableWidth - lineBox.width;
                     break;
                 case TextAlign::Left:
                     break;
                 case TextAlign::Center:
-                    lineOffset = constraints.availableWidth.isAuto() ? 0.0f : (constraints.availableWidth.value - lineBox.width) / 2.0f;
+                    lineOffset = !definiteAvailableWidth ? 0.0f : (availableWidth - lineBox.width) / 2.0f;
                     break;
                 case TextAlign::Right:
-                    lineOffset = constraints.availableWidth.isAuto() ? 0.0f : constraints.availableWidth.value - lineBox.width;
+                    lineOffset = !definiteAvailableWidth ? 0.0f : availableWidth - lineBox.width;
                     break;
             }
             float startingX = constraints.origin.x + lineOffset + offset;
@@ -729,17 +691,21 @@ namespace layout {
             const auto& lineBox = lineBoxes[fragment.lineBoxIndex];
             float offset = fragment.offset;
             float lineOffset = 0.0f;
+            bool definiteAvailableWidth = std::holds_alternative<float>(constraints.availableWidth);
+            float availableWidth = definiteAvailableWidth
+                ? std::get<float>(constraints.availableWidth)
+                : 0.0f;
             switch (constraints.inheritedProperties.textAlign) {
                 case TextAlign::Start:
-                    lineOffset = isLtr || constraints.availableWidth.isAuto() ? 0.0f : constraints.availableWidth.value - lineBox.width;
+                    lineOffset = isLtr || !definiteAvailableWidth ? 0.0f : availableWidth - lineBox.width;
                     break;
                 case TextAlign::Left:
                     break;
                 case TextAlign::Center:
-                    lineOffset = constraints.availableWidth.isAuto() ? 0.0f : (constraints.availableWidth.value - lineBox.width) / 2.0f;
+                    lineOffset = !definiteAvailableWidth ? 0.0f : (availableWidth - lineBox.width) / 2.0f;
                     break;
                 case TextAlign::Right:
-                    lineOffset = constraints.availableWidth.isAuto() ? 0.0f : constraints.availableWidth.value - lineBox.width;
+                    lineOffset = !definiteAvailableWidth ? 0.0f : availableWidth - lineBox.width;
                     break;
             }
             float startingX = originX + lineOffset + offset;
@@ -809,8 +775,8 @@ namespace layout {
             layoutInput.position == Position::Fixed
                 ? ContainingBlock {
                     .origin = {0.0f, 0.0f},
-                    .width = Size::px(constraints.frameInfo.width),
-                    .height = Size::px(constraints.frameInfo.height)
+                    .width = constraints.frameInfo.width,
+                    .height = constraints.frameInfo.height
                 }
                 : constraints.absoluteContainingBlock;
 

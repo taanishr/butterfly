@@ -17,7 +17,6 @@ namespace tree {
     using layout::GridResolver;
     using layout::LayoutResult;
     using layout::MarginMetadata;
-    using layout::Measured;
     using layout::IntrinsicSizes;
     using style::ClipUniform;
 
@@ -169,10 +168,8 @@ namespace tree {
         hash_combine(hash, constraints.origin.y);
         hash_combine(hash, constraints.cursor.x);
         hash_combine(hash, constraints.cursor.y);
-        hash_combine(hash, constraints.availableWidth.value);
-        hash_combine(hash, static_cast<int>(constraints.availableWidth.unit));
-        hash_combine(hash, constraints.availableHeight.value);
-        hash_combine(hash, static_cast<int>(constraints.availableHeight.unit));
+        hashSize(constraints.availableWidth, hash);
+        hashSize(constraints.availableHeight, hash);
         hash_combine(hash, static_cast<int>(constraints.inheritedProperties.direction));
         hash_combine(hash, static_cast<int>(constraints.inheritedProperties.textAlign));
         hash_combine(hash, constraints.frameInfo.width);
@@ -180,10 +177,8 @@ namespace tree {
         hash_combine(hash, constraints.frameInfo.scale);
         hash_combine(hash, constraints.absoluteContainingBlock.origin.x);
         hash_combine(hash, constraints.absoluteContainingBlock.origin.y);
-        hash_combine(hash, constraints.absoluteContainingBlock.width.value);
-        hash_combine(hash, static_cast<int>(constraints.absoluteContainingBlock.width.unit));
-        hash_combine(hash, constraints.absoluteContainingBlock.height.value);
-        hash_combine(hash, static_cast<int>(constraints.absoluteContainingBlock.height.unit));
+        hashSize(constraints.absoluteContainingBlock.width, hash);
+        hashSize(constraints.absoluteContainingBlock.height, hash);
         hash_combine(hash, static_cast<int>(constraints.edgeIntent.edgeDisplayMode));
         hash_combine(hash, constraints.edgeIntent.intent);
         hash_combine(hash, constraints.edgeIntent.collapsable);
@@ -328,13 +323,13 @@ namespace tree {
         rootConstraints = Constraints {
             .origin = simd_float2{0,0},
             .cursor = rootCursor,
-            .availableWidth = Size::px(frameInfo.width),
-            .availableHeight = Size::px(frameInfo.height),
+            .availableWidth = frameInfo.width,
+            .availableHeight = frameInfo.height,
             .frameInfo = frameInfo,
             .absoluteContainingBlock = {
                 .origin = {0, 0},
-                .width = Size::px(frameInfo.width),
-                .height = Size::px(frameInfo.height)
+                .width = frameInfo.width,
+                .height = frameInfo.height
             },
             .clipUniforms = {
                 ClipUniform {
@@ -345,17 +340,6 @@ namespace tree {
             },
         };
 
-        // AHH APPLE CLANG DOESN'T SUPPORT EXECUTION POLICIES YET EXECUTE ME
-        // Parallel::for_each(allNodes.begin(), allNodes.end(),
-        //     [&](TreeNode* node) {
-        //         node->measured = node->element->measure(rootConstraints);
-        //     }
-        // );
-
-        if (subtreeHasDirty(root, DirtyBits::Measure) || !root->measured.has_value()) {
-            instrumentation::PhaseTimer timer{instrumentation::Phase::Measure};
-            measurePhase(root, rootConstraints);
-        }
         if (subtreeHasDirty(root, DirtyBits::Atomize) || !root->atomized.has_value()) {
             instrumentation::PhaseTimer timer{instrumentation::Phase::Atomize};
             if (!atomizePhase(root, rootConstraints)) return;
@@ -374,7 +358,7 @@ namespace tree {
             sizeCache.clear();
             instrumentation::PhaseTimer timer{instrumentation::Phase::Layout};
             auto layoutStart = std::chrono::steady_clock::now();
-            layoutPhase(root, frameInfo, rootConstraints, *root->measured);
+            layoutPhase(root, frameInfo, rootConstraints);
             auto layoutEnd = std::chrono::steady_clock::now();
             std::println("layout pass time: {}",
                 std::chrono::duration<double, std::milli>(layoutEnd - layoutStart));
@@ -424,37 +408,6 @@ namespace tree {
         instrumentation::recordRenderWork(allNodes.size(), allNodes.size(), atomCount);
     }
 
-    void RenderTree::measurePhase(TreeNode* node, Constraints& constraints) {
-        auto key = makeConstraintsKey(constraints);
-        auto reason = recomputeReason(node, DirtyBits::Measure, key);
-        if (reason != instrumentation::RecomputeReason::None) {
-            instrumentation::recordRecompute(node->id, instrumentation::Phase::Measure, reason);
-            auto measured = node->element->measure(constraints, node->shared);
-            node->measured = measured;
-            node->constraintsKey = key;
-            node->dirtySelf |= DirtyBits::Atomize | DirtyBits::Layout | DirtyBits::PostLayout | DirtyBits::Place | DirtyBits::Finalize;
-        }
-        
-        float paddingLeft = node->shared.paddingLeft.value_or(Size{}).resolveOr(constraints.availableWidth);
-        float paddingTop = node->shared.paddingTop.value_or(Size{}).resolveOr(constraints.availableHeight);
-        float paddingRight = node->shared.paddingRight.value_or(Size{}).resolveOr(constraints.availableWidth);
-        float paddingBottom = node->shared.paddingBottom.value_or(Size{}).resolveOr(constraints.availableHeight);
-
-        Constraints childConstraints {};
-
-        childConstraints.availableWidth = node->measured->explicitWidth
-            ? Size::px(*node->measured->explicitWidth - paddingLeft - paddingRight)
-            : Size::autoSize();
-        childConstraints.availableHeight = node->measured->explicitHeight
-            ? Size::px(*node->measured->explicitHeight - paddingTop - paddingBottom)
-            : Size::autoSize();
-        
-        for (auto& child : node->children) {
-            measurePhase(child.get(), childConstraints);
-        }
-    }
-
-
     // consider safer way of accessing cache?
     Result<void> RenderTree::atomizePhase(
         TreeNode* node,
@@ -466,9 +419,8 @@ namespace tree {
         auto reason = recomputeReason(node, DirtyBits::Atomize, key);
         if (reason != instrumentation::RecomputeReason::None) {
             instrumentation::recordRecompute(node->id, instrumentation::Phase::Atomize, reason);
-            auto& measured  = *node->measured;
             auto& shared = node->shared;
-            auto atomized = node->element->atomize(constraints, shared, measured);
+            auto atomized = node->element->atomize(constraints, shared);
             node->atomized = atomized;
             node->constraintsKey = key;
             node->dirtySelf |= DirtyBits::Layout | DirtyBits::PostLayout | DirtyBits::Place | DirtyBits::Finalize;
@@ -628,24 +580,22 @@ namespace tree {
         resolveComputedDisplays(node);
         buildCollapsedChains(node, collapsedChainMap, nextChainId, nullptr, nullptr);
 
-        precomputeMargins(node, constraints, collapsedChainMap);
+        precomputeMargins(*this, node, constraints, collapsedChainMap);
     }
 
     // this should exist for entry pt reasons; makes sense
     void RenderTree::layoutPhase(
         TreeNode* node,
         const FrameInfo& frameInfo,
-        Constraints constraints,
-        Measured measured
+        Constraints constraints
     ) {
-        layoutRecursive(node, frameInfo, constraints, measured, true);
+        layoutRecursive(node, frameInfo, constraints, true);
     }
 
     LayoutResult RenderTree::layoutRecursive(
         TreeNode* node,
         const FrameInfo& frameInfo,
         Constraints constraints,
-        Measured measured,
         bool mutate,
         std::optional<SizeRequest> sizeRequestOverride, // not a fan of these two sources of truth existing
         std::optional<IntrinsicRequest> intrinsicWidthRequestOverride,
@@ -708,7 +658,7 @@ namespace tree {
             }
         }
 
-        auto sizeResult = evaluateSize(*this, node, frameInfo, constraints, measured, sizeRequest, sizeCache);
+        auto sizeResult = evaluateSize(*this, node, frameInfo, constraints, sizeRequest, sizeCache);
 
 
         constraints.resolvedMargins = prelayout.resolvedMargins;
@@ -716,7 +666,7 @@ namespace tree {
 
         // what i should do now:
         // make this take in a size result instead of doing the computation separately
-        auto layout = node->element->layout(constraints, node->shared, measured, atomized, sizeResult);
+        auto layout = node->element->layout(constraints, node->shared, atomized, sizeResult);
 
         auto childConstraints = std::visit([](const auto& state) { return state.childConstraints; }, layout);
         childConstraints.inheritedProperties = constraints.inheritedProperties;
@@ -733,8 +683,12 @@ namespace tree {
 
             childConstraints.absoluteContainingBlock = {
                 .origin = {0.0f, 0.0f},
-                .width = std::holds_alternative<float>(sizeResult.outerSize.width) ? Size::px(std::get<float>(sizeResult.outerSize.width) - 2 * borderWidth) : Size::autoSize(),
-                .height = std::holds_alternative<float>(sizeResult.outerSize.height) ? Size::px(std::get<float>(sizeResult.outerSize.height) - 2 * borderWidth) : Size::autoSize(),
+                .width = std::holds_alternative<float>(sizeResult.outerSize.width)
+                    ? SizeState{std::get<float>(sizeResult.outerSize.width) - 2 * borderWidth}
+                    : sizeResult.outerSize.width,
+                .height = std::holds_alternative<float>(sizeResult.outerSize.height)
+                    ? SizeState{std::get<float>(sizeResult.outerSize.height) - 2 * borderWidth}
+                    : sizeResult.outerSize.height,
             };
         } else {
             childConstraints.absoluteContainingBlock = constraints.absoluteContainingBlock;
@@ -932,7 +886,7 @@ namespace tree {
                         : inlineFormatting->maxChildFragments[i],
                 };
 
-                auto childOutput = layoutRecursive(child, frameInfo, childConstraints, *child->measured, mutate, std::nullopt, sizeRequest.intrinsicWidthRequest, sizeRequest.intrinsicHeightRequest);
+                auto childOutput = layoutRecursive(child, frameInfo, childConstraints, mutate, std::nullopt, sizeRequest.intrinsicWidthRequest, sizeRequest.intrinsicHeightRequest);
 
                 std::visit([&](const auto& childLayout) {
                 if (!childLayout.outOfFlow) {
@@ -1020,10 +974,10 @@ namespace tree {
 
             auto& dp = layout.deferredPosition;
             if (dp.right) {
-                auto containingBlockWidth = dp.containingBlockWidth.resolve(Size::autoSize());
-                auto right = dp.right->resolve(dp.containingBlockWidth);
-                if (containingBlockWidth && right) {
-                    float newX = *containingBlockWidth - dp.marginRight - layout.computedBox.width - *right;
+                SizeState containingBlockWidth = calculateSize(dp.containingBlockWidth, std::monostate{});
+                SizeState right = calculateSize(*dp.right, dp.containingBlockWidth);
+                if (std::holds_alternative<float>(containingBlockWidth) && std::holds_alternative<float>(right)) {
+                    float newX = std::get<float>(containingBlockWidth) - dp.marginRight - layout.computedBox.width - std::get<float>(right);
                     float deltaX = newX - layout.computedBox.x;
                     layout.computedBox.x = newX;
                     for (auto& offset : layout.atomOffsets) offset.x += deltaX;
@@ -1031,10 +985,10 @@ namespace tree {
             }
 
             if (dp.bottom) {
-                auto containingBlockHeight = dp.containingBlockHeight.resolve(Size::autoSize());
-                auto bottom = dp.bottom->resolve(dp.containingBlockHeight);
-                if (containingBlockHeight && bottom) {
-                    float newY = *containingBlockHeight - dp.marginBottom - layout.computedBox.height - *bottom;
+                SizeState containingBlockHeight = calculateSize(dp.containingBlockHeight, std::monostate{});
+                SizeState bottom = calculateSize(*dp.bottom, dp.containingBlockHeight);
+                if (std::holds_alternative<float>(containingBlockHeight) && std::holds_alternative<float>(bottom)) {
+                    float newY = std::get<float>(containingBlockHeight) - dp.marginBottom - layout.computedBox.height - std::get<float>(bottom);
                     float deltaY = newY - layout.computedBox.y;
                     layout.computedBox.y = newY;
                     for (auto& offset : layout.atomOffsets) offset.y += deltaY;
@@ -1083,7 +1037,7 @@ namespace tree {
                 };
             }
 
-            node->atomized = node->element->postLayout(constraints, node->shared, *node->measured,
+            node->atomized = node->element->postLayout(constraints, node->shared,
                                                         *node->atomized, result.layout);
 
             simd_float2 currContentOrigin = {
@@ -1185,11 +1139,10 @@ namespace tree {
         auto reason = recomputeReason(node, DirtyBits::Place, key);
         if (reason != instrumentation::RecomputeReason::None) {
             instrumentation::recordRecompute(node->id, instrumentation::Phase::Place, reason);
-            auto& measured = *node->measured;
             auto& atomized = *node->atomized;
             auto& layout = node->layout->layout;
 
-            auto placed = node->element->place(constraints, node->shared, measured, atomized, layout);
+            auto placed = node->element->place(constraints, node->shared, atomized, layout);
             node->placed = placed;
             node->constraintsKey = key;
             node->dirtySelf |= DirtyBits::Finalize;
@@ -1205,11 +1158,10 @@ namespace tree {
         auto reason = recomputeReason(node, DirtyBits::Finalize, key);
         if (reason != instrumentation::RecomputeReason::None) {
             instrumentation::recordRecompute(node->id, instrumentation::Phase::Finalize, reason);
-            auto& measured =  *node->measured;
             auto& atomized = *node->atomized;
             auto& layout = node->layout->layout;
             auto& placed = *node->placed;
-            auto finalized = node->element->finalize(constraints, node->shared, measured, atomized, layout, placed);
+            auto finalized = node->element->finalize(constraints, node->shared, atomized, layout, placed);
             node->finalized = finalized;
             node->constraintsKey = key;
         }

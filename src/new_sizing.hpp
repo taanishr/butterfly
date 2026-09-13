@@ -44,7 +44,6 @@ struct FrameInfo;
 namespace layout {
     struct Constraints;
     struct IntrinsicSizes;
-    struct Measured;
 }
 
 namespace tree {
@@ -71,7 +70,10 @@ using style::SizeError;
     4) is there a parent override?
 */
 
+// optional vs none
+// this acts more like an override for the type of req you want (instead of relying on the automated path)
 enum class IntrinsicRequest {
+    None,
     Minimum,
     Maximum,
     Both
@@ -242,7 +244,6 @@ auto measureIntrinsicWidth(
     tree::TreeNode* node,
     const FrameInfo& frameInfo,
     const layout::Constraints&,
-    layout::Measured measured,
     SizeRequest req
 ) -> IntrinsicResult;
 auto measureIntrinsicHeight(
@@ -250,7 +251,6 @@ auto measureIntrinsicHeight(
     tree::TreeNode* node,
     const FrameInfo& frameInfo,
     const layout::Constraints&,
-    layout::Measured measured,
     const SizeState& antiSize,
     SizeRequest req
 ) -> IntrinsicResult;
@@ -292,6 +292,8 @@ auto resolveBorderWidth(const SizeRequest& req) -> SizeState;
 auto resolveInnerWidth(const SizeState& size, const PaddingResult& padding, const SizeState& borderWidth) -> SizeState;
 auto resolveInnerHeight(const SizeState& size, const PaddingResult& padding, const SizeState& borderWidth) -> SizeState;
 
+auto hashSize(const SizeState& size, std::size_t& key) -> void;
+auto hashSizePair(const SizePair& size, std::size_t& key) -> void;
 auto hashSizeRequest(const SizeRequest& sizeRequest, std::size_t& key) -> void;
 
 auto evaluateSize(
@@ -299,7 +301,6 @@ auto evaluateSize(
     tree::TreeNode* node,
     const FrameInfo& frameInfo,
     const layout::Constraints& constraints,
-    layout::Measured measured,
     SizeRequest req,
     std::optional<std::unordered_map<size_t, SizeResult>&> sizeCache = std::nullopt
 ) -> SizeResult;

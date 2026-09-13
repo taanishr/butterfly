@@ -650,7 +650,6 @@ auto measureIntrinsicWidth(
     tree::TreeNode* node,
     const FrameInfo& frameInfo,
     const layout::Constraints& constraints,
-    layout::Measured measured,
     SizeRequest req
 ) -> IntrinsicResult {
     if (req.resolvingIntrinsicWidth || req.resolvingIntrinsicHeight) {
@@ -664,9 +663,6 @@ auto measureIntrinsicWidth(
     // this new request should set resolvingIntrinsicWidth = true
     req.resolvingIntrinsicWidth = true;
     req.intrinsicWidthRequest = IntrinsicRequest::Both;
-        
-    // // legacy override
-    // measured.explicitWidth = std::unexpected(style::SizeError::Auto);
 
     // override.width may have been populated by an earlier pass from the node's
     // used layout width. Carrying that cached measurement into this new intrinsic
@@ -685,7 +681,7 @@ auto measureIntrinsicWidth(
     */
 
     // afterwards, establish the recursive call
-    auto output = tree.layoutRecursive(node, frameInfo, std::move(constraints), measured, false, std::move(req));
+    auto output = tree.layoutRecursive(node, frameInfo, std::move(constraints), false, std::move(req));
     auto intrinsic = output.intrinsicSizes;
 
     if (!intrinsic) {
@@ -706,7 +702,6 @@ auto measureIntrinsicHeight(
     tree::TreeNode* node,
     const FrameInfo& frameInfo,
     const layout::Constraints& constraints,
-    layout::Measured measured,
     const SizeState& antiSize,
     SizeRequest req
 ) -> IntrinsicResult {
@@ -738,7 +733,7 @@ auto measureIntrinsicHeight(
     }
 
     // establish the recursive call; make sure it establishes the specified antiSize correctly
-    auto output = tree.layoutRecursive(node, frameInfo, std::move(constraints), measured, false, std::move(req));
+    auto output = tree.layoutRecursive(node, frameInfo, std::move(constraints), false, std::move(req));
     auto intrinsic = output.intrinsicSizes;
 
 
@@ -918,7 +913,6 @@ auto evaluateSize(
     tree::TreeNode* node,
     const FrameInfo& frameInfo,
     const layout::Constraints& constraints,
-    layout::Measured measured,
     SizeRequest req,
     std::optional<std::unordered_map<size_t, SizeResult>&> sizeCache
 ) -> SizeResult
@@ -1023,6 +1017,9 @@ auto evaluateSize(
                                     || req.intrinsicHeightRequest == IntrinsicRequest::Maximum
                                     || req.intrinsicHeightRequest == IntrinsicRequest::Both;
 
+    bool measureWidthIntrinsics = req.intrinsicWidthRequest != IntrinsicRequest::None;
+    bool measureHeightIntrinsics = req.intrinsicHeightRequest != IntrinsicRequest::None;
+
     bool widthFromAspectRatio = false;
 
     if (req.aspectRatio && automaticWidth && !std::holds_alternative<float>(size.width) && std::holds_alternative<float>(size.height)) {
@@ -1034,8 +1031,8 @@ auto evaluateSize(
     std::optional<IntrinsicResult> widthIntrinsic;
 
     // how do I measure both sizing modes?
-    if (widthIntrinsicError || minWidthIntrinsicError || maxWidthIntrinsicError) {
-        widthIntrinsic = measureIntrinsicWidth(tree, node, frameInfo, constraints, measured, req);
+    if (measureWidthIntrinsics && (widthIntrinsicError || minWidthIntrinsicError || maxWidthIntrinsicError)) {
+        widthIntrinsic = measureIntrinsicWidth(tree, node, frameInfo, constraints, req);
 
         if (widthIntrinsicError && !widthFromAspectRatio) {
             size.width = resolveWidth(requestedWidth, req, widthIntrinsic, padding, borderWidth);
@@ -1060,8 +1057,8 @@ auto evaluateSize(
 
     std::optional<IntrinsicResult> heightIntrinsic;
 
-    if (heightIntrinsicError || minHeightIntrinsicError || maxHeightIntrinsicError) {
-        heightIntrinsic = measureIntrinsicHeight(tree, node, frameInfo, constraints, measured, size.width, req);
+    if (measureHeightIntrinsics && (heightIntrinsicError || minHeightIntrinsicError || maxHeightIntrinsicError)) {
+        heightIntrinsic = measureIntrinsicHeight(tree, node, frameInfo, constraints, size.width, req);
 
         if (heightIntrinsicError && !heightFromAspectRatio) {
             size.height = resolveHeight(requestedHeight, req, heightIntrinsic, padding, borderWidth);
