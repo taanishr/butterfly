@@ -1,9 +1,9 @@
 #include "render_tree.hpp"
 #include "hash_combine.hpp"
-#include "new_arch.hpp"
-#include "new_sizing.hpp"
+#include "layout/layout.hpp"
+#include "layout/sizing.hpp"
 #include "overloaded.hpp"
-#include "sizing.hpp"
+#include "layout/sizing.hpp"
 #include <algorithm>
 #include <chrono>
 #include <optional>

@@ -1,8 +1,7 @@
 #include "index.hpp"
 #include "events.hpp"
 #include "fonts.hpp"
-#include "new_arch.hpp"
-#include "sizing.hpp"
+#include "layout/sizing.hpp"
 #include "layout_test_scenes.hpp"
 #include <MacTypes.h>
 #include <simd/vector_types.h>
@@ -131,377 +130,377 @@ auto index() -> void {
 
 
     
-    div(gui::Size::percent(1.0), gui::Size::percent(1.0), simd_float4{1.0,1.0,1.0,1.0})
-    .display(gui::Display::Flex)
-    .paddingTop(gui::Size::px(32.0))
-    .flexDirection(gui::FlexDirection::Col)
-(
-    // Header
-    div(gui::Size::percent(1.0), gui::Size::px(56), simd_float4{1.0,1.0,1.0,1.0})
-        .display(gui::Display::Flex)
-        .alignItems(gui::AlignItems::Center)
-        .justifyContent(gui::JustifyContent::SpaceBetween)
-        .paddingLeft(gui::Size::px(16))
-        .paddingRight(gui::Size::px(16))
-        .borderColor(simd_float4{0.88,0.88,0.88,1.0})
-        .borderWidth(gui::Size::px(1.0))
-        .flexShrink(gui::Size::px(0.0))
-    (
-        // Left
-        div()
-            .color(simd_float4{0.0,0.0,0.0,0.0})
-            .display(gui::Display::Flex)
-            .alignItems(gui::AlignItems::Center)
-            .flexGap(gui::Size::px(8))
-        (
-            div(gui::Size::px(40), gui::Size::px(40), simd_float4{0.96,0.96,0.96,1.0})
-                .cornerRadius(gui::Size::px(20))
-                .display(gui::Display::Flex)
-                .alignItems(gui::AlignItems::Center)
-                .justifyContent(gui::JustifyContent::Center)
-            (
-                text("=").fontSize(gui::Size::pt(18)).color(simd_float4{0.5,0.5,0.5,1.0})
-            ),
-            div()
-                .color(simd_float4{0.96,0.96,0.96,1.0})
-                .paddingLeft(gui::Size::px(12))
-                .paddingRight(gui::Size::px(12))
-                .height(gui::Size::px(32))
-                .cornerRadius(gui::Size::px(6))
-                .display(gui::Display::Flex)
-                .alignItems(gui::AlignItems::Center)
-            (
-                text("You: San Francisco").fontSize(gui::Size::pt(13)).color(simd_float4{0.5,0.5,0.5,1.0})
-            )
-        ),
-        // Right
-        div()
-            .color(simd_float4{0.0,0.0,0.0,0.0})
-            .display(gui::Display::Flex)
-            .alignItems(gui::AlignItems::Center)
-            .flexGap(gui::Size::px(8))
-        (
-            div()
-                .color(simd_float4{0.96,0.96,0.96,1.0})
-                .height(gui::Size::px(36))
-                .paddingLeft(gui::Size::px(16))
-                .paddingRight(gui::Size::px(16))
-                .cornerRadius(gui::Size::px(6))
-                .display(gui::Display::Flex)
-                .alignItems(gui::AlignItems::Center)
-            (
-                text("Import").fontSize(gui::Size::pt(13)).color(simd_float4{0.5,0.5,0.5,1.0})
-            ),
-            div()
-                .color(simd_float4{0.1,0.1,0.1,1.0})
-                .height(gui::Size::px(36))
-                .paddingLeft(gui::Size::px(16))
-                .paddingRight(gui::Size::px(16))
-                .cornerRadius(gui::Size::px(6))
-                .display(gui::Display::Flex)
-                .alignItems(gui::AlignItems::Center)
-            (
-                text("Add trip").fontSize(gui::Size::pt(13)).color(simd_float4{1.0,1.0,1.0,1.0})
-            )
-        )
-    ),
-    // Body
-    div()
-        .color(simd_float4{0.0,0.0,0.0,0.0})
-        .display(gui::Display::Flex)
-        .flexGrow(gui::Size::px(1))
-        .overflow(gui::Overflow::Scroll)
-    (
-        // Sidebar
-        div()
-            // .width(gui::Size::px(160.0))
-            .color(simd_float4{1.0,1.0,1.0,1.0})
-            .borderColor(simd_float4{0.88,0.88,0.88,1.0})
-            .borderWidth(gui::Size::px(1.0))
-            .display(gui::Display::Flex)
-            .flexDirection(gui::FlexDirection::Col)
-            .flexGap(gui::Size::px(4))
-            .padding(gui::Size::px(12))
-            .flexShrink(gui::Size::px(0.0))
-        (
-            text("TRIPS").fontSize(gui::Size::pt(10)).color(simd_float4{0.6,0.6,0.6,1.0}),
-            div()
-                .width(gui::Size::percent(1.0))
-                .color(simd_float4{0.96,0.96,0.96,1.0})
-                .cornerRadius(gui::Size::px(8))
-                .paddingLeft(gui::Size::px(12))
-                .paddingRight(gui::Size::px(12))
-                .paddingTop(gui::Size::px(8))
-                .paddingBottom(gui::Size::px(8))
-                .display(gui::Display::Flex)
-                .flexDirection(gui::FlexDirection::Col)
-                .flexGap(gui::Size::px(2))
-            (
-                text("Tokyo & Kyoto").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0}),
-                text("Mar 10 - Mar 24").fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})
-            ),
-            div()
-                .width(gui::Size::percent(1.0))
-                .color(simd_float4{1.0,1.0,1.0,1.0})
-                .cornerRadius(gui::Size::px(8))
-                .paddingLeft(gui::Size::px(12))
-                .paddingRight(gui::Size::px(12))
-                .paddingTop(gui::Size::px(8))
-                .paddingBottom(gui::Size::px(8))
-                .display(gui::Display::Flex)
-                .flexDirection(gui::FlexDirection::Col)
-                .flexGap(gui::Size::px(2))
-            (
-                text("NYC Weekend").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0}),
-                text("Apr 4 - Apr 7").fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})
-            ),
-            div()
-                .width(gui::Size::percent(1.0))
-                .color(simd_float4{1.0,1.0,1.0,1.0})
-                .cornerRadius(gui::Size::px(8))
-                .paddingLeft(gui::Size::px(12))
-                .paddingRight(gui::Size::px(12))
-                .paddingTop(gui::Size::px(8))
-                .paddingBottom(gui::Size::px(8))
-                .display(gui::Display::Flex)
-                .flexDirection(gui::FlexDirection::Col)
-                .flexGap(gui::Size::px(2))
-            (
-                text("London + Paris").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0}),
-                text("Jun 1 - Jun 12").fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})
-            )
-        ),
-        // Main content
-        div()
-            .color(simd_float4{0.97,0.97,0.97,1.0})
-            .flexGrow(gui::Size::px(1))
-            .display(gui::Display::Flex)
-            .flexDirection(gui::FlexDirection::Col)
-            .padding(gui::Size::px(24))
-            .flexGap(gui::Size::px(12))
-            .overflow(gui::Overflow::Scroll)
-        (
-            // Title row
-            div()
-                .color(simd_float4{0.0,0.0,0.0,0.0})
-                .display(gui::Display::Flex)
-                .alignItems(gui::AlignItems::Center)
-                .justifyContent(gui::JustifyContent::SpaceBetween)
-            (
-                div()
-                    .color(simd_float4{0.0,0.0,0.0,0.0})
-                    .display(gui::Display::Flex)
-                    .flexDirection(gui::FlexDirection::Col)
-                    .flexGap(gui::Size::px(2))
-                (
-                    text("Tokyo & Kyoto").fontSize(gui::Size::pt(20)).color(simd_float4{0.1,0.1,0.1,1.0}),
-                    text("Mar 10 - Mar 24 · 14 days").fontSize(gui::Size::pt(13)).color(simd_float4{0.5,0.5,0.5,1.0})
-                ),
-                div()
-                    .color(simd_float4{0.96,0.96,0.96,1.0})
-                    .paddingLeft(gui::Size::px(16))
-                    .paddingRight(gui::Size::px(16))
-                    .height(gui::Size::px(32))
-                    .cornerRadius(gui::Size::px(6))
-                    .display(gui::Display::Flex)
-                    .alignItems(gui::AlignItems::Center)
-                (
-                    text("Edit").fontSize(gui::Size::pt(12)).color(simd_float4{0.5,0.5,0.5,1.0})
-                )
-            ),
-            // Flight
-            div(gui::Size::percent(1.0), gui::Size::px(80), simd_float4{1.0,1.0,1.0,1.0})
-                .cornerRadius(gui::Size::px(12))
-                .paddingLeft(gui::Size::px(16))
-                .paddingRight(gui::Size::px(16))
-                .display(gui::Display::Flex)
-                .alignItems(gui::AlignItems::Center)
-                .justifyContent(gui::JustifyContent::SpaceBetween)
-            (
-                div()
-                    .color(simd_float4{0.0,0.0,0.0,0.0})
-                    .display(gui::Display::Flex)
-                    .flexDirection(gui::FlexDirection::Col)
-                    .flexGap(gui::Size::px(4))
-                (
-                    div()
-                        .color(simd_float4{0.0,0.0,0.0,0.0})
-                        .display(gui::Display::Flex)
-                        .flexGap(gui::Size::px(4))
-                        .alignItems(gui::AlignItems::Center)
-                    (
-                        svg("/Users/treja/projects/gui/assets/plane.svg")
-                            .width(gui::Size::px(22))
-                            .height(gui::Size::px(22)),
-                        text("SFO -> NRT").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})
-                    )
-                    ,text("Mar 10 · United 837 · 11h 30m").fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})
-                ),
-                div()
-                    .color(simd_float4{0.93,0.88,1.0,1.0})
-                    .paddingLeft(gui::Size::px(12))
-                    .paddingRight(gui::Size::px(12))
-                    .height(gui::Size::px(24))
-                    .cornerRadius(gui::Size::px(12))
-                    .display(gui::Display::Flex)
-                    .alignItems(gui::AlignItems::Center)
-                (
-                    text("[Flight]").fontSize(gui::Size::pt(11)).color(simd_float4{0.4,0.3,1.0,1.0})
-                )
-            ),
-            // Hotel
-            div(gui::Size::percent(1.0), gui::Size::px(80), simd_float4{1.0,1.0,1.0,1.0})
-                .cornerRadius(gui::Size::px(12))
-                .paddingLeft(gui::Size::px(16))
-                .paddingRight(gui::Size::px(16))
-                .display(gui::Display::Flex)
-                .alignItems(gui::AlignItems::Center)
-                .justifyContent(gui::JustifyContent::SpaceBetween)
-            (
-                div()
-                    .color(simd_float4{0.0,0.0,0.0,0.0})
-                    .display(gui::Display::Flex)
-                    .flexDirection(gui::FlexDirection::Col)
-                    .flexGap(gui::Size::px(4))
-                (
-                    text("Park Hyatt Tokyo").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0}),
-                    text("Mar 11 - Mar 17 · 6 nights").fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})
-                ),
-                div()
-                    .color(simd_float4{0.85,0.93,1.0,1.0})
-                    .paddingLeft(gui::Size::px(12))
-                    .paddingRight(gui::Size::px(12))
-                    .height(gui::Size::px(24))
-                    .cornerRadius(gui::Size::px(12))
-                    .display(gui::Display::Flex)
-                    .alignItems(gui::AlignItems::Center)
-                (
-                    text("[Hotel]").fontSize(gui::Size::pt(11)).color(simd_float4{0.2,0.6,0.9,1.0})
-                )
-            ),
-            // Train
-            div(gui::Size::percent(1.0), gui::Size::px(80), simd_float4{1.0,1.0,1.0,1.0})
-                .cornerRadius(gui::Size::px(12))
-                .paddingLeft(gui::Size::px(16))
-                .paddingRight(gui::Size::px(16))
-                .display(gui::Display::Flex)
-                .alignItems(gui::AlignItems::Center)
-                .justifyContent(gui::JustifyContent::SpaceBetween)
-            (
-                div()
-                    .color(simd_float4{0.0,0.0,0.0,0.0})
-                    .display(gui::Display::Flex)
-                    .flexDirection(gui::FlexDirection::Col)
-                    .flexGap(gui::Size::px(4))
-                (
-                    text("Tokyo -> Kyoto").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0}),
-                    text("Mar 17 · Shinkansen · 2h 15m").fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})
-                ),
-                div()
-                    .color(simd_float4{0.85,1.0,0.9,1.0})
-                    .paddingLeft(gui::Size::px(12))
-                    .paddingRight(gui::Size::px(12))
-                    .height(gui::Size::px(24))
-                    .cornerRadius(gui::Size::px(12))
-                    .display(gui::Display::Flex)
-                    .alignItems(gui::AlignItems::Center)
-                (
-                    text("[Train]").fontSize(gui::Size::pt(11)).color(simd_float4{0.1,0.7,0.4,1.0})
-                )
-            )
-        )
-        // Detail panel
-        ,div()
-            // .width(gui::Size::px(200.0))
-            .color(simd_float4{1.0,1.0,1.0,1.0})
-            .borderColor(simd_float4{0.88,0.88,0.88,1.0})
-            .borderWidth(gui::Size::px(1.0))
-            .display(gui::Display::Flex)
-            .flexDirection(gui::FlexDirection::Col)
-            .flexGap(gui::Size::px(16))
-            .padding(gui::Size::px(16))
-            .flexShrink(gui::Size::px(0.0))
-            .overflow(gui::Overflow::Scroll)
-        (
-            div()
-                .color(simd_float4{0.0,0.0,0.0,0.0})
-                .display(gui::Display::Flex)
-                .alignItems(gui::AlignItems::Center)
-                .justifyContent(gui::JustifyContent::SpaceBetween)
-            (
-                text("Flight Details").fontSize(gui::Size::pt(14)).color(simd_float4{0.1,0.1,0.1,1.0}),
-                text("x").fontSize(gui::Size::pt(13)).color(simd_float4{0.6,0.6,0.6,1.0})
-            ),
-            div()
-                .color(simd_float4{0.0,0.0,0.0,0.0})
-                .display(gui::Display::Flex)
-                .flexDirection(gui::FlexDirection::Col)
-                .flexGap(gui::Size::px(12))
-            (
-                div()
-                    .color(simd_float4{0.0,0.0,0.0,0.0})
-                    .display(gui::Display::Flex)
-                    .justifyContent(gui::JustifyContent::SpaceBetween)
-                (
-                    text("Flight").fontSize(gui::Size::pt(13)).color(simd_float4{0.6,0.6,0.6,1.0}),
-                    text("UA 837").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})
-                ),
-                div()
-                    .color(simd_float4{0.0,0.0,0.0,0.0})
-                    .display(gui::Display::Flex)
-                    .justifyContent(gui::JustifyContent::SpaceBetween)
-                (
-                    text("Departs").fontSize(gui::Size::pt(13)).color(simd_float4{0.6,0.6,0.6,1.0}),
-                    text("10:45 AM").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})
-                ),
-                div()
-                    .color(simd_float4{0.0,0.0,0.0,0.0})
-                    .display(gui::Display::Flex)
-                    .justifyContent(gui::JustifyContent::SpaceBetween)
-                (
-                    text("Arrives").fontSize(gui::Size::pt(13)).color(simd_float4{0.6,0.6,0.6,1.0}),
-                    text("3:15 PM +1").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})
-                ),
-                div()
-                    .color(simd_float4{0.0,0.0,0.0,0.0})
-                    .display(gui::Display::Flex)
-                    .justifyContent(gui::JustifyContent::SpaceBetween)
-                (
-                    text("Duration").fontSize(gui::Size::pt(13)).color(simd_float4{0.6,0.6,0.6,1.0}),
-                    text("11h 30m").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})
-                ),
-                div()
-                    .color(simd_float4{0.0,0.0,0.0,0.0})
-                    .display(gui::Display::Flex)
-                    .justifyContent(gui::JustifyContent::SpaceBetween)
-                (
-                    text("Seat").fontSize(gui::Size::pt(13)).color(simd_float4{0.6,0.6,0.6,1.0}),
-                    text("42A").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})
-                ),
-                div()
-                    .color(simd_float4{0.0,0.0,0.0,0.0})
-                    .display(gui::Display::Flex)
-                    .justifyContent(gui::JustifyContent::SpaceBetween)
-                (
-                    text("Class").fontSize(gui::Size::pt(13)).color(simd_float4{0.6,0.6,0.6,1.0}),
-                    text("Economy").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})
-                )
-            ),
-            div()
-                .width(gui::Size::percent(1.0))
-                .color(simd_float4{0.97,0.97,0.97,1.0})
-                .cornerRadius(gui::Size::px(8))
-                .padding(gui::Size::px(12))
-                .display(gui::Display::Flex)
-                .flexDirection(gui::FlexDirection::Col)
-                .flexGap(gui::Size::px(4))
-            (
-                text("Local time at destination").fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0}),
-                text("3:15 PM JST (UTC+9)").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})
-            )
-        )
-    )
-);
+//     div(gui::Size::percent(1.0), gui::Size::percent(1.0), simd_float4{1.0,1.0,1.0,1.0})
+//     .display(gui::Display::Flex)
+//     .paddingTop(gui::Size::px(32.0))
+//     .flexDirection(gui::FlexDirection::Col)
+// (
+//     // Header
+//     div(gui::Size::percent(1.0), gui::Size::px(56), simd_float4{1.0,1.0,1.0,1.0})
+//         .display(gui::Display::Flex)
+//         .alignItems(gui::AlignItems::Center)
+//         .justifyContent(gui::JustifyContent::SpaceBetween)
+//         .paddingLeft(gui::Size::px(16))
+//         .paddingRight(gui::Size::px(16))
+//         .borderColor(simd_float4{0.88,0.88,0.88,1.0})
+//         .borderWidth(gui::Size::px(1.0))
+//         .flexShrink(gui::Size::px(0.0))
+//     (
+//         // Left
+//         div()
+//             .color(simd_float4{0.0,0.0,0.0,0.0})
+//             .display(gui::Display::Flex)
+//             .alignItems(gui::AlignItems::Center)
+//             .flexGap(gui::Size::px(8))
+//         (
+//             div(gui::Size::px(40), gui::Size::px(40), simd_float4{0.96,0.96,0.96,1.0})
+//                 .cornerRadius(gui::Size::px(20))
+//                 .display(gui::Display::Flex)
+//                 .alignItems(gui::AlignItems::Center)
+//                 .justifyContent(gui::JustifyContent::Center)
+//             (
+//                 text("=").fontSize(gui::Size::pt(18)).color(simd_float4{0.5,0.5,0.5,1.0})
+//             ),
+//             div()
+//                 .color(simd_float4{0.96,0.96,0.96,1.0})
+//                 .paddingLeft(gui::Size::px(12))
+//                 .paddingRight(gui::Size::px(12))
+//                 .height(gui::Size::px(32))
+//                 .cornerRadius(gui::Size::px(6))
+//                 .display(gui::Display::Flex)
+//                 .alignItems(gui::AlignItems::Center)
+//             (
+//                 text("You: San Francisco").fontSize(gui::Size::pt(13)).color(simd_float4{0.5,0.5,0.5,1.0})
+//             )
+//         ),
+//         // Right
+//         div()
+//             .color(simd_float4{0.0,0.0,0.0,0.0})
+//             .display(gui::Display::Flex)
+//             .alignItems(gui::AlignItems::Center)
+//             .flexGap(gui::Size::px(8))
+//         (
+//             div()
+//                 .color(simd_float4{0.96,0.96,0.96,1.0})
+//                 .height(gui::Size::px(36))
+//                 .paddingLeft(gui::Size::px(16))
+//                 .paddingRight(gui::Size::px(16))
+//                 .cornerRadius(gui::Size::px(6))
+//                 .display(gui::Display::Flex)
+//                 .alignItems(gui::AlignItems::Center)
+//             (
+//                 text("Import").fontSize(gui::Size::pt(13)).color(simd_float4{0.5,0.5,0.5,1.0})
+//             ),
+//             div()
+//                 .color(simd_float4{0.1,0.1,0.1,1.0})
+//                 .height(gui::Size::px(36))
+//                 .paddingLeft(gui::Size::px(16))
+//                 .paddingRight(gui::Size::px(16))
+//                 .cornerRadius(gui::Size::px(6))
+//                 .display(gui::Display::Flex)
+//                 .alignItems(gui::AlignItems::Center)
+//             (
+//                 text("Add trip").fontSize(gui::Size::pt(13)).color(simd_float4{1.0,1.0,1.0,1.0})
+//             )
+//         )
+//     ),
+//     // Body
+//     div()
+//         .color(simd_float4{0.0,0.0,0.0,0.0})
+//         .display(gui::Display::Flex)
+//         .flexGrow(gui::Size::px(1))
+//         .overflow(gui::Overflow::Scroll)
+//     (
+//         // Sidebar
+//         div()
+//             // .width(gui::Size::px(160.0))
+//             .color(simd_float4{1.0,1.0,1.0,1.0})
+//             .borderColor(simd_float4{0.88,0.88,0.88,1.0})
+//             .borderWidth(gui::Size::px(1.0))
+//             .display(gui::Display::Flex)
+//             .flexDirection(gui::FlexDirection::Col)
+//             .flexGap(gui::Size::px(4))
+//             .padding(gui::Size::px(12))
+//             .flexShrink(gui::Size::px(0.0))
+//         (
+//             text("TRIPS").fontSize(gui::Size::pt(10)).color(simd_float4{0.6,0.6,0.6,1.0}),
+//             div()
+//                 .width(gui::Size::percent(1.0))
+//                 .color(simd_float4{0.96,0.96,0.96,1.0})
+//                 .cornerRadius(gui::Size::px(8))
+//                 .paddingLeft(gui::Size::px(12))
+//                 .paddingRight(gui::Size::px(12))
+//                 .paddingTop(gui::Size::px(8))
+//                 .paddingBottom(gui::Size::px(8))
+//                 .display(gui::Display::Flex)
+//                 .flexDirection(gui::FlexDirection::Col)
+//                 .flexGap(gui::Size::px(2))
+//             (
+//                 text("Tokyo & Kyoto").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0}),
+//                 text("Mar 10 - Mar 24").fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})
+//             ),
+//             div()
+//                 .width(gui::Size::percent(1.0))
+//                 .color(simd_float4{1.0,1.0,1.0,1.0})
+//                 .cornerRadius(gui::Size::px(8))
+//                 .paddingLeft(gui::Size::px(12))
+//                 .paddingRight(gui::Size::px(12))
+//                 .paddingTop(gui::Size::px(8))
+//                 .paddingBottom(gui::Size::px(8))
+//                 .display(gui::Display::Flex)
+//                 .flexDirection(gui::FlexDirection::Col)
+//                 .flexGap(gui::Size::px(2))
+//             (
+//                 text("NYC Weekend").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0}),
+//                 text("Apr 4 - Apr 7").fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})
+//             ),
+//             div()
+//                 .width(gui::Size::percent(1.0))
+//                 .color(simd_float4{1.0,1.0,1.0,1.0})
+//                 .cornerRadius(gui::Size::px(8))
+//                 .paddingLeft(gui::Size::px(12))
+//                 .paddingRight(gui::Size::px(12))
+//                 .paddingTop(gui::Size::px(8))
+//                 .paddingBottom(gui::Size::px(8))
+//                 .display(gui::Display::Flex)
+//                 .flexDirection(gui::FlexDirection::Col)
+//                 .flexGap(gui::Size::px(2))
+//             (
+//                 text("London + Paris").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0}),
+//                 text("Jun 1 - Jun 12").fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})
+//             )
+//         ),
+//         // Main content
+//         div()
+//             .color(simd_float4{0.97,0.97,0.97,1.0})
+//             .flexGrow(gui::Size::px(1))
+//             .display(gui::Display::Flex)
+//             .flexDirection(gui::FlexDirection::Col)
+//             .padding(gui::Size::px(24))
+//             .flexGap(gui::Size::px(12))
+//             .overflow(gui::Overflow::Scroll)
+//         (
+//             // Title row
+//             div()
+//                 .color(simd_float4{0.0,0.0,0.0,0.0})
+//                 .display(gui::Display::Flex)
+//                 .alignItems(gui::AlignItems::Center)
+//                 .justifyContent(gui::JustifyContent::SpaceBetween)
+//             (
+//                 div()
+//                     .color(simd_float4{0.0,0.0,0.0,0.0})
+//                     .display(gui::Display::Flex)
+//                     .flexDirection(gui::FlexDirection::Col)
+//                     .flexGap(gui::Size::px(2))
+//                 (
+//                     text("Tokyo & Kyoto").fontSize(gui::Size::pt(20)).color(simd_float4{0.1,0.1,0.1,1.0}),
+//                     text("Mar 10 - Mar 24 · 14 days").fontSize(gui::Size::pt(13)).color(simd_float4{0.5,0.5,0.5,1.0})
+//                 ),
+//                 div()
+//                     .color(simd_float4{0.96,0.96,0.96,1.0})
+//                     .paddingLeft(gui::Size::px(16))
+//                     .paddingRight(gui::Size::px(16))
+//                     .height(gui::Size::px(32))
+//                     .cornerRadius(gui::Size::px(6))
+//                     .display(gui::Display::Flex)
+//                     .alignItems(gui::AlignItems::Center)
+//                 (
+//                     text("Edit").fontSize(gui::Size::pt(12)).color(simd_float4{0.5,0.5,0.5,1.0})
+//                 )
+//             ),
+//             // Flight
+//             div(gui::Size::percent(1.0), gui::Size::px(80), simd_float4{1.0,1.0,1.0,1.0})
+//                 .cornerRadius(gui::Size::px(12))
+//                 .paddingLeft(gui::Size::px(16))
+//                 .paddingRight(gui::Size::px(16))
+//                 .display(gui::Display::Flex)
+//                 .alignItems(gui::AlignItems::Center)
+//                 .justifyContent(gui::JustifyContent::SpaceBetween)
+//             (
+//                 div()
+//                     .color(simd_float4{0.0,0.0,0.0,0.0})
+//                     .display(gui::Display::Flex)
+//                     .flexDirection(gui::FlexDirection::Col)
+//                     .flexGap(gui::Size::px(4))
+//                 (
+//                     div()
+//                         .color(simd_float4{0.0,0.0,0.0,0.0})
+//                         .display(gui::Display::Flex)
+//                         .flexGap(gui::Size::px(4))
+//                         .alignItems(gui::AlignItems::Center)
+//                     (
+//                         svg("/Users/treja/projects/gui/assets/plane.svg")
+//                             .width(gui::Size::px(22))
+//                             .height(gui::Size::px(22)),
+//                         text("SFO -> NRT").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})
+//                     )
+//                     ,text("Mar 10 · United 837 · 11h 30m").fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})
+//                 ),
+//                 div()
+//                     .color(simd_float4{0.93,0.88,1.0,1.0})
+//                     .paddingLeft(gui::Size::px(12))
+//                     .paddingRight(gui::Size::px(12))
+//                     .height(gui::Size::px(24))
+//                     .cornerRadius(gui::Size::px(12))
+//                     .display(gui::Display::Flex)
+//                     .alignItems(gui::AlignItems::Center)
+//                 (
+//                     text("[Flight]").fontSize(gui::Size::pt(11)).color(simd_float4{0.4,0.3,1.0,1.0})
+//                 )
+//             ),
+//             // Hotel
+//             div(gui::Size::percent(1.0), gui::Size::px(80), simd_float4{1.0,1.0,1.0,1.0})
+//                 .cornerRadius(gui::Size::px(12))
+//                 .paddingLeft(gui::Size::px(16))
+//                 .paddingRight(gui::Size::px(16))
+//                 .display(gui::Display::Flex)
+//                 .alignItems(gui::AlignItems::Center)
+//                 .justifyContent(gui::JustifyContent::SpaceBetween)
+//             (
+//                 div()
+//                     .color(simd_float4{0.0,0.0,0.0,0.0})
+//                     .display(gui::Display::Flex)
+//                     .flexDirection(gui::FlexDirection::Col)
+//                     .flexGap(gui::Size::px(4))
+//                 (
+//                     text("Park Hyatt Tokyo").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0}),
+//                     text("Mar 11 - Mar 17 · 6 nights").fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})
+//                 ),
+//                 div()
+//                     .color(simd_float4{0.85,0.93,1.0,1.0})
+//                     .paddingLeft(gui::Size::px(12))
+//                     .paddingRight(gui::Size::px(12))
+//                     .height(gui::Size::px(24))
+//                     .cornerRadius(gui::Size::px(12))
+//                     .display(gui::Display::Flex)
+//                     .alignItems(gui::AlignItems::Center)
+//                 (
+//                     text("[Hotel]").fontSize(gui::Size::pt(11)).color(simd_float4{0.2,0.6,0.9,1.0})
+//                 )
+//             ),
+//             // Train
+//             div(gui::Size::percent(1.0), gui::Size::px(80), simd_float4{1.0,1.0,1.0,1.0})
+//                 .cornerRadius(gui::Size::px(12))
+//                 .paddingLeft(gui::Size::px(16))
+//                 .paddingRight(gui::Size::px(16))
+//                 .display(gui::Display::Flex)
+//                 .alignItems(gui::AlignItems::Center)
+//                 .justifyContent(gui::JustifyContent::SpaceBetween)
+//             (
+//                 div()
+//                     .color(simd_float4{0.0,0.0,0.0,0.0})
+//                     .display(gui::Display::Flex)
+//                     .flexDirection(gui::FlexDirection::Col)
+//                     .flexGap(gui::Size::px(4))
+//                 (
+//                     text("Tokyo -> Kyoto").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0}),
+//                     text("Mar 17 · Shinkansen · 2h 15m").fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})
+//                 ),
+//                 div()
+//                     .color(simd_float4{0.85,1.0,0.9,1.0})
+//                     .paddingLeft(gui::Size::px(12))
+//                     .paddingRight(gui::Size::px(12))
+//                     .height(gui::Size::px(24))
+//                     .cornerRadius(gui::Size::px(12))
+//                     .display(gui::Display::Flex)
+//                     .alignItems(gui::AlignItems::Center)
+//                 (
+//                     text("[Train]").fontSize(gui::Size::pt(11)).color(simd_float4{0.1,0.7,0.4,1.0})
+//                 )
+//             )
+//         )
+//         // Detail panel
+//         ,div()
+//             // .width(gui::Size::px(200.0))
+//             .color(simd_float4{1.0,1.0,1.0,1.0})
+//             .borderColor(simd_float4{0.88,0.88,0.88,1.0})
+//             .borderWidth(gui::Size::px(1.0))
+//             .display(gui::Display::Flex)
+//             .flexDirection(gui::FlexDirection::Col)
+//             .flexGap(gui::Size::px(16))
+//             .padding(gui::Size::px(16))
+//             .flexShrink(gui::Size::px(0.0))
+//             .overflow(gui::Overflow::Scroll)
+//         (
+//             div()
+//                 .color(simd_float4{0.0,0.0,0.0,0.0})
+//                 .display(gui::Display::Flex)
+//                 .alignItems(gui::AlignItems::Center)
+//                 .justifyContent(gui::JustifyContent::SpaceBetween)
+//             (
+//                 text("Flight Details").fontSize(gui::Size::pt(14)).color(simd_float4{0.1,0.1,0.1,1.0}),
+//                 text("x").fontSize(gui::Size::pt(13)).color(simd_float4{0.6,0.6,0.6,1.0})
+//             ),
+//             div()
+//                 .color(simd_float4{0.0,0.0,0.0,0.0})
+//                 .display(gui::Display::Flex)
+//                 .flexDirection(gui::FlexDirection::Col)
+//                 .flexGap(gui::Size::px(12))
+//             (
+//                 div()
+//                     .color(simd_float4{0.0,0.0,0.0,0.0})
+//                     .display(gui::Display::Flex)
+//                     .justifyContent(gui::JustifyContent::SpaceBetween)
+//                 (
+//                     text("Flight").fontSize(gui::Size::pt(13)).color(simd_float4{0.6,0.6,0.6,1.0}),
+//                     text("UA 837").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})
+//                 ),
+//                 div()
+//                     .color(simd_float4{0.0,0.0,0.0,0.0})
+//                     .display(gui::Display::Flex)
+//                     .justifyContent(gui::JustifyContent::SpaceBetween)
+//                 (
+//                     text("Departs").fontSize(gui::Size::pt(13)).color(simd_float4{0.6,0.6,0.6,1.0}),
+//                     text("10:45 AM").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})
+//                 ),
+//                 div()
+//                     .color(simd_float4{0.0,0.0,0.0,0.0})
+//                     .display(gui::Display::Flex)
+//                     .justifyContent(gui::JustifyContent::SpaceBetween)
+//                 (
+//                     text("Arrives").fontSize(gui::Size::pt(13)).color(simd_float4{0.6,0.6,0.6,1.0}),
+//                     text("3:15 PM +1").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})
+//                 ),
+//                 div()
+//                     .color(simd_float4{0.0,0.0,0.0,0.0})
+//                     .display(gui::Display::Flex)
+//                     .justifyContent(gui::JustifyContent::SpaceBetween)
+//                 (
+//                     text("Duration").fontSize(gui::Size::pt(13)).color(simd_float4{0.6,0.6,0.6,1.0}),
+//                     text("11h 30m").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})
+//                 ),
+//                 div()
+//                     .color(simd_float4{0.0,0.0,0.0,0.0})
+//                     .display(gui::Display::Flex)
+//                     .justifyContent(gui::JustifyContent::SpaceBetween)
+//                 (
+//                     text("Seat").fontSize(gui::Size::pt(13)).color(simd_float4{0.6,0.6,0.6,1.0}),
+//                     text("42A").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})
+//                 ),
+//                 div()
+//                     .color(simd_float4{0.0,0.0,0.0,0.0})
+//                     .display(gui::Display::Flex)
+//                     .justifyContent(gui::JustifyContent::SpaceBetween)
+//                 (
+//                     text("Class").fontSize(gui::Size::pt(13)).color(simd_float4{0.6,0.6,0.6,1.0}),
+//                     text("Economy").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})
+//                 )
+//             ),
+//             div()
+//                 .width(gui::Size::percent(1.0))
+//                 .color(simd_float4{0.97,0.97,0.97,1.0})
+//                 .cornerRadius(gui::Size::px(8))
+//                 .padding(gui::Size::px(12))
+//                 .display(gui::Display::Flex)
+//                 .flexDirection(gui::FlexDirection::Col)
+//                 .flexGap(gui::Size::px(4))
+//             (
+//                 text("Local time at destination").fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0}),
+//                 text("3:15 PM JST (UTC+9)").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})
+//             )
+//         )
+//     )
+// );
 
 //    div(gui::Size::percent(1.0), gui::Size::percent(1.0), simd_float4{0.95,0.95,0.95,1.0})
 //         .display(gui::Display::Flex)
@@ -3653,12 +3652,13 @@ div()
 //         )
 //     );
 
-    // layout_test::scenes::buildBrowser();
+    layout_test::scenes::buildBrowser();
 
     // using S = gui::Size;
     // constexpr auto intrinsicText = "short extraordinarilylongword short words that should wrap";
 
-    // div(S::percent(1.0), S::percent(1.0), simd_float4{0.94,0.94,0.96,1.0})
+    // div(S::percent(1.0), S
+    // ::percent(1.0), simd_float4{0.94,0.94,0.96,1.0})
     //     .padding(S::px(32))
     // (
     //     div(S::minContent(), S::autoSize(), simd_float4{0.20,0.70,0.90,1.0})

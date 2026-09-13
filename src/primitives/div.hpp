@@ -13,10 +13,10 @@
 #include <print>
 #include "element.hpp"
 #include "events.hpp"
-#include "new_arch.hpp"
+#include "layout/layout.hpp"
 #include "frame_buffered_buffer.hpp"
 #include "renderer_constants.hpp"
-#include "sizing.hpp"
+#include "layout/sizing.hpp"
 #include <any>
 #include <simd/vector_types.h>
 #include "overloaded.hpp"

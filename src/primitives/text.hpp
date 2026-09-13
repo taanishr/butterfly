@@ -15,10 +15,10 @@
 #include <mutex>
 #include <optional>
 #include <print>
-#include "new_arch.hpp"
+#include "layout/layout.hpp"
 #include "overloaded.hpp"
 #include "utf8.hpp"
-#include "textShaper.hpp"
+#include "text/textShaper.hpp"
 #include <any>
 #include <vector>
 

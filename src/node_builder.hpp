@@ -1,14 +1,14 @@
 #pragma once
 
-#include "element.hpp"
-#include "div.hpp"
+#include "tree_node.hpp"
+#include "primitives/div.hpp"
 #include "events.hpp"
 #include "fonts.hpp"
 #include "renderer.hpp"
-#include "image.hpp"
-#include "svg.hpp"
-#include "text.hpp"
-#include "new_arch.hpp"
+#include "primitives/image.hpp"
+#include "primitives/svg.hpp"
+#include "primitives/text.hpp"
+#include "layout/layout.hpp"
 #include <algorithm>
 #include <cstdint>
 #include <memory>

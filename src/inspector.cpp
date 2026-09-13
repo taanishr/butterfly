@@ -2,8 +2,8 @@
 #include "context_manager.hpp"
 #include "events.hpp"
 #include "instrumentation.hpp"
-#include "new_arch.hpp"
-#include "sizing.hpp"
+#include "layout/layout.hpp"
+#include "layout/sizing.hpp"
 #include <algorithm>
 #include <functional>
 #include <print>

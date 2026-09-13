@@ -1,6 +1,6 @@
 #pragma once
 
-#include "bidi.hpp"
+#include "text/bidi.hpp"
 #include <memory>
 #include <span>
 #include <string>

@@ -1,10 +1,9 @@
 
 #pragma once
 
-#include "new_arch.hpp"
-#include "element.hpp"
-#include "new_sizing.hpp"
-#include "sizing.hpp"
+#include "layout/layout.hpp"
+#include "tree_node.hpp"
+#include "layout/sizing.hpp"
 #include <variant>
 
 namespace tree {

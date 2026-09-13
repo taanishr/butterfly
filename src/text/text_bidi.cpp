@@ -1,4 +1,4 @@
-#include "text_bidi.hpp"
+#include "text/text_bidi.hpp"
 
 #include "utf8.hpp"
 #include <SheenBidi/SheenBidi.h>

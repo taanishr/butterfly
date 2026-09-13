@@ -42,35 +42,41 @@ endif()
 
 set(GUI_SOURCES
     MTKTexture_loader.cpp
-    bidi.cpp
     buffer_allocator.cpp
     color.cpp
     context_manager.cpp
-    div.cpp
     element.cpp
-    flex.cpp
     glyphCache.cpp
     glyphs.cpp
-    grid.cpp
-    image.cpp
     index.cpp
     instrumentation.cpp
     inspector.cpp
+    layout/block.cpp
+    layout/flex.cpp
+    layout/grid.cpp
+    layout/inline.cpp
+    layout/inline_formatting.cpp
+    layout/margin_resolution.cpp
+    layout/resolver.cpp
+    layout/sizing.cpp
     layout_test_scenes.cpp
     main.cpp
-    new_arch.cpp
-    new_sizing.cpp
     node_builder.cpp
     printers.cpp
+    primitives/div.cpp
+    primitives/image.cpp
+    primitives/svg.cpp
+    primitives/text.cpp
     render_tree.cpp
     renderer.cpp
     sdf_helpers.cpp
-    svg.cpp
     swift_object.cpp
-    text.cpp
-    textShaper.cpp
-    text_bidi.cpp
+    text/bidi.cpp
+    text/textShaper.cpp
+    text/text_bidi.cpp
     tree_manager.cpp
+    tree_node.cpp
+    ui_context.cpp
     window.cpp
 )
 

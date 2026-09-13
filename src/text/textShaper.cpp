@@ -1,4 +1,4 @@
-#include "textShaper.hpp"
+#include "text/textShaper.hpp"
 #include "glyphs.hpp"
 #include "utf8.hpp"
 #include <hb-ft.h>

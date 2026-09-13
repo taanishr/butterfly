@@ -1,8 +1,8 @@
 #pragma once
 
-#include "element.hpp"
-#include "new_arch.hpp"
-#include "new_sizing.hpp"
+#include "tree_node.hpp"
+#include "layout/layout.hpp"
+#include "layout/sizing.hpp"
 #include <optional>
 #include <unordered_map>
 #include <vector>

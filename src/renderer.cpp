@@ -7,10 +7,10 @@
 
 #include "renderer.hpp"
 #include "element.hpp"
-#include "div.hpp"
-#include "svg.hpp"
+#include "primitives/div.hpp"
+#include "primitives/svg.hpp"
 #include "tree_manager.hpp"
-#include "new_arch.hpp"
+#include "layout/layout.hpp"
 #include <simd/vector_types.h>
 #include "index.hpp"
 #include "inspector.hpp"

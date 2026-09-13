@@ -8,17 +8,17 @@
 #pragma once
 #include <semaphore>
 #include "frame_info.hpp"
-#include "new_arch.hpp"
-#include "div.hpp"
-#include "image.hpp"
+#include "layout/layout.hpp"
+#include "primitives/div.hpp"
+#include "primitives/image.hpp"
 #include <chrono>
-#include "text.hpp"
+#include "primitives/text.hpp"
 #include "element.hpp"
 #include "renderer_constants.hpp"
 #include "context_manager.hpp"
 #include "tree_manager.hpp"
 #include "AppKit_Extensions.hpp"
-#include "sizing.hpp"
+#include "layout/sizing.hpp"
 
 namespace Inspector {
     struct Inspector;

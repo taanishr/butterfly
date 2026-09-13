@@ -1,9 +1,9 @@
-#include "grid.hpp"
-#include "new_arch.hpp"
-#include "new_sizing.hpp"
+#include "layout/grid.hpp"
+#include "layout/layout.hpp"
+#include "layout/sizing.hpp"
 #include "overloaded.hpp"
 #include "render_tree.hpp"
-#include "sizing.hpp"
+#include "layout/sizing.hpp"
 #include <algorithm>
 #include <array>
 #include <cstdint>

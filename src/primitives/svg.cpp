@@ -1,5 +1,5 @@
-#include "svg.hpp"
-#include "sizing.hpp"
+#include "primitives/svg.hpp"
+#include "layout/sizing.hpp"
 
 elements::SVGAsset::~SVGAsset() {
     if (tree) resvg_tree_destroy(tree);

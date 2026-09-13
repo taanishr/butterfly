@@ -1,5 +1,5 @@
 #include "node_builder.hpp"
-#include "div.hpp"
+#include "primitives/div.hpp"
 #include "tree_manager.hpp"
 #include <print>
 

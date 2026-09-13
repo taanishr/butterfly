@@ -1,5 +1,5 @@
-#include "image.hpp"
-#include "sizing.hpp"
+#include "primitives/image.hpp"
+#include "layout/sizing.hpp"
 
 std::shared_ptr<elements::ImageAsset> elements::ImageCache::retrieve(const std::string& path) {
     {

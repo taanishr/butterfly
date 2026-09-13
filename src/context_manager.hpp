@@ -1,10 +1,10 @@
 #pragma once
 
-#include "new_arch.hpp"
-#include "div.hpp"
-#include "image.hpp"
-#include "svg.hpp"
-#include "text.hpp"
+#include "layout/layout.hpp"
+#include "primitives/div.hpp"
+#include "primitives/image.hpp"
+#include "primitives/svg.hpp"
+#include "primitives/text.hpp"
 #include <mutex>
 
 namespace runtime {
