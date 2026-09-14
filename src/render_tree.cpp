@@ -2,6 +2,7 @@
 #include "hash_combine.hpp"
 #include "layout/layout.hpp"
 #include "layout/sizing.hpp"
+#include "layout/style.hpp"
 #include "overloaded.hpp"
 #include "layout/sizing.hpp"
 #include <algorithm>
@@ -184,6 +185,10 @@ namespace tree {
         hash_combine(hash, constraints.absoluteContainingBlock.origin.y);
         hashSize(constraints.absoluteContainingBlock.width, hash);
         hashSize(constraints.absoluteContainingBlock.height, hash);
+        hash_combine(hash, constraints.scrollport.origin.x);
+        hash_combine(hash, constraints.scrollport.origin.y);
+        hashSize(constraints.scrollport.width, hash);
+        hashSize(constraints.scrollport.height, hash);
         hash_combine(hash, static_cast<int>(constraints.edgeIntent.edgeDisplayMode));
         hash_combine(hash, constraints.edgeIntent.intent);
         hash_combine(hash, constraints.edgeIntent.collapsable);
@@ -332,6 +337,11 @@ namespace tree {
                 .height = frameInfo.height
             },
             .absoluteContainingBlock = {
+                .origin = {0, 0},
+                .width = frameInfo.width,
+                .height = frameInfo.height
+            },
+            .scrollport = {
                 .origin = {0, 0},
                 .width = frameInfo.width,
                 .height = frameInfo.height
@@ -698,6 +708,16 @@ namespace tree {
             childConstraints.absoluteContainingBlock = constraints.absoluteContainingBlock;
         }
 
+        if (node->shared.overflow == Overflow::Scroll) {
+            childConstraints.scrollport = {
+                .origin = {0.0f, 0.0f},
+                .width = sizeResult.paddingBoxSize.width,
+                .height = sizeResult.paddingBoxSize.height,
+            };
+        } else {
+            childConstraints.scrollport = constraints.scrollport;
+        }
+
         std::optional<IntrinsicSizes> intrinsicResult;
 
         if (sizeRequest.resolvingIntrinsicWidth || sizeRequest.resolvingIntrinsicHeight) {
@@ -1036,6 +1056,73 @@ namespace tree {
             
             layout.clipUniforms = constraints.clipUniforms;
 
+            // sticky adjustment
+            if (position == Position::Sticky) {
+                float stickyX = layout.computedBox.x;
+                float stickyY = layout.computedBox.y;
+
+                // sticky insets resolve against scrolport
+                auto top = node->shared.top ? calculateSize(*node->shared.top, constraints.scrollport.height) : std::monostate{};
+                auto bottom = node->shared.bottom ? calculateSize(*node->shared.bottom, constraints.scrollport.height) : std::monostate{};
+                auto left = node->shared.left ? calculateSize(*node->shared.left, constraints.scrollport.width) : std::monostate{};
+                auto right = node->shared.right ? calculateSize(*node->shared.right, constraints.scrollport.width) : std::monostate{};
+
+
+                auto scrollportHeight = calculateSize(constraints.scrollport.height, std::monostate{});
+                auto scrollportWidth = calculateSize(constraints.scrollport.width, std::monostate{});
+
+                if (std::holds_alternative<float>(top)) {
+                    auto resolvedTop = std::get<float>(top);
+                    stickyY = std::max(stickyY, constraints.scrollport.origin.y + resolvedTop);
+                }   
+
+                if (std::holds_alternative<float>(bottom) && std::holds_alternative<float>(scrollportHeight)) {
+                    auto resolvedBottom = std::get<float>(bottom);
+                    auto resolvedScrollportHeight = std::get<float>(scrollportHeight);
+                    stickyY = std::min(stickyY, constraints.scrollport.origin.y + resolvedScrollportHeight - resolvedBottom - outerHeight);
+                }
+
+                if (std::holds_alternative<float>(left)) {
+                    auto resolvedLeft = std::get<float>(left);
+                    stickyX = std::max(stickyX, constraints.scrollport.origin.x + resolvedLeft);
+                }
+
+                if (std::holds_alternative<float>(right) && std::holds_alternative<float>(scrollportWidth)) {
+                    auto resolvedRight = std::get<float>(right);
+                    auto resolvedScrollportWidth = std::get<float>(scrollportWidth);
+                    stickyX = std::min(stickyX, constraints.scrollport.origin.x + resolvedScrollportWidth - resolvedRight - outerWidth);
+                }
+
+                // clamp inside containing block
+                auto containingBlockWidth = calculateSize(containingBlock.width, std::monostate{});
+                auto containingBlockHeight = calculateSize(containingBlock.height, std::monostate{});
+                const auto& margins = node->preLayout->resolvedMargins;
+
+                if (std::holds_alternative<float>(containingBlockWidth)) {
+                    auto resolvedContainingBlockWidth = std::get<float>(containingBlockWidth);
+                    auto minimumX = std::min(layout.computedBox.x, containingBlock.origin.x + margins.left);
+                    auto maximumX = std::max(layout.computedBox.x, containingBlock.origin.x + resolvedContainingBlockWidth - margins.right - outerWidth);
+                    stickyX = std::clamp(stickyX, minimumX, maximumX);
+                }
+
+                if (std::holds_alternative<float>(containingBlockHeight)) {
+                    auto resolvedContainingBlockHeight = std::get<float>(containingBlockHeight);
+                    auto minimumY = std::min(layout.computedBox.y, containingBlock.origin.y + margins.top);
+                    auto maximumY = std::max(layout.computedBox.y, containingBlock.origin.y + resolvedContainingBlockHeight - margins.bottom - outerHeight);
+                    stickyY = std::clamp(stickyY, minimumY, maximumY);
+                }
+
+                // adjust computed box + atom offsets
+                float deltaX = stickyX - layout.computedBox.x;
+                float deltaY = stickyY - layout.computedBox.y;
+                layout.computedBox.x = stickyX;
+                layout.computedBox.y = stickyY;
+                for (auto& offset : layout.atomOffsets) {
+                    offset.x += deltaX;
+                    offset.y += deltaY;
+                }
+            }
+
             node->atomized = node->element->postLayout(constraints, node->shared,*node->atomized, result.layout);
 
             // prepare child constraints; add clipping uniforms
@@ -1050,12 +1137,20 @@ namespace tree {
                 layout.computedBox.y + borderWidth + paddingTop
             };
 
+            ContainingBlock childScrollport = constraints.scrollport;
+
             if (node->shared.overflow == Overflow::Scroll) {
                 // compute scroll port size
                 const auto& paddingBoxSize = result.sizeResult.paddingBoxSize;
                 node->scrollViewportSize = {
                     std::holds_alternative<float>(paddingBoxSize.width) ? std::max(0.0f, std::get<float>(paddingBoxSize.width)) : 0.0f,
                     std::holds_alternative<float>(paddingBoxSize.height) ? std::max(0.0f, std::get<float>(paddingBoxSize.height)) : 0.0f
+                };
+
+                childScrollport = {
+                    .origin = currPaddingOrigin,
+                    .width = paddingBoxSize.width,
+                    .height = paddingBoxSize.height
                 };
 
                 // adjust origins by scroll offsets
@@ -1076,6 +1171,8 @@ namespace tree {
                 .width = result.sizeResult.innerSize.width,
                 .height = result.sizeResult.innerSize.height
             };
+
+            childConstraints.scrollport = childScrollport;
 
             if (position != Position::Static) {
                 childConstraints.absoluteContainingBlock = {

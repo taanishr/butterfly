@@ -294,6 +294,7 @@ namespace layout {
         FrameInfo frameInfo{}; // viewport size (for fixed)
         ContainingBlock containingBlock{}; // for normal flow: parent content box
         ContainingBlock absoluteContainingBlock{}; // for absolute: nearest positioned ancestor
+        ContainingBlock scrollport{}; // nearest scroll container's padding box
 
         EdgeIntent edgeIntent{};
 

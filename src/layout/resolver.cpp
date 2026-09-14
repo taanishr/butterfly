@@ -79,6 +79,7 @@ namespace layout {
                 break;
             }   
             case layout::Position::Relative:
+            case layout::Position::Sticky:
             case layout::Position::Static: {
                 switch (ctx.layoutInput.display) {
                     case layout::Display::Flex:
