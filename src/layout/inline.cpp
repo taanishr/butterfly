@@ -364,26 +364,6 @@ namespace layout {
 
         lr.siblingCursor = currentCursor;
 
-        ContainingBlock containingBlock =
-            layoutInput.position == Position::Fixed
-                ? ContainingBlock {
-                    .origin = {0.0f, 0.0f},
-                    .width = constraints.frameInfo.width,
-                    .height = constraints.frameInfo.height
-                }
-                : constraints.absoluteContainingBlock;
-
-        bool isRtl = constraints.inheritedProperties.direction == Direction::rtl;
-
-        lr.deferredPosition = {
-            .containingBlockWidth = containingBlock.width,
-            .containingBlockHeight = containingBlock.height,
-            .right = (!layoutInput.left.has_value() || isRtl) ? layoutInput.right : std::nullopt,
-            .bottom = !layoutInput.top.has_value() ? layoutInput.bottom : std::nullopt,
-            .marginRight = margins.right,
-            .marginBottom = margins.bottom
-        };
-
         return lr;
     }
 

@@ -55,8 +55,7 @@ namespace tree {
             Constraints constraints
         );
     
-        void postLayoutPhase(TreeNode* node, const FrameInfo& frameInfo, Constraints& constraints,
-                             simd_float2 parentGlobalOrigin, simd_float2 absBlockGlobalOrigin);
+        void postLayoutPhase(TreeNode* node, const FrameInfo& frameInfo, Constraints& constraints);
 
         void placePhase(TreeNode* node, const FrameInfo& frameInfo, Constraints& constraints);
         void finalizePhase(TreeNode* node, Constraints& constraints);
@@ -72,7 +71,7 @@ namespace tree {
         );
     private:
         bool isFrameInfoChanged(const FrameInfo& frameInfo) const;
-        ConstraintsKey makeConstraintsKey(const Constraints& constraints, simd_float2 extraOriginA = {0.0f, 0.0f}, simd_float2 extraOriginB = {0.0f, 0.0f}) const;
+        ConstraintsKey makeConstraintsKey(const Constraints& constraints) const;
         instrumentation::RecomputeReason recomputeReason(
             TreeNode* node,
             DirtyBits bit,

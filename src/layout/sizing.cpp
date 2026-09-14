@@ -475,6 +475,21 @@ auto resolveInnerHeight(const SizeState& size, const PaddingResult& padding, con
     }, size);
 }
 
+auto resolvePaddingBoxSize(const SizeState& size, const SizeState& borderWidth) -> SizeState {
+    return std::visit(Overloaded{
+        [&](float paddingBoxSize) -> SizeState {
+            if (std::holds_alternative<float>(borderWidth)) {
+                paddingBoxSize -= 2 * std::get<float>(borderWidth);
+            }
+
+            return paddingBoxSize;
+        },
+        [&](auto& other) -> SizeState {
+            return other;
+        }
+    }, size);
+}
+
 // these ONLY exist because of different auto behavior fo min/max width and height
 auto resolveMinWidth(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic) -> SizeState {
     // run size through a calculate size pass (maybe avail too)
@@ -1071,7 +1086,12 @@ auto evaluateSize(
 
     size.height = clampSize(size.height, minimum.height, maximum.height);
 
-    // inner sizes 
+    SizePair paddingBoxSize {
+        .width = resolvePaddingBoxSize(size.width, borderWidth),
+        .height = resolvePaddingBoxSize(size.height, borderWidth)
+    };
+
+    // inner sizes
     SizePair innerSize {
         .width = resolveInnerWidth(size.width, padding, borderWidth),
         .height = resolveInnerHeight(size.height, padding, borderWidth)
@@ -1079,6 +1099,7 @@ auto evaluateSize(
 
     SizeResult result = {
         .outerSize = size,
+        .paddingBoxSize = paddingBoxSize,
         .innerSize = innerSize,
         .minimum = minimum,
         .maximum = maximum,

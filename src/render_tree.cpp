@@ -12,6 +12,7 @@
 #include <variant>
 
 namespace tree {
+    using layout::ContainingBlock;
     using layout::FlexLayout;
     using layout::FlexResolver;
     using layout::GridResolver;
@@ -162,7 +163,7 @@ namespace tree {
         return hasDirty(node->dirtySelf | node->dirtySubtree, bits);
     }
 
-    ConstraintsKey RenderTree::makeConstraintsKey(const Constraints& constraints, simd_float2 extraOriginA, simd_float2 extraOriginB) const {
+    ConstraintsKey RenderTree::makeConstraintsKey(const Constraints& constraints) const {
         std::size_t hash = 0;
         hash_combine(hash, constraints.origin.x);
         hash_combine(hash, constraints.origin.y);
@@ -175,6 +176,10 @@ namespace tree {
         hash_combine(hash, constraints.frameInfo.width);
         hash_combine(hash, constraints.frameInfo.height);
         hash_combine(hash, constraints.frameInfo.scale);
+        hash_combine(hash, constraints.containingBlock.origin.x);
+        hash_combine(hash, constraints.containingBlock.origin.y);
+        hashSize(constraints.containingBlock.width, hash);
+        hashSize(constraints.containingBlock.height, hash);
         hash_combine(hash, constraints.absoluteContainingBlock.origin.x);
         hash_combine(hash, constraints.absoluteContainingBlock.origin.y);
         hashSize(constraints.absoluteContainingBlock.width, hash);
@@ -209,11 +214,6 @@ namespace tree {
             hash_combine(hash, clip.cornerRadius.x);
             hash_combine(hash, clip.cornerRadius.y);
         }
-
-        hash_combine(hash, extraOriginA.x);
-        hash_combine(hash, extraOriginA.y);
-        hash_combine(hash, extraOriginB.x);
-        hash_combine(hash, extraOriginB.y);
 
         return ConstraintsKey{.value = hash};
     }
@@ -326,6 +326,11 @@ namespace tree {
             .availableWidth = frameInfo.width,
             .availableHeight = frameInfo.height,
             .frameInfo = frameInfo,
+            .containingBlock = {
+                .origin = {0, 0},
+                .width = frameInfo.width,
+                .height = frameInfo.height
+            },
             .absoluteContainingBlock = {
                 .origin = {0, 0},
                 .width = frameInfo.width,
@@ -369,7 +374,7 @@ namespace tree {
         // postLayout: resolve global positions (serial, top-down) + reconcile atoms
         if (subtreeHasDirty(root, DirtyBits::PostLayout) || !root->layout.has_value()) {
             instrumentation::PhaseTimer timer{instrumentation::Phase::PostLayout};
-            postLayoutPhase(root, frameInfo, rootConstraints, {0.0f, 0.0f}, {0.0f, 0.0f});
+            postLayoutPhase(root, frameInfo, rootConstraints);
         }
 
         if (subtreeHasDirty(root, DirtyBits::Place) || !root->placed.has_value()) {
@@ -676,19 +681,18 @@ namespace tree {
             childConstraints.textOverflow = node->shared.textOverflow;
         }
 
-        if (node->getPosition() != Position::Static) {
-            float borderWidth = std::holds_alternative<float>(sizeResult.borderWidth)
-                ? std::get<float>(sizeResult.borderWidth)
-                : 0.0f;
+        // local during layout (so origin always 0.0; becomes non-local in post-layout)
+        childConstraints.containingBlock = {
+            .origin = {0.0f, 0.0f},
+            .width = sizeResult.innerSize.width,
+            .height = sizeResult.innerSize.height,
+        };
 
+        if (node->getPosition() != Position::Static) {
             childConstraints.absoluteContainingBlock = {
                 .origin = {0.0f, 0.0f},
-                .width = std::holds_alternative<float>(sizeResult.outerSize.width)
-                    ? SizeState{std::get<float>(sizeResult.outerSize.width) - 2 * borderWidth}
-                    : sizeResult.outerSize.width,
-                .height = std::holds_alternative<float>(sizeResult.outerSize.height)
-                    ? SizeState{std::get<float>(sizeResult.outerSize.height) - 2 * borderWidth}
-                    : sizeResult.outerSize.height,
+                .width = sizeResult.paddingBoxSize.width,
+                .height = sizeResult.paddingBoxSize.height,
             };
         } else {
             childConstraints.absoluteContainingBlock = constraints.absoluteContainingBlock;
@@ -943,9 +947,8 @@ namespace tree {
         return output;
     }
 
-    void RenderTree::postLayoutPhase(TreeNode* node, const FrameInfo& frameInfo, Constraints& constraints,
-                                      simd_float2 parentGlobalOrigin, simd_float2 absBlockGlobalOrigin) {
-        auto key = makeConstraintsKey(constraints, parentGlobalOrigin, absBlockGlobalOrigin);
+    void RenderTree::postLayoutPhase(TreeNode* node, const FrameInfo& frameInfo, Constraints& constraints) {
+        auto key = makeConstraintsKey(constraints);
         auto reason = recomputeReason(node, DirtyBits::PostLayout, key);
         if (reason == instrumentation::RecomputeReason::None) {
             return;
@@ -959,46 +962,68 @@ namespace tree {
         float paddingBottom = std::holds_alternative<float>(padding.bottom) ? std::get<float>(padding.bottom) : 0.0f;
         float paddingLeft = std::holds_alternative<float>(padding.left) ? std::get<float>(padding.left) : 0.0f;
 
-        const auto& border = result.sizeResult.borderWidth;
-        float borderWidth = std::holds_alternative<float>(border) ? std::get<float>(border) : 0.0f;
+        float borderWidth = std::holds_alternative<float>(result.sizeResult.borderWidth) ? std::get<float>(result.sizeResult.borderWidth) : 0.0f;
+
+        const auto& outerSize = result.sizeResult.outerSize;
+        float outerWidth = std::holds_alternative<float>(outerSize.width) ? std::get<float>(outerSize.width) : 0.0f;
+        float outerHeight = std::holds_alternative<float>(outerSize.height) ? std::get<float>(outerSize.height) : 0.0f;
+
+        auto position = node->getPosition();
+
+        ContainingBlock containingBlock = constraints.containingBlock;
+        if (position == Position::Fixed) {
+            containingBlock = {
+                .origin = {0.0f, 0.0f},
+                .width = frameInfo.width,
+                .height = frameInfo.height
+            };
+        } else if (position == Position::Absolute) {
+            containingBlock = constraints.absoluteContainingBlock;
+        }
 
         std::visit([&](auto& layout) {
+            // reset computed box to local variants
             layout.computedBox = layout.localComputedBox;
             layout.atomOffsets = layout.localAtomOffsets;
 
-            auto position = node->getPosition();
+            // resolve right / bottom positioning
+            // we only know how to position it after its size has been determiend
+            if (layout.outOfFlow) {
+                const auto& margins = node->preLayout->resolvedMargins;
+                bool isRtl = constraints.inheritedProperties.direction == layout::Direction::rtl;
 
-            auto& dp = layout.deferredPosition;
-            if (dp.right) {
-                SizeState containingBlockWidth = calculateSize(dp.containingBlockWidth, std::monostate{});
-                SizeState right = calculateSize(*dp.right, dp.containingBlockWidth);
-                if (std::holds_alternative<float>(containingBlockWidth) && std::holds_alternative<float>(right)) {
-                    float newX = std::get<float>(containingBlockWidth) - dp.marginRight - layout.computedBox.width - std::get<float>(right);
-                    float deltaX = newX - layout.computedBox.x;
-                    layout.computedBox.x = newX;
-                    for (auto& offset : layout.atomOffsets) offset.x += deltaX;
+                std::optional<Size> rightInset = (!node->shared.left.has_value() || isRtl) ? node->shared.right : std::nullopt;
+                std::optional<Size> bottomInset = !node->shared.top.has_value() ? node->shared.bottom : std::nullopt;
+
+                if (rightInset) {
+                    SizeState containingBlockWidth = calculateSize(containingBlock.width, std::monostate{});
+                    SizeState right = calculateSize(*rightInset, containingBlock.width);
+                    if (std::holds_alternative<float>(containingBlockWidth) && std::holds_alternative<float>(right)) {
+                        float newX = std::get<float>(containingBlockWidth) - margins.right - outerWidth - std::get<float>(right);
+                        float deltaX = newX - layout.computedBox.x;
+                        layout.computedBox.x = newX;
+                        for (auto& offset : layout.atomOffsets) {
+                            offset.x += deltaX;
+                        }
+                    }
+                }
+
+                if (bottomInset) {
+                    SizeState containingBlockHeight = calculateSize(containingBlock.height, std::monostate{});
+                    SizeState bottom = calculateSize(*bottomInset, containingBlock.height);
+                    if (std::holds_alternative<float>(containingBlockHeight) && std::holds_alternative<float>(bottom)) {
+                        float newY = std::get<float>(containingBlockHeight) - margins.bottom - outerHeight - std::get<float>(bottom);
+                        float deltaY = newY - layout.computedBox.y;
+                        layout.computedBox.y = newY;
+                        for (auto& offset : layout.atomOffsets) {
+                            offset.y += deltaY;
+                        }
+                    }
                 }
             }
 
-            if (dp.bottom) {
-                SizeState containingBlockHeight = calculateSize(dp.containingBlockHeight, std::monostate{});
-                SizeState bottom = calculateSize(*dp.bottom, dp.containingBlockHeight);
-                if (std::holds_alternative<float>(containingBlockHeight) && std::holds_alternative<float>(bottom)) {
-                    float newY = std::get<float>(containingBlockHeight) - dp.marginBottom - layout.computedBox.height - std::get<float>(bottom);
-                    float deltaY = newY - layout.computedBox.y;
-                    layout.computedBox.y = newY;
-                    for (auto& offset : layout.atomOffsets) offset.y += deltaY;
-                }
-            }
-
-            simd_float2 baseOrigin;
-            if (position == Position::Fixed) {
-                baseOrigin = {0.0f, 0.0f};
-            } else if (position == Position::Absolute) {
-                baseOrigin = absBlockGlobalOrigin;
-            } else {
-                baseOrigin = parentGlobalOrigin;
-            }
+            // establish post layout constraints
+            simd_float2 baseOrigin = containingBlock.origin;
 
             layout.computedBox.x += baseOrigin.x;
             layout.computedBox.y += baseOrigin.y;
@@ -1011,35 +1036,29 @@ namespace tree {
             
             layout.clipUniforms = constraints.clipUniforms;
 
-            if (node->shared.overflow == Overflow::Scroll) {
-                const auto& outerSize = result.sizeResult.outerSize;
-                node->scrollViewportSize = {
-                    // the scrollport is actually the padding box
-                    // so container MINUS only borders
-                    // i should probably encode this in sr
-                    std::holds_alternative<float>(outerSize.width)
-                        ? std::max(0.0f, std::get<float>(outerSize.width) - 2 * borderWidth)
-                        : 0.0f,
-                    std::holds_alternative<float>(outerSize.height)
-                        ? std::max(0.0f, std::get<float>(outerSize.height) - 2 * borderWidth)
-                        : 0.0f
-                };
-            }
+            node->atomized = node->element->postLayout(constraints, node->shared,*node->atomized, result.layout);
 
-            node->atomized = node->element->postLayout(constraints, node->shared,
-                                                        *node->atomized, result.layout);
+            // prepare child constraints; add clipping uniforms
+            simd_float2 currPaddingOrigin = {
+                layout.computedBox.x + borderWidth,
+                layout.computedBox.y + borderWidth
+            };
+
 
             simd_float2 currContentOrigin = {
                 layout.computedBox.x + borderWidth + paddingLeft,
                 layout.computedBox.y + borderWidth + paddingTop
             };
 
-            simd_float2 currPaddingOrigin = {
-                layout.computedBox.x + borderWidth,
-                layout.computedBox.y + borderWidth
-            };
-
             if (node->shared.overflow == Overflow::Scroll) {
+                // compute scroll port size
+                const auto& paddingBoxSize = result.sizeResult.paddingBoxSize;
+                node->scrollViewportSize = {
+                    std::holds_alternative<float>(paddingBoxSize.width) ? std::max(0.0f, std::get<float>(paddingBoxSize.width)) : 0.0f,
+                    std::holds_alternative<float>(paddingBoxSize.height) ? std::max(0.0f, std::get<float>(paddingBoxSize.height)) : 0.0f
+                };
+
+                // adjust origins by scroll offsets
                 float scrollX = constraints.inheritedProperties.direction == layout::Direction::rtl ? node->scrollOffset.x : -node->scrollOffset.x;
 
                 currContentOrigin.x += scrollX;
@@ -1048,22 +1067,33 @@ namespace tree {
                 currPaddingOrigin.y -= node->scrollOffset.y;
             }
 
-            simd_float2 childAbsBlockOrigin = absBlockGlobalOrigin;
-            if (position != Position::Static) {
-                childAbsBlockOrigin = currPaddingOrigin;
-            }
-
             auto childConstraints = constraints;
             childConstraints.availableWidth = layout.childConstraints.availableWidth;
+            childConstraints.availableHeight = layout.childConstraints.availableHeight;
+
+            childConstraints.containingBlock = {
+                .origin = currContentOrigin,
+                .width = result.sizeResult.innerSize.width,
+                .height = result.sizeResult.innerSize.height
+            };
+
+            if (position != Position::Static) {
+                childConstraints.absoluteContainingBlock = {
+                    .origin = currPaddingOrigin,
+                    .width = result.sizeResult.paddingBoxSize.width,
+                    .height = result.sizeResult.paddingBoxSize.height
+                };
+            }
+
             if (node->shared.overflow != Overflow::Visible) {
                 childConstraints.textOverflow = node->shared.textOverflow;
                 float cornerRadius = node->shared.cornerRadius.resolveOr(
-                    Size::px(std::min(layout.computedBox.width, layout.computedBox.height))
+                    Size::px(std::min(outerWidth, outerHeight))
                 );
 
                 simd_float2 halfExtent {
-                    layout.computedBox.width * 0.5f,
-                    layout.computedBox.height * 0.5f
+                    outerWidth * 0.5f,
+                    outerHeight * 0.5f
                 };
 
                 childConstraints.clipUniforms.push_back({
@@ -1076,18 +1106,13 @@ namespace tree {
                 });
             }
 
-            if (position == Position::Sticky) {
-                auto top = node->shared.top ? node->shared.top->resolveOr(Size::px(0.0)) : 0.0f;
-                auto bottom = node->shared.bottom ? node->shared.bottom->resolveOr(Size::px(0.0)) : 0.0f;
-                auto left = node->shared.left ? node->shared.left->resolveOr(Size::px(0.0)) : 0.0f;
-                auto right = left = node->shared.right ? node->shared.right->resolveOr(Size::px(0.0)) : 0.0f;;
-
-            }
-
+            // recurse
             for (auto& child : node->children) {
-                postLayoutPhase(child.get(), frameInfo, childConstraints,currContentOrigin, childAbsBlockOrigin);
+                postLayoutPhase(child.get(), frameInfo, childConstraints);
             }
 
+
+            // measure scrollable content and update scroll extent
             if (node->shared.overflow == Overflow::Scroll) {
                 simd_float2 contentSize {0.0f, 0.0f};
                 std::function<void(TreeNode*, bool)> includeChildOverflow;
@@ -1102,6 +1127,9 @@ namespace tree {
                         }
 
                         const auto& childBox = childLayout.computedBox;
+                        const auto& childOuterSize = child->layout->sizeResult.outerSize;
+                        float childOuterWidth = std::holds_alternative<float>(childOuterSize.width) ? std::get<float>(childOuterSize.width) : 0.0f;
+                        float childOuterHeight = std::holds_alternative<float>(childOuterSize.height) ? std::get<float>(childOuterSize.height) : 0.0f;
                         if (constraints.inheritedProperties.direction == layout::Direction::rtl) {
                             // rtl needs padding subtracted bc it starts from the RIGHT edge, (which includes both paddings)
                             contentSize.x = std::max(
@@ -1113,10 +1141,10 @@ namespace tree {
                                     - childBox.x
                             );
                         } else {
-                            contentSize.x = std::max(contentSize.x, childBox.x + childBox.width - currContentOrigin.x);
+                            contentSize.x = std::max(contentSize.x, childBox.x + childOuterWidth - currContentOrigin.x);
                         }
 
-                        contentSize.y = std::max(contentSize.y, childBox.y + childBox.height - currContentOrigin.y);
+                        contentSize.y = std::max(contentSize.y, childBox.y + childOuterHeight - currContentOrigin.y);
 
                         if (child->shared.overflow != Overflow::Visible){
                             return;
@@ -1136,7 +1164,7 @@ namespace tree {
                     includeChildOverflow(child.get(), hasRelativeAncestor);
                 }
 
-                // need to include padding AFTER
+                // need to include padding after again so content size is correct
                 node->scrollContentSize = {
                     std::max(
                         node->scrollViewportSize.x,

@@ -252,6 +252,7 @@ struct PaddingResult {
 // SizeSpec *may or may not* be fully resolved; that is fine
 struct SizeResult {
     SizePair outerSize;      // preferred SizeSpec recieved back
+    SizePair paddingBoxSize;
     SizePair innerSize;      // inner size
     SizePair minimum;   // min dim constraints evaluated against content box
     SizePair maximum; // max dim constraints evaluated against content box
@@ -392,6 +393,9 @@ auto resolveBorderWidth(const SizeRequest& req) -> SizeState;
 // resolve inner sizes (w padding)
 auto resolveInnerWidth(const SizeState& size, const PaddingResult& padding, const SizeState& borderWidth) -> SizeState;
 auto resolveInnerHeight(const SizeState& size, const PaddingResult& padding, const SizeState& borderWidth) -> SizeState;
+
+// resolve paddding box size (does not depend on w/h bc border is same across; padding box size is outer size - borders)
+auto resolvePaddingBoxSize(const SizeState& size, const SizeState& borderWidth) -> SizeState;
 
 auto hashSize(const SizeState& size, std::size_t& key) -> void;
 auto hashSizePair(const SizePair& size, std::size_t& key) -> void;

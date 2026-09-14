@@ -292,6 +292,7 @@ namespace layout {
         InheritedProperties inheritedProperties{};
 
         FrameInfo frameInfo{}; // viewport size (for fixed)
+        ContainingBlock containingBlock{}; // for normal flow: parent content box
         ContainingBlock absoluteContainingBlock{}; // for absolute: nearest positioned ancestor
 
         EdgeIntent edgeIntent{};
@@ -360,17 +361,6 @@ namespace layout {
         ResolvedMargins resolvedMargins;
     };
 
-    // Info needed to resolve right/bottom positioning in postLayout
-    // (deferred because element size may not be known during layout)
-    struct DeferredPositionInfo {
-        SizeState containingBlockWidth{std::monostate{}};
-        SizeState containingBlockHeight{std::monostate{}};
-        std::optional<Size> right;
-        std::optional<Size> bottom;
-        float marginRight{};
-        float marginBottom{};
-    };
-
     struct LayoutBox {
         float x, y;
         float width, height;
@@ -396,7 +386,6 @@ namespace layout {
         bool outOfFlow; // don't change siblings
         EdgeIntent edgeIntent;
 
-        DeferredPositionInfo deferredPosition;
         std::vector<ClipUniform> clipUniforms {};
     };
 
@@ -419,7 +408,6 @@ namespace layout {
         bool outOfFlow; // don't change siblings
         EdgeIntent edgeIntent;
 
-        DeferredPositionInfo deferredPosition;
         std::vector<ClipUniform> clipUniforms {};
 
         // inline formatting knows these while it lays the fragments out
@@ -440,7 +428,6 @@ namespace layout {
         { state.siblingCursor } -> std::same_as<simd_float2&>;
         { state.outOfFlow } -> std::same_as<bool&>;
         { state.edgeIntent } -> std::same_as<EdgeIntent&>;
-        { state.deferredPosition } -> std::same_as<DeferredPositionInfo&>;
         { state.clipUniforms } -> std::same_as<std::vector<ClipUniform>&>;
     };
 
