@@ -12,6 +12,7 @@ namespace style {
         Fixed,
         Static,
         Relative,
+        Sticky,
     };
 
     enum class Display {

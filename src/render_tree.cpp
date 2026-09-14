@@ -932,14 +932,10 @@ namespace tree {
             .intrinsicSizes = intrinsicResult
         };
 
-        // if (mutate) {
-        //     node->layout = output;
-        //     node->constraintsKey = key;
-        //     node->dirtySelf |= DirtyBits::PostLayout | DirtyBits::Place | DirtyBits::Finalize;
-        // }
-
         if (mutate) {
             node->layout = output;
+            node->constraintsKey = key;
+            node->dirtySelf |= DirtyBits::PostLayout | DirtyBits::Place | DirtyBits::Finalize;
         }
 
         layoutCache[layoutKey] = output;
@@ -1010,30 +1006,23 @@ namespace tree {
                 offset.x += baseOrigin.x;
                 offset.y += baseOrigin.y;
             }
-            node->globalOffset = baseOrigin;
+
+            node->globalOffset = baseOrigin; // why does this field matter?
+            
             layout.clipUniforms = constraints.clipUniforms;
 
             if (node->shared.overflow == Overflow::Scroll) {
-                float viewportLeft = layout.computedBox.x;
-                float viewportRight = layout.computedBox.x + layout.computedBox.width;
-                float viewportTop = layout.computedBox.y;
-                float viewportBottom = layout.computedBox.y + layout.computedBox.height;
-
-                for (auto& clip : constraints.clipUniforms) {
-                    viewportLeft = std::max(viewportLeft, clip.rectCenter.x - clip.halfExtent.x);
-                    viewportRight = std::min(viewportRight, clip.rectCenter.x + clip.halfExtent.x);
-                    viewportTop = std::max(viewportTop, clip.rectCenter.y - clip.halfExtent.y);
-                    viewportBottom = std::min(viewportBottom, clip.rectCenter.y + clip.halfExtent.y);
-                }
-
-                viewportLeft += paddingLeft;
-                viewportRight -= paddingRight;
-                viewportTop += paddingTop;
-                viewportBottom -= paddingBottom;
-
+                const auto& outerSize = result.sizeResult.outerSize;
                 node->scrollViewportSize = {
-                    std::max(0.0f, viewportRight - viewportLeft),
-                    std::max(0.0f, viewportBottom - viewportTop)
+                    // the scrollport is actually the padding box
+                    // so container MINUS only borders
+                    // i should probably encode this in sr
+                    std::holds_alternative<float>(outerSize.width)
+                        ? std::max(0.0f, std::get<float>(outerSize.width) - 2 * borderWidth)
+                        : 0.0f,
+                    std::holds_alternative<float>(outerSize.height)
+                        ? std::max(0.0f, std::get<float>(outerSize.height) - 2 * borderWidth)
+                        : 0.0f
                 };
             }
 
@@ -1051,9 +1040,7 @@ namespace tree {
             };
 
             if (node->shared.overflow == Overflow::Scroll) {
-                float scrollX = constraints.inheritedProperties.direction == layout::Direction::rtl
-                    ? node->scrollOffset.x
-                    : -node->scrollOffset.x;
+                float scrollX = constraints.inheritedProperties.direction == layout::Direction::rtl ? node->scrollOffset.x : -node->scrollOffset.x;
 
                 currContentOrigin.x += scrollX;
                 currContentOrigin.y -= node->scrollOffset.y;
@@ -1070,8 +1057,6 @@ namespace tree {
             childConstraints.availableWidth = layout.childConstraints.availableWidth;
             if (node->shared.overflow != Overflow::Visible) {
                 childConstraints.textOverflow = node->shared.textOverflow;
-            }
-            if (node->shared.overflow != Overflow::Visible) {
                 float cornerRadius = node->shared.cornerRadius.resolveOr(
                     Size::px(std::min(layout.computedBox.width, layout.computedBox.height))
                 );
@@ -1089,44 +1074,79 @@ namespace tree {
                     .halfExtent = halfExtent,
                     .cornerRadius = {cornerRadius, cornerRadius}
                 });
+            }
+
+            if (position == Position::Sticky) {
+                auto top = node->shared.top ? node->shared.top->resolveOr(Size::px(0.0)) : 0.0f;
+                auto bottom = node->shared.bottom ? node->shared.bottom->resolveOr(Size::px(0.0)) : 0.0f;
+                auto left = node->shared.left ? node->shared.left->resolveOr(Size::px(0.0)) : 0.0f;
+                auto right = left = node->shared.right ? node->shared.right->resolveOr(Size::px(0.0)) : 0.0f;;
 
             }
 
             for (auto& child : node->children) {
-                postLayoutPhase(child.get(), frameInfo, childConstraints,
-                               currContentOrigin, childAbsBlockOrigin);
+                postLayoutPhase(child.get(), frameInfo, childConstraints,currContentOrigin, childAbsBlockOrigin);
             }
 
             if (node->shared.overflow == Overflow::Scroll) {
                 simd_float2 contentSize {0.0f, 0.0f};
-                std::function<void(TreeNode*)> includeChildOverflow;
-                includeChildOverflow = [&](TreeNode* child) {
-                    if (!child->layout.has_value()) return;
-
+                std::function<void(TreeNode*, bool)> includeChildOverflow;
+                includeChildOverflow = [&](TreeNode* child, bool hasRelativeAncestor) {
                     std::visit([&](const auto& childLayout) {
-                        if (childLayout.outOfFlow) return;
+                        // the rule css defines for overflow
+                        // either an absolute that has a relative ancestor along the path
+                        // or in flow
+                        // everything else doesn't get counted
+                        if (child->shared.position == Position::Fixed || (child->shared.position == Position::Absolute && !hasRelativeAncestor)) {
+                            return;
+                        }
+
                         const auto& childBox = childLayout.computedBox;
                         if (constraints.inheritedProperties.direction == layout::Direction::rtl) {
+                            // rtl needs padding subtracted bc it starts from the RIGHT edge, (which includes both paddings)
                             contentSize.x = std::max(
                                 contentSize.x,
-                                currContentOrigin.x + node->scrollViewportSize.x - childBox.x
+                                currContentOrigin.x
+                                    + node->scrollViewportSize.x
+                                    - paddingLeft
+                                    - paddingRight
+                                    - childBox.x
                             );
                         } else {
                             contentSize.x = std::max(contentSize.x, childBox.x + childBox.width - currContentOrigin.x);
                         }
+
                         contentSize.y = std::max(contentSize.y, childBox.y + childBox.height - currContentOrigin.y);
 
-                        if (child->shared.overflow != Overflow::Visible) return;
+                        if (child->shared.overflow != Overflow::Visible){
+                            return;
+                        }
+                        
                         for (auto& grandchild : child->children) {
-                            includeChildOverflow(grandchild.get());
+                            includeChildOverflow(
+                                grandchild.get(),
+                                hasRelativeAncestor || child->shared.position == Position::Relative
+                            );
                         }
                     }, child->layout->layout);
                 };
 
+                bool hasRelativeAncestor = position == Position::Relative;
                 for (auto& child : node->children) {
-                    includeChildOverflow(child.get());
+                    includeChildOverflow(child.get(), hasRelativeAncestor);
                 }
-                node->scrollContentSize = contentSize;
+
+                // need to include padding AFTER
+                node->scrollContentSize = {
+                    std::max(
+                        node->scrollViewportSize.x,
+                        contentSize.x + paddingLeft + paddingRight
+                    ),
+                    std::max(
+                        node->scrollViewportSize.y,
+                        contentSize.y + paddingTop + paddingBottom
+                    )
+                };
             }
         }, result.layout);
 
