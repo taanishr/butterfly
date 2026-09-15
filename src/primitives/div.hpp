@@ -35,6 +35,7 @@ namespace elements {
     using runtime::HitTestContext;
     using runtime::UIContext;
     using style::ClipUniform;
+    using style::CornerRadii;
     using style::SharedDescriptor;
     using style::Size;
     using style::Unit;
@@ -78,7 +79,7 @@ namespace elements {
 
     struct DivStyleUniforms {
         simd_float4 color;
-        simd_float2 cornerRadius;
+        CornerRadii cornerRadius;
         float borderWidth;
         simd_float4 borderColor;
     };
@@ -341,11 +342,12 @@ namespace elements {
                 }
             }
 
-            float minDim = std::min(layout.computedBox.width, layout.computedBox.height);
-            simd_float2 cornerRadius {
-                shared.cornerRadius.resolveOr(Size::px(minDim)),
-                shared.cornerRadius.resolveOr(Size::px(minDim))
-            };
+            // radius calculation
+            CornerRadii cornerRadius = style::resolveCornerRadii(
+                shared,
+                layout.computedBox.width,
+                layout.computedBox.height
+            );
 
             DivStyleUniforms styleUniforms{
                 .color = desc.color,
@@ -421,7 +423,7 @@ namespace elements {
                 simd_float2 halfExtent {box.width / 2.0f, box.height / 2.0f};
                 simd_float2 centerPoint {box.x + halfExtent.x, box.y + halfExtent.y};
                 simd_float2 localTestPoint = testPoint - centerPoint;
-                simd_float2 cr = context.finalized.uniforms.style.cornerRadius;
+                const CornerRadii& cr = context.finalized.uniforms.style.cornerRadius;
 
                 return rounded_rect_sdf(localTestPoint, halfExtent, cr) < 0.0;
             };

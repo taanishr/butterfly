@@ -23,10 +23,17 @@ struct FrameInfo {
     float scale;
 };
 
+struct CornerRadii {
+    float2 topLeft;
+    float2 topRight;
+    float2 bottomRight;
+    float2 bottomLeft;
+};
+
 struct ClipUniform {
     float2 rectCenter;
     float2 halfExtent;
-    float2 cornerRadius;
+    CornerRadii cornerRadius;
 };
 
 inline float2 toNDC(const float2 pt, float width = 512.0f, float height = 512.0f) {
@@ -36,12 +43,17 @@ inline float2 toNDC(const float2 pt, float width = 512.0f, float height = 512.0f
     return {ndcX, ndcY};
 }
 
-inline float rounded_rect_sdf(float2 pt, float2 halfExtent, float2 r) {
+inline float rounded_rect_sdf(float2 pt, float2 halfExtent, CornerRadii radii) {
     const float epsilon = 0.0001;
 
-    // clamp radius x and y
-    r.x = clamp(r.x, epsilon, halfExtent.x);
-    r.y = clamp(r.y, epsilon, halfExtent.y);
+    // select quadrant radius
+    float2 top = select(radii.topLeft, radii.topRight, pt.x >= 0.0);
+    float2 bottom = select(radii.bottomLeft, radii.bottomRight, pt.x >= 0.0);
+    float2 r = select(top, bottom, pt.y >= 0.0);
+
+    // floor radius x and y (can't be 0 to avoid div by 0, cant be negative)
+    r.x = max(r.x, epsilon);
+    r.y = max(r.y, epsilon);
 
     // get the actual signed distance; we add r because we are computing the inner rect
     float2 q = abs(pt) - halfExtent + r;

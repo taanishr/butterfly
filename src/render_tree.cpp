@@ -216,8 +216,14 @@ namespace tree {
             hash_combine(hash, clip.rectCenter.y);
             hash_combine(hash, clip.halfExtent.x);
             hash_combine(hash, clip.halfExtent.y);
-            hash_combine(hash, clip.cornerRadius.x);
-            hash_combine(hash, clip.cornerRadius.y);
+            hash_combine(hash, clip.cornerRadius.topLeft.x);
+            hash_combine(hash, clip.cornerRadius.topLeft.y);
+            hash_combine(hash, clip.cornerRadius.topRight.x);
+            hash_combine(hash, clip.cornerRadius.topRight.y);
+            hash_combine(hash, clip.cornerRadius.bottomRight.x);
+            hash_combine(hash, clip.cornerRadius.bottomRight.y);
+            hash_combine(hash, clip.cornerRadius.bottomLeft.x);
+            hash_combine(hash, clip.cornerRadius.bottomLeft.y);
         }
 
         return ConstraintsKey{.value = hash};
@@ -350,7 +356,7 @@ namespace tree {
                 ClipUniform {
                     .rectCenter = {frameInfo.width * 0.5f, frameInfo.height * 0.5f},
                     .halfExtent = {frameInfo.width * 0.5f, frameInfo.height * 0.5f},
-                    .cornerRadius = {0.0f, 0.0f}
+                    .cornerRadius = {}
                 }
             },
         };
@@ -1185,9 +1191,6 @@ namespace tree {
 
             if (node->shared.overflow != Overflow::Visible) {
                 childConstraints.textOverflow = node->shared.textOverflow;
-                float cornerRadius = node->shared.cornerRadius.resolveOr(
-                    Size::px(std::min(outerWidth, outerHeight))
-                );
 
                 simd_float2 halfExtent {
                     outerWidth * 0.5f,
@@ -1200,7 +1203,11 @@ namespace tree {
                         layout.computedBox.y + halfExtent.y
                     },
                     .halfExtent = halfExtent,
-                    .cornerRadius = {cornerRadius, cornerRadius}
+                    .cornerRadius = style::resolveCornerRadii(
+                        node->shared,
+                        outerWidth,
+                        outerHeight
+                    )
                 });
             }
 

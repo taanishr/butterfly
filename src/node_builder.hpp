@@ -450,7 +450,47 @@ namespace elements {
 
         Derived& cornerRadius(Size radius) {
             node->shared.cornerRadius = radius;
-            markDirty(DirtyBits::Finalize);
+            markDirty(DirtyBits::PostLayout);
+            return self();
+        }
+
+        std::optional<Size> cornerRadiusTopLeft() const {
+            return node->shared.cornerRadiusTopLeft;
+        }
+
+        Derived& cornerRadiusTopLeft(Size radius) {
+            node->shared.cornerRadiusTopLeft = radius;
+            markDirty(DirtyBits::PostLayout);
+            return self();
+        }
+
+        std::optional<Size> cornerRadiusTopRight() const {
+            return node->shared.cornerRadiusTopRight;
+        }
+
+        Derived& cornerRadiusTopRight(Size radius) {
+            node->shared.cornerRadiusTopRight = radius;
+            markDirty(DirtyBits::PostLayout);
+            return self();
+        }
+
+        std::optional<Size> cornerRadiusBottomRight() const {
+            return node->shared.cornerRadiusBottomRight;
+        }
+
+        Derived& cornerRadiusBottomRight(Size radius) {
+            node->shared.cornerRadiusBottomRight = radius;
+            markDirty(DirtyBits::PostLayout);
+            return self();
+        }
+
+        std::optional<Size> cornerRadiusBottomLeft() const {
+            return node->shared.cornerRadiusBottomLeft;
+        }
+
+        Derived& cornerRadiusBottomLeft(Size radius) {
+            node->shared.cornerRadiusBottomLeft = radius;
+            markDirty(DirtyBits::PostLayout);
             return self();
         }
 
@@ -460,7 +500,7 @@ namespace elements {
 
         Derived& borderWidth(Size width) {
             node->shared.borderWidth = width;
-            markDirty(DirtyBits::Finalize);
+            markDirty(layoutDirtyBits());
             return self();
         }
 

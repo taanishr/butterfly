@@ -22,7 +22,7 @@ struct DivVertexOut {
 
 struct DivStyleUniforms {
     float4 color;
-    float2 cornerRadius;
+    CornerRadii cornerRadius;
     float borderWidth;
     float4 borderColor;
 };

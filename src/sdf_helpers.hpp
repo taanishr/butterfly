@@ -8,5 +8,6 @@
 #pragma once
 #include <cmath>
 #include "metal_imports.hpp"
+#include "layout/style.hpp"
 
-float rounded_rect_sdf(simd_float2 pt, simd_float2 halfExtent, simd_float2 r);
+float rounded_rect_sdf(simd_float2 pt, simd_float2 halfExtent, const style::CornerRadii& radii);

@@ -2,6 +2,8 @@
 
 #include "layout/sizing.hpp"
 #include "metal_imports.hpp"
+#include "layout/style.hpp"
+#include <algorithm>
 #include <optional>
 #include <string>
 #include <vector>
@@ -148,10 +150,17 @@ namespace style {
         }
     };
 
+    struct CornerRadii {
+        simd_float2 topLeft{};
+        simd_float2 topRight{};
+        simd_float2 bottomRight{};
+        simd_float2 bottomLeft{};
+    };
+
     struct ClipUniform {
         simd_float2 rectCenter{};
         simd_float2 halfExtent{};
-        simd_float2 cornerRadius{};
+        CornerRadii cornerRadius{};
     };
 
     struct GridPlacement {
@@ -201,6 +210,8 @@ namespace style {
         GridPlacement gridPlacement{};
 
         Size cornerRadius{};
+        std::optional<Size> cornerRadiusTopLeft, cornerRadiusTopRight;
+        std::optional<Size> cornerRadiusBottomRight, cornerRadiusBottomLeft;
         Size borderWidth{};
         simd_float4 borderColor{0,0,0,1};
 
@@ -209,4 +220,57 @@ namespace style {
         TextOverflow textOverflow{};
         std::optional<TextAlign> textAlign{};
     };
+
+    inline auto resolveCornerRadii(const SharedDescriptor& desc, float width, float height) -> CornerRadii {
+        auto topLeft = desc.cornerRadiusTopLeft.value_or(desc.cornerRadius);
+        auto topRight = desc.cornerRadiusTopRight.value_or(desc.cornerRadius);
+        auto bottomLeft = desc.cornerRadiusBottomLeft.value_or(desc.cornerRadius);
+        auto bottomRight = desc.cornerRadiusBottomRight.value_or(desc.cornerRadius);
+
+        // first; resolve the corner radius normally
+        CornerRadii cornerRadii {
+            .topLeft = {topLeft.resolveOr(Size::px(width), 0.0), topLeft.resolveOr(Size::px(height), 0.0)},
+            .topRight = {topRight.resolveOr(Size::px(width), 0.0), topRight.resolveOr(Size::px(height), 0.0)},
+            .bottomRight = {bottomRight.resolveOr(Size::px(width), 0.0), bottomRight.resolveOr(Size::px(height), 0.0)},
+            .bottomLeft = {bottomLeft.resolveOr(Size::px(width), 0.0), bottomLeft.resolveOr(Size::px(height), 0.0)}
+        };
+
+        /*
+            then; this is for the pill case
+            lets say the corner radius execeeds one dimension
+            (common when the corner radius >= height)
+
+            then, we'll scale both down uniformly according to this function
+            which is defined roughly equivalently in CSS
+        */
+        float topSum = cornerRadii.topLeft.x + cornerRadii.topRight.x;
+        float bottomSum = cornerRadii.bottomLeft.x + cornerRadii.bottomRight.x;
+        float leftSum = cornerRadii.topLeft.y + cornerRadii.bottomLeft.y;
+        float rightSum = cornerRadii.topRight.y + cornerRadii.bottomRight.y;
+
+        float radiusScale = 1.0f;
+
+        if (topSum > width) {
+            radiusScale = std::min(radiusScale, width / topSum);
+        }
+
+        if (bottomSum > width) {
+            radiusScale = std::min(radiusScale, width / bottomSum);
+        }
+
+        if (leftSum > height) {
+            radiusScale = std::min(radiusScale, height / leftSum);
+        }
+
+        if (rightSum > height) {
+            radiusScale = std::min(radiusScale, height / rightSum);
+        }
+
+        cornerRadii.topLeft *= radiusScale;
+        cornerRadii.topRight *= radiusScale;
+        cornerRadii.bottomRight *= radiusScale;
+        cornerRadii.bottomLeft *= radiusScale;
+
+        return cornerRadii;
+    }
 }

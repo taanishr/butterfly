@@ -34,6 +34,7 @@ namespace elements {
     using runtime::HitTestContext;
     using runtime::UIContext;
     using style::ClipUniform;
+    using style::CornerRadii;
     using style::SharedDescriptor;
     using style::Size;
     using style::Unit;
@@ -55,7 +56,7 @@ namespace elements {
     };
 
     struct SVGStyleUniforms {
-        simd_float2 cornerRadius;
+        CornerRadii cornerRadius;
         float borderWidth;
         simd_float4 borderColor;
     };
@@ -442,10 +443,11 @@ namespace elements {
                 }
             }
 
-            simd_float2 cornerRadius {
-                shared.cornerRadius.resolveOr(Size::px(layout.computedBox.width)),
-                shared.cornerRadius.resolveOr(Size::px(layout.computedBox.height))
-            };
+            CornerRadii cornerRadius = style::resolveCornerRadii(
+                shared,
+                layout.computedBox.width,
+                layout.computedBox.height
+            );
 
             SVGStyleUniforms styleUniforms {
                 .cornerRadius = cornerRadius,
