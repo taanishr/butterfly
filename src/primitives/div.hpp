@@ -392,6 +392,12 @@ namespace elements {
         }
         
         void encode(MTL::RenderCommandEncoder* encoder, Fragment<S>& fragment, Finalized<U>& finalized) {
+            // TODO: to support things like gradients, we have two options
+            // blow up the cost of the normal shader
+            // separate shaders
+            // the obvious ideal is: separate shaders
+            // so we'd switch on what finalized's DivStyleUniforms type looks like
+            // then run diff pipelines for each
             auto pipeline = getPipeline();
             encoder->setRenderPipelineState(pipeline);
             
