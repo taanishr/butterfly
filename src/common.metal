@@ -39,15 +39,23 @@ inline float2 toNDC(const float2 pt, float width = 512.0f, float height = 512.0f
 inline float rounded_rect_sdf(float2 pt, float2 halfExtent, float2 r) {
     const float epsilon = 0.0001;
 
+    // clamp radius x and y
     r.x = clamp(r.x, epsilon, halfExtent.x);
     r.y = clamp(r.y, epsilon, halfExtent.y);
 
+    // get the actual signed distance; we add r because we are computing the inner rect
     float2 q = abs(pt) - halfExtent + r;
 
+    // normalize q in terms of the radius units; dist from inner rectnagle to outer rectangle. flat edges are 1 radius away. corners curve to be 1 radius away
     float2 qNormalized = max(q, 0.0) / r;
     
 
+    // get the lengths, subtract 1.0 bc we want 1.0 radiuses away to be the 0 point. less than will be negative (in rect)
+    // more than will be positive (outside rect)
+    // then multiply by min unit to get real distance back
     float distOutside = (length(qNormalized) - 1.0) *  min(r.x, r.y);
+    
+    // this is just the harsh sdf clamp
     float distInside = min(max(q.x,q.y), 0.0);
 
     return distOutside + distInside;

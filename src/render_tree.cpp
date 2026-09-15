@@ -989,7 +989,7 @@ namespace tree {
         float outerHeight = std::holds_alternative<float>(outerSize.height) ? std::get<float>(outerSize.height) : 0.0f;
 
         auto position = node->getPosition();
-
+        
         ContainingBlock containingBlock = constraints.containingBlock;
         if (position == Position::Fixed) {
             containingBlock = {
@@ -1071,6 +1071,7 @@ namespace tree {
                 auto scrollportHeight = calculateSize(constraints.scrollport.height, std::monostate{});
                 auto scrollportWidth = calculateSize(constraints.scrollport.width, std::monostate{});
 
+                // determine sticky x/y after inset adjustment
                 if (std::holds_alternative<float>(top)) {
                     auto resolvedTop = std::get<float>(top);
                     stickyY = std::max(stickyY, constraints.scrollport.origin.y + resolvedTop);

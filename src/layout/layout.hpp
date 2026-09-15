@@ -291,6 +291,17 @@ namespace layout {
 
         InheritedProperties inheritedProperties{};
 
+        /*
+            containing block vs absolute containing block vs available size
+
+            available size: can be determined and adjusted as pleases (i.e. by a second class layout resolver); starts as viewport
+            containing block: always the nearest block ancesstor (mostly equivalent to available size); starts as viewport
+            absolute containing block: the nearest relative/fixed/ancestor changes this; starts as viewport
+
+            used primarily in post layout for positioning adjustments
+
+            the coordinate space is local during layout and later becomes global during post layout
+        */
         FrameInfo frameInfo{}; // viewport size (for fixed)
         ContainingBlock containingBlock{}; // for normal flow: parent content box
         ContainingBlock absoluteContainingBlock{}; // for absolute: nearest positioned ancestor
