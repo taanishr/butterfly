@@ -42,7 +42,7 @@ vertex TextVertexOut vertex_text(
     float scale = uniforms->fontSize/BASE_PIXEL_HEIGHT;
 
     float2 adjustedPos = ((in.position + in.shapingOffset) * scale)/64.0f + offsets[in.atom_id];
-    float2 ndcPos = toNDC(adjustedPos, frameInfo->width, frameInfo->height);
+    float2 ndcPos = to_ndc(adjustedPos, frameInfo->width, frameInfo->height);
     out.position = float4(ndcPos, 0.0, 1.0);
     out.worldPosition = float4(in.position, 0.0, 1.0);
     out.clipPosition = float4(adjustedPos, 0.0, 1.0);

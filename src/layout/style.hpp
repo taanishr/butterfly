@@ -163,6 +163,23 @@ namespace style {
         CornerRadii cornerRadius{};
     };
 
+    struct BoxShadow {
+        Size offsetX{};
+        Size offsetY{};
+        Size blur{};
+        Size spread{};
+        simd_float4 color{0, 0, 0, 0};
+        bool inset{false};
+    };
+
+    struct ShadowUniform {
+        simd_float2 offset{};
+        float spread{0};
+        float sigma{0};
+        simd_float4 color{0, 0, 0, 0};
+        uint32_t inset{0};
+    };
+
     struct GridPlacement {
         int colStart{0};  // 1-based line number, 0 = auto
         int colEnd{0};    // 0 = colStart+1 (span 1)
@@ -214,6 +231,7 @@ namespace style {
         std::optional<Size> cornerRadiusBottomRight, cornerRadiusBottomLeft;
         Size borderWidth{};
         simd_float4 borderColor{0,0,0,1};
+        BoxShadow boxShadow{};
 
         Overflow overflow {Overflow::Visible};
         PointerEvents pointerEvents {PointerEvents::Auto};

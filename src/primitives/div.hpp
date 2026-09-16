@@ -36,6 +36,7 @@ namespace elements {
     using runtime::UIContext;
     using style::ClipUniform;
     using style::CornerRadii;
+    using style::ShadowUniform;
     using style::SharedDescriptor;
     using style::Size;
     using style::Unit;
@@ -82,6 +83,7 @@ namespace elements {
         CornerRadii cornerRadius;
         float borderWidth;
         simd_float4 borderColor;
+        ShadowUniform shadow;
     };
 
     struct DivGeometryUniforms {
@@ -274,25 +276,11 @@ namespace elements {
             float width = layout.computedBox.width;
             float height = layout.computedBox.height;
 
-            // prepare buffer
-            size_t bufferLen = 6*sizeof(DivPoint);
-            
-            std::array<DivPoint, 6> atomPoints {{
-                {{0,0}, 0},
-                {{width,0}, 0},
-                {{0,height}, 0},
-                {{0,height}, 0},
-                {{width,0}, 0},
-                {{width,height}, 0},
-            }};
-            
-            fragment.fragmentStorage.atomsBuffer.write(ctx.frameIndex, atomPoints.data(), bufferLen);
-            
             // finish allocating atom
             Atom atom;
             atom.atomBufferHandle = fragment.fragmentStorage.atomsBuffer.getBufferHandle(0);
             atom.offset = 0;
-            atom.length = bufferLen;
+            atom.length = 6*sizeof(DivPoint);
             atom.width = width;
             atom.height = height;
             
@@ -350,28 +338,69 @@ namespace elements {
                 layout.computedBox.height
             );
 
+            // shadow calculation
+            float width = layout.computedBox.width;
+            float height = layout.computedBox.height;
+            const auto& boxShadow = shared.boxShadow;
+            float shadowBlur = std::max(boxShadow.blur.resolveOr(Size::px(width), 0.0f), 0.0f);
+
+            ShadowUniform shadow {
+                .offset = {
+                    boxShadow.offsetX.resolveOr(Size::px(width), 0.0f),
+                    boxShadow.offsetY.resolveOr(Size::px(height), 0.0f)
+                },
+                .spread = boxShadow.spread.resolveOr(Size::px(width), 0.0f),
+                .sigma = shadowBlur / 2.0f,
+                .color = boxShadow.color,
+                .inset = boxShadow.inset ? 1u : 0u
+            };
+
+            float shadowExtent = 0.0f;
+
+            if (!boxShadow.inset) {
+                shadowExtent = std::max(shadow.spread, 0.0f) + 1.5f * shadowBlur;
+            }
+
             // push style uniforms
             DivStyleUniforms styleUniforms{
                 .color = desc.color,
                 .cornerRadius = cornerRadius,
                 .borderWidth = borderWidth,
-                .borderColor = shared.borderColor
+                .borderColor = shared.borderColor,
+                .shadow = shadow
             };
-            
+
             // geometry uniforms
             DivGeometryUniforms geometryUniforms {};
-            
+
             if (placed.placements.size() > 0) {
                 auto offset = placed.placements.front();
 
                 simd_float2 halfExtent { layout.computedBox.width / 2.0f, layout.computedBox.height / 2.0f };
                 simd_float2 rectCenter { offset.x + halfExtent.x, offset.y + halfExtent.y };
-                
+
                 geometryUniforms.halfExtent = halfExtent;
                 geometryUniforms.rectCenter = rectCenter;
             }
 
             geometryUniforms.numClips = static_cast<uint32_t>(layout.clipUniforms.size());
+
+            // draw quad; expanded past the box to hold the outer shadow
+            float minX = std::min(0.0f, shadow.offset.x - shadowExtent);
+            float minY = std::min(0.0f, shadow.offset.y - shadowExtent);
+            float maxX = std::max(width, width + shadow.offset.x + shadowExtent);
+            float maxY = std::max(height, height + shadow.offset.y + shadowExtent);
+
+            std::array<DivPoint, 6> atomPoints {{
+                {{minX, minY}, 0},
+                {{maxX, minY}, 0},
+                {{minX, maxY}, 0},
+                {{minX, maxY}, 0},
+                {{maxX, minY}, 0},
+                {{maxX, maxY}, 0},
+            }};
+
+            fragment.fragmentStorage.atomsBuffer.write(ctx.frameIndex, atomPoints.data(), 6*sizeof(DivPoint));
             
             DivUniforms uniforms {
                 .style = styleUniforms,

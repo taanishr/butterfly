@@ -514,6 +514,66 @@ namespace elements {
             return self();
         }
 
+        Size shadowOffsetX() const {
+            return node->shared.boxShadow.offsetX;
+        }
+
+        Derived& shadowOffsetX(Size offset) {
+            node->shared.boxShadow.offsetX = offset;
+            markDirty(DirtyBits::Finalize);
+            return self();
+        }
+
+        Size shadowOffsetY() const {
+            return node->shared.boxShadow.offsetY;
+        }
+
+        Derived& shadowOffsetY(Size offset) {
+            node->shared.boxShadow.offsetY = offset;
+            markDirty(DirtyBits::Finalize);
+            return self();
+        }
+
+        Size shadowBlur() const {
+            return node->shared.boxShadow.blur;
+        }
+
+        Derived& shadowBlur(Size blur) {
+            node->shared.boxShadow.blur = blur;
+            markDirty(DirtyBits::Finalize);
+            return self();
+        }
+
+        Size shadowSpread() const {
+            return node->shared.boxShadow.spread;
+        }
+
+        Derived& shadowSpread(Size spread) {
+            node->shared.boxShadow.spread = spread;
+            markDirty(DirtyBits::Finalize);
+            return self();
+        }
+
+        simd_float4 shadowColor() const {
+            return node->shared.boxShadow.color;
+        }
+
+        Derived& shadowColor(simd_float4 color) {
+            node->shared.boxShadow.color = color;
+            markDirty(DirtyBits::Finalize);
+            return self();
+        }
+
+        bool shadowInset() const {
+            return node->shared.boxShadow.inset;
+        }
+
+        Derived& shadowInset(bool inset) {
+            node->shared.boxShadow.inset = inset;
+            markDirty(DirtyBits::Finalize);
+            return self();
+        }
+
         Size padding() const {
             return node->shared.padding;
         }

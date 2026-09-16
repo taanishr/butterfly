@@ -379,10 +379,7 @@ namespace tree {
             layoutCache.clear();
             sizeCache.clear();
             instrumentation::PhaseTimer timer{instrumentation::Phase::Layout};
-            auto layoutStart = std::chrono::steady_clock::now();
             layoutPhase(root, frameInfo, rootConstraints);
-            auto layoutEnd = std::chrono::steady_clock::now();
-                std::chrono::duration<double, std::milli>(layoutEnd - layoutStart));
             root->calculateGlobalZIndex(0);
         }
 

@@ -3712,10 +3712,405 @@ div()
     //     text("hello world").width(S::px(50))
     // );
 
-    // Crates: a record-collection browser.
-    // Exercises sticky section headers inside a scrollport, hover/click state
-    // via MouseEnter/MouseLeave/Click, aspect-ratio + absolute badge in the
-    // detail panel, per-corner radii on chips, and flex-wrap for tags.
+    // // Crates: a record-collection browser.
+    // // Exercises sticky section headers inside a scrollport, hover/click state
+    // // via MouseEnter/MouseLeave/Click, aspect-ratio + absolute badge in the
+    // // detail panel, per-corner radii on chips, and flex-wrap for tags.
+    // using S = gui::Size;
+    // using gui::Display;
+    // using gui::FlexDirection;
+    // using gui::AlignItems;
+    // using gui::JustifyContent;
+    // using runtime::EventType;
+
+    // constexpr simd_float4 bg          {0.043, 0.063, 0.086, 1.0};
+    // constexpr simd_float4 panel       {0.082, 0.110, 0.149, 1.0};
+    // constexpr simd_float4 raised      {0.114, 0.149, 0.200, 1.0};
+    // constexpr simd_float4 hover       {0.153, 0.196, 0.259, 1.0};
+    // constexpr simd_float4 outline     {0.165, 0.208, 0.267, 1.0};
+    // constexpr simd_float4 ink         {0.949, 0.957, 0.969, 1.0};
+    // constexpr simd_float4 muted       {0.541, 0.592, 0.671, 1.0};
+    // constexpr simd_float4 coral       {1.000, 0.420, 0.290, 1.0};
+    // constexpr simd_float4 coralDim    {0.286, 0.157, 0.141, 1.0};
+    // constexpr simd_float4 cyan        {0.290, 0.816, 1.000, 1.0};
+    // constexpr simd_float4 transparent {0.0, 0.0, 0.0, 0.0};
+
+    // constexpr simd_float4 avatarA {0.980, 0.761, 0.200, 1.0};
+    // constexpr simd_float4 avatarB {0.380, 0.922, 0.561, 1.0};
+    // constexpr simd_float4 avatarC {0.639, 0.420, 0.961, 1.0};
+    // constexpr simd_float4 avatarD {0.961, 0.302, 0.459, 1.0};
+    // constexpr simd_float4 avatarE {0.290, 0.816, 1.000, 1.0};
+
+    // constexpr auto coverPath = "/Users/treja/projects/gui/assets/loveless.jpg";
+    // const std::string SF = "/System/Library/Fonts/SFNS.ttf";
+    // const std::string NewYork = "/System/Library/Fonts/NewYork.ttf";
+
+    // auto chip = [&](const char* label, simd_float4 fg, simd_float4 fill) {
+    //     return div()
+    //         .color(fill)
+    //         .height(S::px(22))
+    //         .paddingLeft(S::px(9))
+    //         .paddingRight(S::px(9))
+    //         .cornerRadiusTopLeft(S::px(11))
+    //         .cornerRadiusBottomRight(S::px(11))
+    //         .cornerRadiusTopRight(S::px(3))
+    //         .cornerRadiusBottomLeft(S::px(3))
+    //         .display(Display::Flex)
+    //         .alignItems(AlignItems::Center)
+    //     (
+    //         text(label).font(SFMono).fontSize(S::pt(10)).color(fg)
+    //     );
+    // };
+
+    // auto button = [&](const char* label, simd_float4 fill, simd_float4 hoverFill, simd_float4 fg) {
+    //     return div()
+    //         .color(fill)
+    //         .height(S::px(36))
+    //         .flexGrow(S::px(1))
+    //         .cornerRadius(S::px(8))
+    //         .display(Display::Flex)
+    //         .alignItems(AlignItems::Center)
+    //         .justifyContent(JustifyContent::Center)
+    //         .addEventListener(EventType::MouseEnter, [hoverFill](auto& node, Event&) {
+    //             node.color(hoverFill);
+    //         })
+    //         .addEventListener(EventType::MouseLeave, [fill](auto& node, Event&) {
+    //             node.color(fill);
+    //         })
+    //     (
+    //         text(label).font(ArialBold).fontSize(S::pt(12)).color(fg)
+    //     );
+    // };
+
+    // auto row = [&](const char* initials, const char* artist, const char* meta, const char* genre, simd_float4 avatar) {
+    //     auto selected = std::make_shared<bool>(false);
+
+    //     return div()
+    //         .color(transparent)
+    //         .height(S::px(58))
+    //         .flexShrink(S::px(0))
+    //         .paddingLeft(S::px(12))
+    //         .paddingRight(S::px(12))
+    //         .cornerRadius(S::px(10))
+    //         .display(Display::Flex)
+    //         .alignItems(AlignItems::Center)
+    //         .flexGap(S::px(12))
+    //         .addEventListener(EventType::MouseEnter, [selected](auto& node, Event&) {
+    //             if (!*selected) {
+    //                 node.color(hover);
+    //             }
+    //         })
+    //         .addEventListener(EventType::MouseLeave, [selected](auto& node, Event&) {
+    //             if (!*selected) {
+    //                 node.color(transparent);
+    //             }
+    //         })
+    //         .addEventListener(EventType::Click, [selected](auto& node, Event&) {
+    //             *selected = !*selected;
+
+    //             if (*selected) {
+    //                 node.color(coralDim);
+    //             } else {
+    //                 node.color(hover);
+    //             }
+    //         })
+    //     (
+    //         div(S::px(36), S::px(36), avatar)
+    //             .flexShrink(S::px(0))
+    //             .cornerRadius(S::px(18))
+    //             .display(Display::Flex)
+    //             .alignItems(AlignItems::Center)
+    //             .justifyContent(JustifyContent::Center)
+    //         (
+    //             text(initials).font(DINAlternateBold).fontSize(S::pt(12)).color(bg)
+    //         ),
+    //         div()
+    //             .flexGrow(S::px(1))
+    //             .minWidth(S::px(0))
+    //             .display(Display::Flex)
+    //             .flexDirection(FlexDirection::Col)
+    //             .flexGap(S::px(3))
+    //         (
+    //             text(artist).font(ArialBold).fontSize(S::pt(13)).color(ink),
+    //             text(meta).font(SFMono).fontSize(S::pt(10)).color(muted)
+    //         ),
+    //         chip(genre, muted, raised)
+    //     );
+    // };
+
+    // auto section = [&](const char* letter, const char* count, auto&&... rows) {
+    //     return div()
+    //         .display(Display::Flex)
+    //         .flexDirection(FlexDirection::Col)
+    //         .flexGap(S::px(2))
+    //     (
+    //         div()
+    //             .position(gui::Position::Sticky)
+    //             .top(S::px(0))
+    //             .zIndex(1)
+    //             .color(panel)
+    //             .height(S::px(34))
+    //             .flexShrink(S::px(0))
+    //             .paddingLeft(S::px(12))
+    //             .paddingRight(S::px(12))
+    //             .display(Display::Flex)
+    //             .alignItems(AlignItems::Center)
+    //             .justifyContent(JustifyContent::SpaceBetween)
+    //         (
+    //             text(letter).font(DINAlternateBold).fontSize(S::pt(15)).color(coral),
+    //             text(count).font(SFMono).fontSize(S::pt(10)).color(muted)
+    //         ),
+    //         rows...
+    //     );
+    // };
+
+    // auto stat = [&](const char* label, const char* value) {
+    //     return div()
+    //         .display(Display::Flex)
+    //         .justifyContent(JustifyContent::SpaceBetween)
+    //     (
+    //         text(label).font(SF).fontSize(S::pt(11)).color(muted),
+    //         text(value).font(SFMono).fontSize(S::pt(11)).color(ink)
+    //     );
+    // };
+
+    // div(S::percent(1.0), S::percent(1.0), bg)
+    //     .paddingTop(S::px(28))
+    //     .display(Display::Flex)
+    //     .flexDirection(FlexDirection::Col)
+    // (
+    //     // Top bar
+    //     div()
+    //         .height(S::px(56))
+    //         .flexShrink(S::px(0))
+    //         .paddingLeft(S::px(20))
+    //         .paddingRight(S::px(20))
+    //         .display(Display::Flex)
+    //         .alignItems(AlignItems::Center)
+    //         .justifyContent(JustifyContent::SpaceBetween)
+    //     (
+    //         div()
+    //             .display(Display::Flex)
+    //             .alignItems(AlignItems::Center)
+    //             .flexGap(S::px(12))
+    //         (
+    //             div(S::px(30), S::px(30), coral)
+    //                 .cornerRadiusTopLeft(S::px(15))
+    //                 .cornerRadiusBottomRight(S::px(15))
+    //                 .cornerRadiusTopRight(S::px(4))
+    //                 .cornerRadiusBottomLeft(S::px(4))
+    //             (),
+    //             text("CRATES").font(DINAlternateBold).fontSize(S::pt(20)).color(ink),
+    //             text("16 records · 6 shelves").font(SFMono).fontSize(S::pt(11)).color(muted)
+    //         ),
+    //         div()
+    //             .display(Display::Flex)
+    //             .alignItems(AlignItems::Center)
+    //             .flexGap(S::px(8))
+    //         (
+    //             div()
+    //                 .color(panel)
+    //                 .borderColor(outline)
+    //                 .borderWidth(S::px(1))
+    //                 .height(S::px(34))
+    //                 .paddingLeft(S::px(14))
+    //                 .paddingRight(S::px(80))
+    //                 .cornerRadius(S::px(17))
+    //                 .display(Display::Flex)
+    //                 .alignItems(AlignItems::Center)
+    //             (
+    //                 text("Search the shelf").font(SF).fontSize(S::pt(12)).color(muted)
+    //             ),
+    //             div()
+    //                 .color(raised)
+    //                 .height(S::px(34))
+    //                 .paddingLeft(S::px(14))
+    //                 .paddingRight(S::px(14))
+    //                 .cornerRadius(S::px(17))
+    //                 .display(Display::Flex)
+    //                 .alignItems(AlignItems::Center)
+    //                 .addEventListener(EventType::Click, [on = false](auto& node, Event&) mutable {
+    //                     on = !on;
+
+    //                     if (on) {
+    //                         node.color(coral);
+    //                     } else {
+    //                         node.color(raised);
+    //                     }
+    //                 })
+    //             (
+    //                 text("Shuffle").font(ArialBold).fontSize(S::pt(12)).color(ink)
+    //             )
+    //         )
+    //     ),
+
+    //     // Body
+    //     div()
+    //         .flexGrow(S::px(1))
+    //         .minHeight(S::px(0))
+    //         .paddingLeft(S::px(20))
+    //         .paddingRight(S::px(20))
+    //         .paddingBottom(S::px(20))
+    //         .display(Display::Flex)
+    //         .flexGap(S::px(16))
+    //     (
+    //         // Shelf: scrollport with sticky letter headers
+    //         div()
+    //             .color(panel)
+    //             .borderColor(outline)
+    //             .borderWidth(S::px(1))
+    //             .cornerRadius(S::px(14))
+    //             .flexGrow(S::px(1))
+    //             .minWidth(S::px(0))
+    //             .paddingLeft(S::px(8))
+    //             .paddingRight(S::px(8))
+    //             .overflow(gui::Overflow::Scroll)
+    //         (
+    //             div()
+    //                 .display(Display::Flex)
+    //                 .flexDirection(FlexDirection::Col)
+    //                 .flexGap(S::px(10))
+    //                 .paddingBottom(S::px(12))
+    //             (
+    //                 section("A", "3 records",
+    //                     row("AT", "Aphex Twin",      "Selected Ambient Works 85-92 · 1992", "ambient",   avatarA),
+    //                     row("AU", "Autechre",        "Amber · 1994",                        "idm",       avatarB),
+    //                     row("AL", "Alvvays",         "Antisocialites · 2017",               "indie",     avatarC)
+    //                 ),
+    //                 section("B", "4 records",
+    //                     row("BC", "Boards of Canada","Music Has the Right to Children · 1998", "electronic", avatarD),
+    //                     row("BR", "Broadcast",       "Tender Buttons · 2005",               "pop",       avatarE),
+    //                     row("BU", "Burial",          "Untrue · 2007",                       "garage",    avatarA),
+    //                     row("BH", "Beach House",     "Teen Dream · 2010",                   "dream pop", avatarB)
+    //                 ),
+    //                 section("C", "2 records",
+    //                     row("CT", "Cocteau Twins",   "Heaven or Las Vegas · 1990",          "dream pop", avatarC),
+    //                     row("CA", "Caribou",         "Swim · 2010",                         "electronic", avatarD)
+    //                 ),
+    //                 section("D", "3 records",
+    //                     row("DP", "Daft Punk",       "Discovery · 2001",                    "house",     avatarE),
+    //                     row("DS", "DJ Shadow",       "Endtroducing..... · 1996",            "trip hop",  avatarA),
+    //                     row("DH", "Deerhunter",      "Halcyon Digest · 2010",               "indie",     avatarB)
+    //                 ),
+    //                 section("M", "2 records",
+    //                     row("MB", "My Bloody Valentine", "Loveless · 1991",                 "shoegaze",  avatarD),
+    //                     row("MA", "Massive Attack",  "Mezzanine · 1998",                    "trip hop",  avatarC)
+    //                 ),
+    //                 section("S", "2 records",
+    //                     row("SL", "Slowdive",        "Souvlaki · 1993",                     "shoegaze",  avatarE),
+    //                     row("ST", "Stereolab",       "Dots and Loops · 1997",               "post-rock", avatarA)
+    //                 )
+    //             )
+    //         ),
+
+    //         // Now playing
+    //         div()
+    //             .width(S::px(300))
+    //             .flexShrink(S::px(0))
+    //             .color(panel)
+    //             .borderColor(outline)
+    //             .borderWidth(S::px(1))
+    //             .cornerRadius(S::px(14))
+    //             .padding(S::px(16))
+    //             .display(Display::Flex)
+    //             .flexDirection(FlexDirection::Col)
+    //             .flexGap(S::px(14))
+    //         (
+    //             div()
+    //                 .position(gui::Position::Relative)
+    //                 .width(S::percent(1.0))
+    //                 .height(S::autoSize())
+    //                 .aspectRatio(1, 1)
+    //             (
+    //                 image(coverPath, S::percent(1.0), S::autoSize())
+    //                     .aspectRatio(1, 1)
+    //                     .cornerRadius(S::px(10)),
+    //                 div()
+    //                     .position(gui::Position::Absolute)
+    //                     .top(S::px(10))
+    //                     .right(S::px(10))
+    //                     .color(coral)
+    //                     .height(S::px(22))
+    //                     .paddingLeft(S::px(9))
+    //                     .paddingRight(S::px(9))
+    //                     .cornerRadius(S::px(11))
+    //                     .display(Display::Flex)
+    //                     .alignItems(AlignItems::Center)
+    //                 (
+    //                     text("NOW PLAYING").font(DINAlternateBold).fontSize(S::pt(10)).color(bg)
+    //                 )
+    //             ),
+    //             div()
+    //                 .display(Display::Flex)
+    //                 .flexDirection(FlexDirection::Col)
+    //                 .flexGap(S::px(3))
+    //             (
+    //                 text("Loveless").font(NewYork).fontSize(S::pt(22)).color(ink),
+    //                 text("My Bloody Valentine · 1991").font(SF).fontSize(S::pt(12)).color(muted)
+    //             ),
+    //             div()
+    //                 .display(Display::Flex)
+    //                 .flexWrap(gui::FlexWrap::Wrap)
+    //                 .flexGap(S::px(6))
+    //             (
+    //                 chip("shoegaze", cyan, raised),
+    //                 chip("creation records", cyan, raised),
+    //                 chip("remastered", cyan, raised),
+    //                 chip("vinyl", cyan, raised),
+    //                 chip("11 tracks", cyan, raised)
+    //             ),
+    //             div()
+    //                 .display(Display::Flex)
+    //                 .flexDirection(FlexDirection::Col)
+    //                 .flexGap(S::px(6))
+    //             (
+    //                 div()
+    //                     .display(Display::Flex)
+    //                     .justifyContent(JustifyContent::SpaceBetween)
+    //                 (
+    //                     text("Only Shallow").font(ArialBold).fontSize(S::pt(12)).color(ink),
+    //                     text("01:58 / 04:17").font(SFMono).fontSize(S::pt(10)).color(muted)
+    //                 ),
+    //                 div()
+    //                     .width(S::percent(1.0))
+    //                     .height(S::px(6))
+    //                     .color(raised)
+    //                     .cornerRadius(S::px(3))
+    //                 (
+    //                     div()
+    //                         .width(S::percent(0.46))
+    //                         .height(S::percent(1.0))
+    //                         .color(coral)
+    //                         .cornerRadius(S::px(3))
+    //                     ()
+    //                 )
+    //             ),
+    //             div()
+    //                 .display(Display::Flex)
+    //                 .flexGap(S::px(8))
+    //             (
+    //                 button("Play", coral, avatarA, bg),
+    //                 button("Queue", raised, hover, ink)
+    //             ),
+    //             div().height(S::px(1)).color(outline)(),
+    //             div()
+    //                 .display(Display::Flex)
+    //                 .flexDirection(FlexDirection::Col)
+    //                 .flexGap(S::px(8))
+    //             (
+    //                 stat("Pressing", "1991 · UK first"),
+    //                 stat("Condition", "VG+ / VG+"),
+    //                 stat("Last played", "3 days ago"),
+    //                 stat("Plays", "27")
+    //             )
+    //         )
+    //     )
+    // );
+
+    // Box shadows: a light desk with objects at different elevations.
+    // Exercises outer blur/spread/offset, hard-edged (blur 0) shadows, inset shadows
+    // on divs and images, spread against elliptical per-corner radii, percent-based
+    // offsets, and hover/press state driving shadow changes at finalize only.
     using S = gui::Size;
     using gui::Display;
     using gui::FlexDirection;
@@ -3723,386 +4118,232 @@ div()
     using gui::JustifyContent;
     using runtime::EventType;
 
-    constexpr simd_float4 bg          {0.043, 0.063, 0.086, 1.0};
-    constexpr simd_float4 panel       {0.082, 0.110, 0.149, 1.0};
-    constexpr simd_float4 raised      {0.114, 0.149, 0.200, 1.0};
-    constexpr simd_float4 hover       {0.153, 0.196, 0.259, 1.0};
-    constexpr simd_float4 outline     {0.165, 0.208, 0.267, 1.0};
-    constexpr simd_float4 ink         {0.949, 0.957, 0.969, 1.0};
-    constexpr simd_float4 muted       {0.541, 0.592, 0.671, 1.0};
-    constexpr simd_float4 coral       {1.000, 0.420, 0.290, 1.0};
-    constexpr simd_float4 coralDim    {0.286, 0.157, 0.141, 1.0};
-    constexpr simd_float4 cyan        {0.290, 0.816, 1.000, 1.0};
-    constexpr simd_float4 transparent {0.0, 0.0, 0.0, 0.0};
+    constexpr simd_float4 desk        {0.941, 0.937, 0.925, 1.0};
+    constexpr simd_float4 paper       {1.000, 1.000, 1.000, 1.0};
+    constexpr simd_float4 cream       {0.992, 0.973, 0.925, 1.0};
+    constexpr simd_float4 ink         {0.129, 0.129, 0.153, 1.0};
+    constexpr simd_float4 muted       {0.478, 0.478, 0.510, 1.0};
+    constexpr simd_float4 rule        {0.871, 0.863, 0.839, 1.0};
+    constexpr simd_float4 tangerine   {1.000, 0.502, 0.200, 1.0};
+    constexpr simd_float4 grape       {0.435, 0.271, 0.831, 1.0};
+    constexpr simd_float4 mint        {0.180, 0.741, 0.545, 1.0};
+    constexpr simd_float4 slate       {0.239, 0.271, 0.325, 1.0};
 
-    constexpr simd_float4 avatarA {0.980, 0.761, 0.200, 1.0};
-    constexpr simd_float4 avatarB {0.380, 0.922, 0.561, 1.0};
-    constexpr simd_float4 avatarC {0.639, 0.420, 0.961, 1.0};
-    constexpr simd_float4 avatarD {0.961, 0.302, 0.459, 1.0};
-    constexpr simd_float4 avatarE {0.290, 0.816, 1.000, 1.0};
+    constexpr simd_float4 umbraSoft   {0.0, 0.0, 0.0, 0.16};
+    constexpr simd_float4 umbraHard   {0.0, 0.0, 0.0, 1.00};
+    constexpr simd_float4 umbraLift   {0.0, 0.0, 0.0, 0.26};
+    constexpr simd_float4 umbraWell   {0.0, 0.0, 0.0, 0.32};
+    constexpr simd_float4 grapeGlow   {0.435, 0.271, 0.831, 0.55};
+    constexpr simd_float4 mintGlow    {0.180, 0.741, 0.545, 0.60};
 
+    constexpr auto butterflyPath = "/Users/treja/projects/gui/assets/butterfly.png";
     constexpr auto coverPath = "/Users/treja/projects/gui/assets/loveless.jpg";
-    const std::string SF = "/System/Library/Fonts/SFNS.ttf";
-    const std::string NewYork = "/System/Library/Fonts/NewYork.ttf";
 
-    auto chip = [&](const char* label, simd_float4 fg, simd_float4 fill) {
-        return div()
-            .color(fill)
-            .height(S::px(22))
-            .paddingLeft(S::px(9))
-            .paddingRight(S::px(9))
-            .cornerRadiusTopLeft(S::px(11))
-            .cornerRadiusBottomRight(S::px(11))
-            .cornerRadiusTopRight(S::px(3))
-            .cornerRadiusBottomLeft(S::px(3))
-            .display(Display::Flex)
-            .alignItems(AlignItems::Center)
-        (
-            text(label).font(SFMono).fontSize(S::pt(10)).color(fg)
-        );
-    };
-
-    auto button = [&](const char* label, simd_float4 fill, simd_float4 hoverFill, simd_float4 fg) {
-        return div()
-            .color(fill)
-            .height(S::px(36))
-            .flexGrow(S::px(1))
-            .cornerRadius(S::px(8))
-            .display(Display::Flex)
-            .alignItems(AlignItems::Center)
-            .justifyContent(JustifyContent::Center)
-            .addEventListener(EventType::MouseEnter, [hoverFill](auto& node, Event&) {
-                node.color(hoverFill);
-            })
-            .addEventListener(EventType::MouseLeave, [fill](auto& node, Event&) {
-                node.color(fill);
-            })
-        (
-            text(label).font(ArialBold).fontSize(S::pt(12)).color(fg)
-        );
-    };
-
-    auto row = [&](const char* initials, const char* artist, const char* meta, const char* genre, simd_float4 avatar) {
-        auto selected = std::make_shared<bool>(false);
-
-        return div()
-            .color(transparent)
-            .height(S::px(58))
-            .flexShrink(S::px(0))
-            .paddingLeft(S::px(12))
-            .paddingRight(S::px(12))
-            .cornerRadius(S::px(10))
-            .display(Display::Flex)
-            .alignItems(AlignItems::Center)
-            .flexGap(S::px(12))
-            .addEventListener(EventType::MouseEnter, [selected](auto& node, Event&) {
-                if (!*selected) {
-                    node.color(hover);
-                }
-            })
-            .addEventListener(EventType::MouseLeave, [selected](auto& node, Event&) {
-                if (!*selected) {
-                    node.color(transparent);
-                }
-            })
-            .addEventListener(EventType::Click, [selected](auto& node, Event&) {
-                *selected = !*selected;
-
-                if (*selected) {
-                    node.color(coralDim);
-                } else {
-                    node.color(hover);
-                }
-            })
-        (
-            div(S::px(36), S::px(36), avatar)
-                .flexShrink(S::px(0))
-                .cornerRadius(S::px(18))
-                .display(Display::Flex)
-                .alignItems(AlignItems::Center)
-                .justifyContent(JustifyContent::Center)
-            (
-                text(initials).font(DINAlternateBold).fontSize(S::pt(12)).color(bg)
-            ),
-            div()
-                .flexGrow(S::px(1))
-                .minWidth(S::px(0))
-                .display(Display::Flex)
-                .flexDirection(FlexDirection::Col)
-                .flexGap(S::px(3))
-            (
-                text(artist).font(ArialBold).fontSize(S::pt(13)).color(ink),
-                text(meta).font(SFMono).fontSize(S::pt(10)).color(muted)
-            ),
-            chip(genre, muted, raised)
-        );
-    };
-
-    auto section = [&](const char* letter, const char* count, auto&&... rows) {
+    auto caption = [&](const char* title, const char* spec) {
         return div()
             .display(Display::Flex)
             .flexDirection(FlexDirection::Col)
-            .flexGap(S::px(2))
+            .flexGap(S::px(3))
         (
-            div()
-                .position(gui::Position::Sticky)
-                .top(S::px(0))
-                .zIndex(1)
-                .color(panel)
-                .height(S::px(34))
-                .flexShrink(S::px(0))
-                .paddingLeft(S::px(12))
-                .paddingRight(S::px(12))
-                .display(Display::Flex)
-                .alignItems(AlignItems::Center)
-                .justifyContent(JustifyContent::SpaceBetween)
-            (
-                text(letter).font(DINAlternateBold).fontSize(S::pt(15)).color(coral),
-                text(count).font(SFMono).fontSize(S::pt(10)).color(muted)
-            ),
-            rows...
+            text(title).font(ArialBold).fontSize(S::pt(12)).color(ink),
+            text(spec).font(SFMono).fontSize(S::pt(9)).color(muted)
         );
     };
 
-    auto stat = [&](const char* label, const char* value) {
+    auto cell = [&](auto&& subject, const char* title, const char* spec) {
         return div()
+            .width(S::px(220))
             .display(Display::Flex)
-            .justifyContent(JustifyContent::SpaceBetween)
+            .flexDirection(FlexDirection::Col)
+            .alignItems(AlignItems::Center)
+            .flexGap(S::px(18))
+            .paddingTop(S::px(24))
+            .paddingBottom(S::px(12))
         (
-            text(label).font(SF).fontSize(S::pt(11)).color(muted),
-            text(value).font(SFMono).fontSize(S::pt(11)).color(ink)
+            subject,
+            caption(title, spec)
         );
     };
 
-    div(S::percent(1.0), S::percent(1.0), bg)
-        .paddingTop(S::px(28))
-        .display(Display::Flex)
-        .flexDirection(FlexDirection::Col)
+    div(S::percent(1.0), S::percent(1.0), desk)
+        .padding(S::px(36))
+        .overflow(gui::Overflow::Scroll)
     (
-        // Top bar
         div()
-            .height(S::px(56))
-            .flexShrink(S::px(0))
-            .paddingLeft(S::px(20))
-            .paddingRight(S::px(20))
             .display(Display::Flex)
-            .alignItems(AlignItems::Center)
-            .justifyContent(JustifyContent::SpaceBetween)
+            .flexDirection(FlexDirection::Col)
+            .flexGap(S::px(8))
+            .marginBottom(S::px(28))
         (
-            div()
-                .display(Display::Flex)
-                .alignItems(AlignItems::Center)
-                .flexGap(S::px(12))
-            (
-                div(S::px(30), S::px(30), coral)
-                    .cornerRadiusTopLeft(S::px(15))
-                    .cornerRadiusBottomRight(S::px(15))
-                    .cornerRadiusTopRight(S::px(4))
-                    .cornerRadiusBottomLeft(S::px(4))
-                (),
-                text("CRATES").font(DINAlternateBold).fontSize(S::pt(20)).color(ink),
-                text("16 records · 6 shelves").font(SFMono).fontSize(S::pt(11)).color(muted)
-            ),
-            div()
-                .display(Display::Flex)
-                .alignItems(AlignItems::Center)
-                .flexGap(S::px(8))
-            (
-                div()
-                    .color(panel)
-                    .borderColor(outline)
-                    .borderWidth(S::px(1))
-                    .height(S::px(34))
-                    .paddingLeft(S::px(14))
-                    .paddingRight(S::px(80))
-                    .cornerRadius(S::px(17))
-                    .display(Display::Flex)
-                    .alignItems(AlignItems::Center)
-                (
-                    text("Search the shelf").font(SF).fontSize(S::pt(12)).color(muted)
-                ),
-                div()
-                    .color(raised)
-                    .height(S::px(34))
-                    .paddingLeft(S::px(14))
-                    .paddingRight(S::px(14))
-                    .cornerRadius(S::px(17))
-                    .display(Display::Flex)
-                    .alignItems(AlignItems::Center)
-                    .addEventListener(EventType::Click, [on = false](auto& node, Event&) mutable {
-                        on = !on;
+            text("ELEVATION").font(DINAlternateBold).fontSize(S::pt(26)).color(ink),
+            text("box-shadow on divs and images · hover the button, click to press it")
+                .font(SFMono).fontSize(S::pt(11)).color(muted)
+        ),
+        div().height(S::px(1)).color(rule)(),
 
-                        if (on) {
-                            node.color(coral);
+        div()
+            .display(Display::Flex)
+            .flexWrap(gui::FlexWrap::Wrap)
+            .flexGap(S::px(12))
+            .justifyContent(JustifyContent::Center)
+        (
+            // 1. Soft ambient lift; the bread-and-butter card shadow.
+            cell(
+                div(S::px(140), S::px(100), paper)
+                    .cornerRadius(S::px(12))
+                    .shadowOffsetY(S::px(8))
+                    .shadowBlur(S::px(24))
+                    .shadowColor(umbraSoft)
+                (),
+                "Soft card", "0 8 24 0 · rgba(0,0,0,.16)"
+            ),
+
+            // 2. Hard offset; blur 0 goes through the sharp-edge AA path.
+            cell(
+                div(S::px(140), S::px(100), cream)
+                    .borderWidth(S::px(2))
+                    .borderColor(ink)
+                    .shadowOffsetX(S::px(8))
+                    .shadowOffsetY(S::px(8))
+                    .shadowColor(umbraHard)
+                (),
+                "Brutalist", "8 8 0 0 · #000"
+            ),
+
+            // 3. Negative spread pulls the shadow in under the box; only the blur leaks out.
+            cell(
+                div(S::px(140), S::px(100), paper)
+                    .cornerRadius(S::px(50))
+                    .shadowOffsetY(S::px(14))
+                    .shadowBlur(S::px(20))
+                    .shadowSpread(S::px(-10))
+                    .shadowColor(umbraLift)
+                (),
+                "Pill, negative spread", "0 14 20 -10"
+            ),
+
+            // 4. Colored glow; spread without offset.
+            cell(
+                div(S::px(140), S::px(100), grape)
+                    .cornerRadius(S::px(16))
+                    .shadowBlur(S::px(32))
+                    .shadowSpread(S::px(2))
+                    .shadowColor(grapeGlow)
+                (),
+                "Glow", "0 0 32 2 · grape 55%"
+            ),
+
+            // 5. Inset well on a div; shadow sits above the fill, under the border.
+            cell(
+                div(S::px(140), S::px(100), cream)
+                    .cornerRadius(S::px(10))
+                    .borderWidth(S::px(1))
+                    .borderColor(rule)
+                    .shadowInset(true)
+                    .shadowOffsetY(S::px(4))
+                    .shadowBlur(S::px(10))
+                    .shadowColor(umbraWell)
+                (),
+                "Inset well", "inset 0 4 10 0"
+            ),
+
+            // 6. Mismatched elliptical corners with positive spread; exercises the
+            //    nonlinear radius growth where radius < spread.
+            cell(
+                div(S::px(140), S::px(100), tangerine)
+                    .cornerRadiusTopLeft(S::px(48))
+                    .cornerRadiusTopRight(S::px(4))
+                    .cornerRadiusBottomRight(S::px(30))
+                    .cornerRadiusBottomLeft(S::px(0))
+                    .shadowOffsetY(S::px(6))
+                    .shadowBlur(S::px(10))
+                    .shadowSpread(S::px(12))
+                    .shadowColor(umbraSoft)
+                (),
+                "Uneven corners + spread", "0 6 10 12"
+            ),
+
+            // 7. Percent offsets resolve against the box.
+            cell(
+                div(S::px(140), S::px(100), slate)
+                    .cornerRadius(S::px(6))
+                    .shadowOffsetX(S::percent(0.1))
+                    .shadowOffsetY(S::percent(0.1))
+                    .shadowBlur(S::px(2))
+                    .shadowColor(mintGlow)
+                (),
+                "Percent offset", "10% 10% 2 0"
+            ),
+
+            // 8. Image with a drop shadow; the quad grows but UVs stay on the original rect.
+            cell(
+                image(butterflyPath, S::px(140), S::px(100))
+                    .cornerRadius(S::px(12))
+                    .shadowOffsetY(S::px(10))
+                    .shadowBlur(S::px(22))
+                    .shadowColor(umbraLift),
+                "Image drop", "0 10 22 0"
+            ),
+
+            // 9. Image with an inset vignette over the texture.
+            cell(
+                image(coverPath, S::px(140), S::px(100))
+                    .cornerRadius(S::px(12))
+                    .borderWidth(S::px(2))
+                    .borderColor(paper)
+                    .shadowInset(true)
+                    .shadowBlur(S::px(28))
+                    .shadowSpread(S::px(4))
+                    .shadowColor(umbraWell),
+                "Image vignette", "inset 0 0 28 4"
+            ),
+
+            // 10. Interactive: hover lifts, click presses into an inset shadow.
+            cell(
+                div(S::px(140), S::px(100), mint)
+                    .cornerRadius(S::px(14))
+                    .display(Display::Flex)
+                    .alignItems(AlignItems::Center)
+                    .justifyContent(JustifyContent::Center)
+                    .shadowOffsetY(S::px(4))
+                    .shadowBlur(S::px(10))
+                    .shadowColor(umbraSoft)
+                    .addEventListener(EventType::MouseEnter, [](auto& node, Event&) {
+                        if (node.shadowInset()) {
+                            return;
+                        }
+
+                        node.shadowOffsetY(S::px(12))
+                            .shadowBlur(S::px(28))
+                            .shadowColor(umbraLift);
+                    })
+                    .addEventListener(EventType::MouseLeave, [](auto& node, Event&) {
+                        if (node.shadowInset()) {
+                            return;
+                        }
+
+                        node.shadowOffsetY(S::px(4))
+                            .shadowBlur(S::px(10))
+                            .shadowColor(umbraSoft);
+                    })
+                    .addEventListener(EventType::Click, [](auto& node, Event&) {
+                        bool pressed = !node.shadowInset();
+                        node.shadowInset(pressed);
+
+                        if (pressed) {
+                            node.shadowOffsetY(S::px(3))
+                                .shadowBlur(S::px(8))
+                                .shadowColor(umbraWell);
                         } else {
-                            node.color(raised);
+                            node.shadowOffsetY(S::px(12))
+                                .shadowBlur(S::px(28))
+                                .shadowColor(umbraLift);
                         }
                     })
                 (
-                    text("Shuffle").font(ArialBold).fontSize(S::pt(12)).color(ink)
-                )
-            )
-        ),
-
-        // Body
-        div()
-            .flexGrow(S::px(1))
-            .minHeight(S::px(0))
-            .paddingLeft(S::px(20))
-            .paddingRight(S::px(20))
-            .paddingBottom(S::px(20))
-            .display(Display::Flex)
-            .flexGap(S::px(16))
-        (
-            // Shelf: scrollport with sticky letter headers
-            div()
-                .color(panel)
-                .borderColor(outline)
-                .borderWidth(S::px(1))
-                .cornerRadius(S::px(14))
-                .flexGrow(S::px(1))
-                .minWidth(S::px(0))
-                .paddingLeft(S::px(8))
-                .paddingRight(S::px(8))
-                .overflow(gui::Overflow::Scroll)
-            (
-                div()
-                    .display(Display::Flex)
-                    .flexDirection(FlexDirection::Col)
-                    .flexGap(S::px(10))
-                    .paddingBottom(S::px(12))
-                (
-                    section("A", "3 records",
-                        row("AT", "Aphex Twin",      "Selected Ambient Works 85-92 · 1992", "ambient",   avatarA),
-                        row("AU", "Autechre",        "Amber · 1994",                        "idm",       avatarB),
-                        row("AL", "Alvvays",         "Antisocialites · 2017",               "indie",     avatarC)
-                    ),
-                    section("B", "4 records",
-                        row("BC", "Boards of Canada","Music Has the Right to Children · 1998", "electronic", avatarD),
-                        row("BR", "Broadcast",       "Tender Buttons · 2005",               "pop",       avatarE),
-                        row("BU", "Burial",          "Untrue · 2007",                       "garage",    avatarA),
-                        row("BH", "Beach House",     "Teen Dream · 2010",                   "dream pop", avatarB)
-                    ),
-                    section("C", "2 records",
-                        row("CT", "Cocteau Twins",   "Heaven or Las Vegas · 1990",          "dream pop", avatarC),
-                        row("CA", "Caribou",         "Swim · 2010",                         "electronic", avatarD)
-                    ),
-                    section("D", "3 records",
-                        row("DP", "Daft Punk",       "Discovery · 2001",                    "house",     avatarE),
-                        row("DS", "DJ Shadow",       "Endtroducing..... · 1996",            "trip hop",  avatarA),
-                        row("DH", "Deerhunter",      "Halcyon Digest · 2010",               "indie",     avatarB)
-                    ),
-                    section("M", "2 records",
-                        row("MB", "My Bloody Valentine", "Loveless · 1991",                 "shoegaze",  avatarD),
-                        row("MA", "Massive Attack",  "Mezzanine · 1998",                    "trip hop",  avatarC)
-                    ),
-                    section("S", "2 records",
-                        row("SL", "Slowdive",        "Souvlaki · 1993",                     "shoegaze",  avatarE),
-                        row("ST", "Stereolab",       "Dots and Loops · 1997",               "post-rock", avatarA)
-                    )
-                )
-            ),
-
-            // Now playing
-            div()
-                .width(S::px(300))
-                .flexShrink(S::px(0))
-                .color(panel)
-                .borderColor(outline)
-                .borderWidth(S::px(1))
-                .cornerRadius(S::px(14))
-                .padding(S::px(16))
-                .display(Display::Flex)
-                .flexDirection(FlexDirection::Col)
-                .flexGap(S::px(14))
-            (
-                div()
-                    .position(gui::Position::Relative)
-                    .width(S::percent(1.0))
-                    .height(S::autoSize())
-                    .aspectRatio(1, 1)
-                (
-                    image(coverPath, S::percent(1.0), S::autoSize())
-                        .aspectRatio(1, 1)
-                        .cornerRadius(S::px(10)),
-                    div()
-                        .position(gui::Position::Absolute)
-                        .top(S::px(10))
-                        .right(S::px(10))
-                        .color(coral)
-                        .height(S::px(22))
-                        .paddingLeft(S::px(9))
-                        .paddingRight(S::px(9))
-                        .cornerRadius(S::px(11))
-                        .display(Display::Flex)
-                        .alignItems(AlignItems::Center)
-                    (
-                        text("NOW PLAYING").font(DINAlternateBold).fontSize(S::pt(10)).color(bg)
-                    )
+                    text("press me").font(ArialBold).fontSize(S::pt(12)).color(paper)
                 ),
-                div()
-                    .display(Display::Flex)
-                    .flexDirection(FlexDirection::Col)
-                    .flexGap(S::px(3))
-                (
-                    text("Loveless").font(NewYork).fontSize(S::pt(22)).color(ink),
-                    text("My Bloody Valentine · 1991").font(SF).fontSize(S::pt(12)).color(muted)
-                ),
-                div()
-                    .display(Display::Flex)
-                    .flexWrap(gui::FlexWrap::Wrap)
-                    .flexGap(S::px(6))
-                (
-                    chip("shoegaze", cyan, raised),
-                    chip("creation records", cyan, raised),
-                    chip("remastered", cyan, raised),
-                    chip("vinyl", cyan, raised),
-                    chip("11 tracks", cyan, raised)
-                ),
-                div()
-                    .display(Display::Flex)
-                    .flexDirection(FlexDirection::Col)
-                    .flexGap(S::px(6))
-                (
-                    div()
-                        .display(Display::Flex)
-                        .justifyContent(JustifyContent::SpaceBetween)
-                    (
-                        text("Only Shallow").font(ArialBold).fontSize(S::pt(12)).color(ink),
-                        text("01:58 / 04:17").font(SFMono).fontSize(S::pt(10)).color(muted)
-                    ),
-                    div()
-                        .width(S::percent(1.0))
-                        .height(S::px(6))
-                        .color(raised)
-                        .cornerRadius(S::px(3))
-                    (
-                        div()
-                            .width(S::percent(0.46))
-                            .height(S::percent(1.0))
-                            .color(coral)
-                            .cornerRadius(S::px(3))
-                        ()
-                    )
-                ),
-                div()
-                    .display(Display::Flex)
-                    .flexGap(S::px(8))
-                (
-                    button("Play", coral, avatarA, bg),
-                    button("Queue", raised, hover, ink)
-                ),
-                div().height(S::px(1)).color(outline)(),
-                div()
-                    .display(Display::Flex)
-                    .flexDirection(FlexDirection::Col)
-                    .flexGap(S::px(8))
-                (
-                    stat("Pressing", "1991 · UK first"),
-                    stat("Condition", "VG+ / VG+"),
-                    stat("Last played", "3 days ago"),
-                    stat("Plays", "27")
-                )
+                "Interactive", "hover: lift · click: inset"
             )
         )
     );

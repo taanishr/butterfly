@@ -34,6 +34,7 @@ namespace elements {
     using runtime::UIContext;
     using style::ClipUniform;
     using style::CornerRadii;
+    using style::ShadowUniform;
     using style::SharedDescriptor;
     using style::Size;
     using style::Unit;
@@ -58,6 +59,7 @@ namespace elements {
         CornerRadii cornerRadius;
         float borderWidth;
         simd_float4 borderColor;
+        ShadowUniform shadow;
     };
 
     struct ImageGeometryUniforms {
@@ -332,23 +334,10 @@ namespace elements {
                 activateTexture(fragment, renditionKey);
             }
 
-            size_t bufferLen = 6*sizeof(ImagePoint);
-            
-            std::array<ImagePoint, 6> atomPoints {{
-                {{0, 0},           {0, 0}, 0},
-                {{width, 0},       {1, 0}, 0},
-                {{0, height},      {0, 1}, 0},
-                {{0, height},      {0, 1}, 0},
-                {{width, 0},       {1, 0}, 0},
-                {{width, height},  {1, 1}, 0}
-            }};
-            
-            fragment.fragmentStorage.atomsBuffer.write(ctx.frameIndex, atomPoints.data(), bufferLen);
-            
             Atom atom;
             atom.atomBufferHandle = fragment.fragmentStorage.atomsBuffer.getBufferHandle(ctx.frameIndex);
             atom.offset = 0;
-            atom.length = bufferLen;
+            atom.length = 6*sizeof(ImagePoint);
             atom.width = width;
             atom.height = height;
             
@@ -399,22 +388,66 @@ namespace elements {
                 layout.computedBox.height
             );
 
+            float width = layout.computedBox.width;
+            float height = layout.computedBox.height;
+            const auto& boxShadow = shared.boxShadow;
+            float shadowBlur = std::max(boxShadow.blur.resolveOr(Size::px(width), 0.0f), 0.0f);
+
+            ShadowUniform shadow {
+                .offset = {
+                    boxShadow.offsetX.resolveOr(Size::px(width), 0.0f),
+                    boxShadow.offsetY.resolveOr(Size::px(height), 0.0f)
+                },
+                .spread = boxShadow.spread.resolveOr(Size::px(width), 0.0f),
+                .sigma = shadowBlur / 2.0f,
+                .color = boxShadow.color,
+                .inset = boxShadow.inset ? 1u : 0u
+            };
+
+            float shadowExtent = 0.0f;
+
+            if (!boxShadow.inset) {
+                shadowExtent = std::max(shadow.spread, 0.0f) + 1.5f * shadowBlur;
+            }
+
             ImageStyleUniforms styleUniforms {
                 .cornerRadius = cornerRadius,
                 .borderWidth = borderWidth,
-                .borderColor = shared.borderColor
+                .borderColor = shared.borderColor,
+                .shadow = shadow
             };
 
             ImageGeometryUniforms geometryUniforms;
-            
+
             if (placed.placements.size() > 0) {
                 auto offset = placed.placements.front();
                 simd_float2 halfExtent { layout.computedBox.width / 2.0f, layout.computedBox.height / 2.0f };
                 simd_float2 rectCenter { offset.x + halfExtent.x, offset.y + halfExtent.y };
-                
+
                 geometryUniforms.rectCenter = rectCenter;
                 geometryUniforms.halfExtent = halfExtent;
             }
+
+            float minX = std::min(0.0f, shadow.offset.x - shadowExtent);
+            float minY = std::min(0.0f, shadow.offset.y - shadowExtent);
+            float maxX = std::max(width, width + shadow.offset.x + shadowExtent);
+            float maxY = std::max(height, height + shadow.offset.y + shadowExtent);
+
+            float minU = width > 0.0f ? minX / width : 0.0f;
+            float maxU = width > 0.0f ? maxX / width : 1.0f;
+            float minV = height > 0.0f ? minY / height : 0.0f;
+            float maxV = height > 0.0f ? maxY / height : 1.0f;
+
+            std::array<ImagePoint, 6> atomPoints {{
+                {{minX, minY}, {minU, minV}, 0},
+                {{maxX, minY}, {maxU, minV}, 0},
+                {{minX, maxY}, {minU, maxV}, 0},
+                {{minX, maxY}, {minU, maxV}, 0},
+                {{maxX, minY}, {maxU, minV}, 0},
+                {{maxX, maxY}, {maxU, maxV}, 0}
+            }};
+
+            fragment.fragmentStorage.atomsBuffer.write(ctx.frameIndex, atomPoints.data(), 6*sizeof(ImagePoint));
 
             ImageUniforms uniforms {
                 .style = styleUniforms,
