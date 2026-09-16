@@ -92,19 +92,24 @@ void Renderer::draw() {
 
     MTL::CommandBuffer* commandBuffer = commandQueue->commandBuffer();
     MTL::RenderPassDescriptor* renderPassDescriptor = nullptr;
-    {
-        instrumentation::PhaseTimer timer{instrumentation::Phase::DrawableWait};
-        renderPassDescriptor = view->currentRenderPassDescriptor();
-    }
-    MTL::RenderCommandEncoder* renderCommandEncoder = commandBuffer->renderCommandEncoder(renderPassDescriptor);
+    
     // renderCommandEncoder->setDepthStencilState(getDefaultDepthStencilState());
     uint64_t frameIndex = ctx.frameIndex;
 
     auto ts1 = clock.now();
+    
     {
         instrumentation::PhaseTimer timer{instrumentation::Phase::Update};
         rootTree.update(frameInfo, frameIndex);
     }
+    
+    {
+        instrumentation::PhaseTimer timer{instrumentation::Phase::DrawableWait};
+        renderPassDescriptor = view->currentRenderPassDescriptor();
+    }
+
+    MTL::RenderCommandEncoder* renderCommandEncoder = commandBuffer->renderCommandEncoder(renderPassDescriptor);
+    
     {
         instrumentation::PhaseTimer timer{instrumentation::Phase::Render};
         rootTree.render(renderCommandEncoder);

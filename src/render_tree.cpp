@@ -420,9 +420,7 @@ namespace tree {
         for (auto node : allNodes) {
             if (node->atomized.has_value()) {
                 const auto& atomized = *node->atomized;
-                atomCount += atomized.usesDrawableAtoms
-                    ? atomized.drawableAtoms.size()
-                    : atomized.atoms.size();
+                atomCount += atomized.usesDrawableAtoms ? atomized.drawableAtoms.size() : atomized.atoms.size();
             }
             auto& finalized = node->finalized;
             node->element->encode(encoder, finalized);
