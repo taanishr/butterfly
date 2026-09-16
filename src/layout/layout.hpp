@@ -1,0 +1,475 @@
+//
+//  layout.hpp
+//  gui
+//
+//  Created by Taanish Reja on 11/20/25.
+//
+
+#pragma once
+#include "fragment_types.hpp"
+#include "printers.hpp"
+#include "metal_imports.hpp"
+#include "frame_info.hpp"
+#include "layout/sizing.hpp"
+#include "style.hpp"
+#include "text/text_bidi.hpp"
+#include <concepts>
+#include <cstdint>
+#include <optional>
+#include <ranges>
+#include <span>
+#include <memory>
+#include <format>
+#include "layout/margins.hpp"
+#include "AppKit_Extensions.hpp"
+#include <any>
+#include <unordered_map>
+#include <string>
+#include <utility>
+#include <variant>
+#include <vector>
+
+class Renderer;
+
+namespace layout {
+
+    
+    using FragmentID = uint64_t;
+
+    struct Atomized {
+        FragmentID id;
+        std::vector<Atom> atoms;
+        std::vector<Atom> drawableAtoms;
+        bool usesDrawableAtoms{};
+    };
+
+    struct Placed {
+        FragmentID id;
+        std::vector<AtomPlacement> placements;
+    };
+
+    struct LineFragment {
+        float width{};
+        size_t atomStart{};
+        size_t atomCount{};
+        size_t textByteStart{};
+        size_t textByteLength{};
+        uint8_t bidiLevel{};
+        size_t lineBoxIndex{};
+        size_t fragmentIndex{};  // index within the owning line box
+        float offset{}; // relative x where fragment is placed in line box
+    };
+
+    struct LineBox {
+        size_t fragmentStart{}; // index of the first fragment in the owning fragment vector
+        size_t fragmentCount{}; // number of fragments
+        float width{}; // width of line box (width of all fragments)
+        float currentFragmentOffset{};
+
+        void pushFragment(LineFragment& fragment);
+    };
+
+    struct InlineFragmentRange {
+        size_t start{};
+        size_t count{};
+    };
+
+    struct InlineFormattingContext {
+        std::vector<LineFragment> fragments;
+        std::vector<LineBox> lineBoxes;
+        std::vector<InlineFragmentRange> childFragments;
+
+        std::vector<LineFragment> minFragments;
+        std::vector<LineBox> minLineBoxes;
+        std::vector<InlineFragmentRange> minChildFragments;
+
+        std::vector<LineFragment> maxFragments;
+        std::vector<LineBox> maxLineBoxes;
+        std::vector<InlineFragmentRange> maxChildFragments;
+
+        std::optional<IntrinsicSizes> intrinsicSizes;
+    };
+
+    struct InlineFormattingInput {
+        std::shared_ptr<const InlineFormattingContext> context;
+        InlineFragmentRange fragments;
+        InlineFragmentRange minFragments;
+        InlineFragmentRange maxFragments;
+
+        std::span<const LineFragment> lineFragments() const {
+            if (!context || fragments.count == 0) return {};
+            return std::span{context->fragments}.subspan(fragments.start, fragments.count);
+        }
+
+        std::span<const LineBox> lineBoxes() const {
+            if (!context) return {};
+            return context->lineBoxes;
+        }
+
+        std::span<const LineFragment> minLineFragments() const {
+            if (!context || minFragments.count == 0) return {};
+            return std::span{context->minFragments}.subspan(minFragments.start, minFragments.count);
+        }
+
+        std::span<const LineFragment> maxLineFragments() const {
+            if (!context || maxFragments.count == 0) return {};
+            return std::span{context->maxFragments}.subspan(maxFragments.start, maxFragments.count);
+        }
+    };
+
+    struct FinalizedBase {};
+
+    template <typename U>
+    struct Finalized : FinalizedBase {
+        FragmentID id;
+        Atomized atomized;
+        Placed placed;
+        U uniforms;
+    };
+
+
+    /* layout stuff */
+    // --------------------------- Layout / positioning constraints ---------------------------
+    //
+    // NOTE: units are in frame pixels (layout space) unless stated otherwise. "Available
+    // width" means the width inside the containing block after padding and borders are applied.
+    //
+    // ATOM LIFECYCLE (important):
+    //  - Pre-atomize: produce indivisible content atoms (glyphs, images, shape quads). Each
+    //    atom MUST include: ownerNodeId, intrinsicRect (w,h), styleId (resolved/inherited),
+    //    and atom metadata index (glyph/SDF index).
+    //  - Layout: consume content atoms (intrinsic sizes) to build line boxes and compute
+    //    final layout boxes (content/padding/border) and clip rects. Do NOT emit new content
+    //    atoms here.
+    //  - Finalize: ONLY for multi-atom nodes (text), compute derived box-level atoms (e.g.
+    //    a single background rect for the text node = union of placed glyph rects) and
+    //    patch content atoms' final positions. Finalize must NOT affect layout results.
+    //
+    // ---------------------------------------------------------------------------------------
+
+
+    // relative needs:
+    /*
+        - Participate in normal flow; influence siblings via the running cursor.
+        - Maintain a running cursor (x,y) within the containing block during placement.
+        - Block children:
+            - Always start on a new line (cursor.x reset to line start).
+            - Advance cursor.y by the block’s total outer height (content + padding + border).
+        - Inline children:
+            - Participate in inline formatting context.
+            - Create/extend line boxes; place content atoms greedily into the current line box
+              until "available width" is exceeded, then break to a new line box.
+        - Affects siblings: in-flow; its final box must be included when determining subsequent
+          in-flow placement.
+    */
+
+
+    // absolute needs:
+    /*
+        - Out-of-flow: does not affect siblings or the parent cursor.
+        - Containing block selection:
+            - nearest ancestor with position != static (i.e. positioned ancestor) -> containing block
+            - otherwise -> root frame.
+        - Position coordinates are relative to the containing block origin (top-left by default).
+        - Internal layout (for its children) still uses inline/block semantics and the same
+          line-box logic, but the "available width" is the containing block's inner width.
+        - Shrink-to-fit for inline absolute boxes:
+            - Compute minContentWidth and maxContentWidth for the node.
+            - resolvedWidth = min( max(minContentWidth, availableWidth), maxContentWidth ).
+            - If minContentWidth > availableWidth => inline internal layout degenerates to
+              block-like stacking (vertical flow of line boxes).
+        - Absolute elements must carry owner/style and be atomized as content atoms; any
+          background/box rect for the absolute node is emitted in Finalize after layout.
+    */
+
+
+    // fixed needs:
+    /*
+        - Out-of-flow: does not affect siblings or the parent cursor.
+        - Containing block: the viewport (screen). Coordinates are relative to viewport origin.
+        - Requires awareness of viewport dimensions (screenWidth/screenHeight) as available space.
+        - Internal layout respects inline vs block semantics; shrink-to-fit applies the same way:
+            - If minContentWidth > viewportAvailableWidth => degenerate to block-like stacking.
+        - Position and final atom placement are independent of scrolling of any containing block.
+    */
+
+
+    // inline needs:
+    /*
+        - Participate in inline formatting context inside the containing block.
+        - Produce and extend line boxes (implement an initial greedy line-breaker).
+        - Width behavior: content-determined for inline boxes; use shrink-to-fit when required
+          (see absolute/fixed rules for formula).
+        - Height is determined by line box stacking (sum of line heights + vertical gaps).
+        - Content atoms (glyphs/images) are the unit of breaking; atom sizes are intrinsic and
+          must be used by the line-box algorithm.
+    */
+
+
+    // block needs:
+    /*
+        - Always start on a new line in normal flow.
+        - Default horizontal sizing: occupy the containing block's available width (i.e. do not
+          shrink-to-fit for block-level elements unless explicitly sized).
+        - Height may span multiple line boxes (wrapped inline content).
+        - Visual box (background / border / radius) is a single box-level rect that spans the
+          node's computed width and full height. This is emitted in Finalize (text-only or any
+          multi-atom node that needs a box) and uses the node's resolvedStyle (background/border).
+        - Content atoms do NOT define the block's visual extent; layout computes the block box
+          then finalize emits the box atom that the renderer uses for background/border SDFs.
+    */
+
+
+    // ----------------------------- Additional precise invariants ----------------------------
+    //
+    // - Atoms never decide style: every atom references ownerNodeId -> renderer looks up the
+    //   resolvedStyle/styleId for uniforms. Style inheritance must be resolved in the style pass.
+    // - Stacking contexts/paint order: determine during layout/finalize (stacking context creation
+    //   rules are separate). Finalize produces a paint-ordered atom list referencing node/ctx.
+    // - Text-only finalization: only nodes that expanded into multiple atoms (e.g., text glyph runs)
+    //   require emission of an additional box atom that is derived from layout (union of glyph rects).
+    // - Coordinate spaces: layout positions are frame-space; fixed positions are viewport-space.
+    // - Degeneration rule (explicit): "degenerate to block-like stacking" means inline formatting
+    //   for that node falls back to vertical stacking of line boxes (the node remains out-of-flow).
+    //
+    // ------------------------------------------------------------------------------------------
+
+
+
+}
+
+
+namespace layout {
+    using style::AlignContent;
+    using style::AlignItems;
+    using style::AlignSelf;
+    using style::ClipUniform;
+    using style::Display;
+    using style::FlexDirection;
+    using style::FlexWrap;
+    using style::JustifyContent;
+    using style::JustifyItems;
+    using style::JustifySelf;
+    using style::Position;
+    using style::SharedDescriptor;
+    using style::Size;
+    using style::TextOverflow;
+    using style::TextAlign;
+
+    struct EdgeIntent {
+        Display edgeDisplayMode{Display::Block};
+        float intent{};
+        bool collapsable {};
+    };
+
+    enum class Direction {
+        ltr,
+        rtl
+    };
+
+    struct ReplacedAttributes {
+        std::optional<Size> marginTop{}; 
+        std::optional<Size> marginBottom{}; 
+    };
+
+    struct InheritedProperties {
+        Direction direction{Direction::ltr};
+        TextAlign textAlign{TextAlign::Start};
+    };
+
+    struct ContainingBlock {
+        simd_float2 origin{};
+        SizeState width{std::monostate{}};
+        SizeState height{std::monostate{}};
+    };
+
+    struct Constraints {
+        simd_float2 origin{};
+        simd_float2 cursor{};
+        SizeState availableWidth{std::monostate{}};
+        SizeState availableHeight{std::monostate{}};
+
+        InheritedProperties inheritedProperties{};
+
+        /*
+            containing block vs absolute containing block vs available size
+
+            available size: can be determined and adjusted as pleases (i.e. by a second class layout resolver); starts as viewport
+            containing block: always the nearest block ancesstor (mostly equivalent to available size); starts as viewport
+            absolute containing block: the nearest relative/fixed/ancestor changes this; starts as viewport
+
+            used primarily in post layout for positioning adjustments
+
+            the coordinate space is local during layout and later becomes global during post layout
+        */
+        FrameInfo frameInfo{}; // viewport size (for fixed)
+        ContainingBlock containingBlock{}; // for normal flow: parent content box
+        ContainingBlock absoluteContainingBlock{}; // for absolute: nearest positioned ancestor
+        ContainingBlock scrollport{}; // nearest scroll container's padding box
+
+        EdgeIntent edgeIntent{};
+
+        InlineFormattingInput inlineFormatting {};
+        std::optional<bidi::TextBidiInput> textBidiInput;
+
+        ReplacedAttributes replacedAttributes {};
+        ResolvedMargins resolvedMargins {};
+        std::optional<Display> computedDisplay;
+        float prevInlineHeight{};
+        std::vector<ClipUniform> clipUniforms {};
+        std::optional<TextOverflow&> textOverflow;
+    };
+
+    struct LayoutInput {
+        Position position;
+        Display display;
+
+        std::optional<Size> top, left, bottom, right;
+
+        std::optional<Direction> direction; // overwrites inherited if specified
+        std::optional<TextAlign> textAlign;
+
+        Size marginTop, marginRight, marginBottom, marginLeft;
+
+    };
+
+    inline LayoutInput toLayoutInput(const SharedDescriptor& s, const std::optional<Display>& computedDisplay = std::nullopt) {
+        LayoutInput li;
+        li.position = s.position;
+        li.display = computedDisplay.value_or(s.display);
+        li.top = s.top;
+        li.left = s.left;
+        li.bottom = s.bottom;
+        li.right = s.right;
+        li.textAlign = s.textAlign;
+        li.marginTop = s.marginTop.value_or(s.margin);
+        li.marginRight = s.marginRight.value_or(s.margin);
+        li.marginBottom = s.marginBottom.value_or(s.margin);
+        li.marginLeft = s.marginLeft.value_or(s.margin);
+        return li;
+    }
+
+    struct PositionResolutionContext {
+        simd_float2 currentCursor;
+        const Constraints& constraints;
+        const LayoutInput& layoutInput;
+        const SizeResult& sizeResult;
+        const ResolvedMargins& margins;
+    };
+
+
+    simd_float2 resolvePosition(const PositionResolutionContext& ctx);
+
+
+    using ChainID = uint64_t;
+
+    struct MarginMetadata {
+        std::optional<ChainID> topChainId;
+        std::optional<ChainID> bottomChainId;
+    };  
+
+    struct PreLayoutResult {
+        MarginMetadata marginMetadata;
+        ResolvedMargins resolvedMargins;
+    };
+
+    struct LayoutBox {
+        float x, y;
+        float width, height;
+    };
+
+    // first class layout modes: every node is laid out as block or inline
+    struct BlockState {
+        // atom geometry
+        std::vector<simd_float2> atomOffsets;
+        std::vector<simd_float2> localAtomOffsets;
+        std::vector<simd_float2> drawableAtomOffsets;
+
+        // inline results
+        InlineFormattingInput inlineFormatting;
+        float prevInlineHeight{};
+
+        LayoutBox computedBox;
+        LayoutBox localComputedBox; // fine
+
+        Constraints childConstraints; // child constraints
+
+        simd_float2 siblingCursor;
+        bool outOfFlow; // don't change siblings
+        EdgeIntent edgeIntent;
+
+        std::vector<ClipUniform> clipUniforms {};
+    };
+
+    struct InlineState {
+        // atom geometry
+        std::vector<simd_float2> atomOffsets;
+        std::vector<simd_float2> localAtomOffsets;
+        std::vector<simd_float2> drawableAtomOffsets;
+
+        // inline results
+        InlineFormattingInput inlineFormatting;
+        float prevInlineHeight{};
+
+        LayoutBox computedBox;
+        LayoutBox localComputedBox; // fine
+
+        Constraints childConstraints; // child constraints
+
+        simd_float2 siblingCursor;
+        bool outOfFlow; // don't change siblings
+        EdgeIntent edgeIntent;
+
+        std::vector<ClipUniform> clipUniforms {};
+
+        // inline formatting knows these while it lays the fragments out
+        std::optional<IntrinsicSizes> widthIntrinsicSizes;
+        std::optional<IntrinsicSizes> heightIntrinsicSizes;
+    };
+
+    template <typename S>
+    concept LayoutStateType = requires(S state) {
+        { state.atomOffsets } -> std::same_as<std::vector<simd_float2>&>;
+        { state.localAtomOffsets } -> std::same_as<std::vector<simd_float2>&>;
+        { state.drawableAtomOffsets } -> std::same_as<std::vector<simd_float2>&>;
+        { state.inlineFormatting } -> std::same_as<InlineFormattingInput&>;
+        { state.prevInlineHeight } -> std::same_as<float&>;
+        { state.computedBox } -> std::same_as<LayoutBox&>;
+        { state.localComputedBox } -> std::same_as<LayoutBox&>;
+        { state.childConstraints } -> std::same_as<Constraints&>;
+        { state.siblingCursor } -> std::same_as<simd_float2&>;
+        { state.outOfFlow } -> std::same_as<bool&>;
+        { state.edgeIntent } -> std::same_as<EdgeIntent&>;
+        { state.clipUniforms } -> std::same_as<std::vector<ClipUniform>&>;
+    };
+
+    using LayoutState = std::variant<BlockState, InlineState>;
+
+    struct LayoutResult {
+        LayoutState layout;
+        SizeResult sizeResult;
+        std::optional<IntrinsicSizes> intrinsicSizes;
+    };
+
+
+    struct LayoutEngine {
+        static ResolvedMargins resolveAutoMargins(
+            const LayoutInput& li,
+            const ReplacedAttributes& replacedAttributes,
+            const SizeState& availableWidth,
+            float contentWidth
+        );
+
+        // relative, block/inline
+        static BlockState layoutBlockNormalFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
+        static InlineState layoutInlineNormalFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
+        static LayoutState resolveNormalFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
+
+        // fixed and absolute, block/inline
+        static BlockState layoutBlockOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
+        static InlineState layoutInlineOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
+        static LayoutState resolveOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
+
+        static LayoutState resolve(Constraints& constraints, LayoutInput& layoutInput, Atomized atomized, const SizeResult& sizeResult);
+    };
+}
