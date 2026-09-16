@@ -36,7 +36,15 @@ struct ClipUniform {
     CornerRadii cornerRadius;
 };
 
-inline float2 toNDC(const float2 pt, float width = 512.0f, float height = 512.0f) {
+struct ShadowUniform {
+    float2 offset;
+    float spread;
+    float sigma;
+    float4 color;
+    uint inset;
+};
+
+inline float2 to_ndc(const float2 pt, float width = 512.0f, float height = 512.0f) {
     float ndcX = (pt.x / width) * 2.0f - 1.0f;
     float ndcY = 1.0f - (pt.y / height) * 2.0f;
     
@@ -82,4 +90,53 @@ inline bool outside_clips(float2 p, constant ClipUniform* clips, uint count) {
     }
 
     return d > 0.0;
+}
+
+inline CornerRadii spread_radii(CornerRadii radii, float growth) {
+    float4 rx = float4(radii.topLeft.x, radii.topRight.x, radii.bottomRight.x, radii.bottomLeft.x);
+    float4 ry = float4(radii.topLeft.y, radii.topRight.y, radii.bottomRight.y, radii.bottomLeft.y);
+
+    float4 sx = 1.0;
+    float4 sy = 1.0;
+
+    if (growth > 0.0) {
+        float4 tx = rx / growth - 1.0;
+        float4 ty = ry / growth - 1.0;
+        sx = select(1.0, 1.0 + tx * tx * tx, rx < growth);
+        sy = select(1.0, 1.0 + ty * ty * ty, ry < growth);
+    }
+
+    rx = max(rx + growth * sx, 0.0);
+    ry = max(ry + growth * sy, 0.0);
+
+    CornerRadii result;
+    result.topLeft = float2(rx.x, ry.x);
+    result.topRight = float2(rx.y, ry.y);
+    result.bottomRight = float2(rx.z, ry.z);
+    result.bottomLeft = float2(rx.w, ry.w);
+    return result;
+}
+
+// regular ass gaussian kernel
+inline float gaussian(float distance, float sigma) {
+    return exp(-0.5 * (distance / sigma) * (distance / sigma)) / (sigma * sqrt(2.0 * M_PI_F));
+}
+
+inline float shadow_coverage(float2 p, float2 halfExtent, CornerRadii radii, float sigma, float spread, float borderWidth) {
+    halfExtent = max(halfExtent - borderWidth + spread, 0.0);
+    radii = spread_radii(spread_radii(radii, -borderWidth), spread);
+    float d = rounded_rect_sdf(p, halfExtent, radii);
+
+    // harsh shadow handling
+    if (sigma <= 0.0) {
+        float px = fwidth(d);
+        return clamp(0.5 - d / px, 0.0, 1.0);
+    }
+
+    // approx gaussian integral at -d / sigma
+    // absurdly cool; thanks https://madebyevan.com/shaders/fast-rounded-rectangle-shadows/
+    float x = abs(d) / (sigma * M_SQRT2_F);
+    float denominator = 1.0 + (0.278393 + (0.230389 + 0.078108 * x * x) * x) * x;
+    float tail = 0.5 / pow(denominator, 4.0);
+    return d >= 0.0 ? tail : 1.0 - tail;
 }

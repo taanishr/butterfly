@@ -1307,452 +1307,452 @@ auto index() -> void {
 //     );
 
 
-    using S = gui::Size;
+    // using S = gui::Size;
     
-    // Existing dark music player test.
-    // Dark music player — scrollable playlist (left) + nested scrollable lyrics (right)
-    div(S::percent(1.0), S::percent(1.0), simd_float4{0.09,0.09,0.11,1.0})
-        .display(gui::Display::Flex)
-        .flexDirection(gui::FlexDirection::Col)
-        .paddingTop(S::px(28))
-    (
-        // ── Now Playing bar ──
-        div(S::percent(1.0), S::px(64), simd_float4{0.13,0.13,0.16,1.0})
-            .borderColor(simd_float4{0.22,0.22,0.26,1.0})
-            .borderWidth(S::px(1))
-            .flexShrink(S::px(0.0))
-            .display(gui::Display::Flex)
-            .alignItems(gui::AlignItems::Center)
-            .justifyContent(gui::JustifyContent::SpaceBetween)
-            .paddingLeft(S::px(24))
-            .paddingRight(S::px(24))
-        (
-            div()
-                .display(gui::Display::Flex)
-                .alignItems(gui::AlignItems::Center)
-                .flexGap(S::px(12))
-            (
-                div(S::px(40), S::px(40), simd_float4{0.18,0.72,0.56,1.0})
-                    .cornerRadius(S::px(8))
-                    .display(gui::Display::Flex)
-                    .alignItems(gui::AlignItems::Center)
-                    .justifyContent(gui::JustifyContent::Center)
-                (
-                    text("♪").fontSize(S::pt(20)).color(simd_float4{1.0,1.0,1.0,1.0})
-                ),
-                div()
-                    .display(gui::Display::Flex)
-                    .flexDirection(gui::FlexDirection::Col)
-                    .flexGap(S::px(3))
-                (
-                    text("Endless Reverie").fontSize(S::pt(14)).font(ArialBold).color(simd_float4{0.92,0.92,0.94,1.0}),
-                    text("Glass Prism  ·  Mirrors").fontSize(S::pt(12)).color(simd_float4{0.48,0.48,0.54,1.0})
-                )
-            ),
-            div()
-                .display(gui::Display::Flex)
-                .alignItems(gui::AlignItems::Center)
-                .flexGap(S::px(16))
-            (
-                div(S::px(32), S::px(32), simd_float4{0.20,0.20,0.24,1.0})
-                    .cornerRadius(S::px(16))
-                    .display(gui::Display::Flex)
-                    .alignItems(gui::AlignItems::Center)
-                    .justifyContent(gui::JustifyContent::Center)
-                (
-                    text("|<").fontSize(S::pt(11)).color(simd_float4{0.65,0.65,0.70,1.0})
-                ),
-                div(S::px(44), S::px(44), simd_float4{0.18,0.72,0.56,1.0})
-                    .cornerRadius(S::px(22))
-                    .display(gui::Display::Flex)
-                    .alignItems(gui::AlignItems::Center)
-                    .justifyContent(gui::JustifyContent::Center)
-                (
-                    text("||").fontSize(S::pt(15)).font(ArialBold).color(simd_float4{1.0,1.0,1.0,1.0})
-                ),
-                div(S::px(32), S::px(32), simd_float4{0.20,0.20,0.24,1.0})
-                    .cornerRadius(S::px(16))
-                    .display(gui::Display::Flex)
-                    .alignItems(gui::AlignItems::Center)
-                    .justifyContent(gui::JustifyContent::Center)
-                (
-                    text(">|").fontSize(S::pt(11)).color(simd_float4{0.65,0.65,0.70,1.0})
-                )
-            ),
-            div()
-                .display(gui::Display::Flex)
-                .alignItems(gui::AlignItems::Center)
-                .flexGap(S::px(10))
-            (
-                text("2:14").fontSize(S::pt(12)).color(simd_float4{0.48,0.48,0.54,1.0}),
-                div(S::px(100), S::px(4), simd_float4{0.24,0.24,0.28,1.0})
-                    .cornerRadius(S::px(2))
-                (
-                    div(S::px(48), S::px(4), simd_float4{0.18,0.72,0.56,1.0})
-                        .cornerRadius(S::px(2))()
-                ),
-                text("4:38").fontSize(S::pt(12)).color(simd_float4{0.48,0.48,0.54,1.0})
-            )
-        ),
-        // ── Body ──
-        div(S::percent(1.0), S::percent(1.0), simd_float4{0.0,0.0,0.0,0.0})
-            .display(gui::Display::Flex)
-            .flexGrow(S::px(1))
-        (
-            // sidebar start
-            // Left: scrollable playlist
-            div(S::px(260), S::percent(1.0), simd_float4{0.11,0.11,0.14,1.0})
-                .borderColor(simd_float4{0.20,0.20,0.24,1.0})
-                .borderWidth(S::px(1))
-                .flexShrink(S::px(0.0))
-                .paddingTop(S::px(16))
-                .paddingBottom(S::px(16))
-                .overflow(gui::Overflow::Scroll)
-                .display(gui::Display::Flex)
-                .flexDirection(gui::FlexDirection::Col)
-                .flexGap(S::px(1))
-            (
-                div()
-                    .paddingLeft(S::px(16))
-                    .paddingRight(S::px(16))
-                    .paddingBottom(S::px(10))
-                    .display(gui::Display::Flex)
-                    .alignItems(gui::AlignItems::Center)
-                    .justifyContent(gui::JustifyContent::SpaceBetween)
-                (
-                    text("PLAYLIST").fontSize(S::pt(10)).font(ArialBold).color(simd_float4{0.38,0.38,0.44,1.0}),
-                    text("12 tracks").fontSize(S::pt(10)).color(simd_float4{0.38,0.38,0.44,1.0})
-                ),
-                // 01 – active
-                div(S::percent(1.0), S::px(52), simd_float4{0.14,0.22,0.20,1.0})
-                    .paddingLeft(S::px(16)).paddingRight(S::px(16))
-                    .display(gui::Display::Flex).alignItems(gui::AlignItems::Center).justifyContent(gui::JustifyContent::SpaceBetween)
-                (
-                    div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
-                    (
-                        text("01").fontSize(S::pt(11)).color(simd_float4{0.18,0.72,0.56,1.0}),
-                        text("Endless Reverie").fontSize(S::pt(13)).font(ArialBold).color(simd_float4{0.18,0.72,0.56,1.0})
-                    ),
-                    text("4:38").fontSize(S::pt(12)).color(simd_float4{0.18,0.72,0.56,1.0})
-                ),
-                // 02
-                div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
-                    .paddingLeft(S::px(16)).paddingRight(S::px(16))
-                    .display(gui::Display::Flex).alignItems(gui::AlignItems::Center).justifyContent(gui::JustifyContent::SpaceBetween)
-                (
-                    div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
-                    (
-                        text("02").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
-                        text("Crystalline").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
-                    ),
-                    text("3:52").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
-                ),
-                // 03
-                div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
-                    .paddingLeft(S::px(16)).paddingRight(S::px(16))
-                    .display(gui::Display::Flex).alignItems(gui::AlignItems::Center).justifyContent(gui::JustifyContent::SpaceBetween)
-                (
-                    div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
-                    (
-                        text("03").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
-                        text("Pale Shore").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
-                    ),
-                    text("5:14").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
-                ),
-                // 04
-                div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
-                    .paddingLeft(S::px(16)).paddingRight(S::px(16))
-                    .display(gui::Display::Flex).alignItems(gui::AlignItems::Center).justifyContent(gui::JustifyContent::SpaceBetween)
-                (
-                    div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
-                    (
-                        text("04").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
-                        text("Inversion").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
-                    ),
-                    text("4:07").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
-                ),
-                // 05
-                div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
-                    .paddingLeft(S::px(16)).paddingRight(S::px(16))
-                    .display(gui::Display::Flex).alignItems(gui::AlignItems::Center).justifyContent(gui::JustifyContent::SpaceBetween)
-                (
-                    div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
-                    (
-                        text("05").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
-                        text("Soft Architecture").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
-                    ),
-                    text("6:21").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
-                ),
-                // 06
-                div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
-                    .paddingLeft(S::px(16)).paddingRight(S::px(16))
-                    .display(gui::Display::Flex).alignItems(gui::AlignItems::Center).justifyContent(gui::JustifyContent::SpaceBetween)
-                (
-                    div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
-                    (
-                        text("06").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
-                        text("Between Frames").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
-                    ),
-                    text("3:44").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
-                ),
-                // 07
-                div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
-                    .paddingLeft(S::px(16)).paddingRight(S::px(16))
-                    .display(gui::Display::Flex).alignItems(gui::AlignItems::Center).justifyContent(gui::JustifyContent::SpaceBetween)
-                (
-                    div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
-                    (
-                        text("07").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
-                        text("Nocturne Loop").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
-                    ),
-                    text("4:58").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
-                ),
-                // 08
-                div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
-                    .paddingLeft(S::px(16)).paddingRight(S::px(16))
-                    .display(gui::Display::Flex).alignItems(gui::AlignItems::Center).justifyContent(gui::JustifyContent::SpaceBetween)
-                (
-                    div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
-                    (
-                        text("08").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
-                        text("Refract").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
-                    ),
-                    text("3:30").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
-                ),
-                // 09
-                div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
-                    .paddingLeft(S::px(16)).paddingRight(S::px(16))
-                    .display(gui::Display::Flex).alignItems(gui::AlignItems::Center).justifyContent(gui::JustifyContent::SpaceBetween)
-                (
-                    div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
-                    (
-                        text("09").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
-                        text("Diffusion").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
-                    ),
-                    text("5:02").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
-                ),
-                // 10
-                div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
-                    .paddingLeft(S::px(16)).paddingRight(S::px(16))
-                    .display(gui::Display::Flex).alignItems(gui::AlignItems::Center).justifyContent(gui::JustifyContent::SpaceBetween)
-                (
-                    div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
-                    (
-                        text("10").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
-                        text("Afterimage").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
-                    ),
-                    text("4:15").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
-                ),
-                // 11
-                div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
-                    .paddingLeft(S::px(16)).paddingRight(S::px(16))
-                    .display(gui::Display::Flex).alignItems(gui::AlignItems::Center).justifyContent(gui::JustifyContent::SpaceBetween)
-                (
-                    div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
-                    (
-                        text("11").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
-                        text("Threshold").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
-                    ),
-                    text("7:03").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
-                ),
-                // 12
-                div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
-                    .paddingLeft(S::px(16)).paddingRight(S::px(16))
-                    .display(gui::Display::Flex).alignItems(gui::AlignItems::Center).justifyContent(gui::JustifyContent::SpaceBetween)
-                (
-                    div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
-                    (
-                        text("12").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
-                        text("Dissolve").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
-                    ),
-                    text("4:49").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
-                )
-            ),
-            // sidebar end
+    // // Existing dark music player test.
+    // // Dark music player — scrollable playlist (left) + nested scrollable lyrics (right)
+    // div(S::percent(1.0), S::percent(1.0), simd_float4{0.09,0.09,0.11,1.0})
+    //     .display(gui::Display::Flex)
+    //     .flexDirection(gui::FlexDirection::Col)
+    //     .paddingTop(S::px(28))
+    // (
+    //     // ── Now Playing bar ──
+    //     div(S::percent(1.0), S::px(64), simd_float4{0.13,0.13,0.16,1.0})
+    //         .borderColor(simd_float4{0.22,0.22,0.26,1.0})
+    //         .borderWidth(S::px(1))
+    //         .flexShrink(S::px(0.0))
+    //         .display(gui::Display::Flex)
+    //         .alignItems(gui::AlignItems::Center)
+    //         .justifyContent(gui::JustifyContent::SpaceBetween)
+    //         .paddingLeft(S::px(24))
+    //         .paddingRight(S::px(24))
+    //     (
+    //         div()
+    //             .display(gui::Display::Flex)
+    //             .alignItems(gui::AlignItems::Center)
+    //             .flexGap(S::px(12))
+    //         (
+    //             div(S::px(40), S::px(40), simd_float4{0.18,0.72,0.56,1.0})
+    //                 .cornerRadius(S::px(8))
+    //                 .display(gui::Display::Flex)
+    //                 .alignItems(gui::AlignItems::Center)
+    //                 .justifyContent(gui::JustifyContent::Center)
+    //             (
+    //                 text("♪").fontSize(S::pt(20)).color(simd_float4{1.0,1.0,1.0,1.0})
+    //             ),
+    //             div()
+    //                 .display(gui::Display::Flex)
+    //                 .flexDirection(gui::FlexDirection::Col)
+    //                 .flexGap(S::px(3))
+    //             (
+    //                 text("Endless Reverie").fontSize(S::pt(14)).font(ArialBold).color(simd_float4{0.92,0.92,0.94,1.0}),
+    //                 text("Glass Prism  ·  Mirrors").fontSize(S::pt(12)).color(simd_float4{0.48,0.48,0.54,1.0})
+    //             )
+    //         ),
+    //         div()
+    //             .display(gui::Display::Flex)
+    //             .alignItems(gui::AlignItems::Center)
+    //             .flexGap(S::px(16))
+    //         (
+    //             div(S::px(32), S::px(32), simd_float4{0.20,0.20,0.24,1.0})
+    //                 .cornerRadius(S::px(16))
+    //                 .display(gui::Display::Flex)
+    //                 .alignItems(gui::AlignItems::Center)
+    //                 .justifyContent(gui::JustifyContent::Center)
+    //             (
+    //                 text("|<").fontSize(S::pt(11)).color(simd_float4{0.65,0.65,0.70,1.0})
+    //             ),
+    //             div(S::px(44), S::px(44), simd_float4{0.18,0.72,0.56,1.0})
+    //                 .cornerRadius(S::px(22))
+    //                 .display(gui::Display::Flex)
+    //                 .alignItems(gui::AlignItems::Center)
+    //                 .justifyContent(gui::JustifyContent::Center)
+    //             (
+    //                 text("||").fontSize(S::pt(15)).font(ArialBold).color(simd_float4{1.0,1.0,1.0,1.0})
+    //             ),
+    //             div(S::px(32), S::px(32), simd_float4{0.20,0.20,0.24,1.0})
+    //                 .cornerRadius(S::px(16))
+    //                 .display(gui::Display::Flex)
+    //                 .alignItems(gui::AlignItems::Center)
+    //                 .justifyContent(gui::JustifyContent::Center)
+    //             (
+    //                 text(">|").fontSize(S::pt(11)).color(simd_float4{0.65,0.65,0.70,1.0})
+    //             )
+    //         ),
+    //         div()
+    //             .display(gui::Display::Flex)
+    //             .alignItems(gui::AlignItems::Center)
+    //             .flexGap(S::px(10))
+    //         (
+    //             text("2:14").fontSize(S::pt(12)).color(simd_float4{0.48,0.48,0.54,1.0}),
+    //             div(S::px(100), S::px(4), simd_float4{0.24,0.24,0.28,1.0})
+    //                 .cornerRadius(S::px(2))
+    //             (
+    //                 div(S::px(48), S::px(4), simd_float4{0.18,0.72,0.56,1.0})
+    //                     .cornerRadius(S::px(2))()
+    //             ),
+    //             text("4:38").fontSize(S::pt(12)).color(simd_float4{0.48,0.48,0.54,1.0})
+    //         )
+    //     ),
+    //     // ── Body ──
+    //     div(S::percent(1.0), S::percent(1.0), simd_float4{0.0,0.0,0.0,0.0})
+    //         .display(gui::Display::Flex)
+    //         .flexGrow(S::px(1))
+    //     (
+    //         // sidebar start
+    //         // Left: scrollable playlist
+    //         div(S::px(260), S::percent(1.0), simd_float4{0.11,0.11,0.14,1.0})
+    //             .borderColor(simd_float4{0.20,0.20,0.24,1.0})
+    //             .borderWidth(S::px(1))
+    //             .flexShrink(S::px(0.0))
+    //             .paddingTop(S::px(16))
+    //             .paddingBottom(S::px(16))
+    //             .overflow(gui::Overflow::Scroll)
+    //             .display(gui::Display::Flex)
+    //             .flexDirection(gui::FlexDirection::Col)
+    //             .flexGap(S::px(1))
+    //         (
+    //             div()
+    //                 .paddingLeft(S::px(16))
+    //                 .paddingRight(S::px(16))
+    //                 .paddingBottom(S::px(10))
+    //                 .display(gui::Display::Flex)
+    //                 .alignItems(gui::AlignItems::Center)
+    //                 .justifyContent(gui::JustifyContent::SpaceBetween)
+    //             (
+    //                 text("PLAYLIST").fontSize(S::pt(10)).font(ArialBold).color(simd_float4{0.38,0.38,0.44,1.0}),
+    //                 text("12 tracks").fontSize(S::pt(10)).color(simd_float4{0.38,0.38,0.44,1.0})
+    //             ),
+    //             // 01 – active
+    //             div(S::percent(1.0), S::px(52), simd_float4{0.14,0.22,0.20,1.0})
+    //                 .paddingLeft(S::px(16)).paddingRight(S::px(16))
+    //                 .display(gui::Display::Flex).alignItems(gui::AlignItems::Center).justifyContent(gui::JustifyContent::SpaceBetween)
+    //             (
+    //                 div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
+    //                 (
+    //                     text("01").fontSize(S::pt(11)).color(simd_float4{0.18,0.72,0.56,1.0}),
+    //                     text("Endless Reverie").fontSize(S::pt(13)).font(ArialBold).color(simd_float4{0.18,0.72,0.56,1.0})
+    //                 ),
+    //                 text("4:38").fontSize(S::pt(12)).color(simd_float4{0.18,0.72,0.56,1.0})
+    //             ),
+    //             // 02
+    //             div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
+    //                 .paddingLeft(S::px(16)).paddingRight(S::px(16))
+    //                 .display(gui::Display::Flex).alignItems(gui::AlignItems::Center).justifyContent(gui::JustifyContent::SpaceBetween)
+    //             (
+    //                 div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
+    //                 (
+    //                     text("02").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
+    //                     text("Crystalline").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
+    //                 ),
+    //                 text("3:52").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
+    //             ),
+    //             // 03
+    //             div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
+    //                 .paddingLeft(S::px(16)).paddingRight(S::px(16))
+    //                 .display(gui::Display::Flex).alignItems(gui::AlignItems::Center).justifyContent(gui::JustifyContent::SpaceBetween)
+    //             (
+    //                 div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
+    //                 (
+    //                     text("03").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
+    //                     text("Pale Shore").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
+    //                 ),
+    //                 text("5:14").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
+    //             ),
+    //             // 04
+    //             div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
+    //                 .paddingLeft(S::px(16)).paddingRight(S::px(16))
+    //                 .display(gui::Display::Flex).alignItems(gui::AlignItems::Center).justifyContent(gui::JustifyContent::SpaceBetween)
+    //             (
+    //                 div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
+    //                 (
+    //                     text("04").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
+    //                     text("Inversion").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
+    //                 ),
+    //                 text("4:07").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
+    //             ),
+    //             // 05
+    //             div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
+    //                 .paddingLeft(S::px(16)).paddingRight(S::px(16))
+    //                 .display(gui::Display::Flex).alignItems(gui::AlignItems::Center).justifyContent(gui::JustifyContent::SpaceBetween)
+    //             (
+    //                 div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
+    //                 (
+    //                     text("05").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
+    //                     text("Soft Architecture").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
+    //                 ),
+    //                 text("6:21").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
+    //             ),
+    //             // 06
+    //             div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
+    //                 .paddingLeft(S::px(16)).paddingRight(S::px(16))
+    //                 .display(gui::Display::Flex).alignItems(gui::AlignItems::Center).justifyContent(gui::JustifyContent::SpaceBetween)
+    //             (
+    //                 div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
+    //                 (
+    //                     text("06").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
+    //                     text("Between Frames").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
+    //                 ),
+    //                 text("3:44").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
+    //             ),
+    //             // 07
+    //             div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
+    //                 .paddingLeft(S::px(16)).paddingRight(S::px(16))
+    //                 .display(gui::Display::Flex).alignItems(gui::AlignItems::Center).justifyContent(gui::JustifyContent::SpaceBetween)
+    //             (
+    //                 div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
+    //                 (
+    //                     text("07").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
+    //                     text("Nocturne Loop").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
+    //                 ),
+    //                 text("4:58").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
+    //             ),
+    //             // 08
+    //             div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
+    //                 .paddingLeft(S::px(16)).paddingRight(S::px(16))
+    //                 .display(gui::Display::Flex).alignItems(gui::AlignItems::Center).justifyContent(gui::JustifyContent::SpaceBetween)
+    //             (
+    //                 div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
+    //                 (
+    //                     text("08").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
+    //                     text("Refract").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
+    //                 ),
+    //                 text("3:30").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
+    //             ),
+    //             // 09
+    //             div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
+    //                 .paddingLeft(S::px(16)).paddingRight(S::px(16))
+    //                 .display(gui::Display::Flex).alignItems(gui::AlignItems::Center).justifyContent(gui::JustifyContent::SpaceBetween)
+    //             (
+    //                 div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
+    //                 (
+    //                     text("09").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
+    //                     text("Diffusion").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
+    //                 ),
+    //                 text("5:02").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
+    //             ),
+    //             // 10
+    //             div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
+    //                 .paddingLeft(S::px(16)).paddingRight(S::px(16))
+    //                 .display(gui::Display::Flex).alignItems(gui::AlignItems::Center).justifyContent(gui::JustifyContent::SpaceBetween)
+    //             (
+    //                 div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
+    //                 (
+    //                     text("10").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
+    //                     text("Afterimage").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
+    //                 ),
+    //                 text("4:15").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
+    //             ),
+    //             // 11
+    //             div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
+    //                 .paddingLeft(S::px(16)).paddingRight(S::px(16))
+    //                 .display(gui::Display::Flex).alignItems(gui::AlignItems::Center).justifyContent(gui::JustifyContent::SpaceBetween)
+    //             (
+    //                 div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
+    //                 (
+    //                     text("11").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
+    //                     text("Threshold").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
+    //                 ),
+    //                 text("7:03").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
+    //             ),
+    //             // 12
+    //             div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
+    //                 .paddingLeft(S::px(16)).paddingRight(S::px(16))
+    //                 .display(gui::Display::Flex).alignItems(gui::AlignItems::Center).justifyContent(gui::JustifyContent::SpaceBetween)
+    //             (
+    //                 div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
+    //                 (
+    //                     text("12").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
+    //                     text("Dissolve").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
+    //                 ),
+    //                 text("4:49").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
+    //             )
+    //         ),
+    //         // sidebar end
 
-            // Right: album info + scrollable lyrics
-            div(S::percent(1.0), S::percent(1.0), simd_float4{0.10,0.10,0.12,1.0})
-                .flexGrow(S::px(1))
-                .display(gui::Display::Flex)
-                .flexDirection(gui::FlexDirection::Col)
-                .padding(S::px(32))
-                .flexGap(S::px(20))
-            (
-                // Album banner
-                div(S::percent(1.0), S::px(160), simd_float4{0.0,0.0,0.0,0.0})
-                    .display(gui::Display::Flex)
-                    .alignItems(gui::AlignItems::Center)
-                    .flexGap(S::px(24))
-                    .flexShrink(S::px(0.0))
-                (
-                    div(S::px(152), S::px(152), simd_float4{0.18,0.72,0.56,1.0})
-                        .cornerRadius(S::px(14))
-                        .display(gui::Display::Flex)
-                        .alignItems(gui::AlignItems::Center)
-                        .justifyContent(gui::JustifyContent::Center)
-                    (
-                        text("♫").fontSize(S::pt(52)).color(simd_float4{1.0,1.0,1.0,1.0})
-                    ),
-                    div()
-                        .display(gui::Display::Flex)
-                        .flexDirection(gui::FlexDirection::Col)
-                        .flexGap(S::px(6))
-                    (
-                        text("ALBUM").fontSize(S::pt(10)).font(ArialBold).color(simd_float4{0.38,0.38,0.44,1.0}),
-                        text("Mirrors")
-                            .fontSize(S::pt(30))
-                            .font(ArialBold)
-                            .color(simd_float4{0.92,0.92,0.94,1.0})
-                            .addEventListener(runtime::EventType::MouseDown, [](auto& node, Event&) {
-                                node.text(node.text() == "Mirrors" ? "Mirrors — Extended Edition" : "Mirrors");
-                            }),
-                        text("Glass Prism").fontSize(S::pt(16)).color(simd_float4{0.18,0.72,0.56,1.0}),
-                        text("2024  ·  Ambient  ·  12 tracks").fontSize(S::pt(12)).color(simd_float4{0.48,0.48,0.54,1.0}),
-                        div()
-                            .display(gui::Display::Flex)
-                            .flexGap(S::px(10))
-                            .paddingTop(S::px(8))
-                        (
-                            div(S::px(96), S::px(32), simd_float4{0.18,0.72,0.56,1.0})
-                                .cornerRadius(S::px(16))
-                                .display(gui::Display::Flex)
-                                .alignItems(gui::AlignItems::Center)
-                                .justifyContent(gui::JustifyContent::Center)
-                            (
-                                text("Play all").fontSize(S::pt(13)).font(ArialBold).color(simd_float4{1.0,1.0,1.0,1.0})
-                            ),
-                            div(S::px(96), S::px(32), simd_float4{0.20,0.20,0.24,1.0})
-                                .cornerRadius(S::px(16))
-                                .display(gui::Display::Flex)
-                                .alignItems(gui::AlignItems::Center)
-                                .justifyContent(gui::JustifyContent::Center)
-                            (
-                                text("Shuffle").fontSize(S::pt(13)).color(simd_float4{0.72,0.72,0.78,1.0})
-                            )
-                        )
-                    )
-                ),
-                // Divider
-                div(S::percent(1.0), S::px(1), simd_float4{0.20,0.20,0.24,1.0})
-                    .flexShrink(S::px(0.0))(),
-                // Lyrics label row
-                div()
-                    .display(gui::Display::Flex)
-                    .alignItems(gui::AlignItems::Center)
-                    .justifyContent(gui::JustifyContent::SpaceBetween)
-                    .flexShrink(S::px(0.0))
-                (
-                    text("LYRICS").fontSize(S::pt(10)).font(ArialBold).color(simd_float4{0.38,0.38,0.44,1.0}),
-                    text("Endless Reverie").fontSize(S::pt(12)).color(simd_float4{0.48,0.48,0.54,1.0})
-                ),
-                // Scrollable lyrics
-                div(S::percent(1.0), S::percent(1.0), simd_float4{0.13,0.13,0.16,1.0})
-                    .cornerRadius(S::px(12))
-                    .padding(S::px(22))
-                    .overflow(gui::Overflow::Scroll)
-                    .display(gui::Display::Flex)
-                    .flexDirection(gui::FlexDirection::Col)
-                    .flexGap(S::px(7))
-                    .flexGrow(S::px(1))
-                (
-                    text("Through the glass, a world apart,").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
-                    text("endless echoes fill the dark.").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
-                    text("Fractures in the silver light —").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
-                    div(S::percent(1.0), S::px(8), simd_float4{0.0,0.0,0.0,0.0})(),
-                    text("Hold a breath and feel the weight").fontSize(S::pt(15)).color(simd_float4{0.92,0.92,0.94,1.0}),
-                    text("of every word you couldn't say,").fontSize(S::pt(15)).color(simd_float4{0.92,0.92,0.94,1.0}),
-                    text("mirrored back in shades of grey.").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
-                    div(S::percent(1.0), S::px(8), simd_float4{0.0,0.0,0.0,0.0})(),
-                    text("Reverie, reverie —").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
-                    text("I found you at the edge of sleep.").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
-                    text("Reverie, reverie —").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
-                    text("a promise too fragile to keep.").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
-                    div(S::percent(1.0), S::px(8), simd_float4{0.0,0.0,0.0,0.0})(),
-                    text("Soft light bends around your face,").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
-                    text("I chase the outline, lose the trace.").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
-                    text("The mirror holds what time erased —").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
-                    div(S::percent(1.0), S::px(8), simd_float4{0.0,0.0,0.0,0.0})(),
-                    text("Still you linger in the seams,").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
-                    text("half-remembered, half in dreams.").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
-                    text("I reach — the surface bends and gleams.").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
-                    div(S::percent(1.0), S::px(8), simd_float4{0.0,0.0,0.0,0.0})(),
-                    text("Reverie, reverie —").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
-                    text("I found you at the edge of sleep.").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
-                    text("Reverie, reverie —").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
-                    text("a promise too fragile to keep.").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
-                    div(S::percent(1.0), S::px(8), simd_float4{0.0,0.0,0.0,0.0})(),
-                    text("(Instrumental)").fontSize(S::pt(14)).color(simd_float4{0.35,0.35,0.42,1.0}),
-                    div(S::percent(1.0), S::px(8), simd_float4{0.0,0.0,0.0,0.0})(),
-                    text("The glass grows cold, the echo fades,").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
-                    text("and all that's left is what remains —").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
-                    text("a shape of light, a broken name.").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
-                    div(S::percent(1.0), S::px(8), simd_float4{0.0,0.0,0.0,0.0})(),
-                    text("Reverie, reverie —").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
-                    text("I found you at the edge of sleep.").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
-                    text("Reverie, reverie —").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
-                    text("a promise too fragile to keep.").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0})
-                )
-            )
-        )
-    );
+    //         // Right: album info + scrollable lyrics
+    //         div(S::percent(1.0), S::percent(1.0), simd_float4{0.10,0.10,0.12,1.0})
+    //             .flexGrow(S::px(1))
+    //             .display(gui::Display::Flex)
+    //             .flexDirection(gui::FlexDirection::Col)
+    //             .padding(S::px(32))
+    //             .flexGap(S::px(20))
+    //         (
+    //             // Album banner
+    //             div(S::percent(1.0), S::px(160), simd_float4{0.0,0.0,0.0,0.0})
+    //                 .display(gui::Display::Flex)
+    //                 .alignItems(gui::AlignItems::Center)
+    //                 .flexGap(S::px(24))
+    //                 .flexShrink(S::px(0.0))
+    //             (
+    //                 div(S::px(152), S::px(152), simd_float4{0.18,0.72,0.56,1.0})
+    //                     .cornerRadius(S::px(14))
+    //                     .display(gui::Display::Flex)
+    //                     .alignItems(gui::AlignItems::Center)
+    //                     .justifyContent(gui::JustifyContent::Center)
+    //                 (
+    //                     text("♫").fontSize(S::pt(52)).color(simd_float4{1.0,1.0,1.0,1.0})
+    //                 ),
+    //                 div()
+    //                     .display(gui::Display::Flex)
+    //                     .flexDirection(gui::FlexDirection::Col)
+    //                     .flexGap(S::px(6))
+    //                 (
+    //                     text("ALBUM").fontSize(S::pt(10)).font(ArialBold).color(simd_float4{0.38,0.38,0.44,1.0}),
+    //                     text("Mirrors")
+    //                         .fontSize(S::pt(30))
+    //                         .font(ArialBold)
+    //                         .color(simd_float4{0.92,0.92,0.94,1.0})
+    //                         .addEventListener(runtime::EventType::MouseDown, [](auto& node, Event&) {
+    //                             node.text(node.text() == "Mirrors" ? "Mirrors — Extended Edition" : "Mirrors");
+    //                         }),
+    //                     text("Glass Prism").fontSize(S::pt(16)).color(simd_float4{0.18,0.72,0.56,1.0}),
+    //                     text("2024  ·  Ambient  ·  12 tracks").fontSize(S::pt(12)).color(simd_float4{0.48,0.48,0.54,1.0}),
+    //                     div()
+    //                         .display(gui::Display::Flex)
+    //                         .flexGap(S::px(10))
+    //                         .paddingTop(S::px(8))
+    //                     (
+    //                         div(S::px(96), S::px(32), simd_float4{0.18,0.72,0.56,1.0})
+    //                             .cornerRadius(S::px(16))
+    //                             .display(gui::Display::Flex)
+    //                             .alignItems(gui::AlignItems::Center)
+    //                             .justifyContent(gui::JustifyContent::Center)
+    //                         (
+    //                             text("Play all").fontSize(S::pt(13)).font(ArialBold).color(simd_float4{1.0,1.0,1.0,1.0})
+    //                         ),
+    //                         div(S::px(96), S::px(32), simd_float4{0.20,0.20,0.24,1.0})
+    //                             .cornerRadius(S::px(16))
+    //                             .display(gui::Display::Flex)
+    //                             .alignItems(gui::AlignItems::Center)
+    //                             .justifyContent(gui::JustifyContent::Center)
+    //                         (
+    //                             text("Shuffle").fontSize(S::pt(13)).color(simd_float4{0.72,0.72,0.78,1.0})
+    //                         )
+    //                     )
+    //                 )
+    //             ),
+    //             // Divider
+    //             div(S::percent(1.0), S::px(1), simd_float4{0.20,0.20,0.24,1.0})
+    //                 .flexShrink(S::px(0.0))(),
+    //             // Lyrics label row
+    //             div()
+    //                 .display(gui::Display::Flex)
+    //                 .alignItems(gui::AlignItems::Center)
+    //                 .justifyContent(gui::JustifyContent::SpaceBetween)
+    //                 .flexShrink(S::px(0.0))
+    //             (
+    //                 text("LYRICS").fontSize(S::pt(10)).font(ArialBold).color(simd_float4{0.38,0.38,0.44,1.0}),
+    //                 text("Endless Reverie").fontSize(S::pt(12)).color(simd_float4{0.48,0.48,0.54,1.0})
+    //             ),
+    //             // Scrollable lyrics
+    //             div(S::percent(1.0), S::percent(1.0), simd_float4{0.13,0.13,0.16,1.0})
+    //                 .cornerRadius(S::px(12))
+    //                 .padding(S::px(22))
+    //                 .overflow(gui::Overflow::Scroll)
+    //                 .display(gui::Display::Flex)
+    //                 .flexDirection(gui::FlexDirection::Col)
+    //                 .flexGap(S::px(7))
+    //                 .flexGrow(S::px(1))
+    //             (
+    //                 text("Through the glass, a world apart,").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
+    //                 text("endless echoes fill the dark.").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
+    //                 text("Fractures in the silver light —").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
+    //                 div(S::percent(1.0), S::px(8), simd_float4{0.0,0.0,0.0,0.0})(),
+    //                 text("Hold a breath and feel the weight").fontSize(S::pt(15)).color(simd_float4{0.92,0.92,0.94,1.0}),
+    //                 text("of every word you couldn't say,").fontSize(S::pt(15)).color(simd_float4{0.92,0.92,0.94,1.0}),
+    //                 text("mirrored back in shades of grey.").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
+    //                 div(S::percent(1.0), S::px(8), simd_float4{0.0,0.0,0.0,0.0})(),
+    //                 text("Reverie, reverie —").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
+    //                 text("I found you at the edge of sleep.").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
+    //                 text("Reverie, reverie —").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
+    //                 text("a promise too fragile to keep.").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
+    //                 div(S::percent(1.0), S::px(8), simd_float4{0.0,0.0,0.0,0.0})(),
+    //                 text("Soft light bends around your face,").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
+    //                 text("I chase the outline, lose the trace.").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
+    //                 text("The mirror holds what time erased —").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
+    //                 div(S::percent(1.0), S::px(8), simd_float4{0.0,0.0,0.0,0.0})(),
+    //                 text("Still you linger in the seams,").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
+    //                 text("half-remembered, half in dreams.").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
+    //                 text("I reach — the surface bends and gleams.").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
+    //                 div(S::percent(1.0), S::px(8), simd_float4{0.0,0.0,0.0,0.0})(),
+    //                 text("Reverie, reverie —").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
+    //                 text("I found you at the edge of sleep.").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
+    //                 text("Reverie, reverie —").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
+    //                 text("a promise too fragile to keep.").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
+    //                 div(S::percent(1.0), S::px(8), simd_float4{0.0,0.0,0.0,0.0})(),
+    //                 text("(Instrumental)").fontSize(S::pt(14)).color(simd_float4{0.35,0.35,0.42,1.0}),
+    //                 div(S::percent(1.0), S::px(8), simd_float4{0.0,0.0,0.0,0.0})(),
+    //                 text("The glass grows cold, the echo fades,").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
+    //                 text("and all that's left is what remains —").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
+    //                 text("a shape of light, a broken name.").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
+    //                 div(S::percent(1.0), S::px(8), simd_float4{0.0,0.0,0.0,0.0})(),
+    //                 text("Reverie, reverie —").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
+    //                 text("I found you at the edge of sleep.").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
+    //                 text("Reverie, reverie —").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
+    //                 text("a promise too fragile to keep.").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0})
+    //             )
+    //         )
+    //     )
+    // );
 
-    // Browser reference: react_tests/src/app/intrinsic-sizing/page.tsx
-    using S = gui::Size;
-    constexpr auto intrinsicText = "Intrinsic sizing chooses every soft break opportunity";
+    // // Browser reference: react_tests/src/app/intrinsic-sizing/page.tsx
+    // using S = gui::Size;
+    // constexpr auto intrinsicText = "Intrinsic sizing chooses every soft break opportunity";
 
-    div(S::percent(1.0), S::percent(1.0), simd_float4{0.059,0.071,0.090,1.0})
-        .padding(S::px(32))
-        .overflow(gui::Overflow::Scroll)
-    (
-        div(S::minContent(), S::autoSize(), simd_float4{0.078,0.722,0.859,1.0})
-        (
-            text(intrinsicText)
-                .font(Arial)
-                .fontSize(S::pt(18))
-                .color(simd_float4{0.961,0.969,1.0,1.0})
-        ),
+    // div(S::percent(1.0), S::percent(1.0), simd_float4{0.059,0.071,0.090,1.0})
+    //     .padding(S::px(32))
+    //     .overflow(gui::Overflow::Scroll)
+    // (
+    //     div(S::minContent(), S::autoSize(), simd_float4{0.078,0.722,0.859,1.0})
+    //     (
+    //         text(intrinsicText)
+    //             .font(Arial)
+    //             .fontSize(S::pt(18))
+    //             .color(simd_float4{0.961,0.969,1.0,1.0})
+    //     ),
 
-        div(S::maxContent(), S::autoSize(), simd_float4{0.961,0.302,0.459,1.0})
-            .marginTop(S::px(20))
-        (
-            text(intrinsicText)
-                .font(Arial)
-                .fontSize(S::pt(18))
-                .color(simd_float4{0.961,0.969,1.0,1.0})
-        ),
+    //     div(S::maxContent(), S::autoSize(), simd_float4{0.961,0.302,0.459,1.0})
+    //         .marginTop(S::px(20))
+    //     (
+    //         text(intrinsicText)
+    //             .font(Arial)
+    //             .fontSize(S::pt(18))
+    //             .color(simd_float4{0.961,0.969,1.0,1.0})
+    //     ),
 
-        div(S::px(360), S::autoSize(), simd_float4{0.149,0.161,0.200,1.0})
-            .marginTop(S::px(20))
-        (
-            div(S::fitContent(), S::autoSize(), simd_float4{0.980,0.761,0.200,1.0})
-            (
-                text(intrinsicText)
-                    .font(Arial)
-                    .fontSize(S::pt(18))
-                    .color(simd_float4{0.078,0.090,0.110,1.0})
-            )
-        ),
+    //     div(S::px(360), S::autoSize(), simd_float4{0.149,0.161,0.200,1.0})
+    //         .marginTop(S::px(20))
+    //     (
+    //         div(S::fitContent(), S::autoSize(), simd_float4{0.980,0.761,0.200,1.0})
+    //         (
+    //             text(intrinsicText)
+    //                 .font(Arial)
+    //                 .fontSize(S::pt(18))
+    //                 .color(simd_float4{0.078,0.090,0.110,1.0})
+    //         )
+    //     ),
 
-        div(S::px(120), S::autoSize(), simd_float4{0.380,0.922,0.561,1.0})
-            .minWidth(S::maxContent())
-            .marginTop(S::px(20))
-        (
-            text(intrinsicText)
-                .font(Arial)
-                .fontSize(S::pt(18))
-                .color(simd_float4{0.078,0.090,0.110,1.0})
-        ),
+    //     div(S::px(120), S::autoSize(), simd_float4{0.380,0.922,0.561,1.0})
+    //         .minWidth(S::maxContent())
+    //         .marginTop(S::px(20))
+    //     (
+    //         text(intrinsicText)
+    //             .font(Arial)
+    //             .fontSize(S::pt(18))
+    //             .color(simd_float4{0.078,0.090,0.110,1.0})
+    //     ),
 
-        div(S::px(640), S::autoSize(), simd_float4{0.639,0.420,0.961,1.0})
-            .maxWidth(S::minContent())
-            .marginTop(S::px(20))
-        (
-            text(intrinsicText)
-                .font(Arial)
-                .fontSize(S::pt(18))
-                .color(simd_float4{0.961,0.969,1.0,1.0})
-        )
-    );
+    //     div(S::px(640), S::autoSize(), simd_float4{0.639,0.420,0.961,1.0})
+    //         .maxWidth(S::minContent())
+    //         .marginTop(S::px(20))
+    //     (
+    //         text(intrinsicText)
+    //             .font(Arial)
+    //             .fontSize(S::pt(18))
+    //             .color(simd_float4{0.961,0.969,1.0,1.0})
+    //     )
+    // );
 
 
     // // Auto-sized parent with a percentage-width child.
@@ -3711,4 +3711,640 @@ div()
     // (
     //     text("hello world").width(S::px(50))
     // );
+
+    // // Crates: a record-collection browser.
+    // // Exercises sticky section headers inside a scrollport, hover/click state
+    // // via MouseEnter/MouseLeave/Click, aspect-ratio + absolute badge in the
+    // // detail panel, per-corner radii on chips, and flex-wrap for tags.
+    // using S = gui::Size;
+    // using gui::Display;
+    // using gui::FlexDirection;
+    // using gui::AlignItems;
+    // using gui::JustifyContent;
+    // using runtime::EventType;
+
+    // constexpr simd_float4 bg          {0.043, 0.063, 0.086, 1.0};
+    // constexpr simd_float4 panel       {0.082, 0.110, 0.149, 1.0};
+    // constexpr simd_float4 raised      {0.114, 0.149, 0.200, 1.0};
+    // constexpr simd_float4 hover       {0.153, 0.196, 0.259, 1.0};
+    // constexpr simd_float4 outline     {0.165, 0.208, 0.267, 1.0};
+    // constexpr simd_float4 ink         {0.949, 0.957, 0.969, 1.0};
+    // constexpr simd_float4 muted       {0.541, 0.592, 0.671, 1.0};
+    // constexpr simd_float4 coral       {1.000, 0.420, 0.290, 1.0};
+    // constexpr simd_float4 coralDim    {0.286, 0.157, 0.141, 1.0};
+    // constexpr simd_float4 cyan        {0.290, 0.816, 1.000, 1.0};
+    // constexpr simd_float4 transparent {0.0, 0.0, 0.0, 0.0};
+
+    // constexpr simd_float4 avatarA {0.980, 0.761, 0.200, 1.0};
+    // constexpr simd_float4 avatarB {0.380, 0.922, 0.561, 1.0};
+    // constexpr simd_float4 avatarC {0.639, 0.420, 0.961, 1.0};
+    // constexpr simd_float4 avatarD {0.961, 0.302, 0.459, 1.0};
+    // constexpr simd_float4 avatarE {0.290, 0.816, 1.000, 1.0};
+
+    // constexpr auto coverPath = "/Users/treja/projects/gui/assets/loveless.jpg";
+    // const std::string SF = "/System/Library/Fonts/SFNS.ttf";
+    // const std::string NewYork = "/System/Library/Fonts/NewYork.ttf";
+
+    // auto chip = [&](const char* label, simd_float4 fg, simd_float4 fill) {
+    //     return div()
+    //         .color(fill)
+    //         .height(S::px(22))
+    //         .paddingLeft(S::px(9))
+    //         .paddingRight(S::px(9))
+    //         .cornerRadiusTopLeft(S::px(11))
+    //         .cornerRadiusBottomRight(S::px(11))
+    //         .cornerRadiusTopRight(S::px(3))
+    //         .cornerRadiusBottomLeft(S::px(3))
+    //         .display(Display::Flex)
+    //         .alignItems(AlignItems::Center)
+    //     (
+    //         text(label).font(SFMono).fontSize(S::pt(10)).color(fg)
+    //     );
+    // };
+
+    // auto button = [&](const char* label, simd_float4 fill, simd_float4 hoverFill, simd_float4 fg) {
+    //     return div()
+    //         .color(fill)
+    //         .height(S::px(36))
+    //         .flexGrow(S::px(1))
+    //         .cornerRadius(S::px(8))
+    //         .display(Display::Flex)
+    //         .alignItems(AlignItems::Center)
+    //         .justifyContent(JustifyContent::Center)
+    //         .addEventListener(EventType::MouseEnter, [hoverFill](auto& node, Event&) {
+    //             node.color(hoverFill);
+    //         })
+    //         .addEventListener(EventType::MouseLeave, [fill](auto& node, Event&) {
+    //             node.color(fill);
+    //         })
+    //     (
+    //         text(label).font(ArialBold).fontSize(S::pt(12)).color(fg)
+    //     );
+    // };
+
+    // auto row = [&](const char* initials, const char* artist, const char* meta, const char* genre, simd_float4 avatar) {
+    //     auto selected = std::make_shared<bool>(false);
+
+    //     return div()
+    //         .color(transparent)
+    //         .height(S::px(58))
+    //         .flexShrink(S::px(0))
+    //         .paddingLeft(S::px(12))
+    //         .paddingRight(S::px(12))
+    //         .cornerRadius(S::px(10))
+    //         .display(Display::Flex)
+    //         .alignItems(AlignItems::Center)
+    //         .flexGap(S::px(12))
+    //         .addEventListener(EventType::MouseEnter, [selected](auto& node, Event&) {
+    //             if (!*selected) {
+    //                 node.color(hover);
+    //             }
+    //         })
+    //         .addEventListener(EventType::MouseLeave, [selected](auto& node, Event&) {
+    //             if (!*selected) {
+    //                 node.color(transparent);
+    //             }
+    //         })
+    //         .addEventListener(EventType::Click, [selected](auto& node, Event&) {
+    //             *selected = !*selected;
+
+    //             if (*selected) {
+    //                 node.color(coralDim);
+    //             } else {
+    //                 node.color(hover);
+    //             }
+    //         })
+    //     (
+    //         div(S::px(36), S::px(36), avatar)
+    //             .flexShrink(S::px(0))
+    //             .cornerRadius(S::px(18))
+    //             .display(Display::Flex)
+    //             .alignItems(AlignItems::Center)
+    //             .justifyContent(JustifyContent::Center)
+    //         (
+    //             text(initials).font(DINAlternateBold).fontSize(S::pt(12)).color(bg)
+    //         ),
+    //         div()
+    //             .flexGrow(S::px(1))
+    //             .minWidth(S::px(0))
+    //             .display(Display::Flex)
+    //             .flexDirection(FlexDirection::Col)
+    //             .flexGap(S::px(3))
+    //         (
+    //             text(artist).font(ArialBold).fontSize(S::pt(13)).color(ink),
+    //             text(meta).font(SFMono).fontSize(S::pt(10)).color(muted)
+    //         ),
+    //         chip(genre, muted, raised)
+    //     );
+    // };
+
+    // auto section = [&](const char* letter, const char* count, auto&&... rows) {
+    //     return div()
+    //         .display(Display::Flex)
+    //         .flexDirection(FlexDirection::Col)
+    //         .flexGap(S::px(2))
+    //     (
+    //         div()
+    //             .position(gui::Position::Sticky)
+    //             .top(S::px(0))
+    //             .zIndex(1)
+    //             .color(panel)
+    //             .height(S::px(34))
+    //             .flexShrink(S::px(0))
+    //             .paddingLeft(S::px(12))
+    //             .paddingRight(S::px(12))
+    //             .display(Display::Flex)
+    //             .alignItems(AlignItems::Center)
+    //             .justifyContent(JustifyContent::SpaceBetween)
+    //         (
+    //             text(letter).font(DINAlternateBold).fontSize(S::pt(15)).color(coral),
+    //             text(count).font(SFMono).fontSize(S::pt(10)).color(muted)
+    //         ),
+    //         rows...
+    //     );
+    // };
+
+    // auto stat = [&](const char* label, const char* value) {
+    //     return div()
+    //         .display(Display::Flex)
+    //         .justifyContent(JustifyContent::SpaceBetween)
+    //     (
+    //         text(label).font(SF).fontSize(S::pt(11)).color(muted),
+    //         text(value).font(SFMono).fontSize(S::pt(11)).color(ink)
+    //     );
+    // };
+
+    // div(S::percent(1.0), S::percent(1.0), bg)
+    //     .paddingTop(S::px(28))
+    //     .display(Display::Flex)
+    //     .flexDirection(FlexDirection::Col)
+    // (
+    //     // Top bar
+    //     div()
+    //         .height(S::px(56))
+    //         .flexShrink(S::px(0))
+    //         .paddingLeft(S::px(20))
+    //         .paddingRight(S::px(20))
+    //         .display(Display::Flex)
+    //         .alignItems(AlignItems::Center)
+    //         .justifyContent(JustifyContent::SpaceBetween)
+    //     (
+    //         div()
+    //             .display(Display::Flex)
+    //             .alignItems(AlignItems::Center)
+    //             .flexGap(S::px(12))
+    //         (
+    //             div(S::px(30), S::px(30), coral)
+    //                 .cornerRadiusTopLeft(S::px(15))
+    //                 .cornerRadiusBottomRight(S::px(15))
+    //                 .cornerRadiusTopRight(S::px(4))
+    //                 .cornerRadiusBottomLeft(S::px(4))
+    //             (),
+    //             text("CRATES").font(DINAlternateBold).fontSize(S::pt(20)).color(ink),
+    //             text("16 records · 6 shelves").font(SFMono).fontSize(S::pt(11)).color(muted)
+    //         ),
+    //         div()
+    //             .display(Display::Flex)
+    //             .alignItems(AlignItems::Center)
+    //             .flexGap(S::px(8))
+    //         (
+    //             div()
+    //                 .color(panel)
+    //                 .borderColor(outline)
+    //                 .borderWidth(S::px(1))
+    //                 .height(S::px(34))
+    //                 .paddingLeft(S::px(14))
+    //                 .paddingRight(S::px(80))
+    //                 .cornerRadius(S::px(17))
+    //                 .display(Display::Flex)
+    //                 .alignItems(AlignItems::Center)
+    //             (
+    //                 text("Search the shelf").font(SF).fontSize(S::pt(12)).color(muted)
+    //             ),
+    //             div()
+    //                 .color(raised)
+    //                 .height(S::px(34))
+    //                 .paddingLeft(S::px(14))
+    //                 .paddingRight(S::px(14))
+    //                 .cornerRadius(S::px(17))
+    //                 .display(Display::Flex)
+    //                 .alignItems(AlignItems::Center)
+    //                 .addEventListener(EventType::Click, [on = false](auto& node, Event&) mutable {
+    //                     on = !on;
+
+    //                     if (on) {
+    //                         node.color(coral);
+    //                     } else {
+    //                         node.color(raised);
+    //                     }
+    //                 })
+    //             (
+    //                 text("Shuffle").font(ArialBold).fontSize(S::pt(12)).color(ink)
+    //             )
+    //         )
+    //     ),
+
+    //     // Body
+    //     div()
+    //         .flexGrow(S::px(1))
+    //         .minHeight(S::px(0))
+    //         .paddingLeft(S::px(20))
+    //         .paddingRight(S::px(20))
+    //         .paddingBottom(S::px(20))
+    //         .display(Display::Flex)
+    //         .flexGap(S::px(16))
+    //     (
+    //         // Shelf: scrollport with sticky letter headers
+    //         div()
+    //             .color(panel)
+    //             .borderColor(outline)
+    //             .borderWidth(S::px(1))
+    //             .cornerRadius(S::px(14))
+    //             .flexGrow(S::px(1))
+    //             .minWidth(S::px(0))
+    //             .paddingLeft(S::px(8))
+    //             .paddingRight(S::px(8))
+    //             .overflow(gui::Overflow::Scroll)
+    //         (
+    //             div()
+    //                 .display(Display::Flex)
+    //                 .flexDirection(FlexDirection::Col)
+    //                 .flexGap(S::px(10))
+    //                 .paddingBottom(S::px(12))
+    //             (
+    //                 section("A", "3 records",
+    //                     row("AT", "Aphex Twin",      "Selected Ambient Works 85-92 · 1992", "ambient",   avatarA),
+    //                     row("AU", "Autechre",        "Amber · 1994",                        "idm",       avatarB),
+    //                     row("AL", "Alvvays",         "Antisocialites · 2017",               "indie",     avatarC)
+    //                 ),
+    //                 section("B", "4 records",
+    //                     row("BC", "Boards of Canada","Music Has the Right to Children · 1998", "electronic", avatarD),
+    //                     row("BR", "Broadcast",       "Tender Buttons · 2005",               "pop",       avatarE),
+    //                     row("BU", "Burial",          "Untrue · 2007",                       "garage",    avatarA),
+    //                     row("BH", "Beach House",     "Teen Dream · 2010",                   "dream pop", avatarB)
+    //                 ),
+    //                 section("C", "2 records",
+    //                     row("CT", "Cocteau Twins",   "Heaven or Las Vegas · 1990",          "dream pop", avatarC),
+    //                     row("CA", "Caribou",         "Swim · 2010",                         "electronic", avatarD)
+    //                 ),
+    //                 section("D", "3 records",
+    //                     row("DP", "Daft Punk",       "Discovery · 2001",                    "house",     avatarE),
+    //                     row("DS", "DJ Shadow",       "Endtroducing..... · 1996",            "trip hop",  avatarA),
+    //                     row("DH", "Deerhunter",      "Halcyon Digest · 2010",               "indie",     avatarB)
+    //                 ),
+    //                 section("M", "2 records",
+    //                     row("MB", "My Bloody Valentine", "Loveless · 1991",                 "shoegaze",  avatarD),
+    //                     row("MA", "Massive Attack",  "Mezzanine · 1998",                    "trip hop",  avatarC)
+    //                 ),
+    //                 section("S", "2 records",
+    //                     row("SL", "Slowdive",        "Souvlaki · 1993",                     "shoegaze",  avatarE),
+    //                     row("ST", "Stereolab",       "Dots and Loops · 1997",               "post-rock", avatarA)
+    //                 )
+    //             )
+    //         ),
+
+    //         // Now playing
+    //         div()
+    //             .width(S::px(300))
+    //             .flexShrink(S::px(0))
+    //             .color(panel)
+    //             .borderColor(outline)
+    //             .borderWidth(S::px(1))
+    //             .cornerRadius(S::px(14))
+    //             .padding(S::px(16))
+    //             .display(Display::Flex)
+    //             .flexDirection(FlexDirection::Col)
+    //             .flexGap(S::px(14))
+    //         (
+    //             div()
+    //                 .position(gui::Position::Relative)
+    //                 .width(S::percent(1.0))
+    //                 .height(S::autoSize())
+    //                 .aspectRatio(1, 1)
+    //             (
+    //                 image(coverPath, S::percent(1.0), S::autoSize())
+    //                     .aspectRatio(1, 1)
+    //                     .cornerRadius(S::px(10)),
+    //                 div()
+    //                     .position(gui::Position::Absolute)
+    //                     .top(S::px(10))
+    //                     .right(S::px(10))
+    //                     .color(coral)
+    //                     .height(S::px(22))
+    //                     .paddingLeft(S::px(9))
+    //                     .paddingRight(S::px(9))
+    //                     .cornerRadius(S::px(11))
+    //                     .display(Display::Flex)
+    //                     .alignItems(AlignItems::Center)
+    //                 (
+    //                     text("NOW PLAYING").font(DINAlternateBold).fontSize(S::pt(10)).color(bg)
+    //                 )
+    //             ),
+    //             div()
+    //                 .display(Display::Flex)
+    //                 .flexDirection(FlexDirection::Col)
+    //                 .flexGap(S::px(3))
+    //             (
+    //                 text("Loveless").font(NewYork).fontSize(S::pt(22)).color(ink),
+    //                 text("My Bloody Valentine · 1991").font(SF).fontSize(S::pt(12)).color(muted)
+    //             ),
+    //             div()
+    //                 .display(Display::Flex)
+    //                 .flexWrap(gui::FlexWrap::Wrap)
+    //                 .flexGap(S::px(6))
+    //             (
+    //                 chip("shoegaze", cyan, raised),
+    //                 chip("creation records", cyan, raised),
+    //                 chip("remastered", cyan, raised),
+    //                 chip("vinyl", cyan, raised),
+    //                 chip("11 tracks", cyan, raised)
+    //             ),
+    //             div()
+    //                 .display(Display::Flex)
+    //                 .flexDirection(FlexDirection::Col)
+    //                 .flexGap(S::px(6))
+    //             (
+    //                 div()
+    //                     .display(Display::Flex)
+    //                     .justifyContent(JustifyContent::SpaceBetween)
+    //                 (
+    //                     text("Only Shallow").font(ArialBold).fontSize(S::pt(12)).color(ink),
+    //                     text("01:58 / 04:17").font(SFMono).fontSize(S::pt(10)).color(muted)
+    //                 ),
+    //                 div()
+    //                     .width(S::percent(1.0))
+    //                     .height(S::px(6))
+    //                     .color(raised)
+    //                     .cornerRadius(S::px(3))
+    //                 (
+    //                     div()
+    //                         .width(S::percent(0.46))
+    //                         .height(S::percent(1.0))
+    //                         .color(coral)
+    //                         .cornerRadius(S::px(3))
+    //                     ()
+    //                 )
+    //             ),
+    //             div()
+    //                 .display(Display::Flex)
+    //                 .flexGap(S::px(8))
+    //             (
+    //                 button("Play", coral, avatarA, bg),
+    //                 button("Queue", raised, hover, ink)
+    //             ),
+    //             div().height(S::px(1)).color(outline)(),
+    //             div()
+    //                 .display(Display::Flex)
+    //                 .flexDirection(FlexDirection::Col)
+    //                 .flexGap(S::px(8))
+    //             (
+    //                 stat("Pressing", "1991 · UK first"),
+    //                 stat("Condition", "VG+ / VG+"),
+    //                 stat("Last played", "3 days ago"),
+    //                 stat("Plays", "27")
+    //             )
+    //         )
+    //     )
+    // );
+
+    // Box shadows: a light desk with objects at different elevations.
+    // Exercises outer blur/spread/offset, hard-edged (blur 0) shadows, inset shadows
+    // on divs and images, spread against elliptical per-corner radii, percent-based
+    // offsets, and hover/press state driving shadow changes at finalize only.
+    using S = gui::Size;
+    using gui::Display;
+    using gui::FlexDirection;
+    using gui::AlignItems;
+    using gui::JustifyContent;
+    using runtime::EventType;
+
+    constexpr simd_float4 desk        {0.941, 0.937, 0.925, 1.0};
+    constexpr simd_float4 paper       {1.000, 1.000, 1.000, 1.0};
+    constexpr simd_float4 cream       {0.992, 0.973, 0.925, 1.0};
+    constexpr simd_float4 ink         {0.129, 0.129, 0.153, 1.0};
+    constexpr simd_float4 muted       {0.478, 0.478, 0.510, 1.0};
+    constexpr simd_float4 rule        {0.871, 0.863, 0.839, 1.0};
+    constexpr simd_float4 tangerine   {1.000, 0.502, 0.200, 1.0};
+    constexpr simd_float4 grape       {0.435, 0.271, 0.831, 1.0};
+    constexpr simd_float4 mint        {0.180, 0.741, 0.545, 1.0};
+    constexpr simd_float4 slate       {0.239, 0.271, 0.325, 1.0};
+
+    constexpr simd_float4 umbraSoft   {0.0, 0.0, 0.0, 0.16};
+    constexpr simd_float4 umbraHard   {0.0, 0.0, 0.0, 1.00};
+    constexpr simd_float4 umbraLift   {0.0, 0.0, 0.0, 0.26};
+    constexpr simd_float4 umbraWell   {0.0, 0.0, 0.0, 0.32};
+    constexpr simd_float4 grapeGlow   {0.435, 0.271, 0.831, 0.55};
+    constexpr simd_float4 mintGlow    {0.180, 0.741, 0.545, 0.60};
+
+    constexpr auto butterflyPath = "/Users/treja/projects/gui/assets/butterfly.png";
+    constexpr auto coverPath = "/Users/treja/projects/gui/assets/loveless.jpg";
+
+    auto caption = [&](const char* title, const char* spec) {
+        return div()
+            .display(Display::Flex)
+            .flexDirection(FlexDirection::Col)
+            .flexGap(S::px(3))
+        (
+            text(title).font(ArialBold).fontSize(S::pt(12)).color(ink),
+            text(spec).font(SFMono).fontSize(S::pt(9)).color(muted)
+        );
+    };
+
+    auto cell = [&](auto&& subject, const char* title, const char* spec) {
+        return div()
+            .width(S::px(220))
+            .display(Display::Flex)
+            .flexDirection(FlexDirection::Col)
+            .alignItems(AlignItems::Center)
+            .flexGap(S::px(18))
+            .paddingTop(S::px(24))
+            .paddingBottom(S::px(12))
+        (
+            subject,
+            caption(title, spec)
+        );
+    };
+
+    div(S::percent(1.0), S::percent(1.0), desk)
+        .padding(S::px(36))
+        .overflow(gui::Overflow::Scroll)
+    (
+        div()
+            .display(Display::Flex)
+            .flexDirection(FlexDirection::Col)
+            .flexGap(S::px(8))
+            .marginBottom(S::px(28))
+        (
+            text("ELEVATION").font(DINAlternateBold).fontSize(S::pt(26)).color(ink),
+            text("box-shadow on divs and images · hover the button, click to press it")
+                .font(SFMono).fontSize(S::pt(11)).color(muted)
+        ),
+        div().height(S::px(1)).color(rule)(),
+
+        div()
+            .display(Display::Flex)
+            .flexWrap(gui::FlexWrap::Wrap)
+            .flexGap(S::px(12))
+            .justifyContent(JustifyContent::Center)
+        (
+            // 1. Soft ambient lift; the bread-and-butter card shadow.
+            cell(
+                div(S::px(140), S::px(100), paper)
+                    .cornerRadius(S::px(12))
+                    .shadowOffsetY(S::px(8))
+                    .shadowBlur(S::px(24))
+                    .shadowColor(umbraSoft)
+                (),
+                "Soft card", "0 8 24 0 · rgba(0,0,0,.16)"
+            ),
+
+            // 2. Hard offset; blur 0 goes through the sharp-edge AA path.
+            cell(
+                div(S::px(140), S::px(100), cream)
+                    .borderWidth(S::px(2))
+                    .borderColor(ink)
+                    .shadowOffsetX(S::px(8))
+                    .shadowOffsetY(S::px(8))
+                    .shadowColor(umbraHard)
+                (),
+                "Brutalist", "8 8 0 0 · #000"
+            ),
+
+            // 3. Negative spread pulls the shadow in under the box; only the blur leaks out.
+            cell(
+                div(S::px(140), S::px(100), paper)
+                    .cornerRadius(S::px(50))
+                    .shadowOffsetY(S::px(14))
+                    .shadowBlur(S::px(20))
+                    .shadowSpread(S::px(-10))
+                    .shadowColor(umbraLift)
+                (),
+                "Pill, negative spread", "0 14 20 -10"
+            ),
+
+            // 4. Colored glow; spread without offset.
+            cell(
+                div(S::px(140), S::px(100), grape)
+                    .cornerRadius(S::px(16))
+                    .shadowBlur(S::px(32))
+                    .shadowSpread(S::px(2))
+                    .shadowColor(grapeGlow)
+                (),
+                "Glow", "0 0 32 2 · grape 55%"
+            ),
+
+            // 5. Inset well on a div; shadow sits above the fill, under the border.
+            cell(
+                div(S::px(140), S::px(100), cream)
+                    .cornerRadius(S::px(10))
+                    .borderWidth(S::px(1))
+                    .borderColor(rule)
+                    .shadowInset(true)
+                    .shadowOffsetY(S::px(4))
+                    .shadowBlur(S::px(10))
+                    .shadowColor(umbraWell)
+                (),
+                "Inset well", "inset 0 4 10 0"
+            ),
+
+            // 6. Mismatched elliptical corners with positive spread; exercises the
+            //    nonlinear radius growth where radius < spread.
+            cell(
+                div(S::px(140), S::px(100), tangerine)
+                    .cornerRadiusTopLeft(S::px(48))
+                    .cornerRadiusTopRight(S::px(4))
+                    .cornerRadiusBottomRight(S::px(30))
+                    .cornerRadiusBottomLeft(S::px(0))
+                    .shadowOffsetY(S::px(6))
+                    .shadowBlur(S::px(10))
+                    .shadowSpread(S::px(12))
+                    .shadowColor(umbraSoft)
+                (),
+                "Uneven corners + spread", "0 6 10 12"
+            ),
+
+            // 7. Percent offsets resolve against the box.
+            cell(
+                div(S::px(140), S::px(100), slate)
+                    .cornerRadius(S::px(6))
+                    .shadowOffsetX(S::percent(0.1))
+                    .shadowOffsetY(S::percent(0.1))
+                    .shadowBlur(S::px(2))
+                    .shadowColor(mintGlow)
+                (),
+                "Percent offset", "10% 10% 2 0"
+            ),
+
+            // 8. Image with a drop shadow; the quad grows but UVs stay on the original rect.
+            cell(
+                image(butterflyPath, S::px(140), S::px(100))
+                    .cornerRadius(S::px(12))
+                    .shadowOffsetY(S::px(10))
+                    .shadowBlur(S::px(22))
+                    .shadowColor(umbraLift),
+                "Image drop", "0 10 22 0"
+            ),
+
+            // 9. Image with an inset vignette over the texture.
+            cell(
+                image(coverPath, S::px(140), S::px(100))
+                    .cornerRadius(S::px(12))
+                    .borderWidth(S::px(2))
+                    .borderColor(paper)
+                    .shadowInset(true)
+                    .shadowBlur(S::px(28))
+                    .shadowSpread(S::px(4))
+                    .shadowColor(umbraWell),
+                "Image vignette", "inset 0 0 28 4"
+            ),
+
+            // 10. Interactive: hover lifts, click presses into an inset shadow.
+            cell(
+                div(S::px(140), S::px(100), mint)
+                    .cornerRadius(S::px(14))
+                    .display(Display::Flex)
+                    .alignItems(AlignItems::Center)
+                    .justifyContent(JustifyContent::Center)
+                    .shadowOffsetY(S::px(4))
+                    .shadowBlur(S::px(10))
+                    .shadowColor(umbraSoft)
+                    .addEventListener(EventType::MouseEnter, [](auto& node, Event&) {
+                        if (node.shadowInset()) {
+                            return;
+                        }
+
+                        node.shadowOffsetY(S::px(12))
+                            .shadowBlur(S::px(28))
+                            .shadowColor(umbraLift);
+                    })
+                    .addEventListener(EventType::MouseLeave, [](auto& node, Event&) {
+                        if (node.shadowInset()) {
+                            return;
+                        }
+
+                        node.shadowOffsetY(S::px(4))
+                            .shadowBlur(S::px(10))
+                            .shadowColor(umbraSoft);
+                    })
+                    .addEventListener(EventType::Click, [](auto& node, Event&) {
+                        bool pressed = !node.shadowInset();
+                        node.shadowInset(pressed);
+
+                        if (pressed) {
+                            node.shadowOffsetY(S::px(3))
+                                .shadowBlur(S::px(8))
+                                .shadowColor(umbraWell);
+                        } else {
+                            node.shadowOffsetY(S::px(12))
+                                .shadowBlur(S::px(28))
+                                .shadowColor(umbraLift);
+                        }
+                    })
+                (
+                    text("press me").font(ArialBold).fontSize(S::pt(12)).color(paper)
+                ),
+                "Interactive", "hover: lift · click: inset"
+            )
+        )
+    );
 }

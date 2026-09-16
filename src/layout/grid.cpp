@@ -1541,11 +1541,11 @@ namespace layout {
                 .intrinsicWidthRequest = IntrinsicRequest::Both,
             };
 
-            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childNode, {
+            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(tree, childNode, frameInfo, preparedChildConstraints, childRequest, {
                 .availableWidth = childRequest.available.width,
                 .widthRequest = childRequest.intrinsicWidthRequest,
                 .trackIntrinsicWidth = false,
-            });
+            }, sizeCache);
 
             const SizeResult childSizing = evaluateSize(tree, childNode, frameInfo, preparedChildConstraints, childRequest, sizeCache);
 
@@ -1672,11 +1672,11 @@ namespace layout {
                 .intrinsicHeightRequest = IntrinsicRequest::Both,
             };
 
-            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childNode, {
+            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(tree, childNode, frameInfo, preparedChildConstraints, childRequest, {
                 .availableWidth = childRequest.available.width,
                 .widthRequest = childRequest.intrinsicWidthRequest,
                 .trackIntrinsicWidth = false,
-            });
+            }, sizeCache);
 
             SizeResult childSizing = evaluateSize( tree, childNode, frameInfo, preparedChildConstraints, childRequest, sizeCache);
 
@@ -1831,11 +1831,11 @@ namespace layout {
                 .automaticMinimumHeight = AutomaticMinimum::Zero
             };
 
-            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childNode, {
+            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(tree, childNode, frameInfo, preparedChildConstraints, childRequest, {
                 .availableWidth = childRequest.available.width,
                 .widthRequest = childRequest.intrinsicWidthRequest,
                 .trackIntrinsicWidth = false,
-            });
+            }, sizeCache);
 
             const SizeResult childSizing = evaluateSize(tree, childNode, frameInfo, preparedChildConstraints, childRequest, sizeCache);
 

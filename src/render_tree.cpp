@@ -5,6 +5,7 @@
 #include "layout/style.hpp"
 #include "overloaded.hpp"
 #include "layout/sizing.hpp"
+#include "tree_node.hpp"
 #include <algorithm>
 #include <chrono>
 #include <optional>
@@ -378,11 +379,7 @@ namespace tree {
             layoutCache.clear();
             sizeCache.clear();
             instrumentation::PhaseTimer timer{instrumentation::Phase::Layout};
-            auto layoutStart = std::chrono::steady_clock::now();
             layoutPhase(root, frameInfo, rootConstraints);
-            auto layoutEnd = std::chrono::steady_clock::now();
-            std::println("layout pass time: {}",
-                std::chrono::duration<double, std::milli>(layoutEnd - layoutStart));
             root->calculateGlobalZIndex(0);
         }
 
@@ -419,9 +416,7 @@ namespace tree {
         for (auto node : allNodes) {
             if (node->atomized.has_value()) {
                 const auto& atomized = *node->atomized;
-                atomCount += atomized.usesDrawableAtoms
-                    ? atomized.drawableAtoms.size()
-                    : atomized.atoms.size();
+                atomCount += atomized.usesDrawableAtoms ? atomized.drawableAtoms.size() : atomized.atoms.size();
             }
             auto& finalized = node->finalized;
             node->element->encode(encoder, finalized);
@@ -889,7 +884,7 @@ namespace tree {
             // it only changes for flex/grid/etc...
             // which provide different contributions not based on intrinsic size collection but
             // min and max bounds; this needs to be fixed
-            auto inlineFormatting = buildInlineBoxes(node, inlineSizing);
+            auto inlineFormatting = buildInlineBoxes(*this, node, frameInfo, childConstraints, sizeRequest, inlineSizing, sizeCache);
 
             if (inlineFormatting->intrinsicSizes) {
                 intrinsicResult = *inlineFormatting->intrinsicSizes;
@@ -1286,7 +1281,7 @@ namespace tree {
         node->constraintsKey = key;
         node->dirtySelf |= DirtyBits::Place | DirtyBits::Finalize;
     }
-
+    
     void RenderTree::placePhase(TreeNode* node, const FrameInfo& frameInfo, Constraints& constraints) {
         auto key = makeConstraintsKey(constraints);
         auto reason = recomputeReason(node, DirtyBits::Place, key);

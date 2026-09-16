@@ -25,6 +25,7 @@ struct DivStyleUniforms {
     CornerRadii cornerRadius;
     float borderWidth;
     float4 borderColor;
+    ShadowUniform shadow;
 };
 
 struct DivGeometryUniforms {
@@ -48,7 +49,7 @@ vertex DivVertexOut vertex_div(
     
     in.position += offsets[in.atom_id];
     
-    float2 adjustedPosition = toNDC(in.position, frameInfo->width, frameInfo->height);
+    float2 adjustedPosition = to_ndc(in.position, frameInfo->width, frameInfo->height);
     out.position = float4(adjustedPosition, 0.0, 1.0);
     out.worldPosition = float4(in.position, 0.0, 1.0);
     return out;
@@ -76,19 +77,39 @@ fragment float4 fragment_div(
     
     float borderMask = outerMask - innerMask;
     float fillMask = innerMask;
-    
+
     float4 fillColor = uniforms->style.color;
     float4 borderColor = uniforms->style.borderColor;
-    
-    float3 premulFill = fillColor.rgb * fillColor.a * fillMask;
-    float3 premulBorder = borderColor.rgb * borderColor.a * borderMask;
-    
-    float alpha = borderMask * borderColor.a + fillMask * fillColor.a;
+    ShadowUniform shadow = uniforms->style.shadow;
 
-    float3 rgb = premulFill + premulBorder;
+    float outerCoverage = shadow_coverage(localPosition - shadow.offset, uniforms->geometry.halfExtent,
+                                          uniforms->style.cornerRadius, shadow.sigma, shadow.spread, 0.0);
+    float innerCoverage = shadow_coverage(localPosition - shadow.offset, uniforms->geometry.halfExtent,
+                                          uniforms->style.cornerRadius, shadow.sigma, -shadow.spread,
+                                          uniforms->style.borderWidth);
     
-    if (alpha > 1e-6)
+    float outerShadowMask = outerCoverage * (1.0 - outerMask) * float(shadow.inset == 0);
+    float insetShadowMask = (1.0 - innerCoverage) * float(shadow.inset != 0);
+
+    float3 premulFill = fillColor.rgb * fillColor.a;
+    float fillAlpha = fillColor.a;
+
+    float insetAlpha = shadow.color.a * insetShadowMask;
+    float3 premulInset = (shadow.color.rgb * insetAlpha + premulFill * (1.0 - insetAlpha)) * fillMask;
+    float insetOverFillAlpha = (insetAlpha + fillAlpha * (1.0 - insetAlpha)) * fillMask;
+
+    float outerAlpha = shadow.color.a * outerShadowMask;
+    float3 premulOuter = shadow.color.rgb * outerAlpha;
+
+    float3 premulBorder = borderColor.rgb * borderColor.a * borderMask;
+
+    float alpha = borderMask * borderColor.a + insetOverFillAlpha + outerAlpha;
+
+    float3 rgb = premulInset + premulOuter + premulBorder;
+
+    if (alpha > 1e-6) {
         rgb /= alpha;
-    
+    }
+
     return float4(rgb, alpha);
 }
