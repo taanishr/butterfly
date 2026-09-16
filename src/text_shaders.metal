@@ -145,9 +145,11 @@ int countQuadraticIntersections(float2 p0, float2 p1, float2 p2, float fragX, fl
 float approximateQuadraticDistance(float2 p0, float2 p1, float2 p2, float2 q) {
     float2 chord = p2 - p0;
     float chordLengthSquared = dot(chord, chord);
-    float t = chordLengthSquared > 1e-6
-        ? clamp(dot(q - p0, chord) / chordLengthSquared, 0.0, 1.0)
-        : 0.5;
+    float t = select(
+        0.5,
+        clamp(dot(q - p0, chord) / chordLengthSquared, 0.0, 1.0),
+        chordLengthSquared > 1e-6
+    );
 
     for (int i=0; i<2; ++i) {
         float2 point = evaluateQuadratic(p0, p1, p2, t);
@@ -168,9 +170,11 @@ float approximateQuadraticDistance(float2 p0, float2 p1, float2 p2, float2 q) {
 float approximateCubicDistance(float2 p0, float2 p1, float2 p2, float2 p3, float2 q) {
     float2 chord = p3 - p0;
     float chordLengthSquared = dot(chord, chord);
-    float t = chordLengthSquared > 1e-6
-        ? clamp(dot(q - p0, chord) / chordLengthSquared, 0.0, 1.0)
-        : 0.5;
+    float t = select(
+        0.5,
+        clamp(dot(q - p0, chord) / chordLengthSquared, 0.0, 1.0),
+        chordLengthSquared > 1e-6
+    );
 
     for (int i = 0; i < 2; ++i) {
         float2 point = evaluateCubic(p0, p1, p2, p3, t);
@@ -274,7 +278,7 @@ fragment float4 fragment_text(
     int bezierIndex = glyphMeta[metadataIndex];
     CurveType curveType = CurveType(uint(glyphMeta[metadataIndex + 1]));
     int numContours = glyphMeta[metadataIndex + 2];
-    int pointStride = curveType == CurveType::Cubic ? 4 : 3;
+    int pointStride = select(3, 4, curveType == CurveType::Cubic);
     float minDist = 1e20;
     
     int intersections = 0;
@@ -311,7 +315,7 @@ fragment float4 fragment_text(
 
     bool inside = intersections & 1;
 
-    float sd = inside ? -minDist : minDist;
+    float sd = select(minDist, -minDist, inside);
 
     float px = fwidth(fragPt.x);
 
