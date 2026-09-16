@@ -333,6 +333,7 @@ namespace elements {
         template <LayoutStateType L>
         Finalized<U> finalize(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, DivDescriptor& desc, Atomized& atomized, L& layout, Placed& placed)
         {
+            // border width calculation
             float borderWidth = 0.0;
 
             if (shared.borderWidth.unit == Unit::Px) {
@@ -349,6 +350,7 @@ namespace elements {
                 layout.computedBox.height
             );
 
+            // push style uniforms
             DivStyleUniforms styleUniforms{
                 .color = desc.color,
                 .cornerRadius = cornerRadius,

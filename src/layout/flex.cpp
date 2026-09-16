@@ -103,6 +103,7 @@ namespace layout {
                 continue;
 
             auto selfAlign = childAsPtr->getAlignSelf();
+            AlignItems effectiveAlign = flex.effectiveAlign(selfAlign);
 
             SizeRequest childRequest {
                 .position = childAsPtr->shared.position,
@@ -149,11 +150,30 @@ namespace layout {
                 .intrinsicHeightRequest = flex.axis.isRow ? std::nullopt : std::optional{IntrinsicRequest::Both},
             };
 
-            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childAsPtr, {
+            /*
+                flex 9.8(3)
+                If a single-line flex container has a definite cross size, the automatic preferred outer cross size of any stretched flex items 
+                is the flex container’s inner cross size (clamped to the flex item’s min and max cross size) and is considered definite.
+
+                That translates to:
+                - use the avaiable instead of content sizing an indefinite cross size, bc the available is the flex parent's
+                inner size (container inner size)
+            */
+            bool stretchesToDefiniteCross = effectiveAlign == AlignItems::Stretch && std::holds_alternative<float>(flex.axis.crossSize(availableSize));
+
+            if (stretchesToDefiniteCross) {
+                if (flex.axis.isRow) {
+                    childRequest.automaticHeight = AutomaticSizing::UseAvailable;
+                } else {
+                    childRequest.automaticWidth = AutomaticSizing::UseAvailable;
+                }
+            }
+
+            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(tree, childAsPtr, frameInfo, preparedChildConstraints, childRequest, {
                 .availableWidth = preparedChildConstraints.availableWidth,
                 .widthRequest = childRequest.intrinsicWidthRequest,
                 .trackIntrinsicWidth = flex.axis.isRow ? true : false,
-            });
+            }, sizeCache);
 
             SizeResult childSizing = evaluateSize(tree, childAsPtr, frameInfo, preparedChildConstraints, childRequest, sizeCache);
 
@@ -163,8 +183,6 @@ namespace layout {
                 .minimum = measuredMainIntrinsicSizes->minimum,
                 .maximum = measuredMainIntrinsicSizes->maximum
             };
-
-            AlignItems effectiveAlign = flex.effectiveAlign(selfAlign);
 
             const SizeState& flexBaseSize = std::holds_alternative<float>(preferredMainSize) ? preferredMainSize : mainIntrinsicSizes.maximum;
             const SizeState& minimumMainSize = flex.axis.mainSize(childSizing.minimum);
@@ -252,11 +270,13 @@ namespace layout {
 
                 };
 
-                preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childNode, {
+                flex.axis.mainSize(childRequest.override) = item.usedMainSize;
+
+                preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(tree, childNode, frameInfo, preparedChildConstraints, childRequest, {
                     .availableWidth = childAvailableSize.width,
                     .widthRequest = childRequest.intrinsicWidthRequest,
                     .trackIntrinsicWidth = flex.axis.isRow ? false : true,
-                });
+                }, sizeCache);
 
                 if (flex.axis.isRow) {
                     childRequest.automaticHeight = AutomaticSizing::UseContent;
@@ -265,8 +285,6 @@ namespace layout {
                 }
 
 
-                flex.axis.mainSize(childRequest.override) = item.usedMainSize;
-                
                 SizeResult childSizing = evaluateSize(tree, childNode, frameInfo, preparedChildConstraints, childRequest, sizeCache);
 
                 if (std::holds_alternative<float>(flex.axis.crossSize(childSizing.outerSize))) {
@@ -367,13 +385,6 @@ namespace layout {
                 .automaticMinimumHeight = AutomaticMinimum::Zero,
             };
 
-            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(childNode, {
-                .availableWidth = childAvailableSize.width,
-                .widthRequest = childRequest.intrinsicWidthRequest,
-                .trackIntrinsicWidth = false,
-            });
-
-
             flex.axis.mainSize(childRequest.override) = placement.mainSize;
 
             if (flex.axis.isRow) {
@@ -381,6 +392,12 @@ namespace layout {
             } else {
                 childRequest.automaticWidth = placement.alignment == AlignItems::Stretch ? AutomaticSizing::UseAvailable : AutomaticSizing::UseContent;
             }
+
+            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(tree, childNode, frameInfo, preparedChildConstraints, childRequest, {
+                .availableWidth = childAvailableSize.width,
+                .widthRequest = childRequest.intrinsicWidthRequest,
+                .trackIntrinsicWidth = false,
+            }, sizeCache);
 
             tree.layoutRecursive(childNode, frameInfo, std::move(preparedChildConstraints), mutate, std::move(childRequest));
         }

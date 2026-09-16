@@ -5,6 +5,7 @@
 #include "layout/style.hpp"
 #include "overloaded.hpp"
 #include "layout/sizing.hpp"
+#include "tree_node.hpp"
 #include <algorithm>
 #include <chrono>
 #include <optional>
@@ -889,7 +890,7 @@ namespace tree {
             // it only changes for flex/grid/etc...
             // which provide different contributions not based on intrinsic size collection but
             // min and max bounds; this needs to be fixed
-            auto inlineFormatting = buildInlineBoxes(node, inlineSizing);
+            auto inlineFormatting = buildInlineBoxes(*this, node, frameInfo, childConstraints, sizeRequest, inlineSizing, sizeCache);
 
             if (inlineFormatting->intrinsicSizes) {
                 intrinsicResult = *inlineFormatting->intrinsicSizes;
@@ -1286,7 +1287,7 @@ namespace tree {
         node->constraintsKey = key;
         node->dirtySelf |= DirtyBits::Place | DirtyBits::Finalize;
     }
-
+    
     void RenderTree::placePhase(TreeNode* node, const FrameInfo& frameInfo, Constraints& constraints) {
         auto key = makeConstraintsKey(constraints);
         auto reason = recomputeReason(node, DirtyBits::Place, key);

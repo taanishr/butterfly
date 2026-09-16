@@ -261,10 +261,16 @@ namespace tree {
     void precomputeMargins(RenderTree& tree, TreeNode* node, Constraints& constraints, std::unordered_map<ChainID, CollapsedChain>& collapsedChainMap);
     
     // full blown inline context
-    std::shared_ptr<layout::InlineFormattingContext> buildInlineBoxes(TreeNode* node, const InlineSizingInput& sizing);
+    std::shared_ptr<layout::InlineFormattingContext> buildInlineBoxes(
+        RenderTree& tree, TreeNode* node, const FrameInfo& frameInfo,
+        const Constraints& constraints, const SizeRequest& request, const InlineSizingInput& sizing,
+        std::optional<std::unordered_map<size_t, SizeResult>&> sizeCache);
 
     // inline context calculated for a single child, independently of other siblings
-    layout::InlineFormattingInput buildIsolatedInlineBoxes(TreeNode* node, const InlineSizingInput& sizing);
+    layout::InlineFormattingInput buildIsolatedInlineBoxes(
+        RenderTree& tree, TreeNode* node, const FrameInfo& frameInfo,
+        const Constraints& constraints, const SizeRequest& request, const InlineSizingInput& sizing,
+        std::optional<std::unordered_map<size_t, SizeResult>&> sizeCache);
 
 }
 

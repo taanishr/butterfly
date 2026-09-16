@@ -296,7 +296,8 @@ namespace tree {
     }
 
     void appendAtomicInlineFragment(
-        const std::vector<Atom>& atoms,
+        std::vector<Atom>& atoms,
+        const SizeResult& sizeResult,
         const bidi::TextShapingRun& run,
         ResolvedMargins margins,
         const SizeState& availableWidth,
@@ -307,12 +308,19 @@ namespace tree {
         size_t& currentLineBoxIndex,
         bool& lastFragmentHasBreakOpportunity
     ) {
-        if (atoms.empty()) return;
-
-        float width = margins.left + margins.right;
-        for (const auto& atom : atoms) {
-            width += atom.width;
+        if (atoms.empty()) {
+            return;
         }
+
+        if (std::holds_alternative<float>(sizeResult.outerSize.width)) {
+            atoms.front().width = std::get<float>(sizeResult.outerSize.width);
+        }
+
+        if (std::holds_alternative<float>(sizeResult.outerSize.height)) {
+            atoms.front().height = std::get<float>(sizeResult.outerSize.height);
+        }
+        
+        float width = margins.left + margins.right + atoms.front().width;
 
         if (shouldTakeSoftBreak(
                 widthRequest,
@@ -532,7 +540,10 @@ namespace tree {
     }
     
 
-    layout::InlineFormattingInput buildIsolatedInlineBoxes(TreeNode* node, const InlineSizingInput& sizing) {
+    layout::InlineFormattingInput buildIsolatedInlineBoxes(
+        RenderTree& tree, TreeNode* node, const FrameInfo& frameInfo,
+        const Constraints& constraints, const SizeRequest& request, const InlineSizingInput& sizing,
+        std::optional<std::unordered_map<size_t, SizeResult>&> sizeCache) {
         auto context = std::make_shared<layout::InlineFormattingContext>();
         auto& fragments = context->fragments;
         auto& lineBoxes = context->lineBoxes;
@@ -563,9 +574,11 @@ namespace tree {
                     lastFragmentHasBreakOpportunity
                 );
             } else {
+                const auto sizeResult = evaluateSize(tree, node, frameInfo, constraints, request, sizeCache);
                 const auto& run = node->textBidiInput->runs.front();
                 appendAtomicInlineFragment(
                     atoms,
+                    sizeResult,
                     run,
                     margins,
                     availableWidth,
@@ -598,8 +611,8 @@ namespace tree {
                 .trackIntrinsicWidth = false,
             };
 
-            auto minInput = sizing.widthRequest == IntrinsicRequest::Minimum ? currentInput : buildIsolatedInlineBoxes(node, minimumSizing);
-            auto maxInput = sizing.widthRequest == IntrinsicRequest::Maximum ? currentInput : buildIsolatedInlineBoxes(node, maximumSizing);
+            auto minInput = sizing.widthRequest == IntrinsicRequest::Minimum ? currentInput : buildIsolatedInlineBoxes(tree, node, frameInfo, constraints, request, minimumSizing, sizeCache);
+            auto maxInput = sizing.widthRequest == IntrinsicRequest::Maximum ? currentInput : buildIsolatedInlineBoxes(tree, node, frameInfo, constraints, request, maximumSizing, sizeCache);
             
             std::vector<float> minLineWidths(minInput.lineBoxes().size(), 0.0f);
             for (const auto& fragment : minInput.lineFragments()) {
@@ -635,7 +648,10 @@ namespace tree {
         };
     }
 
-    std::shared_ptr<layout::InlineFormattingContext> buildInlineBoxes(TreeNode* node, const InlineSizingInput& sizing) {
+    std::shared_ptr<layout::InlineFormattingContext> buildInlineBoxes(
+        RenderTree& tree, TreeNode* node, const FrameInfo& frameInfo,
+        const Constraints& constraints, const SizeRequest& request, const InlineSizingInput& sizing,
+        std::optional<std::unordered_map<size_t, SizeResult>&> sizeCache) {
         bool prevInline = false;
         auto context = std::make_shared<layout::InlineFormattingContext>();
         auto& childrenLineBoxes = context->lineBoxes;
@@ -680,9 +696,41 @@ namespace tree {
                         lastFragmentHasBreakOpportunity
                     );
                 } else {
+                    SizeRequest childRequest {
+                        .position = child->shared.position,
+                        .specified = {.width = child->shared.width, .height = child->shared.height},
+                        .minimum = {.width = child->shared.minWidth, .height = child->shared.minHeight},
+                        .maximum = {
+                            .width = child->shared.maxWidth ? SizeState{*child->shared.maxWidth} : SizeState{std::monostate{}},
+                            .height = child->shared.maxHeight ? SizeState{*child->shared.maxHeight} : SizeState{std::monostate{}},
+                        },
+                        .available = {.width = constraints.availableWidth, .height = constraints.availableHeight},
+                        .top = child->shared.top,
+                        .right = child->shared.right,
+                        .bottom = child->shared.bottom,
+                        .left = child->shared.left,
+                        .paddingTop = child->shared.paddingTop.value_or(child->shared.padding),
+                        .paddingRight = child->shared.paddingRight.value_or(child->shared.padding),
+                        .paddingBottom = child->shared.paddingBottom.value_or(child->shared.padding),
+                        .paddingLeft = child->shared.paddingLeft.value_or(child->shared.padding),
+                        .borderWidth = child->shared.borderWidth,
+                        .margins = margins,
+                        .aspectRatio = child->shared.aspectRatio,
+                        .automaticWidth = (child->getPosition() == Position::Absolute || child->getPosition() == Position::Fixed)
+                            ? AutomaticSizing::UseContent : AutomaticSizing::UseAvailable,
+                        .automaticHeight = AutomaticSizing::UseContent,
+                        .automaticMinimumWidth = AutomaticMinimum::Zero,
+                        .automaticMinimumHeight = AutomaticMinimum::Zero,
+                        .intrinsicWidthRequest = request.intrinsicWidthRequest,
+                        .intrinsicHeightRequest = request.intrinsicHeightRequest,
+                        .resolvingIntrinsicWidth = request.intrinsicWidthRequest.has_value(),
+                        .resolvingIntrinsicHeight = request.intrinsicHeightRequest.has_value(),
+                    };
+                    const auto sizeResult = evaluateSize(tree, child.get(), frameInfo, constraints, childRequest, sizeCache);
                     const auto& run = child->textBidiInput->runs.front();
                     appendAtomicInlineFragment(
                         atoms,
+                        sizeResult,
                         run,
                         margins,
                         availableWidth,
@@ -719,7 +767,7 @@ namespace tree {
                     .widthRequest = IntrinsicRequest::Minimum,
                     .trackIntrinsicWidth = false,
                 };
-                auto minContext = buildInlineBoxes(node, minimumSizing);
+                auto minContext = buildInlineBoxes(tree, node, frameInfo, constraints, request, minimumSizing, sizeCache);
                 context->minFragments = std::move(minContext->fragments);
                 context->minLineBoxes = std::move(minContext->lineBoxes);
                 context->minChildFragments = std::move(minContext->childFragments);
@@ -731,7 +779,7 @@ namespace tree {
                     .widthRequest = IntrinsicRequest::Maximum,
                     .trackIntrinsicWidth = false,
                 };
-                auto maxContext = buildInlineBoxes(node, maximumSizing);
+                auto maxContext = buildInlineBoxes(tree, node, frameInfo, constraints, request, maximumSizing, sizeCache);
                 context->maxFragments = std::move(maxContext->fragments);
                 context->maxLineBoxes = std::move(maxContext->lineBoxes);
                 context->maxChildFragments = std::move(maxContext->childFragments);
