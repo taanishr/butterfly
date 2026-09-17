@@ -4482,7 +4482,7 @@ div()
                 .font(SFMono).fontSize(S::pt(11)).color(muted)
         ),
 
-        section("Rendering · origin is box center · order is T·R·S"),
+        section("Rendering • origin is box center • order is T•R•S"),
         row(
             cell("translate", "(24, 12)",
                 ghosted(card(mint).translate(simd_float2{24.0f, 12.0f})())
