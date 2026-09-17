@@ -15,6 +15,7 @@
 #include <print>
 #include <source_location>
 #include "context_manager.hpp"
+#include "simd_helpers.hpp"
 
 namespace elements {
     using runtime::ContextManager;
@@ -322,6 +323,64 @@ namespace elements {
 
         Derived& overflow(Overflow overflow) {
             node->shared.overflow = overflow;
+            markDirty(layoutDirtyBits());
+            return self();
+        }
+
+        std::optional<simd_float2> translate() const {
+            return node->shared.translate;
+        }
+
+        Derived& translate(simd_float2 translate) {
+            auto& shared = node->shared;
+            shared.translate = translate;
+            shared.transform = composeTransform(
+                translate,
+                shared.rotate.value_or(0.0f),
+                shared.scale.value_or(simd_float2{1.0f, 1.0f})
+            );
+            markDirty(DirtyBits::PostLayout | DirtyBits::Finalize);
+            return self();
+        }
+
+        std::optional<float> rotate() const {
+            return node->shared.rotate;
+        }
+
+        Derived& rotate(float rotate) {
+            auto& shared = node->shared;
+            shared.rotate = rotate;
+            shared.transform = composeTransform(
+                shared.translate.value_or(simd_float2{0.0f, 0.0f}),
+                rotate,
+                shared.scale.value_or(simd_float2{1.0f, 1.0f})
+            );
+            markDirty(DirtyBits::PostLayout | DirtyBits::Finalize);
+            return self();
+        }
+
+        std::optional<simd_float2> scale() const {
+            return node->shared.scale;
+        }
+
+        Derived& scale(simd_float2 scale) {
+            auto& shared = node->shared;
+            shared.scale = scale;
+            shared.transform = composeTransform(
+                shared.translate.value_or(simd_float2{0.0f, 0.0f}),
+                shared.rotate.value_or(0.0f),
+                scale
+            );
+            markDirty(DirtyBits::PostLayout | DirtyBits::Finalize);
+            return self();
+        }
+
+        std::optional<simd_float3x3> transform() const {
+            return node->shared.transform;
+        }
+
+        Derived& transform(std::optional<simd_float3x3> transform) {
+            node->shared.transform = transform;
             markDirty(layoutDirtyBits());
             return self();
         }

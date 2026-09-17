@@ -5,6 +5,7 @@
 #include "layout/style.hpp"
 #include <algorithm>
 #include <optional>
+#include <simd/matrix.h>
 #include <string>
 #include <vector>
 
@@ -161,6 +162,7 @@ namespace style {
         simd_float2 rectCenter{};
         simd_float2 halfExtent{};
         CornerRadii cornerRadius{};
+        simd_float3x3 inverseTransform {matrix_identity_float3x3};
     };
 
     struct BoxShadow {
@@ -237,6 +239,14 @@ namespace style {
         PointerEvents pointerEvents {PointerEvents::Auto};
         TextOverflow textOverflow{};
         std::optional<TextAlign> textAlign{};
+
+        // the reason its optional here is bc 
+        // the spec distinguishes between the identity (i.e. set via scale(1))
+        // and a literal no transform set for establishing containing blocks (no transform -> dont establish)
+        std::optional<simd_float3x3> transform {};
+        std::optional<simd_float2> translate {};
+        std::optional<float> rotate {};
+        std::optional<simd_float2> scale {};
     };
 
     inline auto resolveCornerRadii(const SharedDescriptor& desc, float width, float height) -> CornerRadii {

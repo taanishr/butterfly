@@ -20,18 +20,21 @@ namespace layout {
 
         switch (ctx.layoutInput.position) {
             case layout::Position::Fixed: {
-                float refWidth = ctx.constraints.frameInfo.width;
-                float refHeight = ctx.constraints.frameInfo.height;
+                auto& cb = ctx.constraints.fixedContainingBlock;
 
                 std::optional<float> left;
                 if (ctx.layoutInput.left.has_value()) {
-                    auto resolvedLeft = ctx.layoutInput.left->resolve(Size::px(refWidth));
-                    if (resolvedLeft) left = *resolvedLeft;
+                    SizeState resolvedLeft = calculateSize(*ctx.layoutInput.left, cb.width);
+                    if (std::holds_alternative<float>(resolvedLeft)) {
+                        left = std::get<float>(resolvedLeft);
+                    }
                 }
                 std::optional<float> top;
                 if (ctx.layoutInput.top.has_value()) {
-                    auto resolvedTop = ctx.layoutInput.top->resolve(Size::px(refHeight));
-                    if (resolvedTop) top = *resolvedTop;
+                    SizeState resolvedTop = calculateSize(*ctx.layoutInput.top, cb.height);
+                    if (std::holds_alternative<float>(resolvedTop)) {
+                        top = std::get<float>(resolvedTop);
+                    }
                 }
 
                 resolvedPosition = {0.0f, 0.0f};

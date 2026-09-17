@@ -65,6 +65,7 @@ namespace elements {
     struct ImageGeometryUniforms {
         simd_float2 rectCenter;
         simd_float2 halfExtent;
+        simd_float3x3 transform;
     };
 
     struct ImageUniforms {
@@ -428,6 +429,8 @@ namespace elements {
                 geometryUniforms.halfExtent = halfExtent;
             }
 
+            geometryUniforms.transform = constraints.transform;
+
             float minX = std::min(0.0f, shadow.offset.x - shadowExtent);
             float minY = std::min(0.0f, shadow.offset.y - shadowExtent);
             float maxX = std::max(width, width + shadow.offset.x + shadowExtent);
@@ -484,6 +487,7 @@ namespace elements {
             encoder->setVertexBuffer(atomBuf, 0, 0);
             encoder->setVertexBuffer(atomPlacementBuf, 0, 1);
             encoder->setVertexBuffer(frameInfoBuf, 0, 2);
+            encoder->setVertexBuffer(uniformsBuf, 0, 3);
 
             encoder->setFragmentBuffer(uniformsBuf, 0, 0);
             encoder->setFragmentBuffer(clipsBuf, 0, 1);

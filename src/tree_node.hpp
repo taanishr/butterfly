@@ -167,19 +167,32 @@ namespace tree {
         }
 
         bool contains(simd_float2 point) const {
-            if (shared.pointerEvents == PointerEvents::None) return false;
-            if (!layout.has_value()) return false;
+            if (shared.pointerEvents == PointerEvents::None) {
+                return false;
+            }
             
+            if (!layout.has_value()) {
+                return false;
+            }
+
+            if (simd_determinant(transform) == 0.0f) {
+                return false;
+            }
+
+            simd_float3 local = simd_mul(inverseTransform, simd_float3{point.x, point.y, 1.0f});
+            simd_float2 localPoint {local.x, local.y};
+
             bool withinBounds = std::visit([&](const auto& state) {
                 const auto& box = state.computedBox;
 
-                if (point.x < box.x || point.x > box.x + box.width ||
-                    point.y < box.y || point.y > box.y + box.height) {
+                if (localPoint.x < box.x || localPoint.x > box.x + box.width ||
+                    localPoint.y < box.y || localPoint.y > box.y + box.height) {
                     return false;
                 }
 
                 for (const auto& clip : state.clipUniforms) {
-                    if (rounded_rect_sdf(point - clip.rectCenter, clip.halfExtent, clip.cornerRadius) > 0.0f) {
+                    simd_float3 clipLocal = simd_mul(clip.inverseTransform, simd_float3{point.x, point.y, 1.0f});
+                    if (rounded_rect_sdf(simd_float2{clipLocal.x, clipLocal.y} - clip.rectCenter, clip.halfExtent, clip.cornerRadius) > 0.0f) {
                         return false;
                     }
                 }
@@ -189,7 +202,7 @@ namespace tree {
 
             if (!withinBounds) return false;
 
-            return element->preciseHitTest(point, layout->layout, finalized);
+            return element->preciseHitTest(localPoint, layout->layout, finalized);
         }
 
         Position getPosition() const { return shared.position; }
@@ -245,6 +258,8 @@ namespace tree {
         DirtyBits dirtySubtree{~DirtyBits::None};
         std::optional<ConstraintsKey> constraintsKey;
 
+        simd_float3x3 transform {matrix_identity_float3x3};
+        simd_float3x3 inverseTransform {matrix_identity_float3x3};
     private:
         static uint64_t nextId;
     };

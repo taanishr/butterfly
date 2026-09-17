@@ -186,6 +186,10 @@ namespace tree {
         hash_combine(hash, constraints.absoluteContainingBlock.origin.y);
         hashSize(constraints.absoluteContainingBlock.width, hash);
         hashSize(constraints.absoluteContainingBlock.height, hash);
+        hash_combine(hash, constraints.fixedContainingBlock.origin.x);
+        hash_combine(hash, constraints.fixedContainingBlock.origin.y);
+        hashSize(constraints.fixedContainingBlock.width, hash);
+        hashSize(constraints.fixedContainingBlock.height, hash);
         hash_combine(hash, constraints.scrollport.origin.x);
         hash_combine(hash, constraints.scrollport.origin.y);
         hashSize(constraints.scrollport.width, hash);
@@ -346,7 +350,14 @@ namespace tree {
             .absoluteContainingBlock = {
                 .origin = {0, 0},
                 .width = frameInfo.width,
-                .height = frameInfo.height
+                .height = frameInfo.height,
+                .clipCount = 1
+            },
+            .fixedContainingBlock = {
+                .origin = {0, 0},
+                .width = frameInfo.width,
+                .height = frameInfo.height,
+                .clipCount = 1
             },
             .scrollport = {
                 .origin = {0, 0},
@@ -699,7 +710,9 @@ namespace tree {
             .height = sizeResult.innerSize.height,
         };
 
-        if (node->getPosition() != Position::Static) {
+        // here: absolute replaces its containing block if
+        // not static or is transformed
+        if (node->getPosition() != Position::Static || node->shared.transform) {
             childConstraints.absoluteContainingBlock = {
                 .origin = {0.0f, 0.0f},
                 .width = sizeResult.paddingBoxSize.width,
@@ -707,6 +720,13 @@ namespace tree {
             };
         } else {
             childConstraints.absoluteContainingBlock = constraints.absoluteContainingBlock;
+        }
+
+        // here; fixed replaces its containing block if transformed
+        if (node->shared.transform) {
+            childConstraints.fixedContainingBlock = childConstraints.absoluteContainingBlock;
+        } else {
+            childConstraints.fixedContainingBlock = constraints.fixedContainingBlock;
         }
 
         if (node->shared.overflow == Overflow::Scroll) {
@@ -993,11 +1013,7 @@ namespace tree {
         
         ContainingBlock containingBlock = constraints.containingBlock;
         if (position == Position::Fixed) {
-            containingBlock = {
-                .origin = {0.0f, 0.0f},
-                .width = frameInfo.width,
-                .height = frameInfo.height
-            };
+            containingBlock = constraints.fixedContainingBlock;
         } else if (position == Position::Absolute) {
             containingBlock = constraints.absoluteContainingBlock;
         }
@@ -1055,7 +1071,16 @@ namespace tree {
 
             node->globalOffset = baseOrigin; // why does this field matter?
             
-            layout.clipUniforms = constraints.clipUniforms;
+            size_t clipCount = constraints.clipUniforms.size();
+            if (position == Position::Absolute) {
+                clipCount = constraints.absoluteContainingBlock.clipCount;
+            } else if (position == Position::Fixed) {
+                clipCount = constraints.fixedContainingBlock.clipCount;
+            }
+            layout.clipUniforms.assign(
+                constraints.clipUniforms.begin(),
+                constraints.clipUniforms.begin() + clipCount
+            );
 
             // sticky adjustment
             if (position == Position::Sticky) {
@@ -1125,6 +1150,26 @@ namespace tree {
                 }
             }
 
+            // figure out CSS transform properties
+            // firstly; we determine the transform origin
+            simd_float2 transformOrigin {
+                layout.computedBox.x + layout.computedBox.width * 0.5f,
+                layout.computedBox.y + layout.computedBox.height * 0.5f
+            };
+
+            simd_float3x3 toTransformOrigin = matrix_identity_float3x3;
+            toTransformOrigin.columns[2] = {-transformOrigin.x, -transformOrigin.y, 1.0f};
+
+            simd_float3x3 fromTransformOrigin = matrix_identity_float3x3;
+            fromTransformOrigin.columns[2] = {transformOrigin.x, transformOrigin.y, 1.0f};
+
+            // we do NOT want to move the actual shape; the goal of a CSS transform is explicitly to modify geomertry
+            // so we subtract the origin (right mat-mult), apply the transform, then readd the origin (left mat-mult)
+            simd_float3x3 localTransform = simd_mul(fromTransformOrigin, simd_mul(node->shared.transform.value_or(matrix_identity_float3x3), toTransformOrigin));
+        
+            node->transform = simd_mul(constraints.transform, localTransform);
+            node->inverseTransform = simd_inverse(node->transform);
+
             node->atomized = node->element->postLayout(constraints, node->shared,*node->atomized, result.layout);
 
             // prepare child constraints; add clipping uniforms
@@ -1165,8 +1210,10 @@ namespace tree {
             }
 
             auto childConstraints = constraints;
+            childConstraints.clipUniforms = layout.clipUniforms;
             childConstraints.availableWidth = layout.childConstraints.availableWidth;
             childConstraints.availableHeight = layout.childConstraints.availableHeight;
+            childConstraints.transform = node->transform;
 
             childConstraints.containingBlock = {
                 .origin = currContentOrigin,
@@ -1175,14 +1222,6 @@ namespace tree {
             };
 
             childConstraints.scrollport = childScrollport;
-
-            if (position != Position::Static) {
-                childConstraints.absoluteContainingBlock = {
-                    .origin = currPaddingOrigin,
-                    .width = result.sizeResult.paddingBoxSize.width,
-                    .height = result.sizeResult.paddingBoxSize.height
-                };
-            }
 
             if (node->shared.overflow != Overflow::Visible) {
                 childConstraints.textOverflow = node->shared.textOverflow;
@@ -1202,8 +1241,22 @@ namespace tree {
                         node->shared,
                         outerWidth,
                         outerHeight
-                    )
+                    ),
+                    .inverseTransform = node->inverseTransform
                 });
+            }
+
+            if (position != Position::Static || node->shared.transform) {
+                childConstraints.absoluteContainingBlock = {
+                    .origin = currPaddingOrigin,
+                    .width = result.sizeResult.paddingBoxSize.width,
+                    .height = result.sizeResult.paddingBoxSize.height,
+                    .clipCount = childConstraints.clipUniforms.size()
+                };
+            }
+
+            if (node->shared.transform) {
+                childConstraints.fixedContainingBlock = childConstraints.absoluteContainingBlock;
             }
 
             // recurse
@@ -1215,14 +1268,16 @@ namespace tree {
             // measure scrollable content and update scroll extent
             if (node->shared.overflow == Overflow::Scroll) {
                 simd_float2 contentSize {0.0f, 0.0f};
-                std::function<void(TreeNode*, bool)> includeChildOverflow;
-                includeChildOverflow = [&](TreeNode* child, bool hasRelativeAncestor) {
+                std::function<void(TreeNode*, bool, bool, simd_float3x3)> includeChildOverflow;
+                includeChildOverflow = [&](TreeNode* child, bool absoluteContainingBlockEstablished, bool fixedContainingBlockEstablished, simd_float3x3 parentTransform) {
                     std::visit([&](const auto& childLayout) {
-                        // the rule css defines for overflow
-                        // either an absolute that has a relative ancestor along the path
-                        // or in flow
-                        // everything else doesn't get counted
-                        if (child->shared.position == Position::Fixed || (child->shared.position == Position::Absolute && !hasRelativeAncestor)) {
+                        // the overflow rules are a mess, but basically:
+                        // if we have an absolute containing block established within the subtree starting with the overflowing container
+                        // at the root; then recurse; else stop.
+                        if (child->shared.position == Position::Absolute && !absoluteContainingBlockEstablished) {
+                            return;
+                        }
+                        if (child->shared.position == Position::Fixed && !fixedContainingBlockEstablished) {
                             return;
                         }
 
@@ -1230,6 +1285,35 @@ namespace tree {
                         const auto& childOuterSize = child->layout->sizeResult.outerSize;
                         float childOuterWidth = std::holds_alternative<float>(childOuterSize.width) ? std::get<float>(childOuterSize.width) : 0.0f;
                         float childOuterHeight = std::holds_alternative<float>(childOuterSize.height) ? std::get<float>(childOuterSize.height) : 0.0f;
+
+                        // here; we have to include overflow of transforms
+                        simd_float2 transformOrigin {
+                            childBox.x + childBox.width * 0.5f,
+                            childBox.y + childBox.height * 0.5f
+                        };
+
+                        simd_float3x3 toTransformOrigin = matrix_identity_float3x3;
+                        toTransformOrigin.columns[2] = {-transformOrigin.x, -transformOrigin.y, 1.0f};
+
+                        simd_float3x3 fromTransformOrigin = matrix_identity_float3x3;
+                        fromTransformOrigin.columns[2] = {transformOrigin.x, transformOrigin.y, 1.0f};
+
+                        simd_float3x3 localTransform = simd_mul(fromTransformOrigin, simd_mul(child->shared.transform.value_or(matrix_identity_float3x3), toTransformOrigin));
+                        simd_float3x3 childTransform = simd_mul(parentTransform, localTransform);
+
+                        float left = childBox.x;
+                        float right = childBox.x + childOuterWidth;
+                        float bottom = childBox.y + childOuterHeight;
+                        simd_float3 transformedTopLeft = simd_mul(childTransform, simd_float3{left, childBox.y, 1.0f});
+                        simd_float3 transformedTopRight = simd_mul(childTransform, simd_float3{right, childBox.y, 1.0f});
+                        simd_float3 transformedBottomLeft = simd_mul(childTransform, simd_float3{left, bottom, 1.0f});
+                        simd_float3 transformedBottomRight = simd_mul(childTransform, simd_float3{right, bottom, 1.0f});
+
+                        // our scroll container must not *shrink*; thus, we take mins/max's for left/right/bot
+                        left = std::min({left, transformedTopLeft.x, transformedTopRight.x, transformedBottomLeft.x, transformedBottomRight.x});
+                        right = std::max({right, transformedTopLeft.x, transformedTopRight.x, transformedBottomLeft.x, transformedBottomRight.x});
+                        bottom = std::max({bottom, transformedTopLeft.y, transformedTopRight.y, transformedBottomLeft.y, transformedBottomRight.y});
+
                         if (constraints.inheritedProperties.direction == layout::Direction::rtl) {
                             // rtl needs padding subtracted bc it starts from the RIGHT edge, (which includes both paddings)
                             contentSize.x = std::max(
@@ -1238,13 +1322,13 @@ namespace tree {
                                     + node->scrollViewportSize.x
                                     - paddingLeft
                                     - paddingRight
-                                    - childBox.x
+                                    - left
                             );
                         } else {
-                            contentSize.x = std::max(contentSize.x, childBox.x + childOuterWidth - currContentOrigin.x);
+                            contentSize.x = std::max(contentSize.x, right - currContentOrigin.x);
                         }
 
-                        contentSize.y = std::max(contentSize.y, childBox.y + childOuterHeight - currContentOrigin.y);
+                        contentSize.y = std::max(contentSize.y, bottom - currContentOrigin.y);
 
                         if (child->shared.overflow != Overflow::Visible){
                             return;
@@ -1253,15 +1337,18 @@ namespace tree {
                         for (auto& grandchild : child->children) {
                             includeChildOverflow(
                                 grandchild.get(),
-                                hasRelativeAncestor || child->shared.position == Position::Relative
+                                absoluteContainingBlockEstablished || child->shared.position != Position::Static || child->shared.transform,
+                                fixedContainingBlockEstablished || child->shared.transform,
+                                childTransform
                             );
                         }
                     }, child->layout->layout);
                 };
 
-                bool hasRelativeAncestor = position == Position::Relative;
+                bool absoluteContainingBlockEstablished = position != Position::Static || node->shared.transform;
+                bool fixedContainingBlockEstablished = node->shared.transform.has_value();
                 for (auto& child : node->children) {
-                    includeChildOverflow(child.get(), hasRelativeAncestor);
+                    includeChildOverflow(child.get(), absoluteContainingBlockEstablished, fixedContainingBlockEstablished, matrix_identity_float3x3);
                 }
 
                 // need to include padding after again so content size is correct
@@ -1309,7 +1396,9 @@ namespace tree {
             auto& atomized = *node->atomized;
             auto& layout = node->layout->layout;
             auto& placed = *node->placed;
-            auto finalized = node->element->finalize(constraints, node->shared, atomized, layout, placed);
+            auto finalizedConstraints = constraints;
+            finalizedConstraints.transform = node->transform;
+            auto finalized = node->element->finalize(finalizedConstraints, node->shared, atomized, layout, placed);
             node->finalized = finalized;
             node->constraintsKey = key;
         }

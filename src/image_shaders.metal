@@ -20,6 +20,7 @@ struct ImageStyleUniforms {
 struct ImageGeometryUniforms {
     float2 rectCenter;
     float2 halfExtent;
+    float3x3 transform;
 };
 
 struct ImageUniforms {
@@ -37,22 +38,27 @@ struct ImageVertexIn {
 struct ImageVertexOut {
     float4 position [[position]];
     float4 worldPosition;
+    float2 screenPosition;
     float2 texCords;
 };
 
 vertex ImageVertexOut vertex_image(
     ImageVertexIn in [[stage_in]],
     constant float2* offsets [[buffer(1)]],
-    constant FrameInfo* frameInfo [[buffer(2)]]
+    constant FrameInfo* frameInfo [[buffer(2)]],
+    constant ImageUniforms* uniforms [[buffer(3)]]
 )
 {
     ImageVertexOut out;
 
     in.position += offsets[in.atom_id];
 
-    float2 adjustedPosition = to_ndc(in.position, frameInfo->width, frameInfo->height);
+    float2 screenPosition = (uniforms->geometry.transform * float3(in.position, 1.0)).xy;
+
+    float2 adjustedPosition = to_ndc(screenPosition, frameInfo->width, frameInfo->height);
     out.position = float4(adjustedPosition, 0.0, 1.0);
     out.worldPosition = float4(in.position, 0.0, 1.0);
+    out.screenPosition = screenPosition;
     out.texCords = in.texCords;
 
     return out;
@@ -64,7 +70,7 @@ fragment float4 fragment_image(
     texture2d<float, access::sample> textureMap [[texture(0)]],
     sampler textureSampler [[sampler(0)]]
 ) {
-    if (outside_clips(in.worldPosition.xy, clips, uniforms->numClips)) {
+    if (outside_clips(in.screenPosition, clips, uniforms->numClips)) {
         discard_fragment();
     }
 

@@ -64,6 +64,7 @@ namespace elements {
     struct SVGGeometryUniforms {
         simd_float2 rectCenter;
         simd_float2 halfExtent;
+        simd_float3x3 transform;
     };
 
     struct SVGUniforms {
@@ -466,6 +467,8 @@ namespace elements {
                 geometryUniforms.halfExtent = halfExtent;
             }
 
+            geometryUniforms.transform = constraints.transform;
+
             SVGUniforms uniforms {
                 .style = styleUniforms,
                 .geometry = geometryUniforms,
@@ -501,6 +504,7 @@ namespace elements {
             encoder->setVertexBuffer(atomBuf, 0, 0);
             encoder->setVertexBuffer(atomPlacementBuf, 0, 1);
             encoder->setVertexBuffer(frameInfoBuf, 0, 2);
+            encoder->setVertexBuffer(uniformsBuf, 0, 3);
 
             encoder->setFragmentBuffer(uniformsBuf, 0, 0);
             encoder->setFragmentBuffer(clipsBuf, 0, 1);

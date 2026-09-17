@@ -97,6 +97,7 @@ namespace elements {
         simd_float4 color;
         float fontSize;
         uint32_t numClips;
+        simd_float3x3 transform;
     };
 
 
@@ -672,7 +673,7 @@ namespace elements {
         }
         
         template <LayoutStateType L>
-        Finalized<U> finalize(Fragment<S>& fragment, Constraints&, SharedDescriptor& shared, TextDescriptor& desc, Atomized& atomized, L& layout, Placed& placed) {
+        Finalized<U> finalize(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, TextDescriptor& desc, Atomized& atomized, L& layout, Placed& placed) {
             float fontSize;
 
             if (desc.fontSize.unit == Unit::Pt) {
@@ -682,7 +683,8 @@ namespace elements {
             TextUniforms uniforms {
                 .color = desc.color,
                 .fontSize = fontSize,
-                .numClips = static_cast<uint32_t>(layout.clipUniforms.size())
+                .numClips = static_cast<uint32_t>(layout.clipUniforms.size()),
+                .transform = constraints.transform
             };
 
             fragment.fragmentStorage.uniformsBuffer.write(ctx.frameIndex, &uniforms, sizeof(TextUniforms));

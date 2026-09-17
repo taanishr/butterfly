@@ -281,6 +281,17 @@ namespace layout {
         simd_float2 origin{};
         SizeState width{std::monostate{}};
         SizeState height{std::monostate{}};
+        /*
+        this is what css says about how out of flow elems are clipped:
+        A descendant box is positioned absolutely, partly outside the box. 
+        Such boxes are not always clipped by the overflow property on their ancestors; 
+        specifically, they are not clipped by the overflow of any ancestor between 
+        themselves and their containing block
+
+        Thus; we establish a clip count and cap it whenever you reach an absolute/fixed elem; that avoids
+        clipping via things between the node and its containing block
+        */
+        size_t clipCount{0};
     };
 
     struct Constraints {
@@ -304,7 +315,8 @@ namespace layout {
         */
         FrameInfo frameInfo{}; // viewport size (for fixed)
         ContainingBlock containingBlock{}; // for normal flow: parent content box
-        ContainingBlock absoluteContainingBlock{}; // for absolute: nearest positioned ancestor
+        ContainingBlock absoluteContainingBlock{}; // for absolute: nearest positioned ancestor (or nearest transformed)
+        ContainingBlock fixedContainingBlock{}; // for fixed: viewport, or nearest transformed ancestor
         ContainingBlock scrollport{}; // nearest scroll container's padding box
 
         EdgeIntent edgeIntent{};
@@ -313,11 +325,17 @@ namespace layout {
         std::optional<bidi::TextBidiInput> textBidiInput;
 
         ReplacedAttributes replacedAttributes {};
+
         ResolvedMargins resolvedMargins {};
+
         std::optional<Display> computedDisplay;
+
         float prevInlineHeight{};
         std::vector<ClipUniform> clipUniforms {};
+
         std::optional<TextOverflow&> textOverflow;
+
+        simd_float3x3 transform {matrix_identity_float3x3};
     };
 
     struct LayoutInput {

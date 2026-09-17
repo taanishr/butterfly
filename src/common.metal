@@ -34,6 +34,7 @@ struct ClipUniform {
     float2 rectCenter;
     float2 halfExtent;
     CornerRadii cornerRadius;
+    float3x3 inverseTransform;
 };
 
 struct ShadowUniform {
@@ -81,11 +82,12 @@ inline float rounded_rect_sdf(float2 pt, float2 halfExtent, CornerRadii radii) {
     return distOutside + distInside;
 }
 
-inline bool outside_clips(float2 p, constant ClipUniform* clips, uint count) {
+inline bool outside_clips(float2 screenPosition, constant ClipUniform* clips, uint count) {
     float d = -1e20;
 
     for (uint i = 0; i < count; ++i) {
         ClipUniform clip = clips[i];
+        float2 p = (clip.inverseTransform * float3(screenPosition, 1.0)).xy;
         d = max(d, rounded_rect_sdf(p - clip.rectCenter, clip.halfExtent, clip.cornerRadius));
     }
 
@@ -115,11 +117,6 @@ inline CornerRadii spread_radii(CornerRadii radii, float growth) {
     result.bottomRight = float2(rx.z, ry.z);
     result.bottomLeft = float2(rx.w, ry.w);
     return result;
-}
-
-// regular ass gaussian kernel
-inline float gaussian(float distance, float sigma) {
-    return exp(-0.5 * (distance / sigma) * (distance / sigma)) / (sigma * sqrt(2.0 * M_PI_F));
 }
 
 inline float shadow_coverage(float2 p, float2 halfExtent, CornerRadii radii, float sigma, float spread, float borderWidth) {

@@ -90,6 +90,7 @@ namespace elements {
         simd_float2 rectCenter;
         simd_float2 halfExtent;
         uint32_t numClips;
+        simd_float3x3 transform;
     };
 
     struct DivUniforms {
@@ -384,6 +385,7 @@ namespace elements {
             }
 
             geometryUniforms.numClips = static_cast<uint32_t>(layout.clipUniforms.size());
+            geometryUniforms.transform = constraints.transform;
 
             // draw quad; expanded past the box to hold the outer shadow
             float minX = std::min(0.0f, shadow.offset.x - shadowExtent);
@@ -444,7 +446,8 @@ namespace elements {
             encoder->setVertexBuffer(atomBuf, 0, 0);
             encoder->setVertexBuffer(atomPlacementBuf, 0, 1);
             encoder->setVertexBuffer(frameInfoBuf, 0, 2);
-            
+            encoder->setVertexBuffer(uniformsBuf, 0, 3);
+
             encoder->setFragmentBuffer(uniformsBuf, 0, 0);
             encoder->setFragmentBuffer(clipsBuf, 0, 1);
             

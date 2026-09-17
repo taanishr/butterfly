@@ -4111,35 +4111,267 @@ div()
     // Exercises outer blur/spread/offset, hard-edged (blur 0) shadows, inset shadows
     // on divs and images, spread against elliptical per-corner radii, percent-based
     // offsets, and hover/press state driving shadow changes at finalize only.
+//     using S = gui::Size;
+//     using gui::Display;
+//     using gui::FlexDirection;
+//     using gui::AlignItems;
+//     using gui::JustifyContent;
+//     using runtime::EventType;
+// 
+//     constexpr simd_float4 desk        {0.941, 0.937, 0.925, 1.0};
+//     constexpr simd_float4 paper       {1.000, 1.000, 1.000, 1.0};
+//     constexpr simd_float4 cream       {0.992, 0.973, 0.925, 1.0};
+//     constexpr simd_float4 ink         {0.129, 0.129, 0.153, 1.0};
+//     constexpr simd_float4 muted       {0.478, 0.478, 0.510, 1.0};
+//     constexpr simd_float4 rule        {0.871, 0.863, 0.839, 1.0};
+//     constexpr simd_float4 tangerine   {1.000, 0.502, 0.200, 1.0};
+//     constexpr simd_float4 grape       {0.435, 0.271, 0.831, 1.0};
+//     constexpr simd_float4 mint        {0.180, 0.741, 0.545, 1.0};
+//     constexpr simd_float4 slate       {0.239, 0.271, 0.325, 1.0};
+// 
+//     constexpr simd_float4 umbraSoft   {0.0, 0.0, 0.0, 0.16};
+//     constexpr simd_float4 umbraHard   {0.0, 0.0, 0.0, 1.00};
+//     constexpr simd_float4 umbraLift   {0.0, 0.0, 0.0, 0.26};
+//     constexpr simd_float4 umbraWell   {0.0, 0.0, 0.0, 0.32};
+//     constexpr simd_float4 grapeGlow   {0.435, 0.271, 0.831, 0.55};
+//     constexpr simd_float4 mintGlow    {0.180, 0.741, 0.545, 0.60};
+// 
+//     constexpr auto butterflyPath = "/Users/treja/projects/gui/assets/butterfly.png";
+//     constexpr auto coverPath = "/Users/treja/projects/gui/assets/loveless.jpg";
+// 
+//     auto caption = [&](const char* title, const char* spec) {
+//         return div()
+//             .display(Display::Flex)
+//             .flexDirection(FlexDirection::Col)
+//             .flexGap(S::px(3))
+//         (
+//             text(title).font(ArialBold).fontSize(S::pt(12)).color(ink),
+//             text(spec).font(SFMono).fontSize(S::pt(9)).color(muted)
+//         );
+//     };
+// 
+//     auto cell = [&](auto&& subject, const char* title, const char* spec) {
+//         return div()
+//             .width(S::px(220))
+//             .display(Display::Flex)
+//             .flexDirection(FlexDirection::Col)
+//             .alignItems(AlignItems::Center)
+//             .flexGap(S::px(18))
+//             .paddingTop(S::px(24))
+//             .paddingBottom(S::px(12))
+//         (
+//             subject,
+//             caption(title, spec)
+//         );
+//     };
+// 
+//     div(S::percent(1.0), S::percent(1.0), desk)
+//         .padding(S::px(36))
+//         .overflow(gui::Overflow::Scroll)
+//     (
+//         div()
+//             .display(Display::Flex)
+//             .flexDirection(FlexDirection::Col)
+//             .flexGap(S::px(8))
+//             .marginBottom(S::px(28))
+//         (
+//             text("ELEVATION").font(DINAlternateBold).fontSize(S::pt(26)).color(ink),
+//             text("box-shadow on divs and images · hover the button, click to press it")
+//                 .font(SFMono).fontSize(S::pt(11)).color(muted)
+//         ),
+//         div().height(S::px(1)).color(rule)(),
+// 
+//         div()
+//             .display(Display::Flex)
+//             .flexWrap(gui::FlexWrap::Wrap)
+//             .flexGap(S::px(12))
+//             .justifyContent(JustifyContent::Center)
+//         (
+//             // 1. Soft ambient lift; the bread-and-butter card shadow.
+//             cell(
+//                 div(S::px(140), S::px(100), paper)
+//                     .cornerRadius(S::px(12))
+//                     .shadowOffsetY(S::px(8))
+//                     .shadowBlur(S::px(24))
+//                     .shadowColor(umbraSoft)
+//                 (),
+//                 "Soft card", "0 8 24 0 · rgba(0,0,0,.16)"
+//             ),
+// 
+//             // 2. Hard offset; blur 0 goes through the sharp-edge AA path.
+//             cell(
+//                 div(S::px(140), S::px(100), cream)
+//                     .borderWidth(S::px(2))
+//                     .borderColor(ink)
+//                     .shadowOffsetX(S::px(8))
+//                     .shadowOffsetY(S::px(8))
+//                     .shadowColor(umbraHard)
+//                 (),
+//                 "Brutalist", "8 8 0 0 · #000"
+//             ),
+// 
+//             // 3. Negative spread pulls the shadow in under the box; only the blur leaks out.
+//             cell(
+//                 div(S::px(140), S::px(100), paper)
+//                     .cornerRadius(S::px(50))
+//                     .shadowOffsetY(S::px(14))
+//                     .shadowBlur(S::px(20))
+//                     .shadowSpread(S::px(-10))
+//                     .shadowColor(umbraLift)
+//                 (),
+//                 "Pill, negative spread", "0 14 20 -10"
+//             ),
+// 
+//             // 4. Colored glow; spread without offset.
+//             cell(
+//                 div(S::px(140), S::px(100), grape)
+//                     .cornerRadius(S::px(16))
+//                     .shadowBlur(S::px(32))
+//                     .shadowSpread(S::px(2))
+//                     .shadowColor(grapeGlow)
+//                 (),
+//                 "Glow", "0 0 32 2 · grape 55%"
+//             ),
+// 
+//             // 5. Inset well on a div; shadow sits above the fill, under the border.
+//             cell(
+//                 div(S::px(140), S::px(100), cream)
+//                     .cornerRadius(S::px(10))
+//                     .borderWidth(S::px(1))
+//                     .borderColor(rule)
+//                     .shadowInset(true)
+//                     .shadowOffsetY(S::px(4))
+//                     .shadowBlur(S::px(10))
+//                     .shadowColor(umbraWell)
+//                 (),
+//                 "Inset well", "inset 0 4 10 0"
+//             ),
+// 
+//             // 6. Mismatched elliptical corners with positive spread; exercises the
+//             //    nonlinear radius growth where radius < spread.
+//             cell(
+//                 div(S::px(140), S::px(100), tangerine)
+//                     .cornerRadiusTopLeft(S::px(48))
+//                     .cornerRadiusTopRight(S::px(4))
+//                     .cornerRadiusBottomRight(S::px(30))
+//                     .cornerRadiusBottomLeft(S::px(0))
+//                     .shadowOffsetY(S::px(6))
+//                     .shadowBlur(S::px(10))
+//                     .shadowSpread(S::px(12))
+//                     .shadowColor(umbraSoft)
+//                 (),
+//                 "Uneven corners + spread", "0 6 10 12"
+//             ),
+// 
+//             // 7. Percent offsets resolve against the box.
+//             cell(
+//                 div(S::px(140), S::px(100), slate)
+//                     .cornerRadius(S::px(6))
+//                     .shadowOffsetX(S::percent(0.1))
+//                     .shadowOffsetY(S::percent(0.1))
+//                     .shadowBlur(S::px(2))
+//                     .shadowColor(mintGlow)
+//                 (),
+//                 "Percent offset", "10% 10% 2 0"
+//             ),
+// 
+//             // 8. Image with a drop shadow; the quad grows but UVs stay on the original rect.
+//             cell(
+//                 image(butterflyPath, S::px(140), S::px(100))
+//                     .cornerRadius(S::px(12))
+//                     .shadowOffsetY(S::px(10))
+//                     .shadowBlur(S::px(22))
+//                     .shadowColor(umbraLift),
+//                 "Image drop", "0 10 22 0"
+//             ),
+// 
+//             // 9. Image with an inset vignette over the texture.
+//             cell(
+//                 image(coverPath, S::px(140), S::px(100))
+//                     .cornerRadius(S::px(12))
+//                     .borderWidth(S::px(2))
+//                     .borderColor(paper)
+//                     .shadowInset(true)
+//                     .shadowBlur(S::px(28))
+//                     .shadowSpread(S::px(4))
+//                     .shadowColor(umbraWell),
+//                 "Image vignette", "inset 0 0 28 4"
+//             ),
+// 
+//             // 10. Interactive: hover lifts, click presses into an inset shadow.
+//             cell(
+//                 div(S::px(140), S::px(100), mint)
+//                     .cornerRadius(S::px(14))
+//                     .display(Display::Flex)
+//                     .alignItems(AlignItems::Center)
+//                     .justifyContent(JustifyContent::Center)
+//                     .shadowOffsetY(S::px(4))
+//                     .shadowBlur(S::px(10))
+//                     .shadowColor(umbraSoft)
+//                     .addEventListener(EventType::MouseEnter, [](auto& node, Event&) {
+//                         if (node.shadowInset()) {
+//                             return;
+//                         }
+// 
+//                         node.shadowOffsetY(S::px(12))
+//                             .shadowBlur(S::px(28))
+//                             .shadowColor(umbraLift);
+//                     })
+//                     .addEventListener(EventType::MouseLeave, [](auto& node, Event&) {
+//                         if (node.shadowInset()) {
+//                             return;
+//                         }
+// 
+//                         node.shadowOffsetY(S::px(4))
+//                             .shadowBlur(S::px(10))
+//                             .shadowColor(umbraSoft);
+//                     })
+//                     .addEventListener(EventType::Click, [](auto& node, Event&) {
+//                         bool pressed = !node.shadowInset();
+//                         node.shadowInset(pressed);
+// 
+//                         if (pressed) {
+//                             node.shadowOffsetY(S::px(3))
+//                                 .shadowBlur(S::px(8))
+//                                 .shadowColor(umbraWell);
+//                         } else {
+//                             node.shadowOffsetY(S::px(12))
+//                                 .shadowBlur(S::px(28))
+//                                 .shadowColor(umbraLift);
+//                         }
+//                     })
+//                 (
+//                     text("press me").font(ArialBold).fontSize(S::pt(12)).color(paper)
+//                 ),
+//                 "Interactive", "hover: lift · click: inset"
+//             )
+//         )
+//     );
+
+    // Transforms: rendering, composition, origin, hit testing, clipping,
+    // containing blocks (none vs identity), and scrollable overflow.
     using S = gui::Size;
     using gui::Display;
     using gui::FlexDirection;
     using gui::AlignItems;
     using gui::JustifyContent;
+    using gui::Position;
+    using gui::Overflow;
     using runtime::EventType;
 
-    constexpr simd_float4 desk        {0.941, 0.937, 0.925, 1.0};
-    constexpr simd_float4 paper       {1.000, 1.000, 1.000, 1.0};
-    constexpr simd_float4 cream       {0.992, 0.973, 0.925, 1.0};
-    constexpr simd_float4 ink         {0.129, 0.129, 0.153, 1.0};
-    constexpr simd_float4 muted       {0.478, 0.478, 0.510, 1.0};
-    constexpr simd_float4 rule        {0.871, 0.863, 0.839, 1.0};
-    constexpr simd_float4 tangerine   {1.000, 0.502, 0.200, 1.0};
-    constexpr simd_float4 grape       {0.435, 0.271, 0.831, 1.0};
-    constexpr simd_float4 mint        {0.180, 0.741, 0.545, 1.0};
-    constexpr simd_float4 slate       {0.239, 0.271, 0.325, 1.0};
+    constexpr simd_float4 desk      {0.941, 0.937, 0.925, 1.0};
+    constexpr simd_float4 paper     {1.000, 1.000, 1.000, 1.0};
+    constexpr simd_float4 cream     {0.992, 0.973, 0.925, 1.0};
+    constexpr simd_float4 ink       {0.129, 0.129, 0.153, 1.0};
+    constexpr simd_float4 muted     {0.478, 0.478, 0.510, 1.0};
+    constexpr simd_float4 rule      {0.871, 0.863, 0.839, 1.0};
+    constexpr simd_float4 grape     {0.435, 0.271, 0.831, 1.0};
+    constexpr simd_float4 mint      {0.180, 0.741, 0.545, 1.0};
+    constexpr simd_float4 tangerine {1.000, 0.502, 0.200, 1.0};
+    constexpr simd_float4 slate     {0.239, 0.271, 0.325, 1.0};
+    constexpr simd_float4 ghost     {0.129, 0.129, 0.153, 0.08};
 
-    constexpr simd_float4 umbraSoft   {0.0, 0.0, 0.0, 0.16};
-    constexpr simd_float4 umbraHard   {0.0, 0.0, 0.0, 1.00};
-    constexpr simd_float4 umbraLift   {0.0, 0.0, 0.0, 0.26};
-    constexpr simd_float4 umbraWell   {0.0, 0.0, 0.0, 0.32};
-    constexpr simd_float4 grapeGlow   {0.435, 0.271, 0.831, 0.55};
-    constexpr simd_float4 mintGlow    {0.180, 0.741, 0.545, 0.60};
-
-    constexpr auto butterflyPath = "/Users/treja/projects/gui/assets/butterfly.png";
-    constexpr auto coverPath = "/Users/treja/projects/gui/assets/loveless.jpg";
-
-    auto caption = [&](const char* title, const char* spec) {
+    auto label = [&](const char* title, const char* spec) {
         return div()
             .display(Display::Flex)
             .flexDirection(FlexDirection::Col)
@@ -4150,200 +4382,274 @@ div()
         );
     };
 
-    auto cell = [&](auto&& subject, const char* title, const char* spec) {
+    auto cell = [&](const char* title, const char* spec, auto&& subject) {
         return div()
             .width(S::px(220))
             .display(Display::Flex)
             .flexDirection(FlexDirection::Col)
             .alignItems(AlignItems::Center)
-            .flexGap(S::px(18))
-            .paddingTop(S::px(24))
+            .flexGap(S::px(14))
+            .paddingTop(S::px(20))
             .paddingBottom(S::px(12))
         (
             subject,
-            caption(title, spec)
+            label(title, spec)
         );
+    };
+
+    auto section = [&](const char* title) {
+        return div()
+            .display(Display::Flex)
+            .flexDirection(FlexDirection::Col)
+            .flexGap(S::px(6))
+            .marginTop(S::px(36))
+            .marginBottom(S::px(8))
+        (
+            text(title).font(DINAlternateBold).fontSize(S::pt(18)).color(ink),
+            div().height(S::px(1)).color(rule)()
+        );
+    };
+
+    auto row = [&](auto&&... cells) {
+        return div()
+            .display(Display::Flex)
+            .flexWrap(gui::FlexWrap::Wrap)
+            .flexGap(S::px(12))
+            .justifyContent(JustifyContent::Center)
+        (cells...);
+    };
+
+    // Untransformed footprint drawn under a transformed subject so the offset is visible.
+    auto ghosted = [&](auto&& subject) {
+        return div(S::px(140), S::px(100), ghost)
+            .cornerRadius(S::px(12))
+            .position(Position::Relative)
+        (
+            subject.position(Position::Absolute).top(S::px(0)).left(S::px(0))
+        );
+    };
+
+    auto card = [&](simd_float4 color) {
+        return div(S::px(140), S::px(100), color)
+            .cornerRadius(S::px(12))
+            .borderWidth(S::px(2))
+            .borderColor(ink);
+    };
+
+    auto probe = [&](Position position, simd_float4 color = grape) {
+        return div(S::px(120), S::px(36), color)
+            .position(position)
+            .top(S::px(420))
+            .left(S::px(20))
+            .cornerRadius(S::px(6))
+            .display(Display::Flex)
+            .alignItems(AlignItems::Center)
+            .paddingLeft(S::px(10))
+        (
+            text("probe").font(ArialBold).fontSize(S::pt(11)).color(paper)
+        );
+    };
+
+    auto filler = [&]() {
+        return div(S::px(160), S::px(90), cream)
+            .cornerRadius(S::px(6))
+            .padding(S::px(10))
+        (
+            text("in-flow").font(SFMono).fontSize(S::pt(10)).color(muted)
+        );
+    };
+
+    auto scroller = [&]() {
+        return div(S::px(200), S::px(160), paper)
+            .overflow(Overflow::Scroll)
+            .padding(S::px(12))
+            .borderWidth(S::px(1))
+            .borderColor(rule)
+            .cornerRadius(S::px(8));
     };
 
     div(S::percent(1.0), S::percent(1.0), desk)
         .padding(S::px(36))
-        .overflow(gui::Overflow::Scroll)
+        .overflow(Overflow::Scroll)
     (
         div()
             .display(Display::Flex)
             .flexDirection(FlexDirection::Col)
             .flexGap(S::px(8))
-            .marginBottom(S::px(28))
         (
-            text("ELEVATION").font(DINAlternateBold).fontSize(S::pt(26)).color(ink),
-            text("box-shadow on divs and images · hover the button, click to press it")
+            text("TRANSFORMS").font(DINAlternateBold).fontSize(S::pt(26)).color(ink),
+            text("ghost = layout box · transforms never move layout")
                 .font(SFMono).fontSize(S::pt(11)).color(muted)
         ),
-        div().height(S::px(1)).color(rule)(),
 
-        div()
-            .display(Display::Flex)
-            .flexWrap(gui::FlexWrap::Wrap)
-            .flexGap(S::px(12))
-            .justifyContent(JustifyContent::Center)
-        (
-            // 1. Soft ambient lift; the bread-and-butter card shadow.
-            cell(
-                div(S::px(140), S::px(100), paper)
-                    .cornerRadius(S::px(12))
-                    .shadowOffsetY(S::px(8))
-                    .shadowBlur(S::px(24))
-                    .shadowColor(umbraSoft)
-                (),
-                "Soft card", "0 8 24 0 · rgba(0,0,0,.16)"
+        section("Rendering · origin is box center · order is T·R·S"),
+        row(
+            cell("translate", "(24, 12)",
+                ghosted(card(mint).translate(simd_float2{24.0f, 12.0f})())
             ),
-
-            // 2. Hard offset; blur 0 goes through the sharp-edge AA path.
-            cell(
-                div(S::px(140), S::px(100), cream)
-                    .borderWidth(S::px(2))
-                    .borderColor(ink)
-                    .shadowOffsetX(S::px(8))
-                    .shadowOffsetY(S::px(8))
-                    .shadowColor(umbraHard)
-                (),
-                "Brutalist", "8 8 0 0 · #000"
+            cell("rotate", "0.35 rad · cw",
+                ghosted(card(grape).rotate(0.35f)())
             ),
-
-            // 3. Negative spread pulls the shadow in under the box; only the blur leaks out.
-            cell(
-                div(S::px(140), S::px(100), paper)
-                    .cornerRadius(S::px(50))
-                    .shadowOffsetY(S::px(14))
-                    .shadowBlur(S::px(20))
-                    .shadowSpread(S::px(-10))
-                    .shadowColor(umbraLift)
-                (),
-                "Pill, negative spread", "0 14 20 -10"
+            cell("scale", "(1.3, 0.7)",
+                ghosted(card(tangerine).scale(simd_float2{1.3f, 0.7f})())
             ),
-
-            // 4. Colored glow; spread without offset.
-            cell(
-                div(S::px(140), S::px(100), grape)
-                    .cornerRadius(S::px(16))
-                    .shadowBlur(S::px(32))
-                    .shadowSpread(S::px(2))
-                    .shadowColor(grapeGlow)
-                (),
-                "Glow", "0 0 32 2 · grape 55%"
+            cell("all three", "T(20,0) R(0.25) S(0.8)",
+                ghosted(card(slate).translate(simd_float2{20.0f, 0.0f}).rotate(0.25f).scale(simd_float2{0.8f, 0.8f})())
             ),
-
-            // 5. Inset well on a div; shadow sits above the fill, under the border.
-            cell(
-                div(S::px(140), S::px(100), cream)
-                    .cornerRadius(S::px(10))
-                    .borderWidth(S::px(1))
-                    .borderColor(rule)
-                    .shadowInset(true)
-                    .shadowOffsetY(S::px(4))
-                    .shadowBlur(S::px(10))
-                    .shadowColor(umbraWell)
-                (),
-                "Inset well", "inset 0 4 10 0"
+            cell("nested", "parent R(0.3) · child S(0.6)",
+                ghosted(
+                    card(mint).rotate(0.3f)
+                        .display(Display::Flex)
+                        .alignItems(AlignItems::Center)
+                        .justifyContent(JustifyContent::Center)
+                    (
+                        div(S::px(100), S::px(60), grape)
+                            .cornerRadius(S::px(8))
+                            .scale(simd_float2{0.6f, 0.6f})
+                        ()
+                    )
+                )
             ),
+            cell("border + radius under rotate", "SDF stays crisp",
+                ghosted(
+                    card(paper).rotate(0.6f).borderWidth(S::px(6)).cornerRadius(S::px(40))()
+                )
+            )
+        ),
 
-            // 6. Mismatched elliptical corners with positive spread; exercises the
-            //    nonlinear radius growth where radius < spread.
-            cell(
-                div(S::px(140), S::px(100), tangerine)
-                    .cornerRadiusTopLeft(S::px(48))
-                    .cornerRadiusTopRight(S::px(4))
-                    .cornerRadiusBottomRight(S::px(30))
-                    .cornerRadiusBottomLeft(S::px(0))
-                    .shadowOffsetY(S::px(6))
-                    .shadowBlur(S::px(10))
-                    .shadowSpread(S::px(12))
-                    .shadowColor(umbraSoft)
-                (),
-                "Uneven corners + spread", "0 6 10 12"
+        section("Hit testing · handlers fire on the transformed shape, not the ghost"),
+        row(
+            cell("click toggles", "rotated 0.5",
+                ghosted(
+                    card(mint).rotate(0.5f)
+                        .addEventListener(EventType::Click, [](auto& node, Event&) {
+                            node.color(node.color().y > 0.5f ? grape : mint);
+                        })
+                    ()
+                )
             ),
-
-            // 7. Percent offsets resolve against the box.
-            cell(
-                div(S::px(140), S::px(100), slate)
-                    .cornerRadius(S::px(6))
-                    .shadowOffsetX(S::percent(0.1))
-                    .shadowOffsetY(S::percent(0.1))
-                    .shadowBlur(S::px(2))
-                    .shadowColor(mintGlow)
-                (),
-                "Percent offset", "10% 10% 2 0"
+            cell("hover scales", "1.0 ↔ 1.2 · must not compound",
+                ghosted(
+                    card(tangerine)
+                        .addEventListener(EventType::MouseEnter, [](auto& node, Event&) {
+                            node.scale(simd_float2{1.2f, 1.2f});
+                        })
+                        .addEventListener(EventType::MouseLeave, [](auto& node, Event&) {
+                            node.scale(simd_float2{1.0f, 1.0f});
+                        })
+                    ()
+                )
             ),
+            cell("click inside rotated parent", "child inherits parent transform",
+                ghosted(
+                    card(slate).rotate(0.4f)
+                        .display(Display::Flex)
+                        .alignItems(AlignItems::Center)
+                        .justifyContent(JustifyContent::Center)
+                    (
+                        div(S::px(70), S::px(40), grape)
+                            .cornerRadius(S::px(8))
+                            .addEventListener(EventType::Click, [](auto& node, Event&) {
+                                node.color(node.color().x > 0.5f ? grape : tangerine);
+                            })
+                        ()
+                    )
+                )
+            )
+        ),
 
-            // 8. Image with a drop shadow; the quad grows but UVs stay on the original rect.
-            cell(
-                image(butterflyPath, S::px(140), S::px(100))
-                    .cornerRadius(S::px(12))
-                    .shadowOffsetY(S::px(10))
-                    .shadowBlur(S::px(22))
-                    .shadowColor(umbraLift),
-                "Image drop", "0 10 22 0"
+        section("Clipping · overflow: hidden under transforms"),
+        row(
+            cell("rotated clipper", "child clipped by rotated rect",
+                ghosted(
+                    card(paper).rotate(0.4f).overflow(Overflow::Hidden)
+                    (
+                        div(S::px(240), S::px(30), grape).marginTop(S::px(35)).marginLeft(S::px(-50))()
+                    )
+                )
             ),
-
-            // 9. Image with an inset vignette over the texture.
-            cell(
-                image(coverPath, S::px(140), S::px(100))
-                    .cornerRadius(S::px(12))
-                    .borderWidth(S::px(2))
-                    .borderColor(paper)
-                    .shadowInset(true)
-                    .shadowBlur(S::px(28))
-                    .shadowSpread(S::px(4))
-                    .shadowColor(umbraWell),
-                "Image vignette", "inset 0 0 28 4"
+            cell("rotated child", "clipped by axis-aligned parent",
+                ghosted(
+                    card(paper).overflow(Overflow::Hidden)
+                    (
+                        div(S::px(120), S::px(120), mint).cornerRadius(S::px(8)).rotate(0.7f)()
+                    )
+                )
             ),
+            cell("nested clippers", "both rects apply",
+                ghosted(
+                    card(paper).rotate(0.3f).overflow(Overflow::Hidden)
+                    (
+                        div(S::px(140), S::px(100), cream).overflow(Overflow::Hidden).rotate(-0.5f)
+                        (
+                            div(S::px(200), S::px(200), tangerine).marginTop(S::px(-40)).marginLeft(S::px(-30))()
+                        )
+                    )
+                )
+            )
+        ),
 
-            // 10. Interactive: hover lifts, click presses into an inset shadow.
-            cell(
-                div(S::px(140), S::px(100), mint)
-                    .cornerRadius(S::px(14))
-                    .display(Display::Flex)
-                    .alignItems(AlignItems::Center)
-                    .justifyContent(JustifyContent::Center)
-                    .shadowOffsetY(S::px(4))
-                    .shadowBlur(S::px(10))
-                    .shadowColor(umbraSoft)
-                    .addEventListener(EventType::MouseEnter, [](auto& node, Event&) {
-                        if (node.shadowInset()) {
-                            return;
-                        }
-
-                        node.shadowOffsetY(S::px(12))
-                            .shadowBlur(S::px(28))
-                            .shadowColor(umbraLift);
-                    })
-                    .addEventListener(EventType::MouseLeave, [](auto& node, Event&) {
-                        if (node.shadowInset()) {
-                            return;
-                        }
-
-                        node.shadowOffsetY(S::px(4))
-                            .shadowBlur(S::px(10))
-                            .shadowColor(umbraSoft);
-                    })
-                    .addEventListener(EventType::Click, [](auto& node, Event&) {
-                        bool pressed = !node.shadowInset();
-                        node.shadowInset(pressed);
-
-                        if (pressed) {
-                            node.shadowOffsetY(S::px(3))
-                                .shadowBlur(S::px(8))
-                                .shadowColor(umbraWell);
-                        } else {
-                            node.shadowOffsetY(S::px(12))
-                                .shadowBlur(S::px(28))
-                                .shadowColor(umbraLift);
-                        }
-                    })
+        section("Containing blocks · none vs identity"),
+        row(
+            cell("abs in static", "no CB → escapes to root",
+                card(paper).overflow(Overflow::Hidden)
                 (
-                    text("press me").font(ArialBold).fontSize(S::pt(12)).color(paper)
-                ),
-                "Interactive", "hover: lift · click: inset"
+                    div(S::px(40), S::px(40), grape).position(Position::Absolute).top(S::px(10)).left(S::px(10))()
+                )
+            ),
+            cell("abs in scale(1)", "identity CB → stays in card",
+                card(paper).overflow(Overflow::Hidden).scale(simd_float2{1.0f, 1.0f})
+                (
+                    div(S::px(40), S::px(40), grape).position(Position::Absolute).top(S::px(10)).left(S::px(10))()
+                )
+            ),
+            cell("fixed in scale(1)", "identity CB → stays in card",
+                card(paper).overflow(Overflow::Hidden).scale(simd_float2{1.0f, 1.0f})
+                (
+                    div(S::px(40), S::px(40), tangerine).position(Position::Fixed).top(S::px(10)).left(S::px(10))()
+                )
+            ),
+            cell("abs in rotated", "rotated CB → probe rides along",
+                ghosted(
+                    card(mint).rotate(0.35f)
+                    (
+                        div(S::px(50), S::px(24), grape)
+                            .position(Position::Absolute).top(S::px(30)).left(S::px(80))
+                            .cornerRadius(S::px(4))
+                        ()
+                    )
+                )
+            )
+        ),
+
+        section("Scrollable overflow · scrolls only if the probe counts"),
+        row(
+            cell("abs, static scroller", "no CB in scroller → no scroll",
+                scroller()(filler(), probe(Position::Absolute))
+            ),
+            cell("abs, relative scroller", "CB is scroller → scrolls",
+                scroller().position(Position::Relative)(filler(), probe(Position::Absolute))
+            ),
+            cell("abs, relative wrapper", "CB inside scroller → scrolls",
+                scroller()(filler(), div().position(Position::Relative)(probe(Position::Absolute)))
+            ),
+            cell("abs inside escaped abs", "wrapper escapes → no scroll",
+                scroller()(
+                    filler(),
+                    div().position(Position::Absolute).top(S::px(0)).left(S::px(0))(probe(Position::Absolute))
+                )
+            ),
+            cell("fixed, static scroller", "viewport CB → no scroll",
+                scroller()(filler(), probe(Position::Fixed, tangerine))
+            ),
+            cell("fixed, scale(1) scroller", "identity CB → scrolls",
+                scroller().scale(simd_float2{1.0f, 1.0f})(filler(), probe(Position::Fixed, tangerine))
+            ),
+            cell("translated in-flow", "transformed box → scrolls",
+                scroller()(filler(), div(S::px(120), S::px(36), mint).cornerRadius(S::px(6)).translate(simd_float2{0.0f, 300.0f})())
+            ),
+            cell("rotated in-flow", "AABB of rotated box → scrolls",
+                scroller()(filler(), div(S::px(30), S::px(260), mint).cornerRadius(S::px(6)).rotate(1.2f)())
             )
         )
     );

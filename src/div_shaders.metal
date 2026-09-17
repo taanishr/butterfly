@@ -18,6 +18,7 @@ struct DivVertexIn {
 struct DivVertexOut {
     float4 position [[position]];
     float4 worldPosition;
+    float2 screenPosition;
 };
 
 struct DivStyleUniforms {
@@ -32,6 +33,7 @@ struct DivGeometryUniforms {
     simd_float2 rectCenter;
     simd_float2 halfExtent;
     uint numClips;
+    float3x3 transform;
 };
 
 struct DivUniforms {
@@ -42,16 +44,20 @@ struct DivUniforms {
 vertex DivVertexOut vertex_div(
    DivVertexIn in [[stage_in]],
    constant float2* offsets [[buffer(1)]],
-   constant FrameInfo* frameInfo [[buffer(2)]]
+   constant FrameInfo* frameInfo [[buffer(2)]],
+   constant DivUniforms* uniforms [[buffer(3)]]
 )
 {
     DivVertexOut out;
-    
+
     in.position += offsets[in.atom_id];
-    
-    float2 adjustedPosition = to_ndc(in.position, frameInfo->width, frameInfo->height);
+
+    float2 screenPosition = (uniforms->geometry.transform * float3(in.position, 1.0)).xy;
+
+    float2 adjustedPosition = to_ndc(screenPosition, frameInfo->width, frameInfo->height);
     out.position = float4(adjustedPosition, 0.0, 1.0);
     out.worldPosition = float4(in.position, 0.0, 1.0);
+    out.screenPosition = screenPosition;
     return out;
 }
 
@@ -61,7 +67,7 @@ fragment float4 fragment_div(
     constant ClipUniform* clips [[buffer(1)]]
 )
 {
-    if (outside_clips(in.worldPosition.xy, clips, uniforms->geometry.numClips)) {
+    if (outside_clips(in.screenPosition, clips, uniforms->geometry.numClips)) {
         discard_fragment();
     }
 

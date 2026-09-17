@@ -170,11 +170,10 @@ Goal: expand the engine toward practical app UI.
 ### 3. Better visual styling
 
 - Per-corner radius — done.
-- Box shadows.
-- Dashed borders.
-- Opacity — inherited per-element opacity; group opacity is out of scope initially.
+- Box shadows. - done
+- Dashed borders. - bro this absolutely has to fucking happen next
+- Opacity — inherited per-element opacity; group opacity is out of scope initially. - this has to happen to
 - Linear gradients — deferred.
-- Background images — documentation recipe.
 
 ### 4. Transforms
 
@@ -194,7 +193,7 @@ Goal: expand the engine toward practical app UI.
 - Duration, easing, interruption, and retargeting.
 - Later: opacity, position, and size animation.
 
-### 7. Stacking contexts / overlays
+### 7. Stacking contexts / overlays (I lowkey dont give a fuck about stacking contexts lol? They seem entirely fucking irrelevant)
 
 - Stacking contexts with scoped descendant z-order.
 - Portals / overlay layer.
