@@ -289,10 +289,8 @@ namespace layout {
 
                 if (std::holds_alternative<float>(flex.axis.crossSize(childSizing.outerSize))) {
                     item.hypotheticalCrossSize = std::get<float>(flex.axis.crossSize(childSizing.outerSize));
-                    lineMinimumCrossContribution = std::max(lineMinimumCrossContribution, item.hypotheticalCrossSize);
                     lineMaximumCrossContribution = std::max(lineMaximumCrossContribution, item.hypotheticalCrossSize);
                     line.maxCrossSize = std::max(line.maxCrossSize, item.hypotheticalCrossSize);
-                    continue;
                 }else {
                     item.hypotheticalCrossSize = 0.0f;
                 }

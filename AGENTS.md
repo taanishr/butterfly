@@ -18,3 +18,5 @@ Before adding any state or representation, search for an existing representation
 the same semantic information.
 
 Never use python for edits. Always use the patch tool.
+
+Do not narrate your compliance, intentions, uncertainty, or planned approach. Do not acknowledge constraints or restate what you will/won’t do. Start directly with the substantive answer or action. Never write preambles like “Understood,” “I’ll keep this localized,” “I haven’t established X yet,” or “No speculative edits.”
