@@ -598,53 +598,50 @@ namespace tree {
         reorderLineFragments(*context);
 
         if (sizing.trackIntrinsicWidth) {
-            layout::InlineFormattingInput currentInput{.context = context, .fragments = {.start = 0, .count = fragments.size()}};
-            InlineSizingInput minimumSizing {
-                .availableWidth = std::monostate{},
-                .widthRequest = IntrinsicRequest::Minimum,
-                .trackIntrinsicWidth = false,
-            };
+            if (sizing.widthRequest != IntrinsicRequest::Minimum) {
+                InlineSizingInput minimumSizing {
+                    .availableWidth = std::monostate{},
+                    .widthRequest = IntrinsicRequest::Minimum,
+                    .trackIntrinsicWidth = false,
+                };
+                auto minContext = buildIsolatedInlineBoxes(tree, node, frameInfo, constraints, request, minimumSizing, sizeCache).context;
+                context->minFragments = std::move(minContext->fragments);
+                context->minLineBoxes = std::move(minContext->lineBoxes);
+            }
 
-            InlineSizingInput maximumSizing {
-                .availableWidth = std::monostate{},
-                .widthRequest = IntrinsicRequest::Maximum,
-                .trackIntrinsicWidth = false,
-            };
+            if (sizing.widthRequest != IntrinsicRequest::Maximum) {
+                InlineSizingInput maximumSizing {
+                    .availableWidth = std::monostate{},
+                    .widthRequest = IntrinsicRequest::Maximum,
+                    .trackIntrinsicWidth = false,
+                };
+                auto maxContext = buildIsolatedInlineBoxes(tree, node, frameInfo, constraints, request, maximumSizing, sizeCache).context;
+                context->maxFragments = std::move(maxContext->fragments);
+                context->maxLineBoxes = std::move(maxContext->lineBoxes);
+            }
 
-            auto minInput = sizing.widthRequest == IntrinsicRequest::Minimum ? currentInput : buildIsolatedInlineBoxes(tree, node, frameInfo, constraints, request, minimumSizing, sizeCache);
-            auto maxInput = sizing.widthRequest == IntrinsicRequest::Maximum ? currentInput : buildIsolatedInlineBoxes(tree, node, frameInfo, constraints, request, maximumSizing, sizeCache);
-            
-            std::vector<float> minLineWidths(minInput.lineBoxes().size(), 0.0f);
-            for (const auto& fragment : minInput.lineFragments()) {
-                for (size_t i = 0; i < fragment.atomCount; ++i) {
-                    minLineWidths[fragment.lineBoxIndex] += node->atomized->atoms[fragment.atomStart + i].width;
+            const auto& minLineBoxes = context->minLineBoxes.empty() ? context->lineBoxes : context->minLineBoxes;
+            const auto& maxLineBoxes = context->maxLineBoxes.empty() ? context->lineBoxes : context->maxLineBoxes;
+
+            if (!minLineBoxes.empty() || !maxLineBoxes.empty()) {
+                float minContent = 0.0f;
+                for (const auto& lineBox : minLineBoxes) {
+                    minContent = std::max(minContent, lineBox.width);
                 }
-            }
-            float minContent = 0.0f;
-            for (float width : minLineWidths) {
-                minContent = std::max(minContent, width);
-            }
+                float maxContent = 0.0f;
 
-            std::vector<float> maxLineWidths(maxInput.lineBoxes().size(), 0.0f);
-            for (const auto& fragment : maxInput.lineFragments()) {
-                for (size_t i = 0; i < fragment.atomCount; ++i) {
-                    maxLineWidths[fragment.lineBoxIndex] += node->atomized->atoms[fragment.atomStart + i].width;
+                for (const auto& lineBox : maxLineBoxes) {
+                    maxContent = std::max(maxContent, lineBox.width);
                 }
-            }
-            float maxContent = 0.0f;
-            for (float width : maxLineWidths) {
-                maxContent = std::max(maxContent, width);
-            }
-
-            if (!minLineWidths.empty() || !maxLineWidths.empty()) {
                 context->intrinsicSizes = layout::IntrinsicSizes{.minimum = minContent, .maximum = maxContent};
             }
         }
 
-        const size_t fragmentCount = fragments.size();
         return {
             .context = context,
-            .fragments = {.start = 0, .count = fragmentCount}
+            .fragments = {.start = 0, .count = fragments.size()},
+            .minFragments = {.start = 0, .count = context->minFragments.size()},
+            .maxFragments = {.start = 0, .count = context->maxFragments.size()},
         };
     }
 
