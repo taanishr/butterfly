@@ -3652,7 +3652,7 @@ div()
     //     )
     // );
 
-    // layout_test::scenes::buildBrowser();
+    layout_test::scenes::buildBrowser();
 
     // using S = gui::Size;
 
@@ -4657,146 +4657,146 @@ div()
     // Border styles: solid, dashed, dotted, double across widths, radii
     // (circular, elliptical, uneven, sharp), on divs and images, with shadows,
     // and a click that cycles the style at finalize only.
-    using S = gui::Size;
-    using gui::Display;
-    using gui::FlexDirection;
-    using gui::AlignItems;
-    using gui::JustifyContent;
-    using gui::BorderStyle;
-    using runtime::EventType;
+    // using S = gui::Size;
+    // using gui::Display;
+    // using gui::FlexDirection;
+    // using gui::AlignItems;
+    // using gui::JustifyContent;
+    // using gui::BorderStyle;
+    // using runtime::EventType;
 
-    constexpr simd_float4 desk        {0.941, 0.937, 0.925, 1.0};
-    constexpr simd_float4 paper       {1.000, 1.000, 1.000, 1.0};
-    constexpr simd_float4 cream       {0.992, 0.973, 0.925, 1.0};
-    constexpr simd_float4 ink         {0.129, 0.129, 0.153, 1.0};
-    constexpr simd_float4 muted       {0.478, 0.478, 0.510, 1.0};
-    constexpr simd_float4 rule        {0.871, 0.863, 0.839, 1.0};
-    constexpr simd_float4 tangerine   {1.000, 0.502, 0.200, 1.0};
-    constexpr simd_float4 grape       {0.435, 0.271, 0.831, 1.0};
-    constexpr simd_float4 mint        {0.180, 0.741, 0.545, 1.0};
-    constexpr simd_float4 slate       {0.239, 0.271, 0.325, 1.0};
-    constexpr simd_float4 umbraSoft   {0.0, 0.0, 0.0, 0.16};
+    // constexpr simd_float4 desk        {0.941, 0.937, 0.925, 1.0};
+    // constexpr simd_float4 paper       {1.000, 1.000, 1.000, 1.0};
+    // constexpr simd_float4 cream       {0.992, 0.973, 0.925, 1.0};
+    // constexpr simd_float4 ink         {0.129, 0.129, 0.153, 1.0};
+    // constexpr simd_float4 muted       {0.478, 0.478, 0.510, 1.0};
+    // constexpr simd_float4 rule        {0.871, 0.863, 0.839, 1.0};
+    // constexpr simd_float4 tangerine   {1.000, 0.502, 0.200, 1.0};
+    // constexpr simd_float4 grape       {0.435, 0.271, 0.831, 1.0};
+    // constexpr simd_float4 mint        {0.180, 0.741, 0.545, 1.0};
+    // constexpr simd_float4 slate       {0.239, 0.271, 0.325, 1.0};
+    // constexpr simd_float4 umbraSoft   {0.0, 0.0, 0.0, 0.16};
 
-    constexpr auto butterflyPath = "/Users/treja/projects/gui/assets/butterfly.png";
+    // constexpr auto butterflyPath = "/Users/treja/projects/gui/assets/butterfly.png";
 
-    auto caption = [&](const char* title, const char* spec) {
-        return div()
-            .display(Display::Flex)
-            .flexDirection(FlexDirection::Col)
-            .flexGap(S::px(3))
-        (
-            text(title).font(ArialBold).fontSize(S::pt(12)).color(ink),
-            text(spec).font(SFMono).fontSize(S::pt(9)).color(muted)
-        );
-    };
+    // auto caption = [&](const char* title, const char* spec) {
+    //     return div()
+    //         .display(Display::Flex)
+    //         .flexDirection(FlexDirection::Col)
+    //         .flexGap(S::px(3))
+    //     (
+    //         text(title).font(ArialBold).fontSize(S::pt(12)).color(ink),
+    //         text(spec).font(SFMono).fontSize(S::pt(9)).color(muted)
+    //     );
+    // };
 
-    auto cell = [&](auto&& subject, const char* title, const char* spec) {
-        return div()
-            .width(S::px(220))
-            .display(Display::Flex)
-            .flexDirection(FlexDirection::Col)
-            .alignItems(AlignItems::Center)
-            .flexGap(S::px(18))
-            .paddingTop(S::px(24))
-            .paddingBottom(S::px(12))
-        (
-            subject,
-            caption(title, spec)
-        );
-    };
+    // auto cell = [&](auto&& subject, const char* title, const char* spec) {
+    //     return div()
+    //         .width(S::px(220))
+    //         .display(Display::Flex)
+    //         .flexDirection(FlexDirection::Col)
+    //         .alignItems(AlignItems::Center)
+    //         .flexGap(S::px(18))
+    //         .paddingTop(S::px(24))
+    //         .paddingBottom(S::px(12))
+    //     (
+    //         subject,
+    //         caption(title, spec)
+    //     );
+    // };
 
-    auto swatch = [&](simd_float4 fill, float width, BorderStyle style, simd_float4 stroke = ink) {
-        return div(S::px(140), S::px(100), fill)
-            .borderWidth(S::px(width))
-            .borderStyle(style)
-            .borderColor(stroke);
-    };
+    // auto swatch = [&](simd_float4 fill, float width, BorderStyle style, simd_float4 stroke = ink) {
+    //     return div(S::px(140), S::px(100), fill)
+    //         .borderWidth(S::px(width))
+    //         .borderStyle(style)
+    //         .borderColor(stroke);
+    // };
 
-    div(S::percent(1.0), S::percent(1.0), desk)
-        .padding(S::px(36))
-        .overflow(gui::Overflow::Scroll)
-    (
-        div()
-            .display(Display::Flex)
-            .flexDirection(FlexDirection::Col)
-            .flexGap(S::px(8))
-            .marginBottom(S::px(28))
-        (
-            text("STROKES").font(DINAlternateBold).fontSize(S::pt(26)).color(ink),
-            text("border-style on divs and images · click the last card to cycle its style")
-                .font(SFMono).fontSize(S::pt(11)).color(muted)
-        ),
-        div().height(S::px(1)).color(rule)(),
+    // div(S::percent(1.0), S::percent(1.0), desk)
+    //     .padding(S::px(36))
+    //     .overflow(gui::Overflow::Scroll)
+    // (
+    //     div()
+    //         .display(Display::Flex)
+    //         .flexDirection(FlexDirection::Col)
+    //         .flexGap(S::px(8))
+    //         .marginBottom(S::px(28))
+    //     (
+    //         text("STROKES").font(DINAlternateBold).fontSize(S::pt(26)).color(ink),
+    //         text("border-style on divs and images · click the last card to cycle its style")
+    //             .font(SFMono).fontSize(S::pt(11)).color(muted)
+    //     ),
+    //     div().height(S::px(1)).color(rule)(),
 
-        div()
-            .display(Display::Flex)
-            .flexWrap(gui::FlexWrap::Wrap)
-            .flexGap(S::px(12))
-            .justifyContent(JustifyContent::Center)
-        (
-            cell(swatch(paper, 1, BorderStyle::Solid).cornerRadius(S::px(12))(),
-                "Solid hairline", "1 solid · r12"),
-            cell(swatch(cream, 6, BorderStyle::Solid)(),
-                "Solid thick", "6 solid · sharp"),
-            cell(swatch(paper, 1, BorderStyle::Dashed)(),
-                "Dashed hairline", "1 dashed · sharp"),
-            cell(swatch(paper, 3, BorderStyle::Dashed).cornerRadius(S::px(12))(),
-                "Dashed", "3 dashed · r12"),
-            cell(swatch(cream, 6, BorderStyle::Dashed, grape).cornerRadius(S::px(50))(),
-                "Dashed pill", "6 dashed · r50"),
-            cell(swatch(paper, 3, BorderStyle::Dashed, tangerine).cornerRadius(S::percent(0.5))(),
-                "Dashed ellipse", "3 dashed · r50%"),
-            cell(swatch(paper, 4, BorderStyle::Dashed, slate)
-                    .cornerRadiusTopLeft(S::px(48))
-                    .cornerRadiusTopRight(S::px(4))
-                    .cornerRadiusBottomRight(S::px(30))
-                    .cornerRadiusBottomLeft(S::px(0))(),
-                "Dashed uneven", "4 dashed · 48 4 30 0"),
-            cell(swatch(paper, 2, BorderStyle::Dotted).cornerRadius(S::px(8))(),
-                "Dotted", "2 dotted · r8"),
-            cell(swatch(cream, 6, BorderStyle::Dotted, mint).cornerRadius(S::px(20))(),
-                "Dotted thick", "6 dotted · r20"),
-            cell(swatch(paper, 5, BorderStyle::Dotted, grape).cornerRadius(S::percent(0.5))(),
-                "Dotted ellipse", "5 dotted · r50%"),
-            cell(swatch(paper, 6, BorderStyle::Double).cornerRadius(S::px(10))(),
-                "Double", "6 double · r10"),
-            cell(swatch(cream, 3, BorderStyle::Double, slate)(),
-                "Double thin", "3 double · sharp"),
-            cell(swatch(paper, 3, BorderStyle::Dashed)
-                    .cornerRadius(S::px(12))
-                    .shadowOffsetY(S::px(8))
-                    .shadowBlur(S::px(24))
-                    .shadowColor(umbraSoft)(),
-                "Dashed + shadow", "3 dashed · 0 8 24"),
-            cell(image(butterflyPath, S::px(140), S::px(100))
-                    .cornerRadius(S::px(12))
-                    .borderWidth(S::px(4))
-                    .borderStyle(BorderStyle::Dotted)
-                    .borderColor(paper),
-                "Image dotted", "4 dotted · r12"),
-            cell(image(butterflyPath, S::px(140), S::px(100))
-                    .cornerRadius(S::px(12))
-                    .borderWidth(S::px(3))
-                    .borderStyle(BorderStyle::Dashed)
-                    .borderColor(ink),
-                "Image dashed", "3 dashed · r12"),
-            cell(swatch(mint, 4, BorderStyle::Solid, ink)
-                    .cornerRadius(S::px(14))
-                    .display(Display::Flex)
-                    .alignItems(AlignItems::Center)
-                    .justifyContent(JustifyContent::Center)
-                    .addEventListener(EventType::Click, [](auto& node, Event&) {
-                        switch (node.borderStyle()) {
-                            case BorderStyle::Solid:  node.borderStyle(BorderStyle::Dashed); break;
-                            case BorderStyle::Dashed: node.borderStyle(BorderStyle::Dotted); break;
-                            case BorderStyle::Dotted: node.borderStyle(BorderStyle::Double); break;
-                            case BorderStyle::Double: node.borderStyle(BorderStyle::Solid); break;
-                        }
-                    })
-                (
-                    text("click me").font(ArialBold).fontSize(S::pt(12)).color(paper)
-                ),
-                "Interactive", "click: solid → dashed → dotted → double")
-        )
-    );
+    //     div()
+    //         .display(Display::Flex)
+    //         .flexWrap(gui::FlexWrap::Wrap)
+    //         .flexGap(S::px(12))
+    //         .justifyContent(JustifyContent::Center)
+    //     (
+    //         cell(swatch(paper, 1, BorderStyle::Solid).cornerRadius(S::px(12))(),
+    //             "Solid hairline", "1 solid · r12"),
+    //         cell(swatch(cream, 6, BorderStyle::Solid)(),
+    //             "Solid thick", "6 solid · sharp"),
+    //         cell(swatch(paper, 1, BorderStyle::Dashed)(),
+    //             "Dashed hairline", "1 dashed · sharp"),
+    //         cell(swatch(paper, 3, BorderStyle::Dashed).cornerRadius(S::px(12))(),
+    //             "Dashed", "3 dashed · r12"),
+    //         cell(swatch(cream, 6, BorderStyle::Dashed, grape).cornerRadius(S::px(50))(),
+    //             "Dashed pill", "6 dashed · r50"),
+    //         cell(swatch(paper, 3, BorderStyle::Dashed, tangerine).cornerRadius(S::percent(0.5))(),
+    //             "Dashed ellipse", "3 dashed · r50%"),
+    //         cell(swatch(paper, 4, BorderStyle::Dashed, slate)
+    //                 .cornerRadiusTopLeft(S::px(48))
+    //                 .cornerRadiusTopRight(S::px(4))
+    //                 .cornerRadiusBottomRight(S::px(30))
+    //                 .cornerRadiusBottomLeft(S::px(0))(),
+    //             "Dashed uneven", "4 dashed · 48 4 30 0"),
+    //         cell(swatch(paper, 2, BorderStyle::Dotted).cornerRadius(S::px(8))(),
+    //             "Dotted", "2 dotted · r8"),
+    //         cell(swatch(cream, 6, BorderStyle::Dotted, mint).cornerRadius(S::px(20))(),
+    //             "Dotted thick", "6 dotted · r20"),
+    //         cell(swatch(paper, 5, BorderStyle::Dotted, grape).cornerRadius(S::percent(0.5))(),
+    //             "Dotted ellipse", "5 dotted · r50%"),
+    //         cell(swatch(paper, 6, BorderStyle::Double).cornerRadius(S::px(10))(),
+    //             "Double", "6 double · r10"),
+    //         cell(swatch(cream, 3, BorderStyle::Double, slate)(),
+    //             "Double thin", "3 double · sharp"),
+    //         cell(swatch(paper, 3, BorderStyle::Dashed)
+    //                 .cornerRadius(S::px(12))
+    //                 .shadowOffsetY(S::px(8))
+    //                 .shadowBlur(S::px(24))
+    //                 .shadowColor(umbraSoft)(),
+    //             "Dashed + shadow", "3 dashed · 0 8 24"),
+    //         cell(image(butterflyPath, S::px(140), S::px(100))
+    //                 .cornerRadius(S::px(12))
+    //                 .borderWidth(S::px(4))
+    //                 .borderStyle(BorderStyle::Dotted)
+    //                 .borderColor(paper),
+    //             "Image dotted", "4 dotted · r12"),
+    //         cell(image(butterflyPath, S::px(140), S::px(100))
+    //                 .cornerRadius(S::px(12))
+    //                 .borderWidth(S::px(3))
+    //                 .borderStyle(BorderStyle::Dashed)
+    //                 .borderColor(ink),
+    //             "Image dashed", "3 dashed · r12"),
+    //         cell(swatch(mint, 4, BorderStyle::Solid, ink)
+    //                 .cornerRadius(S::px(14))
+    //                 .display(Display::Flex)
+    //                 .alignItems(AlignItems::Center)
+    //                 .justifyContent(JustifyContent::Center)
+    //                 .addEventListener(EventType::Click, [](auto& node, Event&) {
+    //                     switch (node.borderStyle()) {
+    //                         case BorderStyle::Solid:  node.borderStyle(BorderStyle::Dashed); break;
+    //                         case BorderStyle::Dashed: node.borderStyle(BorderStyle::Dotted); break;
+    //                         case BorderStyle::Dotted: node.borderStyle(BorderStyle::Double); break;
+    //                         case BorderStyle::Double: node.borderStyle(BorderStyle::Solid); break;
+    //                     }
+    //                 })
+    //             (
+    //                 text("click me").font(ArialBold).fontSize(S::pt(12)).color(paper)
+    //             ),
+    //             "Interactive", "click: solid → dashed → dotted → double")
+    //     )
+    // );
 }

@@ -88,7 +88,7 @@ fragment float4 fragment_image(
 
     float borderD = border_pattern(localPosition, d, uniforms->geometry.halfExtent, uniforms->style.cornerRadius, uniforms->style.border);
     float borderMask = clamp(0.5 - borderD/px, 0.0, 1.0);
-    float fillMask = innerMask;
+    float fillMask = outerMask;
 
     float4 fillColor = color;
     float4 borderColor = uniforms->style.border.color;
@@ -100,7 +100,7 @@ fragment float4 fragment_image(
                                           uniforms->style.cornerRadius, shadow.sigma, -shadow.spread,
                                           uniforms->style.border.width);
     float outerShadowMask = outerCoverage * (1.0 - outerMask) * float(shadow.inset == 0);
-    float insetShadowMask = (1.0 - innerCoverage) * float(shadow.inset != 0);
+    float insetShadowMask = (1.0 - innerCoverage) * innerMask * float(shadow.inset != 0);
 
     float3 premulFill = fillColor.rgb * fillColor.a;
     float fillAlpha = fillColor.a;
@@ -112,11 +112,12 @@ fragment float4 fragment_image(
     float outerAlpha = shadow.color.a * outerShadowMask;
     float3 premulOuter = shadow.color.rgb * outerAlpha;
 
-    float3 premulBorder = borderColor.rgb * borderColor.a * borderMask;
+    float borderAlpha = borderColor.a * borderMask;
+    float3 premulBorder = borderColor.rgb * borderAlpha;
 
-    float alpha = borderMask * borderColor.a + insetOverFillAlpha + outerAlpha;
+    float alpha = borderAlpha + insetOverFillAlpha * (1.0 - borderAlpha) + outerAlpha;
 
-    float3 rgb = premulInset + premulOuter + premulBorder;
+    float3 rgb = premulBorder + premulInset * (1.0 - borderAlpha) + premulOuter;
 
     if (alpha > 1e-6) {
         rgb /= alpha;
