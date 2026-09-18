@@ -153,9 +153,9 @@ Goal: expand the engine toward practical app UI.
 
 ### Priorities
 
-1. Box shadows.
-2. Transforms.
-3. Stacking contexts.
+1. Box shadows. (done)
+2. Transforms. (done)
+3. Stacking contexts. (idgaf until we need to do opacity)
 4. Transitions / animations, initially supporting transforms.
 
 ### 1. Better sizing — done
@@ -171,14 +171,14 @@ Goal: expand the engine toward practical app UI.
 
 - Per-corner radius — done.
 - Box shadows. - done
-- Dashed borders. - bro this absolutely has to fucking happen next
+- Dashed borders. - done
 - Opacity — inherited per-element opacity; group opacity is out of scope initially. - this has to happen to
 - Linear gradients — deferred.
 
-### 4. Transforms
+### 4. Transforms (done)
 
 - Translate, scale, rotate.
-- Transform origin.
+- Transform origin. (eh not really done lol); need to add this
 - Clipping and hit testing that follow transforms.
 
 ### 5. Interaction primitives — deferred

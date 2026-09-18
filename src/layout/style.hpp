@@ -165,6 +165,25 @@ namespace style {
         simd_float3x3 inverseTransform {matrix_identity_float3x3};
     };
 
+    enum class BorderStyle : uint32_t {
+        Solid = 0,
+        Dashed = 1,
+        Dotted = 2,
+        Double = 3,
+    };
+
+    struct Border {
+        Size width{};
+        simd_float4 color{0, 0, 0, 1};
+        BorderStyle style{BorderStyle::Solid};
+    };
+
+    struct BorderUniform {
+        float width{0};
+        simd_float4 color{0, 0, 0, 1};
+        BorderStyle style{BorderStyle::Solid};
+    };
+
     struct BoxShadow {
         Size offsetX{};
         Size offsetY{};
@@ -231,8 +250,7 @@ namespace style {
         Size cornerRadius{};
         std::optional<Size> cornerRadiusTopLeft, cornerRadiusTopRight;
         std::optional<Size> cornerRadiusBottomRight, cornerRadiusBottomLeft;
-        Size borderWidth{};
-        simd_float4 borderColor{0,0,0,1};
+        Border border{};
         BoxShadow boxShadow{};
 
         Overflow overflow {Overflow::Visible};

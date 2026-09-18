@@ -24,8 +24,7 @@ struct DivVertexOut {
 struct DivStyleUniforms {
     float4 color;
     CornerRadii cornerRadius;
-    float borderWidth;
-    float4 borderColor;
+    BorderUniform border;
     ShadowUniform shadow;
 };
 
@@ -77,22 +76,23 @@ fragment float4 fragment_div(
     float px = fwidth(d);
 
     float outerMask = clamp(0.5 - d/px, 0.0, 1.0);
-    
-    float innerD = d + uniforms->style.borderWidth;
+
+    float innerD = d + uniforms->style.border.width;
     float innerMask = clamp(0.5 - innerD/px, 0.0, 1.0);
-    
-    float borderMask = outerMask - innerMask;
+
+    float borderD = border_pattern(localPosition, d, uniforms->geometry.halfExtent, uniforms->style.cornerRadius, uniforms->style.border);
+    float borderMask = clamp(0.5 - borderD/px, 0.0, 1.0);
     float fillMask = innerMask;
 
     float4 fillColor = uniforms->style.color;
-    float4 borderColor = uniforms->style.borderColor;
+    float4 borderColor = uniforms->style.border.color;
     ShadowUniform shadow = uniforms->style.shadow;
 
     float outerCoverage = shadow_coverage(localPosition - shadow.offset, uniforms->geometry.halfExtent,
                                           uniforms->style.cornerRadius, shadow.sigma, shadow.spread, 0.0);
     float innerCoverage = shadow_coverage(localPosition - shadow.offset, uniforms->geometry.halfExtent,
                                           uniforms->style.cornerRadius, shadow.sigma, -shadow.spread,
-                                          uniforms->style.borderWidth);
+                                          uniforms->style.border.width);
     
     float outerShadowMask = outerCoverage * (1.0 - outerMask) * float(shadow.inset == 0);
     float insetShadowMask = (1.0 - innerCoverage) * float(shadow.inset != 0);

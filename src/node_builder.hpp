@@ -25,6 +25,7 @@ namespace elements {
     using style::AlignContent;
     using style::AlignItems;
     using style::AlignSelf;
+    using style::BorderStyle;
     using style::Display;
     using style::FlexDirection;
     using style::FlexWrap;
@@ -554,21 +555,31 @@ namespace elements {
         }
 
         Size borderWidth() const {
-            return node->shared.borderWidth;
+            return node->shared.border.width;
         }
 
         Derived& borderWidth(Size width) {
-            node->shared.borderWidth = width;
+            node->shared.border.width = width;
             markDirty(layoutDirtyBits());
             return self();
         }
 
         simd_float4 borderColor() const {
-            return node->shared.borderColor;
+            return node->shared.border.color;
         }
 
         Derived& borderColor(simd_float4 color) {
-            node->shared.borderColor = color;
+            node->shared.border.color = color;
+            markDirty(DirtyBits::Finalize);
+            return self();
+        }
+
+        BorderStyle borderStyle() const {
+            return node->shared.border.style;
+        }
+
+        Derived& borderStyle(BorderStyle borderStyle) {
+            node->shared.border.style = borderStyle;
             markDirty(DirtyBits::Finalize);
             return self();
         }

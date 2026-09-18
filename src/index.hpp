@@ -26,6 +26,7 @@ namespace gui {
     using style::TextAlign;
     using style::WhiteSpace;
     using style::WordBreak;
+    using style::BorderStyle;
 
     using elements::div;
     using elements::text;

@@ -34,6 +34,7 @@ namespace elements {
     using layout::toLayoutInput;
     using runtime::HitTestContext;
     using runtime::UIContext;
+    using style::BorderUniform;
     using style::ClipUniform;
     using style::CornerRadii;
     using style::ShadowUniform;
@@ -81,8 +82,7 @@ namespace elements {
     struct DivStyleUniforms {
         simd_float4 color;
         CornerRadii cornerRadius;
-        float borderWidth;
-        simd_float4 borderColor;
+        BorderUniform border;
         ShadowUniform shadow;
     };
 
@@ -325,8 +325,8 @@ namespace elements {
             // border width calculation
             float borderWidth = 0.0;
 
-            if (shared.borderWidth.unit == Unit::Px) {
-                SizeState resolvedBorderWidth = calculateSize(shared.borderWidth, constraints.availableWidth);
+            if (shared.border.width.unit == Unit::Px) {
+                SizeState resolvedBorderWidth = calculateSize(shared.border.width, constraints.availableWidth);
                 if (std::holds_alternative<float>(resolvedBorderWidth)) {
                     borderWidth = std::get<float>(resolvedBorderWidth);
                 }
@@ -366,8 +366,7 @@ namespace elements {
             DivStyleUniforms styleUniforms{
                 .color = desc.color,
                 .cornerRadius = cornerRadius,
-                .borderWidth = borderWidth,
-                .borderColor = shared.borderColor,
+                .border = { .width = borderWidth, .color = shared.border.color, .style = shared.border.style },
                 .shadow = shadow
             };
 

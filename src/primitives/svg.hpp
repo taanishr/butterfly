@@ -33,8 +33,10 @@ namespace elements {
     using layout::toLayoutInput;
     using runtime::HitTestContext;
     using runtime::UIContext;
+    using style::BorderUniform;
     using style::ClipUniform;
     using style::CornerRadii;
+    using style::ShadowUniform;
     using style::SharedDescriptor;
     using style::Size;
     using style::Unit;
@@ -57,8 +59,8 @@ namespace elements {
 
     struct SVGStyleUniforms {
         CornerRadii cornerRadius;
-        float borderWidth;
-        simd_float4 borderColor;
+        BorderUniform border;
+        ShadowUniform shadow;
     };
 
     struct SVGGeometryUniforms {
@@ -437,8 +439,8 @@ namespace elements {
         Finalized<U> finalize(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, SVGDescriptor& desc, Atomized& atomized, L& layout, Placed& placed) {
             float borderWidth = 0.0;
 
-            if (shared.borderWidth.unit == Unit::Px) {
-                SizeState resolvedBorderWidth = calculateSize(shared.borderWidth, constraints.availableWidth);
+            if (shared.border.width.unit == Unit::Px) {
+                SizeState resolvedBorderWidth = calculateSize(shared.border.width, constraints.availableWidth);
                 if (std::holds_alternative<float>(resolvedBorderWidth)) {
                     borderWidth = std::get<float>(resolvedBorderWidth);
                 }
@@ -450,17 +452,39 @@ namespace elements {
                 layout.computedBox.height
             );
 
+            float width = layout.computedBox.width;
+            float height = layout.computedBox.height;
+            const auto& boxShadow = shared.boxShadow;
+            float shadowBlur = std::max(boxShadow.blur.resolveOr(Size::px(width), 0.0f), 0.0f);
+
+            ShadowUniform shadow {
+                .offset = {
+                    boxShadow.offsetX.resolveOr(Size::px(width), 0.0f),
+                    boxShadow.offsetY.resolveOr(Size::px(height), 0.0f)
+                },
+                .spread = boxShadow.spread.resolveOr(Size::px(width), 0.0f),
+                .sigma = shadowBlur / 2.0f,
+                .color = boxShadow.color,
+                .inset = boxShadow.inset ? 1u : 0u
+            };
+
+            float shadowExtent = 0.0f;
+
+            if (!boxShadow.inset) {
+                shadowExtent = std::max(shadow.spread, 0.0f) + 1.5f * shadowBlur;
+            }
+
             SVGStyleUniforms styleUniforms {
                 .cornerRadius = cornerRadius,
-                .borderWidth = borderWidth,
-                .borderColor = shared.borderColor
+                .border = { .width = borderWidth, .color = shared.border.color, .style = shared.border.style },
+                .shadow = shadow
             };
 
             SVGGeometryUniforms geometryUniforms;
 
             if (placed.placements.size() > 0) {
                 auto offset = placed.placements.front();
-                simd_float2 halfExtent { layout.computedBox.width / 2.0f, layout.computedBox.height / 2.0f };
+                simd_float2 halfExtent { width / 2.0f, height / 2.0f };
                 simd_float2 rectCenter { offset.x + halfExtent.x, offset.y + halfExtent.y };
 
                 geometryUniforms.rectCenter = rectCenter;
@@ -468,6 +492,27 @@ namespace elements {
             }
 
             geometryUniforms.transform = constraints.transform;
+
+            float minX = std::min(0.0f, shadow.offset.x - shadowExtent);
+            float minY = std::min(0.0f, shadow.offset.y - shadowExtent);
+            float maxX = std::max(width, width + shadow.offset.x + shadowExtent);
+            float maxY = std::max(height, height + shadow.offset.y + shadowExtent);
+
+            float minU = width > 0.0f ? minX / width : 0.0f;
+            float maxU = width > 0.0f ? maxX / width : 1.0f;
+            float minV = height > 0.0f ? minY / height : 0.0f;
+            float maxV = height > 0.0f ? maxY / height : 1.0f;
+
+            std::array<SVGPoint, 6> atomPoints {{
+                {{minX, minY}, {minU, minV}, 0},
+                {{maxX, minY}, {maxU, minV}, 0},
+                {{minX, maxY}, {minU, maxV}, 0},
+                {{minX, maxY}, {minU, maxV}, 0},
+                {{maxX, minY}, {maxU, minV}, 0},
+                {{maxX, maxY}, {maxU, maxV}, 0}
+            }};
+
+            fragment.fragmentStorage.atomsBuffer.write(ctx.frameIndex, atomPoints.data(), 6*sizeof(SVGPoint));
 
             SVGUniforms uniforms {
                 .style = styleUniforms,

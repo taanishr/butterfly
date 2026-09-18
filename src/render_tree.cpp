@@ -652,7 +652,7 @@ namespace tree {
                 .paddingRight = node->shared.paddingRight.value_or(node->shared.padding),
                 .paddingBottom = node->shared.paddingBottom.value_or(node->shared.padding),
                 .paddingLeft = node->shared.paddingLeft.value_or(node->shared.padding),
-                .borderWidth = node->shared.borderWidth,
+                .borderWidth = node->shared.border.width,
                 .margins = prelayout.resolvedMargins,
                 .aspectRatio = node->shared.aspectRatio,
                 .automaticWidth = (node->getPosition() == Position::Absolute || node->getPosition() == Position::Fixed) ? AutomaticSizing::UseContent : AutomaticSizing::UseAvailable,

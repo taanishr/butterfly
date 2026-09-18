@@ -1529,7 +1529,7 @@ namespace layout {
                 .paddingRight = childNode->shared.paddingRight.value_or(childNode->shared.padding),
                 .paddingBottom = childNode->shared.paddingBottom.value_or(childNode->shared.padding),
                 .paddingLeft = childNode->shared.paddingLeft.value_or(childNode->shared.padding),
-                .borderWidth = childNode->shared.borderWidth,
+                .borderWidth = childNode->shared.border.width,
                 .margins = childNode->preLayout->resolvedMargins,
                 .aspectRatio = childNode->shared.aspectRatio,
                 .automaticWidth = AutomaticSizing::UseContent,
@@ -1658,7 +1658,7 @@ namespace layout {
                 .paddingRight = childNode->shared.paddingRight.value_or(childNode->shared.padding),
                 .paddingBottom = childNode->shared.paddingBottom.value_or(childNode->shared.padding),
                 .paddingLeft = childNode->shared.paddingLeft.value_or(childNode->shared.padding),
-                .borderWidth = childNode->shared.borderWidth,
+                .borderWidth = childNode->shared.border.width,
                 .margins = childNode->preLayout->resolvedMargins,
                 .aspectRatio = childNode->shared.aspectRatio,
                 .automaticWidth = effectiveJustify == JustifyItems::Stretch
@@ -1818,7 +1818,7 @@ namespace layout {
                 .paddingRight = childNode->shared.paddingRight.value_or(childNode->shared.padding),
                 .paddingBottom = childNode->shared.paddingBottom.value_or(childNode->shared.padding),
                 .paddingLeft = childNode->shared.paddingLeft.value_or(childNode->shared.padding),
-                .borderWidth = childNode->shared.borderWidth,
+                .borderWidth = childNode->shared.border.width,
                 .margins = childNode->preLayout->resolvedMargins,
                 .aspectRatio = childNode->shared.aspectRatio,
                 .automaticWidth = effectiveJustify == JustifyItems::Stretch

@@ -37,6 +37,19 @@ struct ClipUniform {
     float3x3 inverseTransform;
 };
 
+enum class BorderStyle : uint {
+    Solid = 0,
+    Dashed = 1,
+    Dotted = 2,
+    Double = 3,
+};
+
+struct BorderUniform {
+    float width;
+    float4 color;
+    BorderStyle style;
+};
+
 struct ShadowUniform {
     float2 offset;
     float spread;
@@ -117,6 +130,307 @@ inline CornerRadii spread_radii(CornerRadii radii, float growth) {
     result.bottomRight = float2(rx.z, ry.z);
     result.bottomLeft = float2(rx.w, ry.w);
     return result;
+}
+
+inline float circle_sdf(float2 pt, float2 center, float radius) {
+    return length(pt - center) - radius;
+}
+
+inline float ellipse_arc_length(float2 radius, float angle) {
+    const uint subintervals = 4;
+    float step = angle / subintervals;
+    float sum = 0.0;
+
+    for (uint i = 0; i <= subintervals; ++i) {
+        float theta = i * step;
+        float weight = (i == 0 || i == subintervals) ? 1.0 : (i % 2 == 1 ? 4.0 : 2.0);
+        float2 tangent = float2(radius.x * sin(theta), radius.y * cos(theta));
+        sum += weight * length(tangent);
+    }
+
+    return sum * step / 3.0;
+}
+
+inline float ellipse_arc_angle(float2 radius, float arcLength, float quarterArcLength) {
+    const uint iterations = 3;
+    // initial guess; based on circle
+    float angle = arcLength / quarterArcLength * M_PI_2_F;
+
+    for (uint i = 0; i < iterations; ++i) {
+        float2 tangent = float2(radius.x * sin(angle), radius.y * cos(angle));
+        angle += (arcLength - ellipse_arc_length(radius, angle)) / length(tangent);
+    }
+
+    return angle;
+}
+
+// return 
+inline float border_pattern(float2 pt, float d, float2 halfExtent, CornerRadii radii, BorderUniform border) {
+    if (border.width <= 0.0) {
+        return 1e20;
+    }
+
+    if (border.style == BorderStyle::Solid) {
+        return max(d, -d - border.width);
+    }
+
+    if (border.style == BorderStyle::Double) {
+        float outerThird = max(d, -d - border.width / 3.0);
+        float innerThird = max(d + 2.0 * border.width / 3.0, -d - border.width);
+        return min(outerThird, innerThird);
+    }
+    
+    const float epsilon = 0.0001;
+
+    // dash and gap ratios; switch based on dashed v dotted
+    float dashLength = select(3.0 * border.width, border.width, border.style == BorderStyle::Dotted);
+    float gapLength = select(2.0 * border.width, border.width, border.style == BorderStyle::Dotted);
+    
+    // figure out extent and corners of center line
+    /*
+    /---------- <- border edge
+    |/--------- <- this is the center line
+    |||-------- <- border edge
+     ^
+     |
+     center line
+     */
+    float2 centerlineExtent = max(halfExtent - border.width / 2.0, 0.0);
+    CornerRadii centerlineRadii = spread_radii(radii, -border.width / 2.0);
+    
+    // compute the perimeter of the rounded rect (we compute the corners, arc lengths of corners, and the side lengths)
+    float4 rx = max(float4(centerlineRadii.topLeft.x, centerlineRadii.topRight.x, centerlineRadii.bottomRight.x, centerlineRadii.bottomLeft.x), epsilon);
+    float4 ry = max(float4(centerlineRadii.topLeft.y, centerlineRadii.topRight.y, centerlineRadii.bottomRight.y, centerlineRadii.bottomLeft.y), epsilon);
+    float4 arc = float4(
+        ellipse_arc_length(float2(rx.x, ry.x), M_PI_2_F),
+        ellipse_arc_length(float2(rx.y, ry.y), M_PI_2_F),
+        ellipse_arc_length(float2(rx.z, ry.z), M_PI_2_F),
+        ellipse_arc_length(float2(rx.w, ry.w), M_PI_2_F)
+    );
+    float4 quadrantLength = centerlineExtent.x + centerlineExtent.y - rx - ry + arc;
+    float perimeter = max(quadrantLength.x + quadrantLength.y + quadrantLength.z + quadrantLength.w, epsilon);
+
+    // compute s; the distance *along the line*
+    /*
+        for each quadrant
+        1. start with the previous qudrant lengths
+        2. project onto the two sides + corner (parametric projection)
+        3. find out which segment the point is closest to
+        4. calculate that distance
+        5.
+     */
+    float s = 0.0f;
+    if (pt.y < 0.0 && pt.x < 0.0) {
+        // side 1 projection
+        float leftLength = centerlineExtent.y - ry.x;
+        float leftAlong = clamp(-pt.y, 0.0, leftLength);
+        float2 leftProjection = float2(-centerlineExtent.x, -leftAlong);
+        float leftDistance = dot(pt - leftProjection, pt - leftProjection);
+
+        // corner proj
+        // get the angle (on the ellipse projected to circular space) then complete the projection
+        float2 cornerCenter = float2(-centerlineExtent.x + rx.x, -centerlineExtent.y + ry.x);
+        float2 cornerRadius = float2(rx.x, ry.x);
+        float2 fromCenter = (pt - cornerCenter) / cornerRadius;
+        float cornerAngle = clamp(atan2(-fromCenter.y, -fromCenter.x), 0.0, M_PI_2_F);
+        float2 cornerProjection = cornerCenter - cornerRadius * float2(cos(cornerAngle), sin(cornerAngle));
+        float cornerDistance = dot(pt - cornerProjection, pt - cornerProjection);
+
+        // side 2 projection
+        float topLength = centerlineExtent.x - rx.x;
+        float topAlong = clamp(pt.x + centerlineExtent.x - rx.x, 0.0, topLength);
+        float2 topProjection = float2(-centerlineExtent.x + rx.x + topAlong, -centerlineExtent.y);
+        float topDistance = dot(pt - topProjection, pt - topProjection);
+
+        float bestDistance = leftDistance;
+        s = leftAlong;
+        if (cornerDistance < bestDistance) {
+            bestDistance = cornerDistance;
+            // because the angle is in elliptical space
+            // we need to compute an integral to get how far this arc length is
+            // lmfao. calculus 3!!!
+            s = leftLength + ellipse_arc_length(cornerRadius, cornerAngle);
+        }
+        
+        if (topDistance < bestDistance) {
+            s = leftLength + arc.x + topAlong;
+        }
+    } else if (pt.y < 0.0) {
+        float distanceToSegmentStart = quadrantLength.x;
+
+        float topLength = centerlineExtent.x - rx.y;
+        float topAlong = clamp(pt.x, 0.0, topLength);
+        float2 topProjection = float2(topAlong, -centerlineExtent.y);
+        float topDistance = dot(pt - topProjection, pt - topProjection);
+
+        float2 cornerCenter = float2(centerlineExtent.x - rx.y, -centerlineExtent.y + ry.y);
+        float2 cornerRadius = float2(rx.y, ry.y);
+        float2 fromCenter = (pt - cornerCenter) / cornerRadius;
+        float cornerAngle = clamp(atan2(fromCenter.x, -fromCenter.y), 0.0, M_PI_2_F);
+        float2 cornerProjection = cornerCenter + cornerRadius * float2(sin(cornerAngle), -cos(cornerAngle));
+        float cornerDistance = dot(pt - cornerProjection, pt - cornerProjection);
+
+        float rightLength = centerlineExtent.y - ry.y;
+        float rightAlong = clamp(pt.y + centerlineExtent.y - ry.y, 0.0, rightLength);
+        float2 rightProjection = float2(centerlineExtent.x, -centerlineExtent.y + ry.y + rightAlong);
+        float rightDistance = dot(pt - rightProjection, pt - rightProjection);
+
+        float bestDistance = topDistance;
+        s = distanceToSegmentStart + topAlong;
+        if (cornerDistance < bestDistance) {
+            bestDistance = cornerDistance;
+            s = distanceToSegmentStart + topLength + ellipse_arc_length(cornerRadius.yx, cornerAngle);
+        }
+        
+        if (rightDistance < bestDistance) {
+            s = distanceToSegmentStart + topLength + arc.y + rightAlong;
+        }
+    } else if (pt.x >= 0.0) {
+        float distanceToSegmentStart = quadrantLength.x + quadrantLength.y;
+
+        float rightLength = centerlineExtent.y - ry.z;
+        float rightAlong = clamp(pt.y, 0.0, rightLength);
+        float2 rightProjection = float2(centerlineExtent.x, rightAlong);
+        float rightDistance = dot(pt - rightProjection, pt - rightProjection);
+
+        float2 cornerCenter = float2(centerlineExtent.x - rx.z, centerlineExtent.y - ry.z);
+        float2 cornerRadius = float2(rx.z, ry.z);
+        float2 fromCenter = (pt - cornerCenter) / cornerRadius;
+        float cornerAngle = clamp(atan2(fromCenter.y, fromCenter.x), 0.0, M_PI_2_F);
+        float2 cornerProjection = cornerCenter + cornerRadius * float2(cos(cornerAngle), sin(cornerAngle));
+        float cornerDistance = dot(pt - cornerProjection, pt - cornerProjection);
+
+        float bottomLength = centerlineExtent.x - rx.z;
+        float bottomAlong = clamp(centerlineExtent.x - rx.z - pt.x, 0.0, bottomLength);
+        float2 bottomProjection = float2(centerlineExtent.x - rx.z - bottomAlong, centerlineExtent.y);
+        float bottomDistance = dot(pt - bottomProjection, pt - bottomProjection);
+
+        float bestDistance = rightDistance;
+        s = distanceToSegmentStart + rightAlong;
+        if (cornerDistance < bestDistance) {
+            bestDistance = cornerDistance;
+            s = distanceToSegmentStart + rightLength + ellipse_arc_length(cornerRadius, cornerAngle);
+        }
+        
+        if (bottomDistance < bestDistance) {
+            s = distanceToSegmentStart + rightLength + arc.z + bottomAlong;
+        }
+    } else {
+        float distanceToSegmentStart = quadrantLength.x + quadrantLength.y + quadrantLength.z;
+
+        float bottomLength = centerlineExtent.x - rx.w;
+        float bottomAlong = clamp(-pt.x, 0.0, bottomLength);
+        float2 bottomProjection = float2(-bottomAlong, centerlineExtent.y);
+        float bottomDistance = dot(pt - bottomProjection, pt - bottomProjection);
+
+        float2 cornerCenter = float2(-centerlineExtent.x + rx.w, centerlineExtent.y - ry.w);
+        float2 cornerRadius = float2(rx.w, ry.w);
+        float2 fromCenter = (pt - cornerCenter) / cornerRadius;
+        float cornerAngle = clamp(atan2(-fromCenter.x, fromCenter.y), 0.0, M_PI_2_F);
+        float2 cornerProjection = cornerCenter + cornerRadius * float2(-sin(cornerAngle), cos(cornerAngle));
+        float cornerDistance = dot(pt - cornerProjection, pt - cornerProjection);
+
+        float leftLength = centerlineExtent.y - ry.w;
+        float leftAlong = clamp(centerlineExtent.y - ry.w - pt.y, 0.0, leftLength);
+        float2 leftProjection = float2(-centerlineExtent.x, centerlineExtent.y - ry.w - leftAlong);
+        float leftDistance = dot(pt - leftProjection, pt - leftProjection);
+
+        float bestDistance = bottomDistance;
+        s = distanceToSegmentStart + bottomAlong;
+        if (cornerDistance < bestDistance) {
+            bestDistance = cornerDistance;
+            s = distanceToSegmentStart + bottomLength + ellipse_arc_length(cornerRadius.yx, cornerAngle);
+        }
+        
+        if (leftDistance < bestDistance) {
+            s = distanceToSegmentStart + bottomLength + arc.w + leftAlong;
+        }
+    }
+
+    float period = perimeter / max(1.0, round(perimeter / (dashLength + gapLength)));
+    float nearest = round(s / period);
+
+    // if dashed; job done, just return the period calc
+    if (border.style == BorderStyle::Dashed) {
+        float dash = abs(s - nearest * period) - dashLength / 2.0;
+        return max(max(d, -d - border.width), dash);
+    }
+
+    // now we have to compute the dots
+    /*
+        we're basically converting the distance along the projection
+        into a distance from the nearest dot
+     */
+    float nearestDot = 1e20;
+
+    // check left side, middle & right side of dot position to figure out who the nearest dot is
+    // this really isnt that hard to understand its just v long because of the quadrant checks
+    for (int i = -1; i <= 1; ++i) {
+        float t = (nearest + i) * period;
+        t -= perimeter * floor(t / perimeter);
+        float2 center;
+
+        if (t < quadrantLength.x) {
+            float leftLength = centerlineExtent.y - ry.x;
+            float2 cornerCenter = float2(-centerlineExtent.x + rx.x, -centerlineExtent.y + ry.x);
+            float2 cornerRadius = float2(rx.x, ry.x);
+
+            if (t < leftLength) {
+                center = float2(-centerlineExtent.x, -t);
+            } else if (t < leftLength + arc.x) {
+                float cornerAngle = ellipse_arc_angle(cornerRadius, t - leftLength, arc.x);
+                center = cornerCenter - cornerRadius * float2(cos(cornerAngle), sin(cornerAngle));
+            } else {
+                center = float2(-centerlineExtent.x + rx.x + t - leftLength - arc.x, -centerlineExtent.y);
+            }
+        } else if (t < quadrantLength.x + quadrantLength.y) {
+            t -= quadrantLength.x;
+            float topLength = centerlineExtent.x - rx.y;
+            float2 cornerCenter = float2(centerlineExtent.x - rx.y, -centerlineExtent.y + ry.y);
+            float2 cornerRadius = float2(rx.y, ry.y);
+
+            if (t < topLength) {
+                center = float2(t, -centerlineExtent.y);
+            } else if (t < topLength + arc.y) {
+                float cornerAngle = ellipse_arc_angle(cornerRadius.yx, t - topLength, arc.y);
+                center = cornerCenter + cornerRadius * float2(sin(cornerAngle), -cos(cornerAngle));
+            } else {
+                center = float2(centerlineExtent.x, -centerlineExtent.y + ry.y + t - topLength - arc.y);
+            }
+        } else if (t < quadrantLength.x + quadrantLength.y + quadrantLength.z) {
+            t -= quadrantLength.x + quadrantLength.y;
+            float rightLength = centerlineExtent.y - ry.z;
+            float2 cornerCenter = float2(centerlineExtent.x - rx.z, centerlineExtent.y - ry.z);
+            float2 cornerRadius = float2(rx.z, ry.z);
+
+            if (t < rightLength) {
+                center = float2(centerlineExtent.x, t);
+            } else if (t < rightLength + arc.z) {
+                float cornerAngle = ellipse_arc_angle(cornerRadius, t - rightLength, arc.z);
+                center = cornerCenter + cornerRadius * float2(cos(cornerAngle), sin(cornerAngle));
+            } else {
+                center = float2(centerlineExtent.x - rx.z - t + rightLength + arc.z, centerlineExtent.y);
+            }
+        } else {
+            t -= quadrantLength.x + quadrantLength.y + quadrantLength.z;
+            float bottomLength = centerlineExtent.x - rx.w;
+            float2 cornerCenter = float2(-centerlineExtent.x + rx.w, centerlineExtent.y - ry.w);
+            float2 cornerRadius = float2(rx.w, ry.w);
+
+            if (t < bottomLength) {
+                center = float2(-t, centerlineExtent.y);
+            } else if (t < bottomLength + arc.w) {
+                float cornerAngle = ellipse_arc_angle(cornerRadius.yx, t - bottomLength, arc.w);
+                center = cornerCenter + cornerRadius * float2(-sin(cornerAngle), cos(cornerAngle));
+            } else {
+                center = float2(-centerlineExtent.x, centerlineExtent.y - ry.w - t + bottomLength + arc.w);
+            }
+        }
+
+        nearestDot = min(nearestDot, circle_sdf(pt, center, border.width / 2.0));
+    }
+
+    return nearestDot;
 }
 
 inline float shadow_coverage(float2 p, float2 halfExtent, CornerRadii radii, float sigma, float spread, float borderWidth) {

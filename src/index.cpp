@@ -3352,273 +3352,273 @@ div()
 // );
 
 
-using S = gui::Size;
-constexpr auto butterflyPath = "/Users/treja/projects/gui/assets/butterfly.png";
+// using S = gui::Size;
+// constexpr auto butterflyPath = "/Users/treja/projects/gui/assets/butterfly.png";
 
-div()
-    .width(S::percent(1.0))
-    .height(S::percent(1.0))
-    .padding(S::px(24))
-    .overflow(gui::Overflow::Scroll)
-    .color(simd_float4{0.055,0.067,0.086,1.0})
-    .display(gui::Display::Flex)
-    .flexDirection(gui::FlexDirection::Col)
-    .flexGap(S::px(18))
-(
-    div()
-        .width(S::percent(1.0))
-        .height(S::px(56))
-        .flexShrink(S::px(0))
-        .paddingLeft(S::px(18))
-        .paddingRight(S::px(18))
-        .display(gui::Display::Flex)
-        .alignItems(gui::AlignItems::Center)
-        .justifyContent(gui::JustifyContent::SpaceBetween)
-        .color(simd_float4{0.102,0.122,0.161,1.0})
-    (
-        text("FIELD NOTES")
-            .font(ArialBold)
-            .fontSize(S::pt(24))
-            .color(simd_float4{1.0,1.0,1.0,1.0}),
-        text("Aspect-ratio layout study")
-            .font(Arial)
-            .fontSize(S::pt(16))
-            .color(simd_float4{0.522,0.569,0.678,1.0})
-    ),
+// div()
+//     .width(S::percent(1.0))
+//     .height(S::percent(1.0))
+//     .padding(S::px(24))
+//     .overflow(gui::Overflow::Scroll)
+//     .color(simd_float4{0.055,0.067,0.086,1.0})
+//     .display(gui::Display::Flex)
+//     .flexDirection(gui::FlexDirection::Col)
+//     .flexGap(S::px(18))
+// (
+//     div()
+//         .width(S::percent(1.0))
+//         .height(S::px(56))
+//         .flexShrink(S::px(0))
+//         .paddingLeft(S::px(18))
+//         .paddingRight(S::px(18))
+//         .display(gui::Display::Flex)
+//         .alignItems(gui::AlignItems::Center)
+//         .justifyContent(gui::JustifyContent::SpaceBetween)
+//         .color(simd_float4{0.102,0.122,0.161,1.0})
+//     (
+//         text("FIELD NOTES")
+//             .font(ArialBold)
+//             .fontSize(S::pt(24))
+//             .color(simd_float4{1.0,1.0,1.0,1.0}),
+//         text("Aspect-ratio layout study")
+//             .font(Arial)
+//             .fontSize(S::pt(16))
+//             .color(simd_float4{0.522,0.569,0.678,1.0})
+//     ),
 
-    div()
-        .width(S::percent(1.0))
-        .display(gui::Display::Flex)
-        .alignItems(gui::AlignItems::FlexStart)
-        .flexGap(S::px(18))
-    (
-        div()
-            .minWidth(S::px(0))
-            .flexGrow(S::px(1))
-            .display(gui::Display::Flex)
-            .flexDirection(gui::FlexDirection::Col)
-            .flexGap(S::px(16))
-        (
-            div()
-                .position(gui::Position::Relative)
-                .width(S::percent(1.0))
-                .height(S::autoSize())
-                .aspectRatio(4, 1)
-                .padding(S::px(24))
-                .color(simd_float4{0.180,0.478,0.722,1.0})
-            (
-                div()
-                (
-                    text("DESERT LIGHT")
-                        .font(ArialBold)
-                        .fontSize(S::pt(37))
-                        .color(simd_float4{1.0,1.0,1.0,1.0})
-                ),
-                div()
-                (
-                    text("A responsive hero whose height follows its final width.")
-                        .font(Arial)
-                        .fontSize(S::pt(17))
-                        .color(simd_float4{0.820,0.902,0.980,1.0})
-                ),
-                div()
-                    .position(gui::Position::Absolute)
-                    .width(S::px(164))
-                    .height(S::autoSize())
-                    .aspectRatio(2, 1)
-                    .right(S::px(24))
-                    .top(S::px(24))
-                    .padding(S::px(12))
-                    .color(simd_float4{0.980,0.761,0.200,1.0})
-                (
-                    text("FEATURED")
-                        .font(ArialBold)
-                        .fontSize(S::pt(15))
-                        .color(simd_float4{0.161,0.122,0.039,1.0})
-                )
-            ),
+//     div()
+//         .width(S::percent(1.0))
+//         .display(gui::Display::Flex)
+//         .alignItems(gui::AlignItems::FlexStart)
+//         .flexGap(S::px(18))
+//     (
+//         div()
+//             .minWidth(S::px(0))
+//             .flexGrow(S::px(1))
+//             .display(gui::Display::Flex)
+//             .flexDirection(gui::FlexDirection::Col)
+//             .flexGap(S::px(16))
+//         (
+//             div()
+//                 .position(gui::Position::Relative)
+//                 .width(S::percent(1.0))
+//                 .height(S::autoSize())
+//                 .aspectRatio(4, 1)
+//                 .padding(S::px(24))
+//                 .color(simd_float4{0.180,0.478,0.722,1.0})
+//             (
+//                 div()
+//                 (
+//                     text("DESERT LIGHT")
+//                         .font(ArialBold)
+//                         .fontSize(S::pt(37))
+//                         .color(simd_float4{1.0,1.0,1.0,1.0})
+//                 ),
+//                 div()
+//                 (
+//                     text("A responsive hero whose height follows its final width.")
+//                         .font(Arial)
+//                         .fontSize(S::pt(17))
+//                         .color(simd_float4{0.820,0.902,0.980,1.0})
+//                 ),
+//                 div()
+//                     .position(gui::Position::Absolute)
+//                     .width(S::px(164))
+//                     .height(S::autoSize())
+//                     .aspectRatio(2, 1)
+//                     .right(S::px(24))
+//                     .top(S::px(24))
+//                     .padding(S::px(12))
+//                     .color(simd_float4{0.980,0.761,0.200,1.0})
+//                 (
+//                     text("FEATURED")
+//                         .font(ArialBold)
+//                         .fontSize(S::pt(15))
+//                         .color(simd_float4{0.161,0.122,0.039,1.0})
+//                 )
+//             ),
 
-            div()
-                .width(S::percent(1.0))
-                .display(gui::Display::Grid)
-                .gridTemplateColumns({S::fr(1), S::fr(1), S::fr(1)})
-                .gridColumnGap(S::px(14))
-            (
-                div()
-                    .width(S::percent(1.0))
-                    .height(S::autoSize())
-                    .aspectRatio(5, 3)
-                    .padding(S::px(16))
-                    .color(simd_float4{0.961,0.302,0.459,1.0})
-                (
-                    text("CANYON").font(ArialBold).fontSize(S::pt(16)).color(simd_float4{1.0,1.0,1.0,1.0})
-                ),
-                div()
-                    .width(S::percent(1.0))
-                    .height(S::autoSize())
-                    .aspectRatio(5, 3)
-                    .padding(S::px(16))
-                    .color(simd_float4{0.380,0.922,0.561,1.0})
-                (
-                    text("TIDELINE").font(ArialBold).fontSize(S::pt(16)).color(simd_float4{0.039,0.141,0.090,1.0})
-                ),
-                div()
-                    .width(S::percent(1.0))
-                    .height(S::autoSize())
-                    .aspectRatio(5, 3)
-                    .padding(S::px(16))
-                    .color(simd_float4{0.639,0.420,0.961,1.0})
-                (
-                    text("NIGHTFALL").font(ArialBold).fontSize(S::pt(16)).color(simd_float4{1.0,1.0,1.0,1.0})
-                )
-            )
-        ),
+//             div()
+//                 .width(S::percent(1.0))
+//                 .display(gui::Display::Grid)
+//                 .gridTemplateColumns({S::fr(1), S::fr(1), S::fr(1)})
+//                 .gridColumnGap(S::px(14))
+//             (
+//                 div()
+//                     .width(S::percent(1.0))
+//                     .height(S::autoSize())
+//                     .aspectRatio(5, 3)
+//                     .padding(S::px(16))
+//                     .color(simd_float4{0.961,0.302,0.459,1.0})
+//                 (
+//                     text("CANYON").font(ArialBold).fontSize(S::pt(16)).color(simd_float4{1.0,1.0,1.0,1.0})
+//                 ),
+//                 div()
+//                     .width(S::percent(1.0))
+//                     .height(S::autoSize())
+//                     .aspectRatio(5, 3)
+//                     .padding(S::px(16))
+//                     .color(simd_float4{0.380,0.922,0.561,1.0})
+//                 (
+//                     text("TIDELINE").font(ArialBold).fontSize(S::pt(16)).color(simd_float4{0.039,0.141,0.090,1.0})
+//                 ),
+//                 div()
+//                     .width(S::percent(1.0))
+//                     .height(S::autoSize())
+//                     .aspectRatio(5, 3)
+//                     .padding(S::px(16))
+//                     .color(simd_float4{0.639,0.420,0.961,1.0})
+//                 (
+//                     text("NIGHTFALL").font(ArialBold).fontSize(S::pt(16)).color(simd_float4{1.0,1.0,1.0,1.0})
+//                 )
+//             )
+//         ),
 
-        div()
-            .width(S::px(300))
-            .flexShrink(S::px(0))
-            .padding(S::px(14))
-            .display(gui::Display::Flex)
-            .flexDirection(gui::FlexDirection::Col)
-            .flexGap(S::px(14))
-            .color(simd_float4{0.102,0.122,0.161,1.0})
-        (
-            image(butterflyPath, S::percent(1.0), S::autoSize())
-                .aspectRatio(1, 1),
-            text("SPECIMEN 07")
-                .font(ArialBold)
-                .fontSize(S::pt(19))
-                .color(simd_float4{1.0,1.0,1.0,1.0}),
-            text("The replaced image shares the same square presentation as the GUI reference.")
-                .font(Arial)
-                .fontSize(S::pt(16))
-                .color(simd_float4{0.522,0.569,0.678,1.0}),
-            div()
-                .width(S::percent(1.0))
-                .height(S::autoSize())
-                .aspectRatio(3, 1)
-                .padding(S::px(12))
-                .color(simd_float4{0.980,0.761,0.200,1.0})
-            (
-                text("VIEW COLLECTION")
-                    .font(ArialBold)
-                    .fontSize(S::pt(15))
-                    .color(simd_float4{0.161,0.122,0.039,1.0})
-            )
-        )
-    ),
+//         div()
+//             .width(S::px(300))
+//             .flexShrink(S::px(0))
+//             .padding(S::px(14))
+//             .display(gui::Display::Flex)
+//             .flexDirection(gui::FlexDirection::Col)
+//             .flexGap(S::px(14))
+//             .color(simd_float4{0.102,0.122,0.161,1.0})
+//         (
+//             image(butterflyPath, S::percent(1.0), S::autoSize())
+//                 .aspectRatio(1, 1),
+//             text("SPECIMEN 07")
+//                 .font(ArialBold)
+//                 .fontSize(S::pt(19))
+//                 .color(simd_float4{1.0,1.0,1.0,1.0}),
+//             text("The replaced image shares the same square presentation as the GUI reference.")
+//                 .font(Arial)
+//                 .fontSize(S::pt(16))
+//                 .color(simd_float4{0.522,0.569,0.678,1.0}),
+//             div()
+//                 .width(S::percent(1.0))
+//                 .height(S::autoSize())
+//                 .aspectRatio(3, 1)
+//                 .padding(S::px(12))
+//                 .color(simd_float4{0.980,0.761,0.200,1.0})
+//             (
+//                 text("VIEW COLLECTION")
+//                     .font(ArialBold)
+//                     .fontSize(S::pt(15))
+//                     .color(simd_float4{0.161,0.122,0.039,1.0})
+//             )
+//         )
+//     ),
 
-    div()
-        .width(S::percent(1.0))
-        .height(S::autoSize())
-        .maxHeight(S::px(120))
-        .aspectRatio(10, 1)
-        .flexShrink(S::px(0))
-        .paddingLeft(S::px(22))
-        .paddingRight(S::px(22))
-        .display(gui::Display::Flex)
-        .alignItems(gui::AlignItems::Center)
-        .justifyContent(gui::JustifyContent::SpaceBetween)
-        .color(simd_float4{0.141,0.161,0.212,1.0})
-    (
-        text("Build a collection around the dimensions that matter.")
-            .font(ArialBold)
-            .fontSize(S::pt(19))
-            .color(simd_float4{1.0,1.0,1.0,1.0}),
-        text("EXPLORE ->")
-            .font(ArialBold)
-            .fontSize(S::pt(16))
-            .color(simd_float4{0.980,0.761,0.200,1.0})
-    ),
+//     div()
+//         .width(S::percent(1.0))
+//         .height(S::autoSize())
+//         .maxHeight(S::px(120))
+//         .aspectRatio(10, 1)
+//         .flexShrink(S::px(0))
+//         .paddingLeft(S::px(22))
+//         .paddingRight(S::px(22))
+//         .display(gui::Display::Flex)
+//         .alignItems(gui::AlignItems::Center)
+//         .justifyContent(gui::JustifyContent::SpaceBetween)
+//         .color(simd_float4{0.141,0.161,0.212,1.0})
+//     (
+//         text("Build a collection around the dimensions that matter.")
+//             .font(ArialBold)
+//             .fontSize(S::pt(19))
+//             .color(simd_float4{1.0,1.0,1.0,1.0}),
+//         text("EXPLORE ->")
+//             .font(ArialBold)
+//             .fontSize(S::pt(16))
+//             .color(simd_float4{0.980,0.761,0.200,1.0})
+//     ),
 
-    div()
-        .position(gui::Position::Relative)
-        .width(S::percent(1.0))
-        .height(S::px(220))
-        .flexShrink(S::px(0))
-        .padding(S::px(22))
-        .color(simd_float4{0.102,0.122,0.161,1.0})
-    (
-        div()
-        (
-            text("FLOATING EXHIBIT")
-                .font(ArialBold)
-                .fontSize(S::pt(19))
-                .color(simd_float4{1.0,1.0,1.0,1.0})
-        ),
-        div()
-        (
-            text("This inset-resolved card intentionally crosses the section boundary.")
-                .font(Arial)
-                .fontSize(S::pt(16))
-                .color(simd_float4{0.522,0.569,0.678,1.0})
-        ),
-        div()
-            .position(gui::Position::Absolute)
-            .left(S::px(32))
-            .right(S::px(160))
-            .top(S::px(76))
-            .width(S::autoSize())
-            .height(S::autoSize())
-            .aspectRatio(6, 1)
-            .padding(S::px(18))
-            .color(simd_float4{0.961,0.302,0.459,1.0})
-        (
-            div()
-                .width(S::percent(0.46))
-                .height(S::percent(0.34))
-                .color(simd_float4{0.980,0.761,0.200,1.0})
-            (),
-            text("OUT OF FLOW / IN PROPORTION")
-                .font(ArialBold)
-                .fontSize(S::pt(17))
-                .color(simd_float4{1.0,1.0,1.0,1.0})
-        )
-    ),
+//     div()
+//         .position(gui::Position::Relative)
+//         .width(S::percent(1.0))
+//         .height(S::px(220))
+//         .flexShrink(S::px(0))
+//         .padding(S::px(22))
+//         .color(simd_float4{0.102,0.122,0.161,1.0})
+//     (
+//         div()
+//         (
+//             text("FLOATING EXHIBIT")
+//                 .font(ArialBold)
+//                 .fontSize(S::pt(19))
+//                 .color(simd_float4{1.0,1.0,1.0,1.0})
+//         ),
+//         div()
+//         (
+//             text("This inset-resolved card intentionally crosses the section boundary.")
+//                 .font(Arial)
+//                 .fontSize(S::pt(16))
+//                 .color(simd_float4{0.522,0.569,0.678,1.0})
+//         ),
+//         div()
+//             .position(gui::Position::Absolute)
+//             .left(S::px(32))
+//             .right(S::px(160))
+//             .top(S::px(76))
+//             .width(S::autoSize())
+//             .height(S::autoSize())
+//             .aspectRatio(6, 1)
+//             .padding(S::px(18))
+//             .color(simd_float4{0.961,0.302,0.459,1.0})
+//         (
+//             div()
+//                 .width(S::percent(0.46))
+//                 .height(S::percent(0.34))
+//                 .color(simd_float4{0.980,0.761,0.200,1.0})
+//             (),
+//             text("OUT OF FLOW / IN PROPORTION")
+//                 .font(ArialBold)
+//                 .fontSize(S::pt(17))
+//                 .color(simd_float4{1.0,1.0,1.0,1.0})
+//         )
+//     ),
 
-    div()
-        .width(S::percent(1.0))
-        .height(S::px(420))
-        .flexShrink(S::px(0))
-        .paddingTop(S::px(180))
-        .paddingLeft(S::px(22))
-        .paddingRight(S::px(22))
-        .color(simd_float4{0.122,0.141,0.188,1.0})
-    (
-        text("ARCHIVE")
-            .font(ArialBold)
-            .fontSize(S::pt(20))
-            .color(simd_float4{1.0,1.0,1.0,1.0}),
-        div()
-            .width(S::percent(1.0))
-            .display(gui::Display::Flex)
-            .alignItems(gui::AlignItems::FlexStart)
-            .flexGap(S::px(14))
-            .marginTop(S::px(14))
-        (
-            div()
-                .width(S::autoSize())
-                .height(S::px(76))
-                .aspectRatio(2, 1)
-                .flexShrink(S::px(0))
-                .color(simd_float4{0.078,0.722,0.859,1.0})
-            (),
-            div()
-                .width(S::percent(0.38))
-                .maxWidth(S::px(360))
-                .height(S::autoSize())
-                .aspectRatio(3, 1)
-                .color(simd_float4{0.380,0.922,0.561,1.0})
-            (),
-            div()
-                .width(S::px(180))
-                .height(S::autoSize())
-                .aspectRatio(3, 2)
-                .color(simd_float4{0.639,0.420,0.961,1.0})
-            ()
-        )
-    )
-);
+//     div()
+//         .width(S::percent(1.0))
+//         .height(S::px(420))
+//         .flexShrink(S::px(0))
+//         .paddingTop(S::px(180))
+//         .paddingLeft(S::px(22))
+//         .paddingRight(S::px(22))
+//         .color(simd_float4{0.122,0.141,0.188,1.0})
+//     (
+//         text("ARCHIVE")
+//             .font(ArialBold)
+//             .fontSize(S::pt(20))
+//             .color(simd_float4{1.0,1.0,1.0,1.0}),
+//         div()
+//             .width(S::percent(1.0))
+//             .display(gui::Display::Flex)
+//             .alignItems(gui::AlignItems::FlexStart)
+//             .flexGap(S::px(14))
+//             .marginTop(S::px(14))
+//         (
+//             div()
+//                 .width(S::autoSize())
+//                 .height(S::px(76))
+//                 .aspectRatio(2, 1)
+//                 .flexShrink(S::px(0))
+//                 .color(simd_float4{0.078,0.722,0.859,1.0})
+//             (),
+//             div()
+//                 .width(S::percent(0.38))
+//                 .maxWidth(S::px(360))
+//                 .height(S::autoSize())
+//                 .aspectRatio(3, 1)
+//                 .color(simd_float4{0.380,0.922,0.561,1.0})
+//             (),
+//             div()
+//                 .width(S::px(180))
+//                 .height(S::autoSize())
+//                 .aspectRatio(3, 2)
+//                 .color(simd_float4{0.639,0.420,0.961,1.0})
+//             ()
+//         )
+//     )
+// );
 
     // // Raster downsampling/post-layout test:
     // // - Both elements share the same 2000x2000 source asset.
@@ -4111,242 +4111,242 @@ div()
     // Exercises outer blur/spread/offset, hard-edged (blur 0) shadows, inset shadows
     // on divs and images, spread against elliptical per-corner radii, percent-based
     // offsets, and hover/press state driving shadow changes at finalize only.
-//     using S = gui::Size;
-//     using gui::Display;
-//     using gui::FlexDirection;
-//     using gui::AlignItems;
-//     using gui::JustifyContent;
-//     using runtime::EventType;
-// 
-//     constexpr simd_float4 desk        {0.941, 0.937, 0.925, 1.0};
-//     constexpr simd_float4 paper       {1.000, 1.000, 1.000, 1.0};
-//     constexpr simd_float4 cream       {0.992, 0.973, 0.925, 1.0};
-//     constexpr simd_float4 ink         {0.129, 0.129, 0.153, 1.0};
-//     constexpr simd_float4 muted       {0.478, 0.478, 0.510, 1.0};
-//     constexpr simd_float4 rule        {0.871, 0.863, 0.839, 1.0};
-//     constexpr simd_float4 tangerine   {1.000, 0.502, 0.200, 1.0};
-//     constexpr simd_float4 grape       {0.435, 0.271, 0.831, 1.0};
-//     constexpr simd_float4 mint        {0.180, 0.741, 0.545, 1.0};
-//     constexpr simd_float4 slate       {0.239, 0.271, 0.325, 1.0};
-// 
-//     constexpr simd_float4 umbraSoft   {0.0, 0.0, 0.0, 0.16};
-//     constexpr simd_float4 umbraHard   {0.0, 0.0, 0.0, 1.00};
-//     constexpr simd_float4 umbraLift   {0.0, 0.0, 0.0, 0.26};
-//     constexpr simd_float4 umbraWell   {0.0, 0.0, 0.0, 0.32};
-//     constexpr simd_float4 grapeGlow   {0.435, 0.271, 0.831, 0.55};
-//     constexpr simd_float4 mintGlow    {0.180, 0.741, 0.545, 0.60};
-// 
-//     constexpr auto butterflyPath = "/Users/treja/projects/gui/assets/butterfly.png";
-//     constexpr auto coverPath = "/Users/treja/projects/gui/assets/loveless.jpg";
-// 
-//     auto caption = [&](const char* title, const char* spec) {
-//         return div()
-//             .display(Display::Flex)
-//             .flexDirection(FlexDirection::Col)
-//             .flexGap(S::px(3))
-//         (
-//             text(title).font(ArialBold).fontSize(S::pt(12)).color(ink),
-//             text(spec).font(SFMono).fontSize(S::pt(9)).color(muted)
-//         );
-//     };
-// 
-//     auto cell = [&](auto&& subject, const char* title, const char* spec) {
-//         return div()
-//             .width(S::px(220))
-//             .display(Display::Flex)
-//             .flexDirection(FlexDirection::Col)
-//             .alignItems(AlignItems::Center)
-//             .flexGap(S::px(18))
-//             .paddingTop(S::px(24))
-//             .paddingBottom(S::px(12))
-//         (
-//             subject,
-//             caption(title, spec)
-//         );
-//     };
-// 
-//     div(S::percent(1.0), S::percent(1.0), desk)
-//         .padding(S::px(36))
-//         .overflow(gui::Overflow::Scroll)
-//     (
-//         div()
-//             .display(Display::Flex)
-//             .flexDirection(FlexDirection::Col)
-//             .flexGap(S::px(8))
-//             .marginBottom(S::px(28))
-//         (
-//             text("ELEVATION").font(DINAlternateBold).fontSize(S::pt(26)).color(ink),
-//             text("box-shadow on divs and images · hover the button, click to press it")
-//                 .font(SFMono).fontSize(S::pt(11)).color(muted)
-//         ),
-//         div().height(S::px(1)).color(rule)(),
-// 
-//         div()
-//             .display(Display::Flex)
-//             .flexWrap(gui::FlexWrap::Wrap)
-//             .flexGap(S::px(12))
-//             .justifyContent(JustifyContent::Center)
-//         (
-//             // 1. Soft ambient lift; the bread-and-butter card shadow.
-//             cell(
-//                 div(S::px(140), S::px(100), paper)
-//                     .cornerRadius(S::px(12))
-//                     .shadowOffsetY(S::px(8))
-//                     .shadowBlur(S::px(24))
-//                     .shadowColor(umbraSoft)
-//                 (),
-//                 "Soft card", "0 8 24 0 · rgba(0,0,0,.16)"
-//             ),
-// 
-//             // 2. Hard offset; blur 0 goes through the sharp-edge AA path.
-//             cell(
-//                 div(S::px(140), S::px(100), cream)
-//                     .borderWidth(S::px(2))
-//                     .borderColor(ink)
-//                     .shadowOffsetX(S::px(8))
-//                     .shadowOffsetY(S::px(8))
-//                     .shadowColor(umbraHard)
-//                 (),
-//                 "Brutalist", "8 8 0 0 · #000"
-//             ),
-// 
-//             // 3. Negative spread pulls the shadow in under the box; only the blur leaks out.
-//             cell(
-//                 div(S::px(140), S::px(100), paper)
-//                     .cornerRadius(S::px(50))
-//                     .shadowOffsetY(S::px(14))
-//                     .shadowBlur(S::px(20))
-//                     .shadowSpread(S::px(-10))
-//                     .shadowColor(umbraLift)
-//                 (),
-//                 "Pill, negative spread", "0 14 20 -10"
-//             ),
-// 
-//             // 4. Colored glow; spread without offset.
-//             cell(
-//                 div(S::px(140), S::px(100), grape)
-//                     .cornerRadius(S::px(16))
-//                     .shadowBlur(S::px(32))
-//                     .shadowSpread(S::px(2))
-//                     .shadowColor(grapeGlow)
-//                 (),
-//                 "Glow", "0 0 32 2 · grape 55%"
-//             ),
-// 
-//             // 5. Inset well on a div; shadow sits above the fill, under the border.
-//             cell(
-//                 div(S::px(140), S::px(100), cream)
-//                     .cornerRadius(S::px(10))
-//                     .borderWidth(S::px(1))
-//                     .borderColor(rule)
-//                     .shadowInset(true)
-//                     .shadowOffsetY(S::px(4))
-//                     .shadowBlur(S::px(10))
-//                     .shadowColor(umbraWell)
-//                 (),
-//                 "Inset well", "inset 0 4 10 0"
-//             ),
-// 
-//             // 6. Mismatched elliptical corners with positive spread; exercises the
-//             //    nonlinear radius growth where radius < spread.
-//             cell(
-//                 div(S::px(140), S::px(100), tangerine)
-//                     .cornerRadiusTopLeft(S::px(48))
-//                     .cornerRadiusTopRight(S::px(4))
-//                     .cornerRadiusBottomRight(S::px(30))
-//                     .cornerRadiusBottomLeft(S::px(0))
-//                     .shadowOffsetY(S::px(6))
-//                     .shadowBlur(S::px(10))
-//                     .shadowSpread(S::px(12))
-//                     .shadowColor(umbraSoft)
-//                 (),
-//                 "Uneven corners + spread", "0 6 10 12"
-//             ),
-// 
-//             // 7. Percent offsets resolve against the box.
-//             cell(
-//                 div(S::px(140), S::px(100), slate)
-//                     .cornerRadius(S::px(6))
-//                     .shadowOffsetX(S::percent(0.1))
-//                     .shadowOffsetY(S::percent(0.1))
-//                     .shadowBlur(S::px(2))
-//                     .shadowColor(mintGlow)
-//                 (),
-//                 "Percent offset", "10% 10% 2 0"
-//             ),
-// 
-//             // 8. Image with a drop shadow; the quad grows but UVs stay on the original rect.
-//             cell(
-//                 image(butterflyPath, S::px(140), S::px(100))
-//                     .cornerRadius(S::px(12))
-//                     .shadowOffsetY(S::px(10))
-//                     .shadowBlur(S::px(22))
-//                     .shadowColor(umbraLift),
-//                 "Image drop", "0 10 22 0"
-//             ),
-// 
-//             // 9. Image with an inset vignette over the texture.
-//             cell(
-//                 image(coverPath, S::px(140), S::px(100))
-//                     .cornerRadius(S::px(12))
-//                     .borderWidth(S::px(2))
-//                     .borderColor(paper)
-//                     .shadowInset(true)
-//                     .shadowBlur(S::px(28))
-//                     .shadowSpread(S::px(4))
-//                     .shadowColor(umbraWell),
-//                 "Image vignette", "inset 0 0 28 4"
-//             ),
-// 
-//             // 10. Interactive: hover lifts, click presses into an inset shadow.
-//             cell(
-//                 div(S::px(140), S::px(100), mint)
-//                     .cornerRadius(S::px(14))
-//                     .display(Display::Flex)
-//                     .alignItems(AlignItems::Center)
-//                     .justifyContent(JustifyContent::Center)
-//                     .shadowOffsetY(S::px(4))
-//                     .shadowBlur(S::px(10))
-//                     .shadowColor(umbraSoft)
-//                     .addEventListener(EventType::MouseEnter, [](auto& node, Event&) {
-//                         if (node.shadowInset()) {
-//                             return;
-//                         }
-// 
-//                         node.shadowOffsetY(S::px(12))
-//                             .shadowBlur(S::px(28))
-//                             .shadowColor(umbraLift);
-//                     })
-//                     .addEventListener(EventType::MouseLeave, [](auto& node, Event&) {
-//                         if (node.shadowInset()) {
-//                             return;
-//                         }
-// 
-//                         node.shadowOffsetY(S::px(4))
-//                             .shadowBlur(S::px(10))
-//                             .shadowColor(umbraSoft);
-//                     })
-//                     .addEventListener(EventType::Click, [](auto& node, Event&) {
-//                         bool pressed = !node.shadowInset();
-//                         node.shadowInset(pressed);
-// 
-//                         if (pressed) {
-//                             node.shadowOffsetY(S::px(3))
-//                                 .shadowBlur(S::px(8))
-//                                 .shadowColor(umbraWell);
-//                         } else {
-//                             node.shadowOffsetY(S::px(12))
-//                                 .shadowBlur(S::px(28))
-//                                 .shadowColor(umbraLift);
-//                         }
-//                     })
-//                 (
-//                     text("press me").font(ArialBold).fontSize(S::pt(12)).color(paper)
-//                 ),
-//                 "Interactive", "hover: lift · click: inset"
-//             )
-//         )
-//     );
+    // using S = gui::Size;
+    // using gui::Display;
+    // using gui::FlexDirection;
+    // using gui::AlignItems;
+    // using gui::JustifyContent;
+    // using runtime::EventType;
+
+    // constexpr simd_float4 desk        {0.941, 0.937, 0.925, 1.0};
+    // constexpr simd_float4 paper       {1.000, 1.000, 1.000, 1.0};
+    // constexpr simd_float4 cream       {0.992, 0.973, 0.925, 1.0};
+    // constexpr simd_float4 ink         {0.129, 0.129, 0.153, 1.0};
+    // constexpr simd_float4 muted       {0.478, 0.478, 0.510, 1.0};
+    // constexpr simd_float4 rule        {0.871, 0.863, 0.839, 1.0};
+    // constexpr simd_float4 tangerine   {1.000, 0.502, 0.200, 1.0};
+    // constexpr simd_float4 grape       {0.435, 0.271, 0.831, 1.0};
+    // constexpr simd_float4 mint        {0.180, 0.741, 0.545, 1.0};
+    // constexpr simd_float4 slate       {0.239, 0.271, 0.325, 1.0};
+
+    // constexpr simd_float4 umbraSoft   {0.0, 0.0, 0.0, 0.16};
+    // constexpr simd_float4 umbraHard   {0.0, 0.0, 0.0, 1.00};
+    // constexpr simd_float4 umbraLift   {0.0, 0.0, 0.0, 0.26};
+    // constexpr simd_float4 umbraWell   {0.0, 0.0, 0.0, 0.32};
+    // constexpr simd_float4 grapeGlow   {0.435, 0.271, 0.831, 0.55};
+    // constexpr simd_float4 mintGlow    {0.180, 0.741, 0.545, 0.60};
+
+    // constexpr auto butterflyPath = "/Users/treja/projects/gui/assets/butterfly.png";
+    // constexpr auto coverPath = "/Users/treja/projects/gui/assets/loveless.jpg";
+
+    // auto caption = [&](const char* title, const char* spec) {
+    //     return div()
+    //         .display(Display::Flex)
+    //         .flexDirection(FlexDirection::Col)
+    //         .flexGap(S::px(3))
+    //     (
+    //         text(title).font(ArialBold).fontSize(S::pt(12)).color(ink),
+    //         text(spec).font(SFMono).fontSize(S::pt(9)).color(muted)
+    //     );
+    // };
+
+    // auto cell = [&](auto&& subject, const char* title, const char* spec) {
+    //     return div()
+    //         .width(S::px(220))
+    //         .display(Display::Flex)
+    //         .flexDirection(FlexDirection::Col)
+    //         .alignItems(AlignItems::Center)
+    //         .flexGap(S::px(18))
+    //         .paddingTop(S::px(24))
+    //         .paddingBottom(S::px(12))
+    //     (
+    //         subject,
+    //         caption(title, spec)
+    //     );
+    // };
+
+    // div(S::percent(1.0), S::percent(1.0), desk)
+    //     .padding(S::px(36))
+    //     .overflow(gui::Overflow::Scroll)
+    // (
+    //     div()
+    //         .display(Display::Flex)
+    //         .flexDirection(FlexDirection::Col)
+    //         .flexGap(S::px(8))
+    //         .marginBottom(S::px(28))
+    //     (
+    //         text("ELEVATION").font(DINAlternateBold).fontSize(S::pt(26)).color(ink),
+    //         text("box-shadow on divs and images · hover the button, click to press it")
+    //             .font(SFMono).fontSize(S::pt(11)).color(muted)
+    //     ),
+    //     div().height(S::px(1)).color(rule)(),
+
+    //     div()
+    //         .display(Display::Flex)
+    //         .flexWrap(gui::FlexWrap::Wrap)
+    //         .flexGap(S::px(12))
+    //         .justifyContent(JustifyContent::Center)
+    //     (
+    //         // 1. Soft ambient lift; the bread-and-butter card shadow.
+    //         cell(
+    //             div(S::px(140), S::px(100), paper)
+    //                 .cornerRadius(S::px(12))
+    //                 .shadowOffsetY(S::px(8))
+    //                 .shadowBlur(S::px(24))
+    //                 .shadowColor(umbraSoft)
+    //             (),
+    //             "Soft card", "0 8 24 0 · rgba(0,0,0,.16)"
+    //         ),
+
+    //         // 2. Hard offset; blur 0 goes through the sharp-edge AA path.
+    //         cell(
+    //             div(S::px(140), S::px(100), cream)
+    //                 .borderWidth(S::px(2))
+    //                 .borderColor(ink)
+    //                 .shadowOffsetX(S::px(8))
+    //                 .shadowOffsetY(S::px(8))
+    //                 .shadowColor(umbraHard)
+    //             (),
+    //             "Brutalist", "8 8 0 0 · #000"
+    //         ),
+
+    //         // 3. Negative spread pulls the shadow in under the box; only the blur leaks out.
+    //         cell(
+    //             div(S::px(140), S::px(100), paper)
+    //                 .cornerRadius(S::px(50))
+    //                 .shadowOffsetY(S::px(14))
+    //                 .shadowBlur(S::px(20))
+    //                 .shadowSpread(S::px(-10))
+    //                 .shadowColor(umbraLift)
+    //             (),
+    //             "Pill, negative spread", "0 14 20 -10"
+    //         ),
+
+    //         // 4. Colored glow; spread without offset.
+    //         cell(
+    //             div(S::px(140), S::px(100), grape)
+    //                 .cornerRadius(S::px(16))
+    //                 .shadowBlur(S::px(32))
+    //                 .shadowSpread(S::px(2))
+    //                 .shadowColor(grapeGlow)
+    //             (),
+    //             "Glow", "0 0 32 2 · grape 55%"
+    //         ),
+
+    //         // 5. Inset well on a div; shadow sits above the fill, under the border.
+    //         cell(
+    //             div(S::px(140), S::px(100), cream)
+    //                 .cornerRadius(S::px(10))
+    //                 .borderWidth(S::px(1))
+    //                 .borderColor(rule)
+    //                 .shadowInset(true)
+    //                 .shadowOffsetY(S::px(4))
+    //                 .shadowBlur(S::px(10))
+    //                 .shadowColor(umbraWell)
+    //             (),
+    //             "Inset well", "inset 0 4 10 0"
+    //         ),
+
+    //         // 6. Mismatched elliptical corners with positive spread; exercises the
+    //         //    nonlinear radius growth where radius < spread.
+    //         cell(
+    //             div(S::px(140), S::px(100), tangerine)
+    //                 .cornerRadiusTopLeft(S::px(48))
+    //                 .cornerRadiusTopRight(S::px(4))
+    //                 .cornerRadiusBottomRight(S::px(30))
+    //                 .cornerRadiusBottomLeft(S::px(0))
+    //                 .shadowOffsetY(S::px(6))
+    //                 .shadowBlur(S::px(10))
+    //                 .shadowSpread(S::px(12))
+    //                 .shadowColor(umbraSoft)
+    //             (),
+    //             "Uneven corners + spread", "0 6 10 12"
+    //         ),
+
+    //         // 7. Percent offsets resolve against the box.
+    //         cell(
+    //             div(S::px(140), S::px(100), slate)
+    //                 .cornerRadius(S::px(6))
+    //                 .shadowOffsetX(S::percent(0.1))
+    //                 .shadowOffsetY(S::percent(0.1))
+    //                 .shadowBlur(S::px(2))
+    //                 .shadowColor(mintGlow)
+    //             (),
+    //             "Percent offset", "10% 10% 2 0"
+    //         ),
+
+    //         // 8. Image with a drop shadow; the quad grows but UVs stay on the original rect.
+    //         cell(
+    //             image(butterflyPath, S::px(140), S::px(100))
+    //                 .cornerRadius(S::px(12))
+    //                 .shadowOffsetY(S::px(10))
+    //                 .shadowBlur(S::px(22))
+    //                 .shadowColor(umbraLift),
+    //             "Image drop", "0 10 22 0"
+    //         ),
+
+    //         // 9. Image with an inset vignette over the texture.
+    //         cell(
+    //             image(coverPath, S::px(140), S::px(100))
+    //                 .cornerRadius(S::px(12))
+    //                 .borderWidth(S::px(2))
+    //                 .borderColor(paper)
+    //                 .shadowInset(true)
+    //                 .shadowBlur(S::px(28))
+    //                 .shadowSpread(S::px(4))
+    //                 .shadowColor(umbraWell),
+    //             "Image vignette", "inset 0 0 28 4"
+    //         ),
+
+    //         // 10. Interactive: hover lifts, click presses into an inset shadow.
+    //         cell(
+    //             div(S::px(140), S::px(100), mint)
+    //                 .cornerRadius(S::px(14))
+    //                 .display(Display::Flex)
+    //                 .alignItems(AlignItems::Center)
+    //                 .justifyContent(JustifyContent::Center)
+    //                 .shadowOffsetY(S::px(4))
+    //                 .shadowBlur(S::px(10))
+    //                 .shadowColor(umbraSoft)
+    //                 .addEventListener(EventType::MouseEnter, [](auto& node, Event&) {
+    //                     if (node.shadowInset()) {
+    //                         return;
+    //                     }
+
+    //                     node.shadowOffsetY(S::px(12))
+    //                         .shadowBlur(S::px(28))
+    //                         .shadowColor(umbraLift);
+    //                 })
+    //                 .addEventListener(EventType::MouseLeave, [](auto& node, Event&) {
+    //                     if (node.shadowInset()) {
+    //                         return;
+    //                     }
+
+    //                     node.shadowOffsetY(S::px(4))
+    //                         .shadowBlur(S::px(10))
+    //                         .shadowColor(umbraSoft);
+    //                 })
+    //                 .addEventListener(EventType::Click, [](auto& node, Event&) {
+    //                     bool pressed = !node.shadowInset();
+    //                     node.shadowInset(pressed);
+
+    //                     if (pressed) {
+    //                         node.shadowOffsetY(S::px(3))
+    //                             .shadowBlur(S::px(8))
+    //                             .shadowColor(umbraWell);
+    //                     } else {
+    //                         node.shadowOffsetY(S::px(12))
+    //                             .shadowBlur(S::px(28))
+    //                             .shadowColor(umbraLift);
+    //                     }
+    //                 })
+    //             (
+    //                 text("press me").font(ArialBold).fontSize(S::pt(12)).color(paper)
+    //             ),
+    //             "Interactive", "hover: lift · click: inset"
+    //         )
+    //     )
+    // );
 
     // // Transforms: rendering, composition, origin, hit testing, clipping,
     // // containing blocks (none vs identity), and scrollable overflow.
@@ -4653,4 +4653,150 @@ div()
     //         )
     //     )
     // );
+
+    // Border styles: solid, dashed, dotted, double across widths, radii
+    // (circular, elliptical, uneven, sharp), on divs and images, with shadows,
+    // and a click that cycles the style at finalize only.
+    using S = gui::Size;
+    using gui::Display;
+    using gui::FlexDirection;
+    using gui::AlignItems;
+    using gui::JustifyContent;
+    using gui::BorderStyle;
+    using runtime::EventType;
+
+    constexpr simd_float4 desk        {0.941, 0.937, 0.925, 1.0};
+    constexpr simd_float4 paper       {1.000, 1.000, 1.000, 1.0};
+    constexpr simd_float4 cream       {0.992, 0.973, 0.925, 1.0};
+    constexpr simd_float4 ink         {0.129, 0.129, 0.153, 1.0};
+    constexpr simd_float4 muted       {0.478, 0.478, 0.510, 1.0};
+    constexpr simd_float4 rule        {0.871, 0.863, 0.839, 1.0};
+    constexpr simd_float4 tangerine   {1.000, 0.502, 0.200, 1.0};
+    constexpr simd_float4 grape       {0.435, 0.271, 0.831, 1.0};
+    constexpr simd_float4 mint        {0.180, 0.741, 0.545, 1.0};
+    constexpr simd_float4 slate       {0.239, 0.271, 0.325, 1.0};
+    constexpr simd_float4 umbraSoft   {0.0, 0.0, 0.0, 0.16};
+
+    constexpr auto butterflyPath = "/Users/treja/projects/gui/assets/butterfly.png";
+
+    auto caption = [&](const char* title, const char* spec) {
+        return div()
+            .display(Display::Flex)
+            .flexDirection(FlexDirection::Col)
+            .flexGap(S::px(3))
+        (
+            text(title).font(ArialBold).fontSize(S::pt(12)).color(ink),
+            text(spec).font(SFMono).fontSize(S::pt(9)).color(muted)
+        );
+    };
+
+    auto cell = [&](auto&& subject, const char* title, const char* spec) {
+        return div()
+            .width(S::px(220))
+            .display(Display::Flex)
+            .flexDirection(FlexDirection::Col)
+            .alignItems(AlignItems::Center)
+            .flexGap(S::px(18))
+            .paddingTop(S::px(24))
+            .paddingBottom(S::px(12))
+        (
+            subject,
+            caption(title, spec)
+        );
+    };
+
+    auto swatch = [&](simd_float4 fill, float width, BorderStyle style, simd_float4 stroke = ink) {
+        return div(S::px(140), S::px(100), fill)
+            .borderWidth(S::px(width))
+            .borderStyle(style)
+            .borderColor(stroke);
+    };
+
+    div(S::percent(1.0), S::percent(1.0), desk)
+        .padding(S::px(36))
+        .overflow(gui::Overflow::Scroll)
+    (
+        div()
+            .display(Display::Flex)
+            .flexDirection(FlexDirection::Col)
+            .flexGap(S::px(8))
+            .marginBottom(S::px(28))
+        (
+            text("STROKES").font(DINAlternateBold).fontSize(S::pt(26)).color(ink),
+            text("border-style on divs and images · click the last card to cycle its style")
+                .font(SFMono).fontSize(S::pt(11)).color(muted)
+        ),
+        div().height(S::px(1)).color(rule)(),
+
+        div()
+            .display(Display::Flex)
+            .flexWrap(gui::FlexWrap::Wrap)
+            .flexGap(S::px(12))
+            .justifyContent(JustifyContent::Center)
+        (
+            cell(swatch(paper, 1, BorderStyle::Solid).cornerRadius(S::px(12))(),
+                "Solid hairline", "1 solid · r12"),
+            cell(swatch(cream, 6, BorderStyle::Solid)(),
+                "Solid thick", "6 solid · sharp"),
+            cell(swatch(paper, 1, BorderStyle::Dashed)(),
+                "Dashed hairline", "1 dashed · sharp"),
+            cell(swatch(paper, 3, BorderStyle::Dashed).cornerRadius(S::px(12))(),
+                "Dashed", "3 dashed · r12"),
+            cell(swatch(cream, 6, BorderStyle::Dashed, grape).cornerRadius(S::px(50))(),
+                "Dashed pill", "6 dashed · r50"),
+            cell(swatch(paper, 3, BorderStyle::Dashed, tangerine).cornerRadius(S::percent(0.5))(),
+                "Dashed ellipse", "3 dashed · r50%"),
+            cell(swatch(paper, 4, BorderStyle::Dashed, slate)
+                    .cornerRadiusTopLeft(S::px(48))
+                    .cornerRadiusTopRight(S::px(4))
+                    .cornerRadiusBottomRight(S::px(30))
+                    .cornerRadiusBottomLeft(S::px(0))(),
+                "Dashed uneven", "4 dashed · 48 4 30 0"),
+            cell(swatch(paper, 2, BorderStyle::Dotted).cornerRadius(S::px(8))(),
+                "Dotted", "2 dotted · r8"),
+            cell(swatch(cream, 6, BorderStyle::Dotted, mint).cornerRadius(S::px(20))(),
+                "Dotted thick", "6 dotted · r20"),
+            cell(swatch(paper, 5, BorderStyle::Dotted, grape).cornerRadius(S::percent(0.5))(),
+                "Dotted ellipse", "5 dotted · r50%"),
+            cell(swatch(paper, 6, BorderStyle::Double).cornerRadius(S::px(10))(),
+                "Double", "6 double · r10"),
+            cell(swatch(cream, 3, BorderStyle::Double, slate)(),
+                "Double thin", "3 double · sharp"),
+            cell(swatch(paper, 3, BorderStyle::Dashed)
+                    .cornerRadius(S::px(12))
+                    .shadowOffsetY(S::px(8))
+                    .shadowBlur(S::px(24))
+                    .shadowColor(umbraSoft)(),
+                "Dashed + shadow", "3 dashed · 0 8 24"),
+            cell(image(butterflyPath, S::px(140), S::px(100))
+                    .cornerRadius(S::px(12))
+                    .borderWidth(S::px(4))
+                    .borderStyle(BorderStyle::Dotted)
+                    .borderColor(paper),
+                "Image dotted", "4 dotted · r12"),
+            cell(image(butterflyPath, S::px(140), S::px(100))
+                    .cornerRadius(S::px(12))
+                    .borderWidth(S::px(3))
+                    .borderStyle(BorderStyle::Dashed)
+                    .borderColor(ink),
+                "Image dashed", "3 dashed · r12"),
+            cell(swatch(mint, 4, BorderStyle::Solid, ink)
+                    .cornerRadius(S::px(14))
+                    .display(Display::Flex)
+                    .alignItems(AlignItems::Center)
+                    .justifyContent(JustifyContent::Center)
+                    .addEventListener(EventType::Click, [](auto& node, Event&) {
+                        switch (node.borderStyle()) {
+                            case BorderStyle::Solid:  node.borderStyle(BorderStyle::Dashed); break;
+                            case BorderStyle::Dashed: node.borderStyle(BorderStyle::Dotted); break;
+                            case BorderStyle::Dotted: node.borderStyle(BorderStyle::Double); break;
+                            case BorderStyle::Double: node.borderStyle(BorderStyle::Solid); break;
+                        }
+                    })
+                (
+                    text("click me").font(ArialBold).fontSize(S::pt(12)).color(paper)
+                ),
+                "Interactive", "click: solid → dashed → dotted → double")
+        )
+    );
 }
