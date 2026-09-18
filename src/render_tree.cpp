@@ -1008,6 +1008,11 @@ namespace tree {
         const auto& outerSize = result.sizeResult.outerSize;
         float outerWidth = std::holds_alternative<float>(outerSize.width) ? std::get<float>(outerSize.width) : 0.0f;
         float outerHeight = std::holds_alternative<float>(outerSize.height) ? std::get<float>(outerSize.height) : 0.0f;
+        
+        const auto& paddingBoxSize = result.sizeResult.paddingBoxSize;
+        float paddingBoxWidth = std::holds_alternative<float>(paddingBoxSize.width) ? std::max(0.0f, std::get<float>(paddingBoxSize.width)) : 0.0f;
+        float paddingBoxHeight = std::holds_alternative<float>(paddingBoxSize.height) ? std::max(0.0f, std::get<float>(paddingBoxSize.height)) : 0.0f;
+
 
         auto position = node->getPosition();
         
@@ -1188,16 +1193,15 @@ namespace tree {
 
             if (node->shared.overflow == Overflow::Scroll) {
                 // compute scroll port size
-                const auto& paddingBoxSize = result.sizeResult.paddingBoxSize;
                 node->scrollViewportSize = {
-                    std::holds_alternative<float>(paddingBoxSize.width) ? std::max(0.0f, std::get<float>(paddingBoxSize.width)) : 0.0f,
-                    std::holds_alternative<float>(paddingBoxSize.height) ? std::max(0.0f, std::get<float>(paddingBoxSize.height)) : 0.0f
+                    paddingBoxWidth,
+                    paddingBoxHeight
                 };
 
                 childScrollport = {
                     .origin = currPaddingOrigin,
                     .width = paddingBoxSize.width,
-                    .height = paddingBoxSize.height
+                    .height = paddingBoxSize.width
                 };
 
                 // adjust origins by scroll offsets
@@ -1227,8 +1231,8 @@ namespace tree {
                 childConstraints.textOverflow = node->shared.textOverflow;
 
                 simd_float2 halfExtent {
-                    outerWidth * 0.5f,
-                    outerHeight * 0.5f
+                    paddingBoxWidth * 0.5f,
+                    paddingBoxHeight * 0.5f
                 };
 
                 childConstraints.clipUniforms.push_back({
@@ -1249,8 +1253,8 @@ namespace tree {
             if (position != Position::Static || node->shared.transform) {
                 childConstraints.absoluteContainingBlock = {
                     .origin = currPaddingOrigin,
-                    .width = result.sizeResult.paddingBoxSize.width,
-                    .height = result.sizeResult.paddingBoxSize.height,
+                    .width = paddingBoxSize.width,
+                    .height = paddingBoxSize.height,
                     .clipCount = childConstraints.clipUniforms.size()
                 };
             }

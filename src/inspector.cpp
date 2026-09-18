@@ -615,7 +615,6 @@ namespace Inspector {
         treeViewText.text(treeViewDetails);
         mouseXText.text(mouseXLabel());
         mouseYText.text(mouseYLabel());
-        visualizerState.markDirty();
     }
 
     void Inspector::updateSelectionOverlay(tree::TreeNode* node) {
