@@ -1,3 +1,8 @@
+# this build script is pure slop
+# i will not be bothered with the burden of learning
+# cmake or bash
+# hopefully this doesnt have an RCE lmfao
+
 #!/usr/bin/env bash
 set -euo pipefail
 

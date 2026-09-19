@@ -4,4 +4,5 @@ namespace AppKit_Extensions {
     extern "C" void setMaximumDrawableCount(void* viewPtr, int count);
     extern "C" void setSyncEnabled(void* viewPtr, bool enabled);
     extern "C" float getContentScaleFactor(void* viewPtr);
+    extern "C" bool openURL(const char* urlString);
 }

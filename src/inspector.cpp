@@ -54,7 +54,6 @@ namespace Inspector {
             using instrumentation::Phase;
             switch (phase) {
                 case Phase::Update: return "update";
-                case Phase::Measure: return "measure";
                 case Phase::Atomize: return "atomize";
                 case Phase::PreLayout: return "pre-layout";
                 case Phase::Layout: return "layout";
@@ -541,7 +540,6 @@ namespace Inspector {
                 if (auto found = diagnostics.nodes().find(selectedNode->id);
                     found != diagnostics.nodes().end()) {
                     constexpr std::array phasesToShow {
-                        instrumentation::Phase::Measure,
                         instrumentation::Phase::Atomize,
                         instrumentation::Phase::Layout,
                         instrumentation::Phase::PostLayout,

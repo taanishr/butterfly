@@ -47,6 +47,15 @@ public func setSyncEnabled(viewPtr: UnsafeMutableRawPointer, enabled: CBool) {
     }
 }
 
+@_cdecl("openURL")
+public func openURL(urlString: UnsafePointer<CChar>) -> CBool {
+    guard let url = URL(string: String(cString: urlString)) else {
+        return false;
+    }
+
+    return NSWorkspace.shared.open(url);
+}
+
 @_cdecl("getContentScaleFactor")
 public func getContentScaleFactor(viewPtr: UnsafeMutableRawPointer) -> CFloat {
     let view = Unmanaged<MTKView>.fromOpaque(viewPtr).takeUnretainedValue();

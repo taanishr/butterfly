@@ -1,4 +1,5 @@
 #include "index.hpp"
+#include "AppKit_Extensions.hpp"
 #include "events.hpp"
 #include "fonts.hpp"
 #include "layout/sizing.hpp"
@@ -4657,180 +4658,33 @@ div()
 
     // }
 
-    // Border styles: solid, dashed, dotted, double across widths, radii
-    // (circular, elliptical, uneven, sharp), on divs and images, with shadows,
-    // and a click that cycles the style at finalize only.
-    {
-        using S = gui::Size;
-        using gui::Display;
-        using gui::FlexDirection;
-        using gui::AlignItems;
-        using gui::JustifyContent;
-        using gui::BorderStyle;
-        using runtime::EventType;
-
-        constexpr simd_float4 desk        {0.941, 0.937, 0.925, 1.0};
-        constexpr simd_float4 paper       {1.000, 1.000, 1.000, 1.0};
-        constexpr simd_float4 cream       {0.992, 0.973, 0.925, 1.0};
-        constexpr simd_float4 ink         {0.129, 0.129, 0.153, 1.0};
-        constexpr simd_float4 muted       {0.478, 0.478, 0.510, 1.0};
-        constexpr simd_float4 rule        {0.871, 0.863, 0.839, 1.0};
-        constexpr simd_float4 tangerine   {1.000, 0.502, 0.200, 1.0};
-        constexpr simd_float4 grape       {0.435, 0.271, 0.831, 1.0};
-        constexpr simd_float4 mint        {0.180, 0.741, 0.545, 1.0};
-        constexpr simd_float4 slate       {0.239, 0.271, 0.325, 1.0};
-        constexpr simd_float4 umbraSoft   {0.0, 0.0, 0.0, 0.16};
-
-        constexpr auto butterflyPath = "/Users/treja/projects/gui/assets/butterfly.png";
-
-        auto caption = [&](const char* title, const char* spec) {
-            return div()
-                .display(Display::Flex)
-                .flexDirection(FlexDirection::Col)
-                .flexGap(S::px(3))
-            (
-                text(title).font(ArialBold).fontSize(S::pt(12)).color(ink),
-                text(spec).font(SFMono).fontSize(S::pt(9)).color(muted)
-            );
-        };
-
-        auto cell = [&](auto&& subject, const char* title, const char* spec) {
-            return div()
-                .width(S::px(220))
-                .display(Display::Flex)
-                .flexDirection(FlexDirection::Col)
-                .alignItems(AlignItems::Center)
-                .flexGap(S::px(18))
-                .paddingTop(S::px(24))
-                .paddingBottom(S::px(12))
-            (
-                subject,
-                caption(title, spec)
-            );
-        };
-
-        auto swatch = [&](simd_float4 fill, float width, BorderStyle style, simd_float4 stroke = ink) {
-            return div(S::px(140), S::px(100), fill)
-                .borderWidth(S::px(width))
-                .borderStyle(style)
-                .borderColor(stroke);
-        };
-
-        div(S::percent(1.0), S::percent(1.0), desk)
-            .padding(S::px(36))
-            .overflow(gui::Overflow::Scroll)
-        (
-            div()
-                .display(Display::Flex)
-                .flexDirection(FlexDirection::Col)
-                .flexGap(S::px(8))
-                .marginBottom(S::px(28))
-            (
-                text("STROKES").font(DINAlternateBold).fontSize(S::pt(26)).color(ink),
-                text("border-style on divs and images · click the last card to cycle its style")
-                    .font(SFMono).fontSize(S::pt(11)).color(muted)
-            ),
-            div().height(S::px(1)).color(rule)(),
-
-            div()
-                .display(Display::Flex)
-                .flexWrap(gui::FlexWrap::Wrap)
-                .flexGap(S::px(12))
-                .justifyContent(JustifyContent::Center)
-            (
-                cell(swatch(paper, 1, BorderStyle::Solid).cornerRadius(S::px(12))(),
-                    "Solid hairline", "1 solid · r12"),
-                cell(swatch(cream, 6, BorderStyle::Solid)(),
-                    "Solid thick", "6 solid · sharp"),
-                cell(swatch(paper, 1, BorderStyle::Dashed)(),
-                    "Dashed hairline", "1 dashed · sharp"),
-                cell(swatch(paper, 3, BorderStyle::Dashed).cornerRadius(S::px(12))(),
-                    "Dashed", "3 dashed · r12"),
-                cell(swatch(cream, 6, BorderStyle::Dashed, grape).cornerRadius(S::px(50))(),
-                    "Dashed pill", "6 dashed · r50"),
-                cell(swatch(paper, 3, BorderStyle::Dashed, tangerine).cornerRadius(S::percent(0.5))(),
-                    "Dashed ellipse", "3 dashed · r50%"),
-                cell(swatch(paper, 4, BorderStyle::Dashed, slate)
-                        .cornerRadiusTopLeft(S::px(48))
-                        .cornerRadiusTopRight(S::px(4))
-                        .cornerRadiusBottomRight(S::px(30))
-                        .cornerRadiusBottomLeft(S::px(0))(),
-                    "Dashed uneven", "4 dashed · 48 4 30 0"),
-                cell(swatch(paper, 2, BorderStyle::Dotted).cornerRadius(S::px(8))(),
-                    "Dotted", "2 dotted · r8"),
-                cell(swatch(cream, 6, BorderStyle::Dotted, mint).cornerRadius(S::px(20))(),
-                    "Dotted thick", "6 dotted · r20"),
-                cell(swatch(paper, 5, BorderStyle::Dotted, grape).cornerRadius(S::percent(0.5))(),
-                    "Dotted ellipse", "5 dotted · r50%"),
-                cell(swatch(paper, 6, BorderStyle::Double).cornerRadius(S::px(10))(),
-                    "Double", "6 double · r10"),
-                cell(swatch(cream, 3, BorderStyle::Double, slate)(),
-                    "Double thin", "3 double · sharp"),
-                cell(swatch(paper, 3, BorderStyle::Dashed)
-                        .cornerRadius(S::px(12))
-                        .shadowOffsetY(S::px(8))
-                        .shadowBlur(S::px(24))
-                        .shadowColor(umbraSoft)(),
-                    "Dashed + shadow", "3 dashed · 0 8 24"),
-                cell(image(butterflyPath, S::px(140), S::px(100))
-                        .cornerRadius(S::px(12))
-                        .borderWidth(S::px(4))
-                        .borderStyle(BorderStyle::Dotted)
-                        .borderColor(paper),
-                    "Image dotted", "4 dotted · r12"),
-                cell(image(butterflyPath, S::px(140), S::px(100))
-                        .cornerRadius(S::px(12))
-                        .borderWidth(S::px(3))
-                        .borderStyle(BorderStyle::Dashed)
-                        .borderColor(ink),
-                    "Image dashed", "3 dashed · r12"),
-                cell(swatch(mint, 4, BorderStyle::Solid, ink)
-                        .cornerRadius(S::px(14))
-                        .display(Display::Flex)
-                        .alignItems(AlignItems::Center)
-                        .justifyContent(JustifyContent::Center)
-                        .addEventListener(EventType::Click, [](auto& node, Event&) {
-                            switch (node.borderStyle()) {
-                                case BorderStyle::Solid:  node.borderStyle(BorderStyle::Dashed); break;
-                                case BorderStyle::Dashed: node.borderStyle(BorderStyle::Dotted); break;
-                                case BorderStyle::Dotted: node.borderStyle(BorderStyle::Double); break;
-                                case BorderStyle::Double: node.borderStyle(BorderStyle::Solid); break;
-                            }
-                        })
-                    (
-                        text("click me").font(ArialBold).fontSize(S::pt(12)).color(paper)
-                    ),
-                    "Interactive", "click: solid → dashed → dotted → double")
-            )
-        );
-    }
-
-    // Opacity: multiplies down the tree, applies to fill/border/shadow/text/image,
-    // composes with color alpha, and is per-primitive (no group compositing).
-    // Divergence from browsers: overlapping content under one opacity double-blends.
+    // // Border styles: solid, dashed, dotted, double across widths, radii
+    // // (circular, elliptical, uneven, sharp), on divs and images, with shadows,
+    // // and a click that cycles the style at finalize only.
     // {
     //     using S = gui::Size;
     //     using gui::Display;
     //     using gui::FlexDirection;
     //     using gui::AlignItems;
     //     using gui::JustifyContent;
-    //     using gui::Position;
+    //     using gui::BorderStyle;
     //     using runtime::EventType;
 
-    //     constexpr simd_float4 desk      {0.941, 0.937, 0.925, 1.0};
-    //     constexpr simd_float4 paper     {1.000, 1.000, 1.000, 1.0};
-    //     constexpr simd_float4 ink       {0.129, 0.129, 0.153, 1.0};
-    //     constexpr simd_float4 muted     {0.478, 0.478, 0.510, 1.0};
-    //     constexpr simd_float4 rule      {0.871, 0.863, 0.839, 1.0};
-    //     constexpr simd_float4 grape     {0.435, 0.271, 0.831, 1.0};
-    //     constexpr simd_float4 mint      {0.180, 0.741, 0.545, 1.0};
-    //     constexpr simd_float4 tangerine {1.000, 0.502, 0.200, 1.0};
-    //     constexpr simd_float4 slate     {0.239, 0.271, 0.325, 1.0};
-    //     constexpr simd_float4 umbra     {0.000, 0.000, 0.000, 0.5};
+    //     constexpr simd_float4 desk        {0.941, 0.937, 0.925, 1.0};
+    //     constexpr simd_float4 paper       {1.000, 1.000, 1.000, 1.0};
+    //     constexpr simd_float4 cream       {0.992, 0.973, 0.925, 1.0};
+    //     constexpr simd_float4 ink         {0.129, 0.129, 0.153, 1.0};
+    //     constexpr simd_float4 muted       {0.478, 0.478, 0.510, 1.0};
+    //     constexpr simd_float4 rule        {0.871, 0.863, 0.839, 1.0};
+    //     constexpr simd_float4 tangerine   {1.000, 0.502, 0.200, 1.0};
+    //     constexpr simd_float4 grape       {0.435, 0.271, 0.831, 1.0};
+    //     constexpr simd_float4 mint        {0.180, 0.741, 0.545, 1.0};
+    //     constexpr simd_float4 slate       {0.239, 0.271, 0.325, 1.0};
+    //     constexpr simd_float4 umbraSoft   {0.0, 0.0, 0.0, 0.16};
 
     //     constexpr auto butterflyPath = "/Users/treja/projects/gui/assets/butterfly.png";
 
-    //     auto label = [&](const char* title, const char* spec) {
+    //     auto caption = [&](const char* title, const char* spec) {
     //         return div()
     //             .display(Display::Flex)
     //             .flexDirection(FlexDirection::Col)
@@ -4841,68 +4695,26 @@ div()
     //         );
     //     };
 
-    //     auto cell = [&](const char* title, const char* spec, auto&& subject) {
+    //     auto cell = [&](auto&& subject, const char* title, const char* spec) {
     //         return div()
     //             .width(S::px(220))
     //             .display(Display::Flex)
     //             .flexDirection(FlexDirection::Col)
     //             .alignItems(AlignItems::Center)
-    //             .flexGap(S::px(14))
-    //             .paddingTop(S::px(20))
+    //             .flexGap(S::px(18))
+    //             .paddingTop(S::px(24))
     //             .paddingBottom(S::px(12))
     //         (
     //             subject,
-    //             label(title, spec)
+    //             caption(title, spec)
     //         );
     //     };
 
-    //     auto section = [&](const char* title) {
-    //         return div()
-    //             .display(Display::Flex)
-    //             .flexDirection(FlexDirection::Col)
-    //             .flexGap(S::px(6))
-    //             .marginTop(S::px(36))
-    //             .marginBottom(S::px(8))
-    //         (
-    //             text(title).font(DINAlternateBold).fontSize(S::pt(18)).color(ink),
-    //             div().height(S::px(1)).color(rule)()
-    //         );
-    //     };
-
-    //     auto row = [&](auto&&... cells) {
-    //         return div()
-    //             .display(Display::Flex)
-    //             .flexWrap(gui::FlexWrap::Wrap)
-    //             .flexGap(S::px(12))
-    //             .justifyContent(JustifyContent::Center)
-    //         (cells...);
-    //     };
-
-    //     auto card = [&](simd_float4 color) {
-    //         return div(S::px(140), S::px(100), color)
-    //             .cornerRadius(S::px(12))
-    //             .borderWidth(S::px(2))
-    //             .borderColor(ink);
-    //     };
-
-    //     // Striped backdrop so partial alpha is visible against something other than the desk.
-    //     auto backdrop = [&](auto&& subject) {
-    //         return div().width(S::px(160)).height(S::px(120))
-    //             .display(Display::Flex)
-    //             .alignItems(AlignItems::Center)
-    //             .justifyContent(JustifyContent::Center)
-    //             .position(Position::Relative)
-    //         (
-    //             div(S::px(160), S::px(40), ink).position(Position::Absolute).top(S::px(40)).left(S::px(0))(),
-    //             subject
-    //         );
-    //     };
-
-    //     auto centered = [&](auto&& builder) {
-    //         return builder
-    //             .display(Display::Flex)
-    //             .alignItems(AlignItems::Center)
-    //             .justifyContent(JustifyContent::Center);
+    //     auto swatch = [&](simd_float4 fill, float width, BorderStyle style, simd_float4 stroke = ink) {
+    //         return div(S::px(140), S::px(100), fill)
+    //             .borderWidth(S::px(width))
+    //             .borderStyle(style)
+    //             .borderColor(stroke);
     //     };
 
     //     div(S::percent(1.0), S::percent(1.0), desk)
@@ -4913,198 +4725,418 @@ div()
     //             .display(Display::Flex)
     //             .flexDirection(FlexDirection::Col)
     //             .flexGap(S::px(8))
+    //             .marginBottom(S::px(28))
     //         (
-    //             text("OPACITY").font(DINAlternateBold).fontSize(S::pt(26)).color(ink),
-    //             text("effective = product of ancestors · per-primitive, no group compositing")
+    //             text("STROKES").font(DINAlternateBold).fontSize(S::pt(26)).color(ink),
+    //             text("border-style on divs and images · click the last card to cycle its style")
     //                 .font(SFMono).fontSize(S::pt(11)).color(muted)
     //         ),
+    //         div().height(S::px(1)).color(rule)(),
 
-    //         section("Levels · fill and border fade together"),
-    //         row(
-    //             cell("1.0", "solid", backdrop(card(grape)())),
-    //             cell("0.75", "", backdrop(card(grape).opacity(0.75f)())),
-    //             cell("0.5", "", backdrop(card(grape).opacity(0.5f)())),
-    //             cell("0.25", "", backdrop(card(grape).opacity(0.25f)())),
-    //             cell("0.0", "invisible", backdrop(card(grape).opacity(0.0f)()))
-    //         ),
-
-    //         section("Composition with color alpha"),
-    //         row(
-    //             cell("alpha 0.5, opacity 1", "fill 0.5 · border 1",
-    //                 backdrop(card(simd_float4{grape.x, grape.y, grape.z, 0.5f})())
-    //             ),
-    //             cell("alpha 1, opacity 0.5", "fill 0.5 · border 0.5",
-    //                 backdrop(card(grape).opacity(0.5f)())
-    //             ),
-    //             cell("alpha 0.5, opacity 0.5", "fill 0.25 · border 0.5",
-    //                 backdrop(card(simd_float4{grape.x, grape.y, grape.z, 0.5f}).opacity(0.5f)())
-    //             ),
-    //             cell("shadow", "0.5 · shadow halves too",
-    //                 backdrop(
-    //                     card(paper).opacity(0.5f)
-    //                         .shadowOffsetY(S::px(8))
-    //                         .shadowBlur(S::px(24))
-    //                         .shadowColor(umbra)
-    //                     ()
-    //                 )
-    //             )
-    //         ),
-
-    //         section("Inheritance · child effective = parent × child"),
-    //         row(
-    //             cell("parent 0.5, child 1", "child renders at 0.5",
-    //                 backdrop(
-    //                     centered(card(mint).opacity(0.5f))
-    //                     (
-    //                         div(S::px(80), S::px(50), grape).cornerRadius(S::px(8))()
-    //                     )
-    //                 )
-    //             ),
-    //             cell("parent 0.5, child 0.5", "child renders at 0.25",
-    //                 backdrop(
-    //                     centered(card(mint).opacity(0.5f))
-    //                     (
-    //                         div(S::px(80), S::px(50), grape).cornerRadius(S::px(8)).opacity(0.5f)()
-    //                     )
-    //                 )
-    //             ),
-    //             cell("parent 1, child 0.5", "only child fades",
-    //                 backdrop(
-    //                     centered(card(mint))
-    //                     (
-    //                         div(S::px(80), S::px(50), grape).cornerRadius(S::px(8)).opacity(0.5f)()
-    //                     )
-    //                 )
-    //             ),
-    //             cell("three deep", "0.8 × 0.8 × 0.8 ≈ 0.51",
-    //                 backdrop(
-    //                     centered(card(mint).opacity(0.8f))
-    //                     (
-    //                         centered(div(S::px(100), S::px(70), grape).cornerRadius(S::px(8)).opacity(0.8f))
-    //                         (
-    //                             div(S::px(60), S::px(40), tangerine).cornerRadius(S::px(6)).opacity(0.8f)()
-    //                         )
-    //                     )
-    //                 )
-    //             ),
-    //             cell("text under parent", "parent 0.4 · glyphs fade",
-    //                 backdrop(
-    //                     centered(card(paper).opacity(0.4f))
-    //                     (
-    //                         text("Opacity").font(DINAlternateBold).fontSize(S::pt(22)).color(ink)
-    //                     )
-    //                 )
-    //             ),
-    //             cell("image under parent", "parent 0.5",
-    //                 backdrop(
-    //                     centered(card(paper).opacity(0.5f))
-    //                     (
-    //                         image(butterflyPath, S::px(120), S::px(80)).cornerRadius(S::px(8))
-    //                     )
-    //                 )
-    //             )
-    //         ),
-
-    //         section("Primitives · each shader multiplies its own alpha"),
-    //         row(
-    //             cell("text 0.5", "premultiplied path",
-    //                 backdrop(
-    //                     text("Opacity").font(DINAlternateBold).fontSize(S::pt(26)).color(ink).opacity(0.5f)
-    //                 )
-    //             ),
-    //             cell("image 0.5", "",
-    //                 backdrop(image(butterflyPath, S::px(140), S::px(100)).cornerRadius(S::px(12)).opacity(0.5f))
-    //             ),
-    //             cell("image + border 0.5", "border fades with texels",
-    //                 backdrop(
-    //                     image(butterflyPath, S::px(140), S::px(100))
-    //                         .cornerRadius(S::px(12))
-    //                         .borderWidth(S::px(4))
-    //                         .borderColor(tangerine)
-    //                         .opacity(0.5f)
-    //                 )
-    //             ),
-    //             cell("transformed 0.5", "rotate 0.35",
-    //                 backdrop(card(tangerine).opacity(0.5f).rotate(0.35f)())
-    //             )
-    //         ),
-
-    //         section("Divergence · overlaps double-blend (browsers flatten a group)"),
-    //         row(
-    //             cell("siblings both 0.5", "overlap darker · same in browsers",
-    //                 div().width(S::px(140)).height(S::px(100)).position(Position::Relative)
+    //         div()
+    //             .display(Display::Flex)
+    //             .flexWrap(gui::FlexWrap::Wrap)
+    //             .flexGap(S::px(12))
+    //             .justifyContent(JustifyContent::Center)
+    //         (
+    //             cell(swatch(paper, 1, BorderStyle::Solid).cornerRadius(S::px(12))(),
+    //                 "Solid hairline", "1 solid · r12"),
+    //             cell(swatch(cream, 6, BorderStyle::Solid)(),
+    //                 "Solid thick", "6 solid · sharp"),
+    //             cell(swatch(paper, 1, BorderStyle::Dashed)(),
+    //                 "Dashed hairline", "1 dashed · sharp"),
+    //             cell(swatch(paper, 3, BorderStyle::Dashed).cornerRadius(S::px(12))(),
+    //                 "Dashed", "3 dashed · r12"),
+    //             cell(swatch(cream, 6, BorderStyle::Dashed, grape).cornerRadius(S::px(50))(),
+    //                 "Dashed pill", "6 dashed · r50"),
+    //             cell(swatch(paper, 3, BorderStyle::Dashed, tangerine).cornerRadius(S::percent(0.5))(),
+    //                 "Dashed ellipse", "3 dashed · r50%"),
+    //             cell(swatch(paper, 4, BorderStyle::Dashed, slate)
+    //                     .cornerRadiusTopLeft(S::px(48))
+    //                     .cornerRadiusTopRight(S::px(4))
+    //                     .cornerRadiusBottomRight(S::px(30))
+    //                     .cornerRadiusBottomLeft(S::px(0))(),
+    //                 "Dashed uneven", "4 dashed · 48 4 30 0"),
+    //             cell(swatch(paper, 2, BorderStyle::Dotted).cornerRadius(S::px(8))(),
+    //                 "Dotted", "2 dotted · r8"),
+    //             cell(swatch(cream, 6, BorderStyle::Dotted, mint).cornerRadius(S::px(20))(),
+    //                 "Dotted thick", "6 dotted · r20"),
+    //             cell(swatch(paper, 5, BorderStyle::Dotted, grape).cornerRadius(S::percent(0.5))(),
+    //                 "Dotted ellipse", "5 dotted · r50%"),
+    //             cell(swatch(paper, 6, BorderStyle::Double).cornerRadius(S::px(10))(),
+    //                 "Double", "6 double · r10"),
+    //             cell(swatch(cream, 3, BorderStyle::Double, slate)(),
+    //                 "Double thin", "3 double · sharp"),
+    //             cell(swatch(paper, 3, BorderStyle::Dashed)
+    //                     .cornerRadius(S::px(12))
+    //                     .shadowOffsetY(S::px(8))
+    //                     .shadowBlur(S::px(24))
+    //                     .shadowColor(umbraSoft)(),
+    //                 "Dashed + shadow", "3 dashed · 0 8 24"),
+    //             cell(image(butterflyPath, S::px(140), S::px(100))
+    //                     .cornerRadius(S::px(12))
+    //                     .borderWidth(S::px(4))
+    //                     .borderStyle(BorderStyle::Dotted)
+    //                     .borderColor(paper),
+    //                 "Image dotted", "4 dotted · r12"),
+    //             cell(image(butterflyPath, S::px(140), S::px(100))
+    //                     .cornerRadius(S::px(12))
+    //                     .borderWidth(S::px(3))
+    //                     .borderStyle(BorderStyle::Dashed)
+    //                     .borderColor(ink),
+    //                 "Image dashed", "3 dashed · r12"),
+    //             cell(swatch(mint, 4, BorderStyle::Solid, ink)
+    //                     .cornerRadius(S::px(14))
+    //                     .display(Display::Flex)
+    //                     .alignItems(AlignItems::Center)
+    //                     .justifyContent(JustifyContent::Center)
+    //                     .addEventListener(EventType::Click, [](auto& node, Event&) {
+    //                         switch (node.borderStyle()) {
+    //                             case BorderStyle::Solid:  node.borderStyle(BorderStyle::Dashed); break;
+    //                             case BorderStyle::Dashed: node.borderStyle(BorderStyle::Dotted); break;
+    //                             case BorderStyle::Dotted: node.borderStyle(BorderStyle::Double); break;
+    //                             case BorderStyle::Double: node.borderStyle(BorderStyle::Solid); break;
+    //                         }
+    //                     })
     //                 (
-    //                     div(S::px(90), S::px(70), grape).cornerRadius(S::px(8)).opacity(0.5f)
-    //                         .position(Position::Absolute).top(S::px(0)).left(S::px(0))(),
-    //                     div(S::px(90), S::px(70), grape).cornerRadius(S::px(8)).opacity(0.5f)
-    //                         .position(Position::Absolute).top(S::px(30)).left(S::px(50))()
-    //                 )
-    //             ),
-    //             cell("parent 0.5, opaque children", "overlap darker · browsers: flat",
-    //                 div().width(S::px(140)).height(S::px(100)).position(Position::Relative).opacity(0.5f)
-    //                 (
-    //                     div(S::px(90), S::px(70), grape).cornerRadius(S::px(8))
-    //                         .position(Position::Absolute).top(S::px(0)).left(S::px(0))(),
-    //                     div(S::px(90), S::px(70), grape).cornerRadius(S::px(8))
-    //                         .position(Position::Absolute).top(S::px(30)).left(S::px(50))()
-    //                 )
-    //             ),
-    //             cell("child over parent fill", "parent 0.5 · child shows parent through it",
-    //                 backdrop(
-    //                     centered(card(grape).opacity(0.5f))
-    //                     (
-    //                         div(S::px(80), S::px(50), grape).cornerRadius(S::px(8))()
-    //                     )
-    //                 )
-    //             )
-    //         ),
-
-    //         section("Interaction · opacity is finalize-only, hit testing ignores it"),
-    //         row(
-    //             cell("click cycles", "1 → 0.5 → 0.1 → 1",
-    //                 backdrop(
-    //                     card(slate)
-    //                         .addEventListener(EventType::Click, [](auto& node, Event&) {
-    //                             float o = node.opacity();
-    //                             node.opacity(o > 0.75f ? 0.5f : o > 0.25f ? 0.1f : 1.0f);
-    //                         })
-    //                     ()
-    //                 )
-    //             ),
-    //             cell("hover fades", "1 ↔ 0.4",
-    //                 backdrop(
-    //                     card(mint)
-    //                         .addEventListener(EventType::MouseEnter, [](auto& node, Event&) {
-    //                             node.opacity(0.4f);
-    //                         })
-    //                         .addEventListener(EventType::MouseLeave, [](auto& node, Event&) {
-    //                             node.opacity(1.0f);
-    //                         })
-    //                     ()
-    //                 )
-    //             ),
-    //             cell("opacity 0 still clickable", "click → 1",
-    //                 backdrop(
-    //                     card(grape).opacity(0.0f)
-    //                         .addEventListener(EventType::Click, [](auto& node, Event&) {
-    //                             node.opacity(node.opacity() < 0.5f ? 1.0f : 0.0f);
-    //                         })
-    //                     ()
-    //                 )
-    //             ),
-    //             cell("parent click fades subtree", "child inherits the change",
-    //                 backdrop(
-    //                     centered(card(mint))
-    //                         .addEventListener(EventType::Click, [](auto& node, Event&) {
-    //                             node.opacity(node.opacity() > 0.5f ? 0.3f : 1.0f);
-    //                         })
-    //                     (
-    //                         div(S::px(80), S::px(50), grape).cornerRadius(S::px(8))()
-    //                     )
-    //                 )
-    //             )
+    //                     text("click me").font(ArialBold).fontSize(S::pt(12)).color(paper)
+    //                 ),
+    //                 "Interactive", "click: solid → dashed → dotted → double")
     //         )
     //     );
     // }
+
+//     // Opacity: multiplies down the tree, applies to fill/border/shadow/text/image,
+//     // composes with color alpha, and is per-primitive (no group compositing).
+//     // Divergence from browsers: overlapping content under one opacity double-blends.
+//     {
+//         using S = gui::Size;
+//         using gui::Display;
+//         using gui::FlexDirection;
+//         using gui::AlignItems;
+//         using gui::JustifyContent;
+//         using gui::Position;
+//         using runtime::EventType;
+// 
+//         constexpr simd_float4 desk      {0.941, 0.937, 0.925, 1.0};
+//         constexpr simd_float4 paper     {1.000, 1.000, 1.000, 1.0};
+//         constexpr simd_float4 ink       {0.129, 0.129, 0.153, 1.0};
+//         constexpr simd_float4 muted     {0.478, 0.478, 0.510, 1.0};
+//         constexpr simd_float4 rule      {0.871, 0.863, 0.839, 1.0};
+//         constexpr simd_float4 grape     {0.435, 0.271, 0.831, 1.0};
+//         constexpr simd_float4 mint      {0.180, 0.741, 0.545, 1.0};
+//         constexpr simd_float4 tangerine {1.000, 0.502, 0.200, 1.0};
+//         constexpr simd_float4 slate     {0.239, 0.271, 0.325, 1.0};
+//         constexpr simd_float4 umbra     {0.000, 0.000, 0.000, 0.5};
+// 
+//         constexpr auto butterflyPath = "/Users/treja/projects/gui/assets/butterfly.png";
+// 
+//         auto label = [&](const char* title, const char* spec) {
+//             return div()
+//                 .display(Display::Flex)
+//                 .flexDirection(FlexDirection::Col)
+//                 .flexGap(S::px(3))
+//             (
+//                 text(title).font(ArialBold).fontSize(S::pt(12)).color(ink),
+//                 text(spec).font(SFMono).fontSize(S::pt(9)).color(muted)
+//             );
+//         };
+// 
+//         auto cell = [&](const char* title, const char* spec, auto&& subject) {
+//             return div()
+//                 .width(S::px(220))
+//                 .display(Display::Flex)
+//                 .flexDirection(FlexDirection::Col)
+//                 .alignItems(AlignItems::Center)
+//                 .flexGap(S::px(14))
+//                 .paddingTop(S::px(20))
+//                 .paddingBottom(S::px(12))
+//             (
+//                 subject,
+//                 label(title, spec)
+//             );
+//         };
+// 
+//         auto section = [&](const char* title) {
+//             return div()
+//                 .display(Display::Flex)
+//                 .flexDirection(FlexDirection::Col)
+//                 .flexGap(S::px(6))
+//                 .marginTop(S::px(36))
+//                 .marginBottom(S::px(8))
+//             (
+//                 text(title).font(DINAlternateBold).fontSize(S::pt(18)).color(ink),
+//                 div().height(S::px(1)).color(rule)()
+//             );
+//         };
+// 
+//         auto row = [&](auto&&... cells) {
+//             return div()
+//                 .display(Display::Flex)
+//                 .flexWrap(gui::FlexWrap::Wrap)
+//                 .flexGap(S::px(12))
+//                 .justifyContent(JustifyContent::Center)
+//             (cells...);
+//         };
+// 
+//         auto card = [&](simd_float4 color) {
+//             return div(S::px(140), S::px(100), color)
+//                 .cornerRadius(S::px(12))
+//                 .borderWidth(S::px(2))
+//                 .borderColor(ink);
+//         };
+// 
+//         // Striped backdrop so partial alpha is visible against something other than the desk.
+//         auto backdrop = [&](auto&& subject) {
+//             return div().width(S::px(160)).height(S::px(120))
+//                 .display(Display::Flex)
+//                 .alignItems(AlignItems::Center)
+//                 .justifyContent(JustifyContent::Center)
+//                 .position(Position::Relative)
+//             (
+//                 div(S::px(160), S::px(40), ink).position(Position::Absolute).top(S::px(40)).left(S::px(0))(),
+//                 subject
+//             );
+//         };
+// 
+//         auto centered = [&](auto&& builder) {
+//             return builder
+//                 .display(Display::Flex)
+//                 .alignItems(AlignItems::Center)
+//                 .justifyContent(JustifyContent::Center);
+//         };
+// 
+//         div(S::percent(1.0), S::percent(1.0), desk)
+//             .padding(S::px(36))
+//             .overflow(gui::Overflow::Scroll)
+//         (
+//             div()
+//                 .display(Display::Flex)
+//                 .flexDirection(FlexDirection::Col)
+//                 .flexGap(S::px(8))
+//             (
+//                 text("OPACITY").font(DINAlternateBold).fontSize(S::pt(26)).color(ink),
+//                 text("effective = product of ancestors · per-primitive, no group compositing")
+//                     .font(SFMono).fontSize(S::pt(11)).color(muted)
+//             ),
+// 
+//             section("Levels · fill and border fade together"),
+//             row(
+//                 cell("1.0", "solid", backdrop(card(grape)())),
+//                 cell("0.75", "", backdrop(card(grape).opacity(0.75f)())),
+//                 cell("0.5", "", backdrop(card(grape).opacity(0.5f)())),
+//                 cell("0.25", "", backdrop(card(grape).opacity(0.25f)())),
+//                 cell("0.0", "invisible", backdrop(card(grape).opacity(0.0f)()))
+//             ),
+// 
+//             section("Composition with color alpha"),
+//             row(
+//                 cell("alpha 0.5, opacity 1", "fill 0.5 · border 1",
+//                     backdrop(card(simd_float4{grape.x, grape.y, grape.z, 0.5f})())
+//                 ),
+//                 cell("alpha 1, opacity 0.5", "fill 0.5 · border 0.5",
+//                     backdrop(card(grape).opacity(0.5f)())
+//                 ),
+//                 cell("alpha 0.5, opacity 0.5", "fill 0.25 · border 0.5",
+//                     backdrop(card(simd_float4{grape.x, grape.y, grape.z, 0.5f}).opacity(0.5f)())
+//                 ),
+//                 cell("shadow", "0.5 · shadow halves too",
+//                     backdrop(
+//                         card(paper).opacity(0.5f)
+//                             .shadowOffsetY(S::px(8))
+//                             .shadowBlur(S::px(24))
+//                             .shadowColor(umbra)
+//                         ()
+//                     )
+//                 )
+//             ),
+// 
+//             section("Inheritance · child effective = parent × child"),
+//             row(
+//                 cell("parent 0.5, child 1", "child renders at 0.5",
+//                     backdrop(
+//                         centered(card(mint).opacity(0.5f))
+//                         (
+//                             div(S::px(80), S::px(50), grape).cornerRadius(S::px(8))()
+//                         )
+//                     )
+//                 ),
+//                 cell("parent 0.5, child 0.5", "child renders at 0.25",
+//                     backdrop(
+//                         centered(card(mint).opacity(0.5f))
+//                         (
+//                             div(S::px(80), S::px(50), grape).cornerRadius(S::px(8)).opacity(0.5f)()
+//                         )
+//                     )
+//                 ),
+//                 cell("parent 1, child 0.5", "only child fades",
+//                     backdrop(
+//                         centered(card(mint))
+//                         (
+//                             div(S::px(80), S::px(50), grape).cornerRadius(S::px(8)).opacity(0.5f)()
+//                         )
+//                     )
+//                 ),
+//                 cell("three deep", "0.8 × 0.8 × 0.8 ≈ 0.51",
+//                     backdrop(
+//                         centered(card(mint).opacity(0.8f))
+//                         (
+//                             centered(div(S::px(100), S::px(70), grape).cornerRadius(S::px(8)).opacity(0.8f))
+//                             (
+//                                 div(S::px(60), S::px(40), tangerine).cornerRadius(S::px(6)).opacity(0.8f)()
+//                             )
+//                         )
+//                     )
+//                 ),
+//                 cell("text under parent", "parent 0.4 · glyphs fade",
+//                     backdrop(
+//                         centered(card(paper).opacity(0.4f))
+//                         (
+//                             text("Opacity").font(DINAlternateBold).fontSize(S::pt(22)).color(ink)
+//                         )
+//                     )
+//                 ),
+//                 cell("image under parent", "parent 0.5",
+//                     backdrop(
+//                         centered(card(paper).opacity(0.5f))
+//                         (
+//                             image(butterflyPath, S::px(120), S::px(80)).cornerRadius(S::px(8))
+//                         )
+//                     )
+//                 )
+//             ),
+// 
+//             section("Primitives · each shader multiplies its own alpha"),
+//             row(
+//                 cell("text 0.5", "premultiplied path",
+//                     backdrop(
+//                         text("Opacity").font(DINAlternateBold).fontSize(S::pt(26)).color(ink).opacity(0.5f)
+//                     )
+//                 ),
+//                 cell("image 0.5", "",
+//                     backdrop(image(butterflyPath, S::px(140), S::px(100)).cornerRadius(S::px(12)).opacity(0.5f))
+//                 ),
+//                 cell("image + border 0.5", "border fades with texels",
+//                     backdrop(
+//                         image(butterflyPath, S::px(140), S::px(100))
+//                             .cornerRadius(S::px(12))
+//                             .borderWidth(S::px(4))
+//                             .borderColor(tangerine)
+//                             .opacity(0.5f)
+//                     )
+//                 ),
+//                 cell("transformed 0.5", "rotate 0.35",
+//                     backdrop(card(tangerine).opacity(0.5f).rotate(0.35f)())
+//                 )
+//             ),
+// 
+//             section("Divergence · overlaps double-blend (browsers flatten a group)"),
+//             row(
+//                 cell("siblings both 0.5", "overlap darker · same in browsers",
+//                     div().width(S::px(140)).height(S::px(100)).position(Position::Relative)
+//                     (
+//                         div(S::px(90), S::px(70), grape).cornerRadius(S::px(8)).opacity(0.5f)
+//                             .position(Position::Absolute).top(S::px(0)).left(S::px(0))(),
+//                         div(S::px(90), S::px(70), grape).cornerRadius(S::px(8)).opacity(0.5f)
+//                             .position(Position::Absolute).top(S::px(30)).left(S::px(50))()
+//                     )
+//                 ),
+//                 cell("parent 0.5, opaque children", "overlap darker · browsers: flat",
+//                     div().width(S::px(140)).height(S::px(100)).position(Position::Relative).opacity(0.5f)
+//                     (
+//                         div(S::px(90), S::px(70), grape).cornerRadius(S::px(8))
+//                             .position(Position::Absolute).top(S::px(0)).left(S::px(0))(),
+//                         div(S::px(90), S::px(70), grape).cornerRadius(S::px(8))
+//                             .position(Position::Absolute).top(S::px(30)).left(S::px(50))()
+//                     )
+//                 ),
+//                 cell("child over parent fill", "parent 0.5 · child shows parent through it",
+//                     backdrop(
+//                         centered(card(grape).opacity(0.5f))
+//                         (
+//                             div(S::px(80), S::px(50), grape).cornerRadius(S::px(8))()
+//                         )
+//                     )
+//                 )
+//             ),
+// 
+//             section("Interaction · opacity is finalize-only, hit testing ignores it"),
+//             row(
+//                 cell("click cycles", "1 → 0.5 → 0.1 → 1",
+//                     backdrop(
+//                         card(slate)
+//                             .addEventListener(EventType::Click, [](auto& node, Event&) {
+//                                 float o = node.opacity();
+//                                 node.opacity(o > 0.75f ? 0.5f : o > 0.25f ? 0.1f : 1.0f);
+//                             })
+//                         ()
+//                     )
+//                 ),
+//                 cell("hover fades", "1 ↔ 0.4",
+//                     backdrop(
+//                         card(mint)
+//                             .addEventListener(EventType::MouseEnter, [](auto& node, Event&) {
+//                                 node.opacity(0.4f);
+//                             })
+//                             .addEventListener(EventType::MouseLeave, [](auto& node, Event&) {
+//                                 node.opacity(1.0f);
+//                             })
+//                         ()
+//                     )
+//                 ),
+//                 cell("opacity 0 still clickable", "click → 1",
+//                     backdrop(
+//                         card(grape).opacity(0.0f)
+//                             .addEventListener(EventType::Click, [](auto& node, Event&) {
+//                                 node.opacity(node.opacity() < 0.5f ? 1.0f : 0.0f);
+//                             })
+//                         ()
+//                     )
+//                 ),
+//                 cell("parent click fades subtree", "child inherits the change",
+//                     backdrop(
+//                         centered(card(mint))
+//                             .addEventListener(EventType::Click, [](auto& node, Event&) {
+//                                 node.opacity(node.opacity() > 0.5f ? 0.3f : 1.0f);
+//                             })
+//                         (
+//                             div(S::px(80), S::px(50), grape).cornerRadius(S::px(8))()
+//                         )
+//                     )
+//                 )
+//             )
+//         );
+//     }
+
+    // Links: a link is just an inline text node with a Click listener that
+    // hands the URL to the OS. Sits in an inline formatting context with
+    // regular text on either side.
+    {
+        using S = gui::Size;
+        using runtime::EventType;
+
+        constexpr simd_float4 desk {0.941, 0.937, 0.925, 1.0};
+        constexpr simd_float4 ink  {0.129, 0.129, 0.153, 1.0};
+        constexpr simd_float4 blue {0.000, 0.400, 0.850, 1.0};
+
+        auto link = [&](const std::string& label, std::string url) {
+            return text(label).fontSize(S::pt(14)).color(blue)
+                .addEventListener(EventType::Click, [url = std::move(url)](auto&, Event&) {
+                    AppKit_Extensions::openURL(url.c_str());
+                });
+        };
+
+        div(S::percent(1.0), S::percent(1.0), desk)
+            .padding(S::px(32))
+        (
+            div()
+            (
+                text("This paragraph has a ").fontSize(S::pt(14)).color(ink),
+                link("link to the repo", "https://github.com/taanishr/butterfly"),
+                text(" in the middle of it, and another one at the end: ").fontSize(S::pt(14)).color(ink),
+                link("apple.com", "https://www.apple.com")
+            )
+        );
+    }
 
 }
