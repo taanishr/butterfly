@@ -19,3 +19,7 @@ tests/
 blog/
 
 assets/
+
+AGENTS.md
+ROADMAP.md
+gui.xcodeproj
