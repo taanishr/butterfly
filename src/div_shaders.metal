@@ -26,6 +26,7 @@ struct DivStyleUniforms {
     CornerRadii cornerRadius;
     BorderUniform border;
     ShadowUniform shadow;
+    float opacity;
 };
 
 struct DivGeometryUniforms {
@@ -118,5 +119,5 @@ fragment float4 fragment_div(
         rgb /= alpha;
     }
 
-    return float4(rgb, alpha);
+    return float4(rgb, alpha * uniforms->style.opacity);
 }

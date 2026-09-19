@@ -13,6 +13,7 @@ struct TextUniforms {
     float4 color;
     float fontSize;
     uint numClips;
+    float opacity;
     float3x3 transform;
 };
 
@@ -323,7 +324,7 @@ fragment float4 fragment_text(
 
     float coverage = clamp(0.5 - sd/px, 0.0, 1.0);
 
-    float alpha = coverage * uniforms->color.w;
+    float alpha = coverage * uniforms->color.w * uniforms->opacity;
 
     float3 rgb = uniforms->color.rgb;
     return float4(rgb * alpha, alpha);

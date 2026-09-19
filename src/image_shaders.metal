@@ -14,6 +14,7 @@ struct ImageStyleUniforms {
     CornerRadii cornerRadius;
     BorderUniform border;
     ShadowUniform shadow;
+    float opacity;
 };
 
 struct ImageGeometryUniforms {
@@ -123,5 +124,5 @@ fragment float4 fragment_image(
         rgb /= alpha;
     }
 
-    return float4(rgb, alpha);
+    return float4(rgb, alpha * uniforms->style.opacity);
 }

@@ -99,8 +99,9 @@ namespace layout {
         for (uint64_t i = 0; i < node->children.size(); ++i) {
             auto childAsPtr = node->children[i].get();
             auto position = childAsPtr->getPosition();
-            if (position == Position::Absolute || position == Position::Fixed)
+            if (position == Position::Absolute || position == Position::Fixed) {
                 continue;
+            }
 
             auto selfAlign = childAsPtr->getAlignSelf();
             AlignItems effectiveAlign = flex.effectiveAlign(selfAlign);
@@ -393,6 +394,52 @@ namespace layout {
 
             preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(tree, childNode, frameInfo, preparedChildConstraints, childRequest, {
                 .availableWidth = childAvailableSize.width,
+                .widthRequest = childRequest.intrinsicWidthRequest,
+                .trackIntrinsicWidth = false,
+            }, sizeCache);
+
+            tree.layoutRecursive(childNode, frameInfo, std::move(preparedChildConstraints), mutate, std::move(childRequest));
+        }
+
+        // out of flow items aren't flex items; go back and lay out the out of flow items against
+        // the container size
+        for (auto& child : node->children) {
+            auto childNode = child.get();
+            auto position = childNode->getPosition();
+            if (position != Position::Absolute && position != Position::Fixed)
+                continue;
+
+            auto preparedChildConstraints = prepareChildConstraints();
+
+            SizeRequest childRequest {
+                .position = childNode->shared.position,
+                .specified = {.width = childNode->shared.width, .height = childNode->shared.height},
+                .override = {.width = std::monostate{}, .height = std::monostate{}},
+                .minimum = {.width = childNode->shared.minWidth, .height = childNode->shared.minHeight},
+                .maximum = {
+                    .width = childNode->shared.maxWidth ? SizeState{*childNode->shared.maxWidth} : SizeState{std::monostate{}},
+                    .height = childNode->shared.maxHeight ? SizeState{*childNode->shared.maxHeight} : SizeState{std::monostate{}},
+                },
+                .available = availableSize,
+                .top = childNode->shared.top,
+                .right = childNode->shared.right,
+                .bottom = childNode->shared.bottom,
+                .left = childNode->shared.left,
+                .paddingTop = childNode->shared.paddingTop.value_or(childNode->shared.padding),
+                .paddingRight = childNode->shared.paddingRight.value_or(childNode->shared.padding),
+                .paddingBottom = childNode->shared.paddingBottom.value_or(childNode->shared.padding),
+                .paddingLeft = childNode->shared.paddingLeft.value_or(childNode->shared.padding),
+                .borderWidth = childNode->shared.border.width,
+                .margins = childNode->preLayout->resolvedMargins,
+                .aspectRatio = childNode->shared.aspectRatio,
+                .automaticWidth = AutomaticSizing::UseContent,
+                .automaticHeight = AutomaticSizing::UseContent,
+                .automaticMinimumWidth = AutomaticMinimum::Zero,
+                .automaticMinimumHeight = AutomaticMinimum::Zero,
+            };
+
+            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(tree, childNode, frameInfo, preparedChildConstraints, childRequest, {
+                .availableWidth = availableSize.width,
                 .widthRequest = childRequest.intrinsicWidthRequest,
                 .trackIntrinsicWidth = false,
             }, sizeCache);

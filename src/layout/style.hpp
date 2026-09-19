@@ -267,6 +267,12 @@ namespace style {
         std::optional<simd_float2> scale {};
         Size transformOriginX{Size::percent(0.5f)};
         Size transformOriginY{Size::percent(0.5f)};
+
+        // opacity: different from color opacity
+        // passed down btwn children intentionally
+        // divergence from spec: i wont be collecting nodes as one group and painting them w the same opacity
+        // so we intentionally fail /css/css-color/opacity-overlapping-letters.html
+        float opacity{1.0f};
     };
 
     inline auto resolveCornerRadii(const SharedDescriptor& desc, float width, float height) -> CornerRadii {

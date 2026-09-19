@@ -336,6 +336,7 @@ namespace layout {
         std::optional<TextOverflow&> textOverflow;
 
         simd_float3x3 transform {matrix_identity_float3x3};
+        float opacity{1.0f};
     };
 
     struct LayoutInput {

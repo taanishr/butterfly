@@ -97,6 +97,7 @@ namespace elements {
         simd_float4 color;
         float fontSize;
         uint32_t numClips;
+        float opacity;
         simd_float3x3 transform;
     };
 
@@ -684,6 +685,7 @@ namespace elements {
                 .color = desc.color,
                 .fontSize = fontSize,
                 .numClips = static_cast<uint32_t>(layout.clipUniforms.size()),
+                .opacity = constraints.opacity,
                 .transform = constraints.transform
             };
 

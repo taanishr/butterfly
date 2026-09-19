@@ -387,6 +387,16 @@ namespace elements {
             return self();
         }
 
+        float opacity() const {
+            return node->shared.opacity;
+        }
+
+        Derived& opacity(float opacity) {
+            node->shared.opacity = std::clamp(opacity, 0.0f, 1.0f);
+            markDirty(DirtyBits::PostLayout | DirtyBits::Finalize);
+            return self();
+        }
+
         std::optional<simd_float3x3> transform() const {
             return node->shared.transform;
         }

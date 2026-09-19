@@ -61,6 +61,7 @@ namespace elements {
         CornerRadii cornerRadius;
         BorderUniform border;
         ShadowUniform shadow;
+        float opacity;
     };
 
     struct SVGGeometryUniforms {
@@ -477,7 +478,8 @@ namespace elements {
             SVGStyleUniforms styleUniforms {
                 .cornerRadius = cornerRadius,
                 .border = { .width = borderWidth, .color = shared.border.color, .style = shared.border.style },
-                .shadow = shadow
+                .shadow = shadow,
+                .opacity = constraints.opacity
             };
 
             SVGGeometryUniforms geometryUniforms;

@@ -260,6 +260,7 @@ namespace tree {
 
         simd_float3x3 transform {matrix_identity_float3x3};
         simd_float3x3 inverseTransform {matrix_identity_float3x3};
+        float effectiveOpacity{1.0f};
     private:
         static uint64_t nextId;
     };

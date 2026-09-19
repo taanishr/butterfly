@@ -863,11 +863,7 @@ namespace tree {
                 const IntrinsicResult& intrinsicSizes = sizeRequest.resolvingIntrinsicWidth
                     ? (flexContext.axis.isRow ? result.mainIntrinsicSizes : result.crossIntrinsicSizes)
                     : (flexContext.axis.isRow ? result.crossIntrinsicSizes : result.mainIntrinsicSizes);
-
-                // if (node->id == 32) {
-                //     std::println("intrinsic min: {} intrinsic max: {}", intrinsicResult->minimum, intrinsicResult->maximum);
-                // }   
-
+                    
                 intrinsicResult = IntrinsicSizes {
                     .minimum = std::get<float>(intrinsicSizes.minimum),
                     .maximum = std::get<float>(intrinsicSizes.maximum)
@@ -1174,6 +1170,7 @@ namespace tree {
         
             node->transform = simd_mul(constraints.transform, localTransform);
             node->inverseTransform = simd_inverse(node->transform);
+            node->effectiveOpacity = constraints.opacity * node->shared.opacity;
 
             node->atomized = node->element->postLayout(constraints, node->shared,*node->atomized, result.layout);
 
@@ -1218,6 +1215,7 @@ namespace tree {
             childConstraints.availableWidth = layout.childConstraints.availableWidth;
             childConstraints.availableHeight = layout.childConstraints.availableHeight;
             childConstraints.transform = node->transform;
+            childConstraints.opacity = node->effectiveOpacity;
 
             childConstraints.containingBlock = {
                 .origin = currContentOrigin,
@@ -1402,6 +1400,7 @@ namespace tree {
             auto& placed = *node->placed;
             auto finalizedConstraints = constraints;
             finalizedConstraints.transform = node->transform;
+            finalizedConstraints.opacity = node->effectiveOpacity;
             auto finalized = node->element->finalize(finalizedConstraints, node->shared, atomized, layout, placed);
             node->finalized = finalized;
             node->constraintsKey = key;
