@@ -1051,7 +1051,7 @@ namespace layout_test::scenes {
             .position(gui::Position::Fixed)
             .top(S::px(8))
             .padding(S::px(6))
-            .zIndex(std::numeric_limits<uint64_t>::max())
+            .zIndex(std::numeric_limits<int64_t>::max())
             .color(simd_float4{0.0, 0.0, 0.0, 0.82})
         (
             sceneName

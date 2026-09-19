@@ -100,7 +100,6 @@ namespace elements {
             return DirtyBits::Atomize | DirtyBits::Layout |
                 DirtyBits::PostLayout | DirtyBits::Place | DirtyBits::Finalize;
         }
-
         Derived& self() {
             return static_cast<Derived&>(*this);
         }
@@ -115,7 +114,7 @@ namespace elements {
 
         Derived& position(Position position) {
             node->shared.position = position;
-            markDirty(layoutDirtyBits());
+            markDirty(layoutDirtyBits() | DirtyBits::PaintOrder);
             return self();
         }
 
@@ -340,7 +339,7 @@ namespace elements {
                 shared.rotate.value_or(0.0f),
                 shared.scale.value_or(simd_float2{1.0f, 1.0f})
             );
-            markDirty(DirtyBits::PostLayout | DirtyBits::Finalize);
+            markDirty(DirtyBits::PostLayout | DirtyBits::Finalize | DirtyBits::PaintOrder);
             return self();
         }
 
@@ -356,7 +355,7 @@ namespace elements {
                 rotate,
                 shared.scale.value_or(simd_float2{1.0f, 1.0f})
             );
-            markDirty(DirtyBits::PostLayout | DirtyBits::Finalize);
+            markDirty(DirtyBits::PostLayout | DirtyBits::Finalize | DirtyBits::PaintOrder);
             return self();
         }
 
@@ -372,7 +371,7 @@ namespace elements {
                 shared.rotate.value_or(0.0f),
                 scale
             );
-            markDirty(DirtyBits::PostLayout | DirtyBits::Finalize);
+            markDirty(DirtyBits::PostLayout | DirtyBits::Finalize | DirtyBits::PaintOrder);
             return self();
         }
 
@@ -393,7 +392,7 @@ namespace elements {
 
         Derived& opacity(float opacity) {
             node->shared.opacity = std::clamp(opacity, 0.0f, 1.0f);
-            markDirty(DirtyBits::PostLayout | DirtyBits::Finalize);
+            markDirty(DirtyBits::PostLayout | DirtyBits::Finalize | DirtyBits::PaintOrder);
             return self();
         }
 
@@ -403,7 +402,7 @@ namespace elements {
 
         Derived& transform(std::optional<simd_float3x3> transform) {
             node->shared.transform = transform;
-            markDirty(layoutDirtyBits());
+            markDirty(layoutDirtyBits() | DirtyBits::PaintOrder);
             return self();
         }
 
@@ -789,8 +788,12 @@ namespace elements {
             return self();
         }
 
-        Derived& zIndex(uint64_t zIndex) {
-            node->localZIndex = zIndex; // may need to make this global lol and check nvm we good
+        std::optional<int64_t> zIndex() const {
+            return node->zIndex;
+        }
+
+        Derived& zIndex(std::optional<int64_t> zIndex) {
+            node->zIndex = zIndex;
             markDirty(DirtyBits::PaintOrder);
             return self();
         }

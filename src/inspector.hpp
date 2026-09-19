@@ -17,7 +17,7 @@
 #endif
 
 inline constexpr bool GUI_INSPECTOR_ENABLED = GUI_ENABLE_INSPECTOR;
-constexpr uint64_t DEBUG_Z_INDEX = std::numeric_limits<uint64_t>::max();
+constexpr int64_t DEBUG_Z_INDEX = std::numeric_limits<int64_t>::max();
 
 namespace Inspector {
     using namespace elements;
@@ -95,7 +95,7 @@ namespace Inspector {
         std::optional<float> htNodeLocalH;
         std::optional<float> htNodeScrollX;
         std::optional<float> htNodeScrollY;
-        std::optional<uint64_t> htNodeZIndex;
+        std::optional<std::string> htNodeZIndex;
         std::optional<std::string> htNodePath;
         std::string hitStackDetails{"hit: None"};
         std::string treeViewDetails{"tree: None"};

@@ -261,43 +261,11 @@ namespace tree {
             ? std::to_underlying(instrumentation::RenderOrderReason::EmptyCache)
             : 0;
 
-        renderOrderCache = collectAllNodes(getRoot());
-
         uint64_t paintOrderIndex = 0;
+        assignPaintOrderIndices(getRoot(), paintOrderIndex);
 
-        std::function<void(TreeNode*)> assignPaintOrderIndices = [&](TreeNode* node) {
-            if (!node) return;
-
-            node->paintPreorderIndex = paintOrderIndex++;
-            for (auto& child : node->children) {
-                assignPaintOrderIndices(child.get());
-            }
-            node->paintPostorderIndex = paintOrderIndex++;
-        };
-
-        assignPaintOrderIndices(getRoot());
-
-        std::sort(renderOrderCache.begin(), renderOrderCache.end(), [](TreeNode* a, TreeNode* b) {
-            if (a->globalZIndex != b->globalZIndex) {
-                return a->globalZIndex < b->globalZIndex;
-            }
-
-            auto aIsAncestor = a->paintPreorderIndex < b->paintPreorderIndex
-                && b->paintPostorderIndex < a->paintPostorderIndex;
-            auto bIsAncestor = b->paintPreorderIndex < a->paintPreorderIndex
-                && a->paintPostorderIndex < b->paintPostorderIndex;
-
-            if (aIsAncestor) {
-                return true;
-            }
-            if (bIsAncestor) {
-                return false;
-            }
-
-            // return a->id < b->id;
-
-            return a->paintPreorderIndex < b->paintPreorderIndex;
-        });
+        renderOrderCache.clear();
+        createStackingContexts(getRoot(), renderOrderCache);
 
         renderOrderDirty = false;
         if constexpr (instrumentation::enabled) {
@@ -391,7 +359,6 @@ namespace tree {
             sizeCache.clear();
             instrumentation::PhaseTimer timer{instrumentation::Phase::Layout};
             layoutPhase(root, frameInfo, rootConstraints);
-            root->calculateGlobalZIndex(0);
         }
 
         sortedRenderOrder();
@@ -863,7 +830,7 @@ namespace tree {
                 const IntrinsicResult& intrinsicSizes = sizeRequest.resolvingIntrinsicWidth
                     ? (flexContext.axis.isRow ? result.mainIntrinsicSizes : result.crossIntrinsicSizes)
                     : (flexContext.axis.isRow ? result.crossIntrinsicSizes : result.mainIntrinsicSizes);
-                    
+
                 intrinsicResult = IntrinsicSizes {
                     .minimum = std::get<float>(intrinsicSizes.minimum),
                     .maximum = std::get<float>(intrinsicSizes.maximum)
@@ -1423,8 +1390,7 @@ namespace tree {
             auto& renderOrder = sortedRenderOrder();
             for (auto it = renderOrder.rbegin(); it != renderOrder.rend(); ++it) {
                 auto* candidate = *it;
-                auto isInSubtree = node->paintPreorderIndex <= candidate->paintPreorderIndex
-                    && candidate->paintPostorderIndex <= node->paintPostorderIndex;
+                auto isInSubtree = node->paintPreorderIndex <= candidate->paintPreorderIndex && candidate->paintPostorderIndex <= node->paintPostorderIndex;
                 if (!isInSubtree) {
                     continue;
                 }

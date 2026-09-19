@@ -17,6 +17,13 @@ namespace Inspector {
         constexpr int KEY_CODE_UP = 126;
         constexpr int KEY_CODE_DOWN = 125;
 
+        std::string zIndexName(std::optional<int64_t> zIndex) {
+            if (zIndex.has_value()) {
+                return std::to_string(*zIndex);
+            }
+            return "auto";
+        }
+
         std::string displayName(style::Display display) {
             switch (display) {
                 case style::Display::Block: return "Block";
@@ -407,7 +414,7 @@ namespace Inspector {
             }, htNode->layout->layout);
             htNodeScrollX = float(htNode->scrollOffset.x);
             htNodeScrollY = float(htNode->scrollOffset.y);
-            htNodeZIndex = htNode->globalZIndex;
+            htNodeZIndex = zIndexName(htNode->zIndex);
 
             std::vector<tree::TreeNode*> path;
             for (auto* node = htNode; node; node = node->parent) {
@@ -441,7 +448,7 @@ namespace Inspector {
                     i == selectedHitIndex ? ">" : " ",
                     node->element->elementTypeName(),
                     node->id,
-                    node->globalZIndex
+                    zIndexName(node->zIndex)
                 );
                 if (i + 1 < hitNodes.size()) hitStackDetails += '\n';
             }

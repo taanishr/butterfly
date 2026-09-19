@@ -104,8 +104,6 @@ namespace tree {
             : element(std::make_unique<Element<E,P, typename E::StorageType, typename E::DescriptorType, typename E::UniformsType>>(ctx, std::move(elem), processor)),
             parent(nullptr),
             id(nextId++),
-            localZIndex{0},
-            globalZIndex{0},
             paintPreorderIndex{0},
             paintPostorderIndex{0}
         {}
@@ -152,14 +150,16 @@ namespace tree {
             return nullptr;
         }
 
-        void calculateGlobalZIndex(uint64_t parentGlobal) {
-            globalZIndex = std::add_sat(parentGlobal, localZIndex);
-            
-            for (auto& child : children) {
-                child->calculateGlobalZIndex(globalZIndex);
-            }
+        bool establishesStackingContext() const {
+            return parent == nullptr
+                || zIndex.has_value()
+                || shared.opacity < 1.0f
+                || shared.transform.has_value()
+                || shared.position == Position::Fixed
+                || shared.position == Position::Sticky;
         }
-        
+
+
         void attach_child(std::unique_ptr<TreeNode>&& child) {
             if (!child) return;
             child->parent = this;
@@ -236,8 +236,7 @@ namespace tree {
         TreeNode* parent = nullptr;
         std::vector<std::unique_ptr<TreeNode>> children;
         uint64_t id;
-        uint64_t localZIndex;
-        uint64_t globalZIndex;
+        std::optional<int64_t> zIndex;
         uint64_t paintPreorderIndex;
         uint64_t paintPostorderIndex;
 
@@ -265,7 +264,21 @@ namespace tree {
         static uint64_t nextId;
     };
 
-    std::vector<TreeNode*> collectAllNodes(TreeNode* root);
+    enum class PaintLayer : uint8_t {
+        InFlow,
+        Positioned,
+    };
+
+    struct StackingMember {
+        TreeNode* node;
+        PaintLayer layer;
+        bool establishesContext;
+    };
+
+    void assignPaintOrderIndices(TreeNode* node, uint64_t& index);
+    void collectInFlowMembers(TreeNode* node, PaintLayer layer, std::vector<StackingMember>& members, std::vector<TreeNode*>& deferred);
+    void collectStackingMembers(TreeNode* node, PaintLayer layer, std::vector<StackingMember>& members);
+    void createStackingContexts(TreeNode* node, std::vector<TreeNode*>& order);
     std::optional<std::string> getText(TreeNode* node);
     std::optional<style::WhiteSpace> getWhiteSpace(TreeNode* node);
     Result<std::vector<std::optional<bidi::TextBidiInput>>>
