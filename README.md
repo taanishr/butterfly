@@ -2,7 +2,7 @@
 
 ## Synopsis:
 
-Butterfly is a declarative, GPU-rendered UI library that aims to implement a *useful enough* subset of the the HTML/CSS standard. 
+Butterfly is a declarative, GPU-rendered UI library that aims to implement a *useful enough* subset of the the HTML/CSS standard.  The library itself loosely follows the CSS spec (it is a pain to read).
 
 Butterfly is largely written in C++, with a few Swift bindings. It currently only supports MacOS, as it relies on Metal as its graphics api.
 
@@ -40,6 +40,7 @@ Three primary transforms:
 - Fr
 - Percent
 - Auto
+- Aspect Ratio sizing
 - And more...
 
 Colors and opacity
@@ -213,3 +214,20 @@ Useful flags: \
 `--debug-ui`: enables an inspect element esque debugger that looks sweet.
 
 ## Examples
+Here's a few test harnesses I've had Claude build while testing features:
+
+### Box Shadows
+<img width="1469" height="836" alt="image" src="https://github.com/user-attachments/assets/fb12bb6c-d512-4194-9bce-38bb9bb2b7e7" />
+
+### Transforms
+<img width="1461" height="840" alt="image" src="https://github.com/user-attachments/assets/6aae8fc1-d4fa-4778-8b4c-fe9ed1edaa93" />
+
+### Borders
+<img width="1464" height="843" alt="image" src="https://github.com/user-attachments/assets/94353f3d-1d2d-43be-b3d2-02c92c09502c" />
+
+### Scene I let it have fun with
+*I let Claude choose whatever it wanted to built; it built a record collection. I don't know why. I wonder DJ Shadow got in the training dataset*
+<img width="1469" height="842" alt="image" src="https://github.com/user-attachments/assets/ba4ce770-0bee-446d-9222-1051ee4934bf" />
+
+# Future Work
+I hope to add an animation subsystem too (lots of work), clean up some of the file structure, clean up some of my style conventions, and add more semantic elements. I also hope to release a series of blogs detailing the development process and some of the architectural decisions I made over time. This has been in the works for more than a year at this point (a year and two months).
