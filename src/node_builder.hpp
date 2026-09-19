@@ -376,6 +376,17 @@ namespace elements {
             return self();
         }
 
+        std::pair<Size, Size> transformOrigin() const {
+            return {node->shared.transformOriginX, node->shared.transformOriginY};
+        }
+
+        Derived& transformOrigin(Size x, Size y) {
+            node->shared.transformOriginX = x;
+            node->shared.transformOriginY = y;
+            markDirty(DirtyBits::PostLayout | DirtyBits::Finalize);
+            return self();
+        }
+
         std::optional<simd_float3x3> transform() const {
             return node->shared.transform;
         }

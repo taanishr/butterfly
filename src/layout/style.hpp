@@ -265,6 +265,8 @@ namespace style {
         std::optional<simd_float2> translate {};
         std::optional<float> rotate {};
         std::optional<simd_float2> scale {};
+        Size transformOriginX{Size::percent(0.5f)};
+        Size transformOriginY{Size::percent(0.5f)};
     };
 
     inline auto resolveCornerRadii(const SharedDescriptor& desc, float width, float height) -> CornerRadii {

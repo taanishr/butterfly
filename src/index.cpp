@@ -3652,7 +3652,7 @@ div()
     //     )
     // );
 
-    layout_test::scenes::buildBrowser();
+    // layout_test::scenes::buildBrowser();
 
     // using S = gui::Size;
 
@@ -4348,455 +4348,459 @@ div()
     //     )
     // );
 
-    // // Transforms: rendering, composition, origin, hit testing, clipping,
-    // // containing blocks (none vs identity), and scrollable overflow.
-    // using S = gui::Size;
-    // using gui::Display;
-    // using gui::FlexDirection;
-    // using gui::AlignItems;
-    // using gui::JustifyContent;
-    // using gui::Position;
-    // using gui::Overflow;
-    // using runtime::EventType;
+    // Transforms: rendering, composition, origin, hit testing, clipping,
+    // containing blocks (none vs identity), and scrollable overflow.
+    using S = gui::Size;
+    using gui::Display;
+    using gui::FlexDirection;
+    using gui::AlignItems;
+    using gui::JustifyContent;
+    using gui::Position;
+    using gui::Overflow;
+    using runtime::EventType;
 
-    // constexpr simd_float4 desk      {0.941, 0.937, 0.925, 1.0};
-    // constexpr simd_float4 paper     {1.000, 1.000, 1.000, 1.0};
-    // constexpr simd_float4 cream     {0.992, 0.973, 0.925, 1.0};
-    // constexpr simd_float4 ink       {0.129, 0.129, 0.153, 1.0};
-    // constexpr simd_float4 muted     {0.478, 0.478, 0.510, 1.0};
-    // constexpr simd_float4 rule      {0.871, 0.863, 0.839, 1.0};
-    // constexpr simd_float4 grape     {0.435, 0.271, 0.831, 1.0};
-    // constexpr simd_float4 mint      {0.180, 0.741, 0.545, 1.0};
-    // constexpr simd_float4 tangerine {1.000, 0.502, 0.200, 1.0};
-    // constexpr simd_float4 slate     {0.239, 0.271, 0.325, 1.0};
-    // constexpr simd_float4 ghost     {0.129, 0.129, 0.153, 0.08};
+    constexpr simd_float4 desk      {0.941, 0.937, 0.925, 1.0};
+    constexpr simd_float4 paper     {1.000, 1.000, 1.000, 1.0};
+    constexpr simd_float4 cream     {0.992, 0.973, 0.925, 1.0};
+    constexpr simd_float4 ink       {0.129, 0.129, 0.153, 1.0};
+    constexpr simd_float4 muted     {0.478, 0.478, 0.510, 1.0};
+    constexpr simd_float4 rule      {0.871, 0.863, 0.839, 1.0};
+    constexpr simd_float4 grape     {0.435, 0.271, 0.831, 1.0};
+    constexpr simd_float4 mint      {0.180, 0.741, 0.545, 1.0};
+    constexpr simd_float4 tangerine {1.000, 0.502, 0.200, 1.0};
+    constexpr simd_float4 slate     {0.239, 0.271, 0.325, 1.0};
+    constexpr simd_float4 ghost     {0.129, 0.129, 0.153, 0.08};
 
-    // auto label = [&](const char* title, const char* spec) {
-    //     return div()
-    //         .display(Display::Flex)
-    //         .flexDirection(FlexDirection::Col)
-    //         .flexGap(S::px(3))
+    auto label = [&](const char* title, const char* spec) {
+        return div()
+            .display(Display::Flex)
+            .flexDirection(FlexDirection::Col)
+            .flexGap(S::px(3))
+        (
+            text(title).font(ArialBold).fontSize(S::pt(12)).color(ink),
+            text(spec).font(SFMono).fontSize(S::pt(9)).color(muted)
+        );
+    };
+
+    auto cell = [&](const char* title, const char* spec, auto&& subject) {
+        return div()
+            .width(S::px(220))
+            .display(Display::Flex)
+            .flexDirection(FlexDirection::Col)
+            .alignItems(AlignItems::Center)
+            .flexGap(S::px(14))
+            .paddingTop(S::px(20))
+            .paddingBottom(S::px(12))
+        (
+            subject,
+            label(title, spec)
+        );
+    };
+
+    auto section = [&](const char* title) {
+        return div()
+            .display(Display::Flex)
+            .flexDirection(FlexDirection::Col)
+            .flexGap(S::px(6))
+            .marginTop(S::px(36))
+            .marginBottom(S::px(8))
+        (
+            text(title).font(DINAlternateBold).fontSize(S::pt(18)).color(ink),
+            div().height(S::px(1)).color(rule)()
+        );
+    };
+
+    auto row = [&](auto&&... cells) {
+        return div()
+            .display(Display::Flex)
+            .flexWrap(gui::FlexWrap::Wrap)
+            .flexGap(S::px(12))
+            .justifyContent(JustifyContent::Center)
+        (cells...);
+    };
+
+    // Untransformed footprint drawn under a transformed subject so the offset is visible.
+    auto ghosted = [&](auto&& subject) {
+        return div(S::px(140), S::px(100), ghost)
+            .cornerRadius(S::px(12))
+            .position(Position::Relative)
+        (
+            subject.position(Position::Absolute).top(S::px(0)).left(S::px(0))
+        );
+    };
+
+    auto card = [&](simd_float4 color) {
+        return div(S::px(140), S::px(100), color)
+            .cornerRadius(S::px(12))
+            .borderWidth(S::px(2))
+            .borderColor(ink);
+    };
+
+    auto probe = [&](Position position, simd_float4 color = grape) {
+        return div(S::px(120), S::px(36), color)
+            .position(position)
+            .top(S::px(420))
+            .left(S::px(20))
+            .cornerRadius(S::px(6))
+            .display(Display::Flex)
+            .alignItems(AlignItems::Center)
+            .paddingLeft(S::px(10))
+        (
+            text("probe").font(ArialBold).fontSize(S::pt(11)).color(paper)
+        );
+    };
+
+    auto filler = [&]() {
+        return div(S::px(160), S::px(90), cream)
+            .cornerRadius(S::px(6))
+            .padding(S::px(10))
+        (
+            text("in-flow").font(SFMono).fontSize(S::pt(10)).color(muted)
+        );
+    };
+
+    auto scroller = [&]() {
+        return div(S::px(200), S::px(160), paper)
+            .overflow(Overflow::Scroll)
+            .padding(S::px(12))
+            .borderWidth(S::px(1))
+            .borderColor(rule)
+            .cornerRadius(S::px(8));
+    };
+
+    div(S::percent(1.0), S::percent(1.0), desk)
+        .padding(S::px(36))
+        .overflow(Overflow::Scroll)
+    (
+        div()
+            .display(Display::Flex)
+            .flexDirection(FlexDirection::Col)
+            .flexGap(S::px(8))
+        (
+            text("TRANSFORMS").font(DINAlternateBold).fontSize(S::pt(26)).color(ink),
+            text("ghost = layout box · transforms never move layout")
+                .font(SFMono).fontSize(S::pt(11)).color(muted)
+        ),
+
+        section("Rendering • origin is box center • order is T•R•S"),
+        row(
+            cell("translate", "(24, 12)",
+                ghosted(card(mint).translate(simd_float2{24.0f, 12.0f})())
+            ),
+            cell("rotate", "0.35 rad · cw",
+                ghosted(card(grape).rotate(0.35f)())
+            ),
+            cell("scale", "(1.3, 0.7)",
+                ghosted(card(tangerine).scale(simd_float2{1.3f, 0.7f})())
+            ),
+            cell("all three", "T(20,0) R(0.25) S(0.8)",
+                ghosted(card(slate).translate(simd_float2{20.0f, 0.0f}).rotate(0.25f).scale(simd_float2{0.8f, 0.8f})())
+            ),
+            cell("nested", "parent R(0.3) · child S(0.6)",
+                ghosted(
+                    card(mint).rotate(0.3f)
+                        .display(Display::Flex)
+                        .alignItems(AlignItems::Center)
+                        .justifyContent(JustifyContent::Center)
+                    (
+                        div(S::px(100), S::px(60), grape)
+                            .cornerRadius(S::px(8))
+                            .scale(simd_float2{0.6f, 0.6f})
+                        ()
+                    )
+                )
+            ),
+            cell("border + radius under rotate", "SDF stays crisp",
+                ghosted(
+                    card(paper).rotate(0.6f).borderWidth(S::px(6)).cornerRadius(S::px(40))()
+                )
+            )
+        ),
+
+        section("Hit testing · handlers fire on the transformed shape, not the ghost"),
+        row(
+            cell("click toggles", "rotated 0.5",
+                ghosted(
+                    card(mint).rotate(0.5f)
+                        .addEventListener(EventType::Click, [](auto& node, Event&) {
+                            node.color(node.color().y > 0.5f ? grape : mint);
+                        })
+                    ()
+                )
+            ),
+            cell("hover scales", "1.0 ↔ 1.2 · must not compound",
+                ghosted(
+                    card(tangerine)
+                        .addEventListener(EventType::MouseEnter, [](auto& node, Event&) {
+                            node.scale(simd_float2{1.2f, 1.2f});
+                        })
+                        .addEventListener(EventType::MouseLeave, [](auto& node, Event&) {
+                            node.scale(simd_float2{1.0f, 1.0f});
+                        })
+                    ()
+                )
+            ),
+            cell("click inside rotated parent", "child inherits parent transform",
+                ghosted(
+                    card(slate).rotate(0.4f)
+                        .display(Display::Flex)
+                        .alignItems(AlignItems::Center)
+                        .justifyContent(JustifyContent::Center)
+                    (
+                        div(S::px(70), S::px(40), grape)
+                            .cornerRadius(S::px(8))
+                            .addEventListener(EventType::Click, [](auto& node, Event&) {
+                                node.color(node.color().x > 0.5f ? grape : tangerine);
+                            })
+                        ()
+                    )
+                )
+            )
+        ),
+
+        section("Clipping · overflow: hidden under transforms"),
+        row(
+            cell("rotated clipper", "child clipped by rotated rect",
+                ghosted(
+                    card(paper).rotate(0.4f).overflow(Overflow::Hidden)
+                    (
+                        div(S::px(240), S::px(30), grape).marginTop(S::px(35)).marginLeft(S::px(-50))()
+                    )
+                )
+            ),
+            cell("rotated child", "clipped by axis-aligned parent",
+                ghosted(
+                    card(paper).overflow(Overflow::Hidden)
+                    (
+                        div(S::px(120), S::px(120), mint).cornerRadius(S::px(8)).rotate(0.7f)()
+                    )
+                )
+            ),
+            cell("nested clippers", "both rects apply",
+                ghosted(
+                    card(paper).rotate(0.3f).overflow(Overflow::Hidden)
+                    (
+                        div(S::px(140), S::px(100), cream).overflow(Overflow::Hidden).rotate(-0.5f)
+                        (
+                            div(S::px(200), S::px(200), tangerine).marginTop(S::px(-40)).marginLeft(S::px(-30))()
+                        )
+                    )
+                )
+            )
+        ),
+
+        section("Containing blocks · none vs identity"),
+        row(
+            cell("abs in static", "no CB → escapes to root",
+                card(paper).overflow(Overflow::Hidden)
+                (
+                    div(S::px(40), S::px(40), grape).position(Position::Absolute).top(S::px(10)).left(S::px(10))()
+                )
+            ),
+            cell("abs in scale(1)", "identity CB → stays in card",
+                card(paper).overflow(Overflow::Hidden).scale(simd_float2{1.0f, 1.0f})
+                (
+                    div(S::px(40), S::px(40), grape).position(Position::Absolute).top(S::px(10)).left(S::px(10))()
+                )
+            ),
+            cell("fixed in scale(1)", "identity CB → stays in card",
+                card(paper).overflow(Overflow::Hidden).scale(simd_float2{1.0f, 1.0f})
+                (
+                    div(S::px(40), S::px(40), tangerine).position(Position::Fixed).top(S::px(10)).left(S::px(10))()
+                )
+            ),
+            cell("abs in rotated", "rotated CB → probe rides along",
+                ghosted(
+                    card(mint).rotate(0.35f)
+                    (
+                        div(S::px(50), S::px(24), grape)
+                            .position(Position::Absolute).top(S::px(30)).left(S::px(80))
+                            .cornerRadius(S::px(4))
+                        ()
+                    )
+                )
+            )
+        ),
+
+        section("Scrollable overflow · scrolls only if the probe counts"),
+        row(
+            cell("abs, static scroller", "no CB in scroller → no scroll",
+                scroller()(filler(), probe(Position::Absolute))
+            ),
+            cell("abs, relative scroller", "CB is scroller → scrolls",
+                scroller().position(Position::Relative)(filler(), probe(Position::Absolute))
+            ),
+            cell("abs, relative wrapper", "CB inside scroller → scrolls",
+                scroller()(filler(), div().position(Position::Relative)(probe(Position::Absolute)))
+            ),
+            cell("abs inside escaped abs", "wrapper escapes → no scroll",
+                scroller()(
+                    filler(),
+                    div().position(Position::Absolute).top(S::px(0)).left(S::px(0))(probe(Position::Absolute))
+                )
+            ),
+            cell("fixed, static scroller", "viewport CB → no scroll",
+                scroller()(filler(), probe(Position::Fixed, tangerine))
+            ),
+            cell("fixed, scale(1) scroller", "identity CB → scrolls",
+                scroller().scale(simd_float2{1.0f, 1.0f})(filler(), probe(Position::Fixed, tangerine))
+            ),
+            cell("translated in-flow", "transformed box → scrolls",
+                scroller()(filler(), div(S::px(120), S::px(36), mint).cornerRadius(S::px(6)).translate(simd_float2{0.0f, 300.0f})())
+            ),
+            cell("rotated in-flow", "AABB of rotated box → scrolls",
+                scroller()(filler(), div(S::px(30), S::px(260), mint).cornerRadius(S::px(6)).rotate(1.2f)())
+            )
+        )
+    );
+
+
+    // // Border styles: solid, dashed, dotted, double across widths, radii
+    // // (circular, elliptical, uneven, sharp), on divs and images, with shadows,
+    // // and a click that cycles the style at finalize only.
+    // {
+    //     using S = gui::Size;
+    //     using gui::Display;
+    //     using gui::FlexDirection;
+    //     using gui::AlignItems;
+    //     using gui::JustifyContent;
+    //     using gui::BorderStyle;
+    //     using runtime::EventType;
+
+    //     constexpr simd_float4 desk        {0.941, 0.937, 0.925, 1.0};
+    //     constexpr simd_float4 paper       {1.000, 1.000, 1.000, 1.0};
+    //     constexpr simd_float4 cream       {0.992, 0.973, 0.925, 1.0};
+    //     constexpr simd_float4 ink         {0.129, 0.129, 0.153, 1.0};
+    //     constexpr simd_float4 muted       {0.478, 0.478, 0.510, 1.0};
+    //     constexpr simd_float4 rule        {0.871, 0.863, 0.839, 1.0};
+    //     constexpr simd_float4 tangerine   {1.000, 0.502, 0.200, 1.0};
+    //     constexpr simd_float4 grape       {0.435, 0.271, 0.831, 1.0};
+    //     constexpr simd_float4 mint        {0.180, 0.741, 0.545, 1.0};
+    //     constexpr simd_float4 slate       {0.239, 0.271, 0.325, 1.0};
+    //     constexpr simd_float4 umbraSoft   {0.0, 0.0, 0.0, 0.16};
+
+    //     constexpr auto butterflyPath = "/Users/treja/projects/gui/assets/butterfly.png";
+
+    //     auto caption = [&](const char* title, const char* spec) {
+    //         return div()
+    //             .display(Display::Flex)
+    //             .flexDirection(FlexDirection::Col)
+    //             .flexGap(S::px(3))
+    //         (
+    //             text(title).font(ArialBold).fontSize(S::pt(12)).color(ink),
+    //             text(spec).font(SFMono).fontSize(S::pt(9)).color(muted)
+    //         );
+    //     };
+
+    //     auto cell = [&](auto&& subject, const char* title, const char* spec) {
+    //         return div()
+    //             .width(S::px(220))
+    //             .display(Display::Flex)
+    //             .flexDirection(FlexDirection::Col)
+    //             .alignItems(AlignItems::Center)
+    //             .flexGap(S::px(18))
+    //             .paddingTop(S::px(24))
+    //             .paddingBottom(S::px(12))
+    //         (
+    //             subject,
+    //             caption(title, spec)
+    //         );
+    //     };
+
+    //     auto swatch = [&](simd_float4 fill, float width, BorderStyle style, simd_float4 stroke = ink) {
+    //         return div(S::px(140), S::px(100), fill)
+    //             .borderWidth(S::px(width))
+    //             .borderStyle(style)
+    //             .borderColor(stroke);
+    //     };
+
+    //     div(S::percent(1.0), S::percent(1.0), desk)
+    //         .padding(S::px(36))
+    //         .overflow(gui::Overflow::Scroll)
     //     (
-    //         text(title).font(ArialBold).fontSize(S::pt(12)).color(ink),
-    //         text(spec).font(SFMono).fontSize(S::pt(9)).color(muted)
-    //     );
-    // };
-
-    // auto cell = [&](const char* title, const char* spec, auto&& subject) {
-    //     return div()
-    //         .width(S::px(220))
-    //         .display(Display::Flex)
-    //         .flexDirection(FlexDirection::Col)
-    //         .alignItems(AlignItems::Center)
-    //         .flexGap(S::px(14))
-    //         .paddingTop(S::px(20))
-    //         .paddingBottom(S::px(12))
-    //     (
-    //         subject,
-    //         label(title, spec)
-    //     );
-    // };
-
-    // auto section = [&](const char* title) {
-    //     return div()
-    //         .display(Display::Flex)
-    //         .flexDirection(FlexDirection::Col)
-    //         .flexGap(S::px(6))
-    //         .marginTop(S::px(36))
-    //         .marginBottom(S::px(8))
-    //     (
-    //         text(title).font(DINAlternateBold).fontSize(S::pt(18)).color(ink),
-    //         div().height(S::px(1)).color(rule)()
-    //     );
-    // };
-
-    // auto row = [&](auto&&... cells) {
-    //     return div()
-    //         .display(Display::Flex)
-    //         .flexWrap(gui::FlexWrap::Wrap)
-    //         .flexGap(S::px(12))
-    //         .justifyContent(JustifyContent::Center)
-    //     (cells...);
-    // };
-
-    // // Untransformed footprint drawn under a transformed subject so the offset is visible.
-    // auto ghosted = [&](auto&& subject) {
-    //     return div(S::px(140), S::px(100), ghost)
-    //         .cornerRadius(S::px(12))
-    //         .position(Position::Relative)
-    //     (
-    //         subject.position(Position::Absolute).top(S::px(0)).left(S::px(0))
-    //     );
-    // };
-
-    // auto card = [&](simd_float4 color) {
-    //     return div(S::px(140), S::px(100), color)
-    //         .cornerRadius(S::px(12))
-    //         .borderWidth(S::px(2))
-    //         .borderColor(ink);
-    // };
-
-    // auto probe = [&](Position position, simd_float4 color = grape) {
-    //     return div(S::px(120), S::px(36), color)
-    //         .position(position)
-    //         .top(S::px(420))
-    //         .left(S::px(20))
-    //         .cornerRadius(S::px(6))
-    //         .display(Display::Flex)
-    //         .alignItems(AlignItems::Center)
-    //         .paddingLeft(S::px(10))
-    //     (
-    //         text("probe").font(ArialBold).fontSize(S::pt(11)).color(paper)
-    //     );
-    // };
-
-    // auto filler = [&]() {
-    //     return div(S::px(160), S::px(90), cream)
-    //         .cornerRadius(S::px(6))
-    //         .padding(S::px(10))
-    //     (
-    //         text("in-flow").font(SFMono).fontSize(S::pt(10)).color(muted)
-    //     );
-    // };
-
-    // auto scroller = [&]() {
-    //     return div(S::px(200), S::px(160), paper)
-    //         .overflow(Overflow::Scroll)
-    //         .padding(S::px(12))
-    //         .borderWidth(S::px(1))
-    //         .borderColor(rule)
-    //         .cornerRadius(S::px(8));
-    // };
-
-    // div(S::percent(1.0), S::percent(1.0), desk)
-    //     .padding(S::px(36))
-    //     .overflow(Overflow::Scroll)
-    // (
-    //     div()
-    //         .display(Display::Flex)
-    //         .flexDirection(FlexDirection::Col)
-    //         .flexGap(S::px(8))
-    //     (
-    //         text("TRANSFORMS").font(DINAlternateBold).fontSize(S::pt(26)).color(ink),
-    //         text("ghost = layout box · transforms never move layout")
-    //             .font(SFMono).fontSize(S::pt(11)).color(muted)
-    //     ),
-
-    //     section("Rendering • origin is box center • order is T•R•S"),
-    //     row(
-    //         cell("translate", "(24, 12)",
-    //             ghosted(card(mint).translate(simd_float2{24.0f, 12.0f})())
+    //         div()
+    //             .display(Display::Flex)
+    //             .flexDirection(FlexDirection::Col)
+    //             .flexGap(S::px(8))
+    //             .marginBottom(S::px(28))
+    //         (
+    //             text("STROKES").font(DINAlternateBold).fontSize(S::pt(26)).color(ink),
+    //             text("border-style on divs and images · click the last card to cycle its style")
+    //                 .font(SFMono).fontSize(S::pt(11)).color(muted)
     //         ),
-    //         cell("rotate", "0.35 rad · cw",
-    //             ghosted(card(grape).rotate(0.35f)())
-    //         ),
-    //         cell("scale", "(1.3, 0.7)",
-    //             ghosted(card(tangerine).scale(simd_float2{1.3f, 0.7f})())
-    //         ),
-    //         cell("all three", "T(20,0) R(0.25) S(0.8)",
-    //             ghosted(card(slate).translate(simd_float2{20.0f, 0.0f}).rotate(0.25f).scale(simd_float2{0.8f, 0.8f})())
-    //         ),
-    //         cell("nested", "parent R(0.3) · child S(0.6)",
-    //             ghosted(
-    //                 card(mint).rotate(0.3f)
+    //         div().height(S::px(1)).color(rule)(),
+
+    //         div()
+    //             .display(Display::Flex)
+    //             .flexWrap(gui::FlexWrap::Wrap)
+    //             .flexGap(S::px(12))
+    //             .justifyContent(JustifyContent::Center)
+    //         (
+    //             cell(swatch(paper, 1, BorderStyle::Solid).cornerRadius(S::px(12))(),
+    //                 "Solid hairline", "1 solid · r12"),
+    //             cell(swatch(cream, 6, BorderStyle::Solid)(),
+    //                 "Solid thick", "6 solid · sharp"),
+    //             cell(swatch(paper, 1, BorderStyle::Dashed)(),
+    //                 "Dashed hairline", "1 dashed · sharp"),
+    //             cell(swatch(paper, 3, BorderStyle::Dashed).cornerRadius(S::px(12))(),
+    //                 "Dashed", "3 dashed · r12"),
+    //             cell(swatch(cream, 6, BorderStyle::Dashed, grape).cornerRadius(S::px(50))(),
+    //                 "Dashed pill", "6 dashed · r50"),
+    //             cell(swatch(paper, 3, BorderStyle::Dashed, tangerine).cornerRadius(S::percent(0.5))(),
+    //                 "Dashed ellipse", "3 dashed · r50%"),
+    //             cell(swatch(paper, 4, BorderStyle::Dashed, slate)
+    //                     .cornerRadiusTopLeft(S::px(48))
+    //                     .cornerRadiusTopRight(S::px(4))
+    //                     .cornerRadiusBottomRight(S::px(30))
+    //                     .cornerRadiusBottomLeft(S::px(0))(),
+    //                 "Dashed uneven", "4 dashed · 48 4 30 0"),
+    //             cell(swatch(paper, 2, BorderStyle::Dotted).cornerRadius(S::px(8))(),
+    //                 "Dotted", "2 dotted · r8"),
+    //             cell(swatch(cream, 6, BorderStyle::Dotted, mint).cornerRadius(S::px(20))(),
+    //                 "Dotted thick", "6 dotted · r20"),
+    //             cell(swatch(paper, 5, BorderStyle::Dotted, grape).cornerRadius(S::percent(0.5))(),
+    //                 "Dotted ellipse", "5 dotted · r50%"),
+    //             cell(swatch(paper, 6, BorderStyle::Double).cornerRadius(S::px(10))(),
+    //                 "Double", "6 double · r10"),
+    //             cell(swatch(cream, 3, BorderStyle::Double, slate)(),
+    //                 "Double thin", "3 double · sharp"),
+    //             cell(swatch(paper, 3, BorderStyle::Dashed)
+    //                     .cornerRadius(S::px(12))
+    //                     .shadowOffsetY(S::px(8))
+    //                     .shadowBlur(S::px(24))
+    //                     .shadowColor(umbraSoft)(),
+    //                 "Dashed + shadow", "3 dashed · 0 8 24"),
+    //             cell(image(butterflyPath, S::px(140), S::px(100))
+    //                     .cornerRadius(S::px(12))
+    //                     .borderWidth(S::px(4))
+    //                     .borderStyle(BorderStyle::Dotted)
+    //                     .borderColor(paper),
+    //                 "Image dotted", "4 dotted · r12"),
+    //             cell(image(butterflyPath, S::px(140), S::px(100))
+    //                     .cornerRadius(S::px(12))
+    //                     .borderWidth(S::px(3))
+    //                     .borderStyle(BorderStyle::Dashed)
+    //                     .borderColor(ink),
+    //                 "Image dashed", "3 dashed · r12"),
+    //             cell(swatch(mint, 4, BorderStyle::Solid, ink)
+    //                     .cornerRadius(S::px(14))
     //                     .display(Display::Flex)
     //                     .alignItems(AlignItems::Center)
     //                     .justifyContent(JustifyContent::Center)
-    //                 (
-    //                     div(S::px(100), S::px(60), grape)
-    //                         .cornerRadius(S::px(8))
-    //                         .scale(simd_float2{0.6f, 0.6f})
-    //                     ()
-    //                 )
-    //             )
-    //         ),
-    //         cell("border + radius under rotate", "SDF stays crisp",
-    //             ghosted(
-    //                 card(paper).rotate(0.6f).borderWidth(S::px(6)).cornerRadius(S::px(40))()
-    //             )
-    //         )
-    //     ),
-
-    //     section("Hit testing · handlers fire on the transformed shape, not the ghost"),
-    //     row(
-    //         cell("click toggles", "rotated 0.5",
-    //             ghosted(
-    //                 card(mint).rotate(0.5f)
     //                     .addEventListener(EventType::Click, [](auto& node, Event&) {
-    //                         node.color(node.color().y > 0.5f ? grape : mint);
+    //                         switch (node.borderStyle()) {
+    //                             case BorderStyle::Solid:  node.borderStyle(BorderStyle::Dashed); break;
+    //                             case BorderStyle::Dashed: node.borderStyle(BorderStyle::Dotted); break;
+    //                             case BorderStyle::Dotted: node.borderStyle(BorderStyle::Double); break;
+    //                             case BorderStyle::Double: node.borderStyle(BorderStyle::Solid); break;
+    //                         }
     //                     })
-    //                 ()
-    //             )
-    //         ),
-    //         cell("hover scales", "1.0 ↔ 1.2 · must not compound",
-    //             ghosted(
-    //                 card(tangerine)
-    //                     .addEventListener(EventType::MouseEnter, [](auto& node, Event&) {
-    //                         node.scale(simd_float2{1.2f, 1.2f});
-    //                     })
-    //                     .addEventListener(EventType::MouseLeave, [](auto& node, Event&) {
-    //                         node.scale(simd_float2{1.0f, 1.0f});
-    //                     })
-    //                 ()
-    //             )
-    //         ),
-    //         cell("click inside rotated parent", "child inherits parent transform",
-    //             ghosted(
-    //                 card(slate).rotate(0.4f)
-    //                     .display(Display::Flex)
-    //                     .alignItems(AlignItems::Center)
-    //                     .justifyContent(JustifyContent::Center)
     //                 (
-    //                     div(S::px(70), S::px(40), grape)
-    //                         .cornerRadius(S::px(8))
-    //                         .addEventListener(EventType::Click, [](auto& node, Event&) {
-    //                             node.color(node.color().x > 0.5f ? grape : tangerine);
-    //                         })
-    //                     ()
-    //                 )
-    //             )
+    //                     text("click me").font(ArialBold).fontSize(S::pt(12)).color(paper)
+    //                 ),
+    //                 "Interactive", "click: solid → dashed → dotted → double")
     //         )
-    //     ),
-
-    //     section("Clipping · overflow: hidden under transforms"),
-    //     row(
-    //         cell("rotated clipper", "child clipped by rotated rect",
-    //             ghosted(
-    //                 card(paper).rotate(0.4f).overflow(Overflow::Hidden)
-    //                 (
-    //                     div(S::px(240), S::px(30), grape).marginTop(S::px(35)).marginLeft(S::px(-50))()
-    //                 )
-    //             )
-    //         ),
-    //         cell("rotated child", "clipped by axis-aligned parent",
-    //             ghosted(
-    //                 card(paper).overflow(Overflow::Hidden)
-    //                 (
-    //                     div(S::px(120), S::px(120), mint).cornerRadius(S::px(8)).rotate(0.7f)()
-    //                 )
-    //             )
-    //         ),
-    //         cell("nested clippers", "both rects apply",
-    //             ghosted(
-    //                 card(paper).rotate(0.3f).overflow(Overflow::Hidden)
-    //                 (
-    //                     div(S::px(140), S::px(100), cream).overflow(Overflow::Hidden).rotate(-0.5f)
-    //                     (
-    //                         div(S::px(200), S::px(200), tangerine).marginTop(S::px(-40)).marginLeft(S::px(-30))()
-    //                     )
-    //                 )
-    //             )
-    //         )
-    //     ),
-
-    //     section("Containing blocks · none vs identity"),
-    //     row(
-    //         cell("abs in static", "no CB → escapes to root",
-    //             card(paper).overflow(Overflow::Hidden)
-    //             (
-    //                 div(S::px(40), S::px(40), grape).position(Position::Absolute).top(S::px(10)).left(S::px(10))()
-    //             )
-    //         ),
-    //         cell("abs in scale(1)", "identity CB → stays in card",
-    //             card(paper).overflow(Overflow::Hidden).scale(simd_float2{1.0f, 1.0f})
-    //             (
-    //                 div(S::px(40), S::px(40), grape).position(Position::Absolute).top(S::px(10)).left(S::px(10))()
-    //             )
-    //         ),
-    //         cell("fixed in scale(1)", "identity CB → stays in card",
-    //             card(paper).overflow(Overflow::Hidden).scale(simd_float2{1.0f, 1.0f})
-    //             (
-    //                 div(S::px(40), S::px(40), tangerine).position(Position::Fixed).top(S::px(10)).left(S::px(10))()
-    //             )
-    //         ),
-    //         cell("abs in rotated", "rotated CB → probe rides along",
-    //             ghosted(
-    //                 card(mint).rotate(0.35f)
-    //                 (
-    //                     div(S::px(50), S::px(24), grape)
-    //                         .position(Position::Absolute).top(S::px(30)).left(S::px(80))
-    //                         .cornerRadius(S::px(4))
-    //                     ()
-    //                 )
-    //             )
-    //         )
-    //     ),
-
-    //     section("Scrollable overflow · scrolls only if the probe counts"),
-    //     row(
-    //         cell("abs, static scroller", "no CB in scroller → no scroll",
-    //             scroller()(filler(), probe(Position::Absolute))
-    //         ),
-    //         cell("abs, relative scroller", "CB is scroller → scrolls",
-    //             scroller().position(Position::Relative)(filler(), probe(Position::Absolute))
-    //         ),
-    //         cell("abs, relative wrapper", "CB inside scroller → scrolls",
-    //             scroller()(filler(), div().position(Position::Relative)(probe(Position::Absolute)))
-    //         ),
-    //         cell("abs inside escaped abs", "wrapper escapes → no scroll",
-    //             scroller()(
-    //                 filler(),
-    //                 div().position(Position::Absolute).top(S::px(0)).left(S::px(0))(probe(Position::Absolute))
-    //             )
-    //         ),
-    //         cell("fixed, static scroller", "viewport CB → no scroll",
-    //             scroller()(filler(), probe(Position::Fixed, tangerine))
-    //         ),
-    //         cell("fixed, scale(1) scroller", "identity CB → scrolls",
-    //             scroller().scale(simd_float2{1.0f, 1.0f})(filler(), probe(Position::Fixed, tangerine))
-    //         ),
-    //         cell("translated in-flow", "transformed box → scrolls",
-    //             scroller()(filler(), div(S::px(120), S::px(36), mint).cornerRadius(S::px(6)).translate(simd_float2{0.0f, 300.0f})())
-    //         ),
-    //         cell("rotated in-flow", "AABB of rotated box → scrolls",
-    //             scroller()(filler(), div(S::px(30), S::px(260), mint).cornerRadius(S::px(6)).rotate(1.2f)())
-    //         )
-    //     )
-    // );
-
-    // Border styles: solid, dashed, dotted, double across widths, radii
-    // (circular, elliptical, uneven, sharp), on divs and images, with shadows,
-    // and a click that cycles the style at finalize only.
-    // using S = gui::Size;
-    // using gui::Display;
-    // using gui::FlexDirection;
-    // using gui::AlignItems;
-    // using gui::JustifyContent;
-    // using gui::BorderStyle;
-    // using runtime::EventType;
-
-    // constexpr simd_float4 desk        {0.941, 0.937, 0.925, 1.0};
-    // constexpr simd_float4 paper       {1.000, 1.000, 1.000, 1.0};
-    // constexpr simd_float4 cream       {0.992, 0.973, 0.925, 1.0};
-    // constexpr simd_float4 ink         {0.129, 0.129, 0.153, 1.0};
-    // constexpr simd_float4 muted       {0.478, 0.478, 0.510, 1.0};
-    // constexpr simd_float4 rule        {0.871, 0.863, 0.839, 1.0};
-    // constexpr simd_float4 tangerine   {1.000, 0.502, 0.200, 1.0};
-    // constexpr simd_float4 grape       {0.435, 0.271, 0.831, 1.0};
-    // constexpr simd_float4 mint        {0.180, 0.741, 0.545, 1.0};
-    // constexpr simd_float4 slate       {0.239, 0.271, 0.325, 1.0};
-    // constexpr simd_float4 umbraSoft   {0.0, 0.0, 0.0, 0.16};
-
-    // constexpr auto butterflyPath = "/Users/treja/projects/gui/assets/butterfly.png";
-
-    // auto caption = [&](const char* title, const char* spec) {
-    //     return div()
-    //         .display(Display::Flex)
-    //         .flexDirection(FlexDirection::Col)
-    //         .flexGap(S::px(3))
-    //     (
-    //         text(title).font(ArialBold).fontSize(S::pt(12)).color(ink),
-    //         text(spec).font(SFMono).fontSize(S::pt(9)).color(muted)
     //     );
-    // };
+    // }
 
-    // auto cell = [&](auto&& subject, const char* title, const char* spec) {
-    //     return div()
-    //         .width(S::px(220))
-    //         .display(Display::Flex)
-    //         .flexDirection(FlexDirection::Col)
-    //         .alignItems(AlignItems::Center)
-    //         .flexGap(S::px(18))
-    //         .paddingTop(S::px(24))
-    //         .paddingBottom(S::px(12))
-    //     (
-    //         subject,
-    //         caption(title, spec)
-    //     );
-    // };
-
-    // auto swatch = [&](simd_float4 fill, float width, BorderStyle style, simd_float4 stroke = ink) {
-    //     return div(S::px(140), S::px(100), fill)
-    //         .borderWidth(S::px(width))
-    //         .borderStyle(style)
-    //         .borderColor(stroke);
-    // };
-
-    // div(S::percent(1.0), S::percent(1.0), desk)
-    //     .padding(S::px(36))
-    //     .overflow(gui::Overflow::Scroll)
-    // (
-    //     div()
-    //         .display(Display::Flex)
-    //         .flexDirection(FlexDirection::Col)
-    //         .flexGap(S::px(8))
-    //         .marginBottom(S::px(28))
-    //     (
-    //         text("STROKES").font(DINAlternateBold).fontSize(S::pt(26)).color(ink),
-    //         text("border-style on divs and images · click the last card to cycle its style")
-    //             .font(SFMono).fontSize(S::pt(11)).color(muted)
-    //     ),
-    //     div().height(S::px(1)).color(rule)(),
-
-    //     div()
-    //         .display(Display::Flex)
-    //         .flexWrap(gui::FlexWrap::Wrap)
-    //         .flexGap(S::px(12))
-    //         .justifyContent(JustifyContent::Center)
-    //     (
-    //         cell(swatch(paper, 1, BorderStyle::Solid).cornerRadius(S::px(12))(),
-    //             "Solid hairline", "1 solid · r12"),
-    //         cell(swatch(cream, 6, BorderStyle::Solid)(),
-    //             "Solid thick", "6 solid · sharp"),
-    //         cell(swatch(paper, 1, BorderStyle::Dashed)(),
-    //             "Dashed hairline", "1 dashed · sharp"),
-    //         cell(swatch(paper, 3, BorderStyle::Dashed).cornerRadius(S::px(12))(),
-    //             "Dashed", "3 dashed · r12"),
-    //         cell(swatch(cream, 6, BorderStyle::Dashed, grape).cornerRadius(S::px(50))(),
-    //             "Dashed pill", "6 dashed · r50"),
-    //         cell(swatch(paper, 3, BorderStyle::Dashed, tangerine).cornerRadius(S::percent(0.5))(),
-    //             "Dashed ellipse", "3 dashed · r50%"),
-    //         cell(swatch(paper, 4, BorderStyle::Dashed, slate)
-    //                 .cornerRadiusTopLeft(S::px(48))
-    //                 .cornerRadiusTopRight(S::px(4))
-    //                 .cornerRadiusBottomRight(S::px(30))
-    //                 .cornerRadiusBottomLeft(S::px(0))(),
-    //             "Dashed uneven", "4 dashed · 48 4 30 0"),
-    //         cell(swatch(paper, 2, BorderStyle::Dotted).cornerRadius(S::px(8))(),
-    //             "Dotted", "2 dotted · r8"),
-    //         cell(swatch(cream, 6, BorderStyle::Dotted, mint).cornerRadius(S::px(20))(),
-    //             "Dotted thick", "6 dotted · r20"),
-    //         cell(swatch(paper, 5, BorderStyle::Dotted, grape).cornerRadius(S::percent(0.5))(),
-    //             "Dotted ellipse", "5 dotted · r50%"),
-    //         cell(swatch(paper, 6, BorderStyle::Double).cornerRadius(S::px(10))(),
-    //             "Double", "6 double · r10"),
-    //         cell(swatch(cream, 3, BorderStyle::Double, slate)(),
-    //             "Double thin", "3 double · sharp"),
-    //         cell(swatch(paper, 3, BorderStyle::Dashed)
-    //                 .cornerRadius(S::px(12))
-    //                 .shadowOffsetY(S::px(8))
-    //                 .shadowBlur(S::px(24))
-    //                 .shadowColor(umbraSoft)(),
-    //             "Dashed + shadow", "3 dashed · 0 8 24"),
-    //         cell(image(butterflyPath, S::px(140), S::px(100))
-    //                 .cornerRadius(S::px(12))
-    //                 .borderWidth(S::px(4))
-    //                 .borderStyle(BorderStyle::Dotted)
-    //                 .borderColor(paper),
-    //             "Image dotted", "4 dotted · r12"),
-    //         cell(image(butterflyPath, S::px(140), S::px(100))
-    //                 .cornerRadius(S::px(12))
-    //                 .borderWidth(S::px(3))
-    //                 .borderStyle(BorderStyle::Dashed)
-    //                 .borderColor(ink),
-    //             "Image dashed", "3 dashed · r12"),
-    //         cell(swatch(mint, 4, BorderStyle::Solid, ink)
-    //                 .cornerRadius(S::px(14))
-    //                 .display(Display::Flex)
-    //                 .alignItems(AlignItems::Center)
-    //                 .justifyContent(JustifyContent::Center)
-    //                 .addEventListener(EventType::Click, [](auto& node, Event&) {
-    //                     switch (node.borderStyle()) {
-    //                         case BorderStyle::Solid:  node.borderStyle(BorderStyle::Dashed); break;
-    //                         case BorderStyle::Dashed: node.borderStyle(BorderStyle::Dotted); break;
-    //                         case BorderStyle::Dotted: node.borderStyle(BorderStyle::Double); break;
-    //                         case BorderStyle::Double: node.borderStyle(BorderStyle::Solid); break;
-    //                     }
-    //                 })
-    //             (
-    //                 text("click me").font(ArialBold).fontSize(S::pt(12)).color(paper)
-    //             ),
-    //             "Interactive", "click: solid → dashed → dotted → double")
-    //     )
-    // );
 }

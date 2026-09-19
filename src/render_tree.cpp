@@ -1158,8 +1158,8 @@ namespace tree {
             // figure out CSS transform properties
             // firstly; we determine the transform origin
             simd_float2 transformOrigin {
-                layout.computedBox.x + layout.computedBox.width * 0.5f,
-                layout.computedBox.y + layout.computedBox.height * 0.5f
+                layout.computedBox.x + node->shared.transformOriginX.resolveOr(Size::px(layout.computedBox.width)),
+                layout.computedBox.y + node->shared.transformOriginY.resolveOr(Size::px(layout.computedBox.height))
             };
 
             simd_float3x3 toTransformOrigin = matrix_identity_float3x3;
@@ -1292,8 +1292,8 @@ namespace tree {
 
                         // here; we have to include overflow of transforms
                         simd_float2 transformOrigin {
-                            childBox.x + childBox.width * 0.5f,
-                            childBox.y + childBox.height * 0.5f
+                            childBox.x + child->shared.transformOriginX.resolveOr(Size::px(childBox.width)),
+                            childBox.y + child->shared.transformOriginY.resolveOr(Size::px(childBox.height))
                         };
 
                         simd_float3x3 toTransformOrigin = matrix_identity_float3x3;
