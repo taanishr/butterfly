@@ -216,6 +216,10 @@ Useful flags: \
 ## Examples
 Here's a few test harnesses I've had Claude build while testing features:
 
+### The Debug Inspector
+This is a really cool example that stressed a lot of the layout features in my library and has paid dividends in helping me debug
+<img width="571" height="713" alt="image" src="https://github.com/user-attachments/assets/e9beb1f6-0c1b-4662-b8cd-c2b0c90c5836" />
+
 ### Box Shadows
 <img width="1469" height="836" alt="image" src="https://github.com/user-attachments/assets/fb12bb6c-d512-4194-9bce-38bb9bb2b7e7" />
 
