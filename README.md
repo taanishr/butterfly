@@ -230,7 +230,7 @@ This is a really cool example that stressed a lot of the layout features in my l
 <img width="1464" height="843" alt="image" src="https://github.com/user-attachments/assets/94353f3d-1d2d-43be-b3d2-02c92c09502c" />
 
 ### Scene I let it have fun with
-*I let Claude choose whatever it wanted to built; it built a record collection. I don't know why. I wonder DJ Shadow got in the training dataset*
+*I let Claude choose whatever it wanted to built; it built a record collection. I don't know why. I wonder how DJ Shadow got in the training dataset*
 <img width="1469" height="842" alt="image" src="https://github.com/user-attachments/assets/ba4ce770-0bee-446d-9222-1051ee4934bf" />
 
 # Future Work
