@@ -209,7 +209,7 @@ I can tell you about every line of code in this codebase; except the CMake and b
 | `ship buildrun` | builds and runs           |
 
 
-Useful flags:
+Useful flags: \
 `--debug-ui`: enables an inspect element esque debugger that looks sweet.
 
 ## Examples
