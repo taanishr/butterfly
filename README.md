@@ -1,97 +1,215 @@
-## WIP C++ gpu-rendered GUI library with aims of a supporting a wide range of elements and styling attributes and an ergonomic api.
+# Butterfly - A declarative, GPU-rendered UI library
 
-## Layout
+## Synopsis:
 
-- `src/`: C++ sources, headers, and Metal shaders.
-- `assets/`: checked-in sample/runtime assets.
-- `apple-extensions/`: Swift AppKit and MetalKit extension projects.
-- `build/apple-extensions/`: ignored Swift extension build products linked by the main app.
-- `scripts/`: local build/run helpers.
+Butterfly is a declarative, GPU-rendered UI library that aims to implement a *useful enough* subset of the the HTML/CSS standard. 
 
-## Building
+Butterfly is largely written in C++, with a few Swift bindings. It currently only supports MacOS, as it relies on Metal as its graphics api.
 
-The project uses CMake with Ninja and Homebrew LLVM.
+*Currently, there is support for:*
 
-Configure the debug build once, then build and run it:
+Four semantic elements:
+- SVGs
+- Images
+- Divs
+- Text (inline; span esque)
+  
+These display modes:
+- Flexbox
+- Grid
+- Div
+- Inline
 
-```sh
-cmake --preset debug
-cmake --build --preset debug
-cmake --build --preset debug --target run
+These positioning mode:
+- Static
+- Relative
+- Absolute
+- Fixed
+- Sticky
+
+Many many many borders:
+- Solid/double/dashed/dotted
+- Rounded/elliptical borders
+
+Three primary transforms:
+- Scale/rotate/position
+
+*A lot* of sizing operations:
+- Px
+- Pt
+- Fr
+- Percent
+- Auto
+- And more...
+
+Colors and opacity
+
+Box shadows
+
+Super smooth text, unicode support, bidi support
+
+And a much more (with more to come too).
+
+The declarative syntax is inspired by React. Here's an example from one of my border test cases:
+
 ```
+    using S = gui::Size;
+    using gui::Display;
+    using gui::FlexDirection;
+    using gui::AlignItems;
+    using gui::JustifyContent;
+    using gui::BorderStyle;
+    using runtime::EventType;
 
-After the initial configure, normal iteration only requires the latter two
-commands. Ninja automatically reruns CMake when its inputs change.
+    constexpr simd_float4 desk        {0.941, 0.937, 0.925, 1.0};
+    constexpr simd_float4 paper       {1.000, 1.000, 1.000, 1.0};
+    constexpr simd_float4 cream       {0.992, 0.973, 0.925, 1.0};
+    constexpr simd_float4 ink         {0.129, 0.129, 0.153, 1.0};
+    constexpr simd_float4 muted       {0.478, 0.478, 0.510, 1.0};
+    constexpr simd_float4 rule        {0.871, 0.863, 0.839, 1.0};
+    constexpr simd_float4 tangerine   {1.000, 0.502, 0.200, 1.0};
+    constexpr simd_float4 grape       {0.435, 0.271, 0.831, 1.0};
+    constexpr simd_float4 mint        {0.180, 0.741, 0.545, 1.0};
+    constexpr simd_float4 slate       {0.239, 0.271, 0.325, 1.0};
+    constexpr simd_float4 umbraSoft   {0.0, 0.0, 0.0, 0.16};
 
-Other configurations are available as presets:
+    constexpr auto butterflyPath = "/Users/treja/projects/gui/assets/butterfly.png";
 
-```sh
-cmake --preset release
-cmake --build --preset release
-
-cmake --preset profile
-cmake --build --preset profile
-
-cmake --preset inspector
-cmake --build --preset inspector
-```
-
-Run the tests with:
-
-```sh
-ctest --preset debug
-```
-
-*Example:*
-```
-static int count = 0;
-
-auto index() -> void {
-
-    auto onClick = [](auto& node, Event& event){
-        count += 1;
-
-        if (count % 2 == 0) {
-            node.color(simd_float4{1.0,0.0,0.0,1.0});
-        }else {
-            node.color(simd_float4{0.0,0.0,1.0,1.0});
-        }
-
-        std::println("hello world {}", count);
+    auto caption = [&](const char* title, const char* spec) {
+        return div()
+            .display(Display::Flex)
+            .flexDirection(FlexDirection::Col)
+            .flexGap(S::px(3))
+        (
+            text(title).font(ArialBold).fontSize(S::pt(12)).color(ink),
+            text(spec).font(SFMono).fontSize(S::pt(9)).color(muted)
+        );
     };
 
-    div(gui::Size::percent(1.0), gui::Size::percent(1.0), simd_float4{1.0,1.0,1.0,1.0})
-        .borderColor(simd_float4{0.77,0.71,1.0,1.0})
-        .borderWidth(1.0)
+    auto cell = [&](auto&& subject, const char* title, const char* spec) {
+        return div()
+            .width(S::px(220))
+            .display(Display::Flex)
+            .flexDirection(FlexDirection::Col)
+            .alignItems(AlignItems::Center)
+            .flexGap(S::px(18))
+            .paddingTop(S::px(24))
+            .paddingBottom(S::px(12))
+        (
+            subject,
+            caption(title, spec)
+        );
+    };
+
+    auto swatch = [&](simd_float4 fill, float width, BorderStyle style, simd_float4 stroke = ink) {
+        return div(S::px(140), S::px(100), fill)
+            .borderWidth(S::px(width))
+            .borderStyle(style)
+            .borderColor(stroke);
+    };
+
+    div(S::percent(1.0), S::percent(1.0), desk)
+        .padding(S::px(36))
+        .overflow(gui::Overflow::Scroll)
     (
-         div(gui::Size::percent(0.2), gui::Size::percent(1.0), simd_float4{1.0,0.5,1.0,0.8})(
-            div(gui::Size::px(60), gui::Size::px(30), simd_float4{0.498,0.0,1.0,1.0})
-                .marginTop(30)
-                .marginLeft(gui::Size::autoSize())
-                .marginRight(gui::Size::autoSize())
-                .cornerRadius(7.5)
-                .paddingLeft(9.0)
-                .paddingTop(4.5)
-                .borderColor(simd_float4{0.77,0.71,1.0,1.0})
-                .borderWidth(1.0)
-                .addEventListener(EventType::MouseDown, onClick)
-            (
-                text("Startfsd")
-                    .fontSize(48.0)
-                    .font(Arial)
-                    .marginLeft(10)
-                    .marginRight(10)
-                    .color(simd_float4{0,0,0,1})
-                    ,
-                text("fsdfsdfsda   dads sdsfsdsds")
-                    .fontSize(48.0)
-                    .font(Arial)
-                    .color(simd_float4{0,0,0,1})
-            ),
-            div(
-                gui::Size::px(60), gui::Size::px(30), simd_float4{0.5,0.0,0.0,1.0}
-            ).marginTop(10)
-         )
+        div()
+            .display(Display::Flex)
+            .flexDirection(FlexDirection::Col)
+            .flexGap(S::px(8))
+            .marginBottom(S::px(28))
+        (
+            text("STROKES").font(DINAlternateBold).fontSize(S::pt(26)).color(ink),
+            text("border-style on divs and images · click the last card to cycle its style")
+                .font(SFMono).fontSize(S::pt(11)).color(muted)
+        ),
+        div().height(S::px(1)).color(rule)(),
+
+        div()
+            .display(Display::Flex)
+            .flexWrap(gui::FlexWrap::Wrap)
+            .flexGap(S::px(12))
+            .justifyContent(JustifyContent::Center)
+        (
+            cell(swatch(paper, 1, BorderStyle::Solid).cornerRadius(S::px(12))(),
+                "Solid hairline", "1 solid · r12"),
+            cell(swatch(cream, 6, BorderStyle::Solid)(),
+                "Solid thick", "6 solid · sharp"),
+            cell(swatch(paper, 1, BorderStyle::Dashed)(),
+                "Dashed hairline", "1 dashed · sharp"),
+            cell(swatch(paper, 3, BorderStyle::Dashed).cornerRadius(S::px(12))(),
+                "Dashed", "3 dashed · r12"),
+            cell(swatch(cream, 6, BorderStyle::Dashed, grape).cornerRadius(S::px(50))(),
+                "Dashed pill", "6 dashed · r50"),
+            cell(swatch(paper, 3, BorderStyle::Dashed, tangerine).cornerRadius(S::percent(0.5))(),
+                "Dashed ellipse", "3 dashed · r50%"),
+            cell(swatch(paper, 4, BorderStyle::Dashed, slate)
+                    .cornerRadiusTopLeft(S::px(48))
+                    .cornerRadiusTopRight(S::px(4))
+                    .cornerRadiusBottomRight(S::px(30))
+                    .cornerRadiusBottomLeft(S::px(0))(),
+                "Dashed uneven", "4 dashed · 48 4 30 0"),
+            cell(swatch(paper, 2, BorderStyle::Dotted).cornerRadius(S::px(8))(),
+                "Dotted", "2 dotted · r8"),
+            cell(swatch(cream, 6, BorderStyle::Dotted, mint).cornerRadius(S::px(20))(),
+                "Dotted thick", "6 dotted · r20"),
+            cell(swatch(paper, 5, BorderStyle::Dotted, grape).cornerRadius(S::percent(0.5))(),
+                "Dotted ellipse", "5 dotted · r50%"),
+            cell(swatch(paper, 6, BorderStyle::Double).cornerRadius(S::px(10))(),
+                "Double", "6 double · r10"),
+            cell(swatch(cream, 3, BorderStyle::Double, slate)(),
+                "Double thin", "3 double · sharp"),
+            cell(swatch(paper, 3, BorderStyle::Dashed)
+                    .cornerRadius(S::px(12))
+                    .shadowOffsetY(S::px(8))
+                    .shadowBlur(S::px(24))
+                    .shadowColor(umbraSoft)(),
+                "Dashed + shadow", "3 dashed · 0 8 24"),
+            cell(image(butterflyPath, S::px(140), S::px(100))
+                    .cornerRadius(S::px(12))
+                    .borderWidth(S::px(4))
+                    .borderStyle(BorderStyle::Dotted)
+                    .borderColor(paper),
+                "Image dotted", "4 dotted · r12"),
+            cell(image(butterflyPath, S::px(140), S::px(100))
+                    .cornerRadius(S::px(12))
+                    .borderWidth(S::px(3))
+                    .borderStyle(BorderStyle::Dashed)
+                    .borderColor(ink),
+                "Image dashed", "3 dashed · r12"),
+            cell(swatch(mint, 4, BorderStyle::Solid, ink)
+                    .cornerRadius(S::px(14))
+                    .display(Display::Flex)
+                    .alignItems(AlignItems::Center)
+                    .justifyContent(JustifyContent::Center)
+                    .addEventListener(EventType::Click, [](auto& node, Event&) {
+                        switch (node.borderStyle()) {
+                            case BorderStyle::Solid:  node.borderStyle(BorderStyle::Dashed); break;
+                            case BorderStyle::Dashed: node.borderStyle(BorderStyle::Dotted); break;
+                            case BorderStyle::Dotted: node.borderStyle(BorderStyle::Double); break;
+                            case BorderStyle::Double: node.borderStyle(BorderStyle::Solid); break;
+                        }
+                    })
+                (
+                    text("click me").font(ArialBold).fontSize(S::pt(12)).color(paper)
+                ),
+                "Interactive", "click: solid → dashed → dotted → double")
+        )
     );
-}
 ```
+
+I hope to launch bindings in some interpreted language one day; it's quite annoying to not have hot-swapping. And also the syntax is abhorrent for, you know, writing UIs.
+
+## Building
+I can tell you about every line of code in this codebase; except the CMake and build scripts. Those are totally vibe slopped. That being said, I've vibe slopped a few useful build scripts:
+
+| Commands        | Description               |
+| --------------- | --------------------------|
+| `shio run`      | runs last compiled source |
+| `ship build`    | builds                    |
+| `ship buildrun` | builds and runs           |
+
+
+Useful flags:
+`--debug-ui`: enables an inspect element esque debugger that looks sweet.
+
+## Examples
