@@ -143,10 +143,7 @@ namespace layout {
                 auto& atom = atomized.atoms[atomIndex];
                 float usedLineHeight = atom.lineHeight > 0.0f ? atom.lineHeight : atom.height;
 
-                atomOffsets[atomIndex] = newCursor + simd_float2{
-                    0.0f,
-                    (usedLineHeight - atom.height) / 2.0f
-                };
+                atomOffsets[atomIndex] = newCursor + simd_float2{0.0f, (usedLineHeight - atom.height) / 2.0f};
                 newCursor.x += atom.width;
                 lineHeight = std::max(lineHeight, usedLineHeight);
             }
