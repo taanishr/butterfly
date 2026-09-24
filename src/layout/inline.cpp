@@ -141,9 +141,7 @@ namespace layout {
             size_t atomIndex = fragment.atomStart;
             for (size_t i = 0; i < fragment.atomCount && atomIndex < atomized.atoms.size(); ++i, ++atomIndex) {
                 auto& atom = atomized.atoms[atomIndex];
-                float usedLineHeight = atom.lineHeight > 0.0f
-                    ? atom.lineHeight
-                    : atom.height;
+                float usedLineHeight = atom.lineHeight > 0.0f ? atom.lineHeight : atom.height;
 
                 atomOffsets[atomIndex] = newCursor + simd_float2{
                     0.0f,
