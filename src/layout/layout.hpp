@@ -279,7 +279,7 @@ namespace layout {
     };
 
     struct InheritedProperties {
-        Direction direction{Direction::rtl};
+        Direction direction{Direction::ltr};
         TextAlign textAlign{TextAlign::Start};
     };
 

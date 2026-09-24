@@ -1572,6 +1572,9 @@ namespace layout {
 
             float minimum = std::get<float>(childSizing.minimum.width);
 
+            if (preferredWidth)
+                minimum = *preferredWidth;
+
             if (maxWidth)
                 minimum = std::min(minimum, *maxWidth);
 
@@ -1707,6 +1710,10 @@ namespace layout {
             }
 
             float minimum = std::get<float>(childSizing.minimum.height);
+
+            if (preferredHeight)
+                minimum = *preferredHeight;
+
             if (maxHeight)
                 minimum = std::min(minimum, *maxHeight);
 
@@ -1875,7 +1882,8 @@ namespace layout {
                     dx = (cellW - borderBoxSize - margins.left - margins.right) / 2.0f;
                 } else if (effectiveJustify == JustifyItems::End) {
                     dx = isRtl ? 0.0f : cellW - borderBoxSize - margins.left - margins.right;
-                } else if (effectiveJustify == JustifyItems::Start) {
+                } else {
+                    // default stretch/start behavior
                     dx = isRtl ? cellW - borderBoxSize - margins.left - margins.right : 0.0f;
                 }
 
