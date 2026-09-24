@@ -213,8 +213,7 @@ namespace tree {
                 .textByteStart = byteStart,
                 .textByteLength = byteEnd - byteStart,
                 .bidiLevel = run.bidiLevel,
-                .lineBoxIndex = lineBoxIndex,
-                .fragmentIndex = lineBox.fragmentCount
+                .lineBoxIndex = lineBoxIndex
             };
 
             if (lineBox.fragmentCount == 0) {
@@ -226,9 +225,11 @@ namespace tree {
         }
     }
 
-    void reorderLineFragments(layout::InlineFormattingContext& context) {
+    void reorderLineFragments(layout::InlineFormattingContext& context, bool isLtr) {
         std::vector<LineFragment*> fragments;
         fragments.reserve(context.fragments.size());
+
+        std::unordered_map<size_t, size_t> elementFragmentIndices;
 
         for (size_t lineIndex = 0; lineIndex < context.lineBoxes.size(); ++lineIndex) {
             auto& lineBox = context.lineBoxes[lineIndex];
@@ -270,11 +271,28 @@ namespace tree {
                 }
             }
 
-            float offset = 0.0f;
-            for (auto* fragment : fragments) {
-                fragment->offset = offset;
-                offset += fragment->width;
+            for (size_t i = 0; i < fragments.size(); ++i) {
+                auto* fragment = isLtr ? fragments[i] : fragments[fragments.size() - 1 - i];
+                fragment->elementFragmentIndex = elementFragmentIndices[fragment->elementIndex]++;
+
+                if (fragment->elementFragmentIndex != 0) {
+                    fragment->leadingMargin = 0.0f;
+                    fragment->leadingPadding = 0.0f;
+                }
+
+                if (fragment->elementFragmentIndex + 1 != fragment->elementFragmentCount) {
+                    fragment->trailingMargin = 0.0f;
+                    fragment->trailingPadding = 0.0f;
+                }
             }
+
+            float offset = 0.0f;
+
+            for (auto* fragment : fragments) {
+                fragment->offset = isLtr ? offset + fragment->leadingMargin + fragment->leadingPadding : offset + fragment->trailingMargin + fragment->trailingPadding;
+                offset += fragment->leadingMargin + fragment->leadingPadding + fragment->width + fragment->trailingPadding + fragment->trailingMargin;
+            }
+
             assert(std::abs(offset - lineBox.width) < 0.001f);
         }
     }
@@ -335,18 +353,18 @@ namespace tree {
         }
 
         LineFragment fragment {
-            .width = width,
+            .width = atoms.front().width,
             .atomStart = 0,
             .atomCount = atoms.size(),
             .bidiLevel = run.level,
-            .lineBoxIndex = currentLineBoxIndex,
-            .fragmentIndex = currentLineBox.fragmentCount
+            .lineBoxIndex = currentLineBoxIndex
         };
         if (currentLineBox.fragmentCount == 0) {
             currentLineBox.fragmentStart = fragments.size();
         }
 
         currentLineBox.pushFragment(fragment);
+        currentLineBox.width += margins.left + margins.right;
         fragments.push_back(fragment);
         lastFragmentHasBreakOpportunity = true;
     }
@@ -358,6 +376,8 @@ namespace tree {
         WhiteSpace whiteSpace,
         WordBreak wordBreak,
         ResolvedMargins margins,
+        const PaddingResult& padding,
+        bool isLtr,
         const SizeState& availableWidth,
         std::optional<IntrinsicRequest> widthRequest,
         std::vector<LineFragment>& fragments,
@@ -366,11 +386,22 @@ namespace tree {
         size_t& currentLineBoxIndex,
         bool& lastFragmentHasBreakOpportunity
     ) {
+        const float marginStart = isLtr ? margins.left : margins.right;
+        const float marginEnd = isLtr ? margins.right : margins.left;
+        const auto* paddingStart = std::get_if<float>(isLtr ? &padding.left : &padding.right);
+        const auto* paddingEnd = std::get_if<float>(isLtr ? &padding.right : &padding.left);
+
         const bool preserveLineFeeds = whiteSpace == WhiteSpace::Pre ||  whiteSpace == WhiteSpace::PreWrap;
         const bool allowSoftWrap = whiteSpace == WhiteSpace::Normal || whiteSpace == WhiteSpace::PreWrap;
         const bool breakInsideWords = allowSoftWrap && wordBreak == WordBreak::BreakAll;
 
-        float runningWidth = margins.left;
+        float runningWidth = marginStart;
+        float runningEdge = marginStart;
+
+        if (paddingStart) {
+            runningWidth += *paddingStart;
+            runningEdge += *paddingStart;
+        }
         size_t runningAtomCount = 0;
         size_t runningClusterStart = 0;
         size_t idx = 0;
@@ -385,7 +416,18 @@ namespace tree {
             }
 
             if (preserveLineFeeds && firstAtom.placeOnNewLine) {
-                runningWidth += width + margins.right;
+                runningWidth += width;
+
+                if (idx + 1 >= shapedRun.clusters.size()) {
+                    runningWidth += marginEnd;
+                    runningEdge += marginEnd;
+
+                    if (paddingEnd) {
+                        runningWidth += *paddingEnd;
+                        runningEdge += *paddingEnd;
+                    }
+                }
+
                 runningAtomCount += cluster.glyphCount;
 
                 if (allowSoftWrap && shouldTakeSoftBreak(
@@ -405,11 +447,12 @@ namespace tree {
                     atoms,
                     runningClusterStart,
                     idx + 1,
-                    runningWidth,
+                    runningWidth - runningEdge,
                     fragments,
                     currentLineBox,
                     currentLineBoxIndex
                 );
+                currentLineBox.width += runningEdge;
 
                 lineBoxes.push_back(std::move(currentLineBox));
                 currentLineBox = {};
@@ -417,6 +460,7 @@ namespace tree {
                 lastFragmentHasBreakOpportunity = false;
 
                 runningWidth = 0.0;
+                runningEdge = 0.0;
                 runningAtomCount = 0;
                 idx++;
                 runningClusterStart = idx;
@@ -440,18 +484,23 @@ namespace tree {
                             atoms,
                             runningClusterStart,
                             idx,
-                            runningWidth,
+                            runningWidth - runningEdge,
                             fragments,
                             currentLineBox,
                             currentLineBoxIndex
                         );
+                        currentLineBox.width += runningEdge;
                     }
 
                     lineBoxes.push_back(std::move(currentLineBox));
                     currentLineBox = {};
                     currentLineBoxIndex++;
                     lastFragmentHasBreakOpportunity = false;
-                    runningWidth = hadPendingAtoms ? 0.0f : margins.left;
+
+                    if (hadPendingAtoms) {
+                        runningWidth = 0.0f;
+                        runningEdge = 0.0f;
+                    }
                     runningAtomCount = 0;
                     runningClusterStart = idx;
                 }
@@ -479,7 +528,15 @@ namespace tree {
                 idx++;
             }
 
-            runningWidth += margins.right;
+            if (idx >= shapedRun.clusters.size()) {
+                runningWidth += marginEnd;
+                runningEdge += marginEnd;
+
+                if (paddingEnd) {
+                    runningWidth += *paddingEnd;
+                    runningEdge += *paddingEnd;
+                }
+            }
 
             if (allowSoftWrap && shouldTakeSoftBreak(
                     widthRequest,
@@ -498,20 +555,28 @@ namespace tree {
                 atoms,
                 runningClusterStart,
                 idx,
-                runningWidth,
+                runningWidth - runningEdge,
                 fragments,
                 currentLineBox,
                 currentLineBoxIndex
             );
+            currentLineBox.width += runningEdge;
             lastFragmentHasBreakOpportunity = true;
 
             runningWidth = 0.0;
+            runningEdge = 0.0;
             runningAtomCount = 0;
             runningClusterStart = idx;
         }
 
         if (runningAtomCount > 0) {
-            runningWidth += margins.right;
+            runningWidth += marginEnd;
+            runningEdge += marginEnd;
+
+            if (paddingEnd) {
+                runningWidth += *paddingEnd;
+                runningEdge += *paddingEnd;
+            }
 
             if (allowSoftWrap && shouldTakeSoftBreak(
                     widthRequest,
@@ -530,11 +595,12 @@ namespace tree {
                 atoms,
                 runningClusterStart,
                 shapedRun.clusters.size(),
-                runningWidth,
+                runningWidth - runningEdge,
                 fragments,
                 currentLineBox,
                 currentLineBoxIndex
             );
+            currentLineBox.width += runningEdge;
             lastFragmentHasBreakOpportunity = false;
         }
     }
@@ -551,13 +617,17 @@ namespace tree {
         size_t currentLineBoxIndex = 0;
         bool lastFragmentHasBreakOpportunity = false;
         SizeState availableWidth = calculateSize(sizing.availableWidth, std::monostate{});
+        const bool isLtr = constraints.inheritedProperties.direction == layout::Direction::ltr;
 
         if (node->element->isInline()) {
             auto textResp = getText(node);
             auto margins = node->preLayout->resolvedMargins;
             auto& atoms = node->atomized->atoms;
+            PaddingResult padding {};
 
             if (textResp.has_value()) {
+                padding = resolvePadding(request);
+
                 appendTextLineFragments(
                     *textResp,
                     *getShapedRun(node),
@@ -565,6 +635,8 @@ namespace tree {
                     getWhiteSpace(node).value_or(WhiteSpace::Normal),
                     getWordBreak(node).value_or(WordBreak::Normal),
                     margins,
+                    padding,
+                    isLtr,
                     availableWidth,
                     sizing.widthRequest,
                     fragments,
@@ -590,12 +662,31 @@ namespace tree {
                     lastFragmentHasBreakOpportunity
                 );
             }
+
+            const auto* paddingStart = std::get_if<float>(isLtr ? &padding.left : &padding.right);
+            const auto* paddingEnd = std::get_if<float>(isLtr ? &padding.right : &padding.left);
+
+            for (size_t f = 0; f < fragments.size(); ++f) {
+                fragments[f].elementIndex = 0;
+                fragments[f].elementFragmentIndex = f;
+                fragments[f].elementFragmentCount = fragments.size();
+                fragments[f].leadingMargin = isLtr ? margins.left : margins.right;
+                fragments[f].trailingMargin = isLtr ? margins.right : margins.left;
+
+                if (paddingStart) {
+                    fragments[f].leadingPadding = *paddingStart;
+                }
+
+                if (paddingEnd) {
+                    fragments[f].trailingPadding = *paddingEnd;
+                }
+            }
         }
 
         if (currentLineBox.fragmentCount > 0)
             lineBoxes.push_back(std::move(currentLineBox));
 
-        reorderLineFragments(*context);
+        reorderLineFragments(*context, isLtr);
 
         if (sizing.trackIntrinsicWidth && sizing.widthRequest != IntrinsicRequest::None) {
             if (sizing.widthRequest != IntrinsicRequest::Minimum) {
@@ -658,6 +749,7 @@ namespace tree {
         size_t currentLineBoxIndex = 0;
         bool lastFragmentHasBreakOpportunity = false;
         SizeState availableWidth = calculateSize(sizing.availableWidth, std::monostate{});
+        const bool isLtr = constraints.inheritedProperties.direction == layout::Direction::ltr;
 
 
         for (uint64_t i = 0; i < node->children.size(); ++i) {
@@ -676,7 +768,41 @@ namespace tree {
                     currentLineBoxIndex++;
                 }
 
+                SizeRequest childRequest {
+                    .position = child->shared.position,
+                    .specified = {.width = child->shared.width, .height = child->shared.height},
+                    .minimum = {.width = child->shared.minWidth, .height = child->shared.minHeight},
+                    .maximum = {
+                        .width = child->shared.maxWidth ? SizeState{*child->shared.maxWidth} : SizeState{std::monostate{}},
+                        .height = child->shared.maxHeight ? SizeState{*child->shared.maxHeight} : SizeState{std::monostate{}},
+                    },
+                    .available = {.width = constraints.availableWidth, .height = constraints.availableHeight},
+                    .top = child->shared.top,
+                    .right = child->shared.right,
+                    .bottom = child->shared.bottom,
+                    .left = child->shared.left,
+                    .paddingTop = child->shared.paddingTop.value_or(child->shared.padding),
+                    .paddingRight = child->shared.paddingRight.value_or(child->shared.padding),
+                    .paddingBottom = child->shared.paddingBottom.value_or(child->shared.padding),
+                    .paddingLeft = child->shared.paddingLeft.value_or(child->shared.padding),
+                    .borderWidth = child->shared.border.width,
+                    .margins = margins,
+                    .aspectRatio = child->shared.aspectRatio,
+                    .automaticWidth = (child->getPosition() == Position::Absolute || child->getPosition() == Position::Fixed)
+                        ? AutomaticSizing::UseContent : AutomaticSizing::UseAvailable,
+                    .automaticHeight = AutomaticSizing::UseContent,
+                    .automaticMinimumWidth = AutomaticMinimum::Zero,
+                    .automaticMinimumHeight = AutomaticMinimum::Zero,
+                    .intrinsicWidthRequest = request.intrinsicWidthRequest,
+                    .intrinsicHeightRequest = request.intrinsicHeightRequest,
+                    .resolvingIntrinsicWidth = request.intrinsicWidthRequest.value_or(IntrinsicRequest::None) != IntrinsicRequest::None,
+                    .resolvingIntrinsicHeight = request.intrinsicHeightRequest.value_or(IntrinsicRequest::None) != IntrinsicRequest::None,
+                };
+                PaddingResult padding {};
+
                 if (textResp.has_value()) {
+                    padding = resolvePadding(childRequest);
+
                     appendTextLineFragments(
                         *textResp,
                         *getShapedRun(child.get()),
@@ -684,6 +810,8 @@ namespace tree {
                         getWhiteSpace(child.get()).value_or(WhiteSpace::Normal),
                         getWordBreak(child.get()).value_or(WordBreak::Normal),
                         margins,
+                        padding,
+                        isLtr,
                         availableWidth,
                         sizing.widthRequest,
                         fragments,
@@ -693,36 +821,6 @@ namespace tree {
                         lastFragmentHasBreakOpportunity
                     );
                 } else {
-                    SizeRequest childRequest {
-                        .position = child->shared.position,
-                        .specified = {.width = child->shared.width, .height = child->shared.height},
-                        .minimum = {.width = child->shared.minWidth, .height = child->shared.minHeight},
-                        .maximum = {
-                            .width = child->shared.maxWidth ? SizeState{*child->shared.maxWidth} : SizeState{std::monostate{}},
-                            .height = child->shared.maxHeight ? SizeState{*child->shared.maxHeight} : SizeState{std::monostate{}},
-                        },
-                        .available = {.width = constraints.availableWidth, .height = constraints.availableHeight},
-                        .top = child->shared.top,
-                        .right = child->shared.right,
-                        .bottom = child->shared.bottom,
-                        .left = child->shared.left,
-                        .paddingTop = child->shared.paddingTop.value_or(child->shared.padding),
-                        .paddingRight = child->shared.paddingRight.value_or(child->shared.padding),
-                        .paddingBottom = child->shared.paddingBottom.value_or(child->shared.padding),
-                        .paddingLeft = child->shared.paddingLeft.value_or(child->shared.padding),
-                        .borderWidth = child->shared.border.width,
-                        .margins = margins,
-                        .aspectRatio = child->shared.aspectRatio,
-                        .automaticWidth = (child->getPosition() == Position::Absolute || child->getPosition() == Position::Fixed)
-                            ? AutomaticSizing::UseContent : AutomaticSizing::UseAvailable,
-                        .automaticHeight = AutomaticSizing::UseContent,
-                        .automaticMinimumWidth = AutomaticMinimum::Zero,
-                        .automaticMinimumHeight = AutomaticMinimum::Zero,
-                        .intrinsicWidthRequest = request.intrinsicWidthRequest,
-                        .intrinsicHeightRequest = request.intrinsicHeightRequest,
-                        .resolvingIntrinsicWidth = request.intrinsicWidthRequest.value_or(IntrinsicRequest::None) != IntrinsicRequest::None,
-                        .resolvingIntrinsicHeight = request.intrinsicHeightRequest.value_or(IntrinsicRequest::None) != IntrinsicRequest::None,
-                    };
                     const auto sizeResult = evaluateSize(tree, child.get(), frameInfo, constraints, childRequest, sizeCache);
                     const auto& run = child->textBidiInput->runs.front();
                     appendAtomicInlineFragment(
@@ -740,6 +838,26 @@ namespace tree {
                     );
                 }
 
+                const size_t childFragmentCount = fragments.size() - childFragmentStart;
+                const auto* paddingStart = std::get_if<float>(isLtr ? &padding.left : &padding.right);
+                const auto* paddingEnd = std::get_if<float>(isLtr ? &padding.right : &padding.left);
+
+                for (size_t f = childFragmentStart; f < fragments.size(); ++f) {
+                    fragments[f].elementIndex = i;
+                    fragments[f].elementFragmentIndex = f - childFragmentStart;
+                    fragments[f].elementFragmentCount = childFragmentCount;
+                    fragments[f].leadingMargin = isLtr ? margins.left : margins.right;
+                    fragments[f].trailingMargin = isLtr ? margins.right : margins.left;
+
+                    if (paddingStart) {
+                        fragments[f].leadingPadding = *paddingStart;
+                    }
+
+                    if (paddingEnd) {
+                        fragments[f].trailingPadding = *paddingEnd;
+                    }
+                }
+
                 prevInline = true;
             }else {
                 prevInline = false;
@@ -755,7 +873,7 @@ namespace tree {
             childrenLineBoxes.push_back(std::move(currentLineBox));
         }
 
-        reorderLineFragments(*context);
+        reorderLineFragments(*context, isLtr);
 
         if (sizing.trackIntrinsicWidth && sizing.widthRequest != IntrinsicRequest::None) {
             if (sizing.widthRequest != IntrinsicRequest::Minimum) {

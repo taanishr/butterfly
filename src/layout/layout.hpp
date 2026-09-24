@@ -50,13 +50,19 @@ namespace layout {
 
     struct LineFragment {
         float width{};
+        float leadingMargin{};
+        float leadingPadding{};
+        float trailingMargin{};
+        float trailingPadding{};
+        size_t elementIndex{};
+        size_t elementFragmentIndex{};
+        size_t elementFragmentCount{};
         size_t atomStart{};
         size_t atomCount{};
         size_t textByteStart{};
         size_t textByteLength{};
         uint8_t bidiLevel{};
         size_t lineBoxIndex{};
-        size_t fragmentIndex{};  // index within the owning line box
         float offset{}; // relative x where fragment is placed in line box
     };
 

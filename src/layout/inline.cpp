@@ -81,6 +81,13 @@ namespace layout {
         */
         auto lineFragments = constraints.inlineFormatting.lineFragments();
         auto lineBoxes = constraints.inlineFormatting.lineBoxes();
+
+        if (constraints.edgeIntent.edgeDisplayMode == Display::Inline && !lineFragments.empty() && constraints.inlineFormatting.fragments.start > 0) {
+            const auto& previousFragment = constraints.inlineFormatting.context->fragments[constraints.inlineFormatting.fragments.start - 1];
+            prevLineBoxIndex = previousFragment.lineBoxIndex;
+            lineHeight = constraints.prevInlineHeight;
+        }
+
         size_t fragmentIdx = 0;
         for (auto it = lineFragments.begin(); it != lineFragments.end(); ++it, ++fragmentIdx) {
             const LineFragment& fragment = *it;
@@ -108,29 +115,14 @@ namespace layout {
             float startingX = constraints.origin.x + lineOffset + offset;
 
             newCursor.x = startingX;
-            
-            minX = std::min(minX, newCursor.x);
 
-            if (fragmentIdx == 0) {
+            minX = std::min(minX, startingX - (isLtr ? fragment.leadingPadding : fragment.trailingPadding));
 
-                float inlineMargin = isLtr ? margins.left : margins.right;
-
-                if (constraints.edgeIntent.edgeDisplayMode == Display::Inline) {
-                    if (constraints.edgeIntent.collapsable) {
-                        float collapsed = std::max(inlineMargin, constraints.edgeIntent.intent);
-                        newCursor.x += collapsed;
-                    } else {
-                        float total = inlineMargin + constraints.edgeIntent.intent;
-                        newCursor.x += total;
-                    }
+            if (fragmentIdx == 0 && constraints.edgeIntent.edgeDisplayMode != Display::Inline) {
+                if (constraints.edgeIntent.collapsable) {
+                    newCursor.y += std::max(margins.top, constraints.edgeIntent.intent);
                 } else {
-                    if (constraints.edgeIntent.collapsable) {
-                        newCursor.y += std::max(margins.top, constraints.edgeIntent.intent);
-                    } else {
-                        newCursor.y += margins.top + constraints.edgeIntent.intent;
-                    }
-
-                    newCursor.x += (isLtr ? inlineMargin : -inlineMargin);
+                    newCursor.y += margins.top + constraints.edgeIntent.intent;
                 }
             }
 
@@ -159,13 +151,12 @@ namespace layout {
                 };
                 newCursor.x += atom.width;
                 lineHeight = std::max(lineHeight, usedLineHeight);
-                currentTotalWidth += atom.width;
             }
+
+            currentTotalWidth += fragment.leadingPadding + fragment.width + fragment.trailingPadding;
 
             prevLineBoxIndex = fragment.lineBoxIndex;
         }
-
-        newCursor.x += isLtr ? margins.right : -margins.left;
 
         totalHeight += lineHeight;
         totalWidth = std::max(currentTotalWidth, totalWidth);
@@ -189,10 +180,7 @@ namespace layout {
                     currentWidth = 0.0f;
                 }
 
-                size_t atomIndex = fragment.atomStart;
-                for (size_t i = 0; i < fragment.atomCount && atomIndex < atomized.atoms.size(); ++i, ++atomIndex) {
-                    currentWidth += atomized.atoms[atomIndex].width;
-                }
+                currentWidth += fragment.leadingPadding + fragment.width + fragment.trailingPadding;
 
                 prevIndex = fragment.lineBoxIndex;
             }
@@ -211,10 +199,7 @@ namespace layout {
                     currentWidth = 0.0f;
                 }
 
-                size_t atomIndex = fragment.atomStart;
-                for (size_t i = 0; i < fragment.atomCount && atomIndex < atomized.atoms.size(); ++i, ++atomIndex) {
-                    currentWidth += atomized.atoms[atomIndex].width;
-                }
+                currentWidth += fragment.leadingPadding + fragment.width + fragment.trailingPadding;
 
                 prevIndex = fragment.lineBoxIndex;
             }
@@ -238,7 +223,6 @@ namespace layout {
 
         lr.edgeIntent = {
             .edgeDisplayMode = Display::Inline,
-            .intent = isLtr ? margins.right : margins.left,
             .collapsable = false,
         };
 
@@ -305,7 +289,7 @@ namespace layout {
 
             newCursor.x = startingX;
 
-            minX = std::min(minX, newCursor.x);
+            minX = std::min(minX, startingX - (isLtr ? fragment.leadingPadding : fragment.trailingPadding));
 
             if (fragment.lineBoxIndex != prevLineBoxIndex &&
                 prevLineBoxIndex != -1
@@ -332,8 +316,9 @@ namespace layout {
                 };
                 newCursor.x += atom.width;
                 lineHeight = std::max(lineHeight, usedLineHeight);
-                currentTotalWidth += atom.width;
             }
+
+            currentTotalWidth += fragment.leadingPadding + fragment.width + fragment.trailingPadding;
 
             prevLineBoxIndex = fragment.lineBoxIndex;
         }
