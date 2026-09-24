@@ -1574,6 +1574,11 @@ namespace layout {
             if (maxWidth)
                 minimum = std::min(minimum, *maxWidth);
 
+            const auto& margins = childNode->preLayout->resolvedMargins;
+            minimum += margins.left + margins.right;
+            minContent += margins.left + margins.right;
+            maxContent += margins.left + margins.right;
+
             gridLayout.addChild(i, childNode, {.minimum = minimum, .minContent = minContent, .maxContent = maxContent});
         }
 
@@ -1703,6 +1708,11 @@ namespace layout {
             float minimum = std::get<float>(childSizing.minimum.height);
             if (maxHeight)
                 minimum = std::min(minimum, *maxHeight);
+
+            const auto& margins = childNode->preLayout->resolvedMargins;
+            minimum += margins.top + margins.bottom;
+            minContent += margins.top + margins.bottom;
+            maxContent += margins.top + margins.bottom;
 
             item.heightContributions = {.minimum = minimum, .minContent = minContent, .maxContent = maxContent};
         }
@@ -1841,14 +1851,16 @@ namespace layout {
 
             const SizeResult childSizing = evaluateSize(tree, childNode, frameInfo, preparedChildConstraints, childRequest, sizeCache);
 
+            const auto& margins = childNode->preLayout->resolvedMargins;
+
             // positioning adjustments
             if (std::holds_alternative<float>(childSizing.borderBoxSize.width)) {
                 float borderBoxSize = std::get<float>(childSizing.borderBoxSize.width);
                 float dx = 0.0f;
                 if (effectiveJustify == JustifyItems::Center) {
-                    dx = (cellW - borderBoxSize) / 2.0f;
+                    dx = (cellW - borderBoxSize - margins.left - margins.right) / 2.0f;
                 } else if (effectiveJustify == JustifyItems::End) {
-                    dx = cellW - borderBoxSize;
+                    dx = cellW - borderBoxSize - margins.left - margins.right;
                 }
 
                 preparedChildConstraints.origin.x += dx;
@@ -1859,9 +1871,9 @@ namespace layout {
                 float borderBoxSize = std::get<float>(childSizing.borderBoxSize.height);
                 float dy = 0.0f;
                 if (effectiveAlign == AlignItems::Center) {
-                    dy = (cellH - borderBoxSize) / 2.0f;
+                    dy = (cellH - borderBoxSize - margins.top - margins.bottom) / 2.0f;
                 } else if (effectiveAlign == AlignItems::FlexEnd) {
-                    dy = cellH - borderBoxSize;
+                    dy = cellH - borderBoxSize - margins.top - margins.bottom;
                 }
 
                 preparedChildConstraints.origin.y += dy;

@@ -196,6 +196,7 @@ namespace layout {
                 minimumMainSize,
                 maximumMainSize,
                 mainIntrinsicSizes,
+                childAsPtr->preLayout->resolvedMargins,
                 effectiveAlign,
                 flex.axis.mainSize(availableSize),
                 resolvedGap
@@ -290,8 +291,8 @@ namespace layout {
 
                 if (std::holds_alternative<float>(flex.axis.crossSize(childSizing.borderBoxSize))) {
                     item.hypotheticalCrossSize = std::get<float>(flex.axis.crossSize(childSizing.borderBoxSize));
-                    lineMaximumCrossContribution = std::max(lineMaximumCrossContribution, item.hypotheticalCrossSize);
-                    line.maxCrossSize = std::max(line.maxCrossSize, item.hypotheticalCrossSize);
+                    lineMaximumCrossContribution = std::max(lineMaximumCrossContribution, item.hypotheticalCrossSize + item.crossMargin);
+                    line.maxCrossSize = std::max(line.maxCrossSize, item.hypotheticalCrossSize + item.crossMargin);
                 }else {
                     item.hypotheticalCrossSize = 0.0f;
                 }
@@ -303,12 +304,12 @@ namespace layout {
                     continue;
                 }
 
-                float childMinimumCrossContribution = std::get<float>(measuredCrossIntrinsicSizes->minimum);
-                float childMaximumCrossContribution = std::get<float>(measuredCrossIntrinsicSizes->maximum);
+                float childMinimumCrossContribution = std::get<float>(measuredCrossIntrinsicSizes->minimum) + item.crossMargin;
+                float childMaximumCrossContribution = std::get<float>(measuredCrossIntrinsicSizes->maximum) + item.crossMargin;
 
                 lineMinimumCrossContribution = std::max(lineMinimumCrossContribution, childMinimumCrossContribution);
                 lineMaximumCrossContribution = std::max(lineMaximumCrossContribution, childMaximumCrossContribution);
-                line.maxCrossSize = std::max(line.maxCrossSize, item.hypotheticalCrossSize);
+                line.maxCrossSize = std::max(line.maxCrossSize, item.hypotheticalCrossSize + item.crossMargin);
             }
 
             minimumCrossContribution += lineMinimumCrossContribution;

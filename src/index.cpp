@@ -3653,7 +3653,7 @@ div()
     //     )
     // );
 
-    // layout_test::scenes::buildBrowser();
+    layout_test::scenes::buildBrowser();
 
     // using S = gui::Size;
 
@@ -5695,366 +5695,366 @@ div()
     //     );
     // }
 
-    // ═══════════════════════════════════════════════════════════════════
-    // Clone: github.com repository page
-    // ═══════════════════════════════════════════════════════════════════
-    {
-        using S = gui::Size;
-        using gui::Display;
-        using gui::FlexDirection;
-        using gui::AlignItems;
-        using gui::JustifyContent;
-        using gui::Position;
-        using runtime::EventType;
+    // // ═══════════════════════════════════════════════════════════════════
+    // // Clone: github.com repository page
+    // // ═══════════════════════════════════════════════════════════════════
+    // {
+    //     using S = gui::Size;
+    //     using gui::Display;
+    //     using gui::FlexDirection;
+    //     using gui::AlignItems;
+    //     using gui::JustifyContent;
+    //     using gui::Position;
+    //     using runtime::EventType;
 
-        constexpr auto rgb = [](int r, int g, int b, float a = 1.0f) {
-            return simd_float4{r / 255.0f, g / 255.0f, b / 255.0f, a};
-        };
+    //     constexpr auto rgb = [](int r, int g, int b, float a = 1.0f) {
+    //         return simd_float4{r / 255.0f, g / 255.0f, b / 255.0f, a};
+    //     };
 
-        const auto canvas   = rgb(255, 255, 255);
-        const auto subtle   = rgb(246, 248, 250);
-        const auto border   = rgb(209, 217, 224);
-        const auto fg       = rgb(31, 35, 40);
-        const auto muted    = rgb(89, 99, 110);
-        const auto link     = rgb(9, 105, 218);
-        const auto green    = rgb(31, 136, 61);
-        const auto orange   = rgb(253, 140, 115);
-        const auto clear    = rgb(0, 0, 0, 0.0f);
+    //     const auto canvas   = rgb(255, 255, 255);
+    //     const auto subtle   = rgb(246, 248, 250);
+    //     const auto border   = rgb(209, 217, 224);
+    //     const auto fg       = rgb(31, 35, 40);
+    //     const auto muted    = rgb(89, 99, 110);
+    //     const auto link     = rgb(9, 105, 218);
+    //     const auto green    = rgb(31, 136, 61);
+    //     const auto orange   = rgb(253, 140, 115);
+    //     const auto clear    = rgb(0, 0, 0, 0.0f);
 
-        const std::string Sans     = Helvetica;
-        const std::string SansBold = ArialBold;
-        constexpr auto A = "/Users/treja/projects/gui/assets/clones/";
+    //     const std::string Sans     = Helvetica;
+    //     const std::string SansBold = ArialBold;
+    //     constexpr auto A = "/Users/treja/projects/gui/assets/clones/";
 
-        auto icon = [&](const char* name, float size = 16) {
-            return svg(std::string(A) + name, S::px(size), S::px(size)).flexShrink(S::px(0));
-        };
+    //     auto icon = [&](const char* name, float size = 16) {
+    //         return svg(std::string(A) + name, S::px(size), S::px(size)).flexShrink(S::px(0));
+    //     };
 
-        auto button = [&](simd_float4 bgColor, auto&&... contents) {
-            return div(S::autoSize(), S::px(28), bgColor)
-                .cornerRadius(S::px(6))
-                .borderColor(border)
-                .borderWidth(S::px(1))
-                .paddingLeft(S::px(10)).paddingRight(S::px(10))
-                .display(Display::Flex)
-                .alignItems(AlignItems::Center)
-                .flexGap(S::px(6))
-                .flexShrink(S::px(0))
-            (std::forward<decltype(contents)>(contents)...);
-        };
+    //     auto button = [&](simd_float4 bgColor, auto&&... contents) {
+    //         return div(S::autoSize(), S::px(28), bgColor)
+    //             .cornerRadius(S::px(6))
+    //             .borderColor(border)
+    //             .borderWidth(S::px(1))
+    //             .paddingLeft(S::px(10)).paddingRight(S::px(10))
+    //             .display(Display::Flex)
+    //             .alignItems(AlignItems::Center)
+    //             .flexGap(S::px(6))
+    //             .flexShrink(S::px(0))
+    //         (std::forward<decltype(contents)>(contents)...);
+    //     };
 
-        auto counter = [&](const char* n) {
-            return div(S::autoSize(), S::px(18), rgb(175, 184, 193, 0.2f))
-                .cornerRadius(S::px(9))
-                .paddingLeft(S::px(6)).paddingRight(S::px(6))
-                .display(Display::Flex)
-                .alignItems(AlignItems::Center)
-            (
-                text(n).font(SansBold).fontSize(S::pt(9)).color(fg)
-            );
-        };
+    //     auto counter = [&](const char* n) {
+    //         return div(S::autoSize(), S::px(18), rgb(175, 184, 193, 0.2f))
+    //             .cornerRadius(S::px(9))
+    //             .paddingLeft(S::px(6)).paddingRight(S::px(6))
+    //             .display(Display::Flex)
+    //             .alignItems(AlignItems::Center)
+    //         (
+    //             text(n).font(SansBold).fontSize(S::pt(9)).color(fg)
+    //         );
+    //     };
 
-        auto tab = [&](const char* label, const char* count, bool active) {
-            auto t = div()
-                .height(S::px(46))
-                .paddingLeft(S::px(8)).paddingRight(S::px(8))
-                .display(Display::Flex)
-                .alignItems(AlignItems::Center)
-                .flexGap(S::px(8))
-                .flexShrink(S::px(0))
-                .position(Position::Relative)
-            (
-                text(label).font(active ? SansBold : Sans).fontSize(S::pt(10.5)).color(fg),
-                count ? counter(count) : div(S::px(0), S::px(0), clear)(),
-                div(S::percent(1.0), S::px(2), active ? orange : clear)
-                    .position(Position::Absolute)
-                    .bottom(S::px(0))
-                    .left(S::px(0))
-                    .cornerRadius(S::px(1))()
-            );
-            return t;
-        };
+    //     auto tab = [&](const char* label, const char* count, bool active) {
+    //         auto t = div()
+    //             .height(S::px(46))
+    //             .paddingLeft(S::px(8)).paddingRight(S::px(8))
+    //             .display(Display::Flex)
+    //             .alignItems(AlignItems::Center)
+    //             .flexGap(S::px(8))
+    //             .flexShrink(S::px(0))
+    //             .position(Position::Relative)
+    //         (
+    //             text(label).font(active ? SansBold : Sans).fontSize(S::pt(10.5)).color(fg),
+    //             count ? counter(count) : div(S::px(0), S::px(0), clear)(),
+    //             div(S::percent(1.0), S::px(2), active ? orange : clear)
+    //                 .position(Position::Absolute)
+    //                 .bottom(S::px(0))
+    //                 .left(S::px(0))
+    //                 .cornerRadius(S::px(1))()
+    //         );
+    //         return t;
+    //     };
 
-        auto fileRow = [&](const char* iconName, const char* name, const char* message, const char* age) {
-            return div(S::autoSize(), S::px(38), canvas)
-                .display(Display::Flex)
-                .alignItems(AlignItems::Center)
-                .flexGap(S::px(10))
-                .paddingLeft(S::px(14)).paddingRight(S::px(14))
-                .borderColor(border)
-                .borderWidth(S::px(1))
-            (
-                icon(iconName),
-                div().width(S::px(150)).flexShrink(S::px(0)).overflow(gui::Overflow::Hidden)(
-                    text(name).font(Sans).fontSize(S::pt(10.5)).color(fg)
-                ),
-                div().flexGrow(S::px(1)).overflow(gui::Overflow::Hidden)(
-                    text(message).font(Sans).fontSize(S::pt(10.5)).color(muted).whiteSpace(gui::WhiteSpace::NoWrap)
-                ),
-                text(age).font(Sans).fontSize(S::pt(10.5)).color(muted).flexShrink(S::px(0))
-            );
-        };
+    //     auto fileRow = [&](const char* iconName, const char* name, const char* message, const char* age) {
+    //         return div(S::autoSize(), S::px(38), canvas)
+    //             .display(Display::Flex)
+    //             .alignItems(AlignItems::Center)
+    //             .flexGap(S::px(10))
+    //             .paddingLeft(S::px(14)).paddingRight(S::px(14))
+    //             .borderColor(border)
+    //             .borderWidth(S::px(1))
+    //         (
+    //             icon(iconName),
+    //             div().width(S::px(150)).flexShrink(S::px(0)).overflow(gui::Overflow::Hidden)(
+    //                 text(name).font(Sans).fontSize(S::pt(10.5)).color(fg)
+    //             ),
+    //             div().flexGrow(S::px(1)).overflow(gui::Overflow::Hidden)(
+    //                 text(message).font(Sans).fontSize(S::pt(10.5)).color(muted).whiteSpace(gui::WhiteSpace::NoWrap)
+    //             ),
+    //             text(age).font(Sans).fontSize(S::pt(10.5)).color(muted).flexShrink(S::px(0))
+    //         );
+    //     };
 
-        auto pill = [&](const char* label) {
-            return div(S::autoSize(), S::px(22), rgb(221, 244, 255))
-                .cornerRadius(S::px(11))
-                .paddingLeft(S::px(9)).paddingRight(S::px(9))
-                .display(Display::Flex)
-                .alignItems(AlignItems::Center)
-            (
-                text(label).font(Sans).fontSize(S::pt(9.5)).color(link)
-            );
-        };
+    //     auto pill = [&](const char* label) {
+    //         return div(S::autoSize(), S::px(22), rgb(221, 244, 255))
+    //             .cornerRadius(S::px(11))
+    //             .paddingLeft(S::px(9)).paddingRight(S::px(9))
+    //             .display(Display::Flex)
+    //             .alignItems(AlignItems::Center)
+    //         (
+    //             text(label).font(Sans).fontSize(S::pt(9.5)).color(link)
+    //         );
+    //     };
 
-        auto sideHeading = [&](const char* label) {
-            return text(label).font(SansBold).fontSize(S::pt(11.5)).color(fg);
-        };
+    //     auto sideHeading = [&](const char* label) {
+    //         return text(label).font(SansBold).fontSize(S::pt(11.5)).color(fg);
+    //     };
 
-        auto langDot = [&](simd_float4 c, const char* name, const char* pct) {
-            return div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(6))(
-                div(S::px(8), S::px(8), c).cornerRadius(S::px(4))(),
-                text(name).font(SansBold).fontSize(S::pt(9.5)).color(fg),
-                text(pct).font(Sans).fontSize(S::pt(9.5)).color(muted)
-            );
-        };
+    //     auto langDot = [&](simd_float4 c, const char* name, const char* pct) {
+    //         return div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(6))(
+    //             div(S::px(8), S::px(8), c).cornerRadius(S::px(4))(),
+    //             text(name).font(SansBold).fontSize(S::pt(9.5)).color(fg),
+    //             text(pct).font(Sans).fontSize(S::pt(9.5)).color(muted)
+    //         );
+    //     };
 
-        auto paragraph = [&](const char* body) {
-            return div().marginBottom(S::px(14))(
-                text(body).font(Sans).fontSize(S::pt(11.5)).color(fg).lineHeight(1.55)
-            );
-        };
+    //     auto paragraph = [&](const char* body) {
+    //         return div().marginBottom(S::px(14))(
+    //             text(body).font(Sans).fontSize(S::pt(11.5)).color(fg).lineHeight(1.55)
+    //         );
+    //     };
 
-        auto readmeHeading = [&](const char* title, float size) {
-            return div().paddingBottom(S::px(6)).marginBottom(S::px(14))
-                .borderColor(rgb(216, 222, 228)).borderWidth(S::px(1))
-            (
-                text(title).font(SansBold).fontSize(S::pt(size)).color(fg)
-            );
-        };
+    //     auto readmeHeading = [&](const char* title, float size) {
+    //         return div().paddingBottom(S::px(6)).marginBottom(S::px(14))
+    //             .borderColor(rgb(216, 222, 228)).borderWidth(S::px(1))
+    //         (
+    //             text(title).font(SansBold).fontSize(S::pt(size)).color(fg)
+    //         );
+    //     };
 
-        div(S::percent(1.0), S::percent(1.0), canvas)
-            .overflow(gui::Overflow::Scroll)
-        (
-            // ── Global header ──
-            div(S::percent(1.0), S::px(60), subtle)
-                .display(Display::Flex)
-                .alignItems(AlignItems::Center)
-                .flexGap(S::px(12))
-                .paddingLeft(S::px(16)).paddingRight(S::px(16))
-                .borderColor(border)
-                .borderWidth(S::px(1))
-            (
-                div(S::px(32), S::px(32), clear).cornerRadius(S::px(6)).borderColor(border).borderWidth(S::px(1))
-                    .display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::Center)
-                (
-                    div(S::px(14), S::px(2), fg).cornerRadius(S::px(1))()
-                ),
-                icon("gh-mark.svg", 32),
-                div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(4))(
-                    text("taanishr").font(Sans).fontSize(S::pt(11)).color(fg),
-                    text("/").font(Sans).fontSize(S::pt(11)).color(muted),
-                    text("butterfly").font(SansBold).fontSize(S::pt(11)).color(fg)
-                ),
-                div().flexGrow(S::px(1))(),
-                div(S::px(240), S::px(30), canvas)
-                    .cornerRadius(S::px(6))
-                    .borderColor(border)
-                    .borderWidth(S::px(1))
-                    .display(Display::Flex)
-                    .alignItems(AlignItems::Center)
-                    .justifyContent(JustifyContent::SpaceBetween)
-                    .paddingLeft(S::px(8)).paddingRight(S::px(6))
-                (
-                    div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(6))(
-                        icon("gh-search.svg", 14),
-                        text("Type / to search").font(Sans).fontSize(S::pt(10.5)).color(muted)
-                    ),
-                    div(S::px(20), S::px(20), clear).cornerRadius(S::px(4)).borderColor(border).borderWidth(S::px(1))
-                        .display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::Center)
-                    (
-                        text("/").font(Sans).fontSize(S::pt(9)).color(muted)
-                    )
-                ),
-                div(S::px(32), S::px(32), rgb(94, 106, 210)).cornerRadius(S::px(16))()
-            ),
+    //     div(S::percent(1.0), S::percent(1.0), canvas)
+    //         .overflow(gui::Overflow::Scroll)
+    //     (
+    //         // ── Global header ──
+    //         div(S::percent(1.0), S::px(60), subtle)
+    //             .display(Display::Flex)
+    //             .alignItems(AlignItems::Center)
+    //             .flexGap(S::px(12))
+    //             .paddingLeft(S::px(16)).paddingRight(S::px(16))
+    //             .borderColor(border)
+    //             .borderWidth(S::px(1))
+    //         (
+    //             div(S::px(32), S::px(32), clear).cornerRadius(S::px(6)).borderColor(border).borderWidth(S::px(1))
+    //                 .display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::Center)
+    //             (
+    //                 div(S::px(14), S::px(2), fg).cornerRadius(S::px(1))()
+    //             ),
+    //             icon("gh-mark.svg", 32),
+    //             div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(4))(
+    //                 text("taanishr").font(Sans).fontSize(S::pt(11)).color(fg),
+    //                 text("/").font(Sans).fontSize(S::pt(11)).color(muted),
+    //                 text("butterfly").font(SansBold).fontSize(S::pt(11)).color(fg)
+    //             ),
+    //             div().flexGrow(S::px(1))(),
+    //             div(S::px(240), S::px(30), canvas)
+    //                 .cornerRadius(S::px(6))
+    //                 .borderColor(border)
+    //                 .borderWidth(S::px(1))
+    //                 .display(Display::Flex)
+    //                 .alignItems(AlignItems::Center)
+    //                 .justifyContent(JustifyContent::SpaceBetween)
+    //                 .paddingLeft(S::px(8)).paddingRight(S::px(6))
+    //             (
+    //                 div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(6))(
+    //                     icon("gh-search.svg", 14),
+    //                     text("Type / to search").font(Sans).fontSize(S::pt(10.5)).color(muted)
+    //                 ),
+    //                 div(S::px(20), S::px(20), clear).cornerRadius(S::px(4)).borderColor(border).borderWidth(S::px(1))
+    //                     .display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::Center)
+    //                 (
+    //                     text("/").font(Sans).fontSize(S::pt(9)).color(muted)
+    //                 )
+    //             ),
+    //             div(S::px(32), S::px(32), rgb(94, 106, 210)).cornerRadius(S::px(16))()
+    //         ),
 
-            // ── Repo header ──
-            div(S::percent(1.0), S::autoSize(), subtle)
-                .paddingLeft(S::px(24)).paddingRight(S::px(24))
-                .paddingTop(S::px(14))
-                .borderColor(border)
-                .borderWidth(S::px(1))
-                .display(Display::Flex)
-                .flexDirection(FlexDirection::Col)
-            (
-                div().display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::SpaceBetween)(
-                    div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
-                        icon("gh-repo.svg"),
-                        text("butterfly").font(SansBold).fontSize(S::pt(14)).color(fg)
-                            .addEventListener(EventType::Click, [](auto&, Event&) {
-                                AppKit_Extensions::openURL("https://github.com/taanishr/butterfly");
-                            }),
-                        div(S::autoSize(), S::px(20), clear)
-                            .cornerRadius(S::px(10))
-                            .borderColor(border).borderWidth(S::px(1))
-                            .paddingLeft(S::px(7)).paddingRight(S::px(7))
-                            .display(Display::Flex).alignItems(AlignItems::Center)
-                        (
-                            text("Public").font(Sans).fontSize(S::pt(9)).color(muted)
-                        )
-                    ),
-                    div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
-                        button(subtle, icon("gh-eye.svg"),  text("Watch").font(SansBold).fontSize(S::pt(10)).color(fg), counter("4")),
-                        button(subtle, icon("gh-fork.svg"), text("Fork").font(SansBold).fontSize(S::pt(10)).color(fg),  counter("12")),
-                        button(subtle, icon("gh-star.svg"), text("Star").font(SansBold).fontSize(S::pt(10)).color(fg),  counter("318"))
-                    )
-                ),
-                div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(6)).marginTop(S::px(10))(
-                    tab("Code", nullptr, true),
-                    tab("Issues", "7", false),
-                    tab("Pull requests", "2", false),
-                    tab("Actions", nullptr, false),
-                    tab("Projects", nullptr, false),
-                    tab("Wiki", nullptr, false),
-                    tab("Security", nullptr, false),
-                    tab("Insights", nullptr, false)
-                )
-            ),
+    //         // ── Repo header ──
+    //         div(S::percent(1.0), S::autoSize(), subtle)
+    //             .paddingLeft(S::px(24)).paddingRight(S::px(24))
+    //             .paddingTop(S::px(14))
+    //             .borderColor(border)
+    //             .borderWidth(S::px(1))
+    //             .display(Display::Flex)
+    //             .flexDirection(FlexDirection::Col)
+    //         (
+    //             div().display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::SpaceBetween)(
+    //                 div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
+    //                     icon("gh-repo.svg"),
+    //                     text("butterfly").font(SansBold).fontSize(S::pt(14)).color(fg)
+    //                         .addEventListener(EventType::Click, [](auto&, Event&) {
+    //                             AppKit_Extensions::openURL("https://github.com/taanishr/butterfly");
+    //                         }),
+    //                     div(S::autoSize(), S::px(20), clear)
+    //                         .cornerRadius(S::px(10))
+    //                         .borderColor(border).borderWidth(S::px(1))
+    //                         .paddingLeft(S::px(7)).paddingRight(S::px(7))
+    //                         .display(Display::Flex).alignItems(AlignItems::Center)
+    //                     (
+    //                         text("Public").font(Sans).fontSize(S::pt(9)).color(muted)
+    //                     )
+    //                 ),
+    //                 div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
+    //                     button(subtle, icon("gh-eye.svg"),  text("Watch").font(SansBold).fontSize(S::pt(10)).color(fg), counter("4")),
+    //                     button(subtle, icon("gh-fork.svg"), text("Fork").font(SansBold).fontSize(S::pt(10)).color(fg),  counter("12")),
+    //                     button(subtle, icon("gh-star.svg"), text("Star").font(SansBold).fontSize(S::pt(10)).color(fg),  counter("318"))
+    //                 )
+    //             ),
+    //             div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(6)).marginTop(S::px(10))(
+    //                 tab("Code", nullptr, true),
+    //                 tab("Issues", "7", false),
+    //                 tab("Pull requests", "2", false),
+    //                 tab("Actions", nullptr, false),
+    //                 tab("Projects", nullptr, false),
+    //                 tab("Wiki", nullptr, false),
+    //                 tab("Security", nullptr, false),
+    //                 tab("Insights", nullptr, false)
+    //             )
+    //         ),
 
-            // ── Body ──
-            div()
-                .width(S::percent(1.0))
-                .padding(S::px(24))
-                .display(Display::Grid)
-                .gridTemplateColumns({S::fr(1), S::px(230)})
-                .gridColumnGap(S::px(24))
-            (
-                // main column
-                div()(
-                    // branch bar
-                    div().display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::SpaceBetween)(
-                        div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
-                            button(subtle, icon("gh-branch.svg"), text("main").font(SansBold).fontSize(S::pt(10)).color(fg), text("▾").font(Sans).fontSize(S::pt(9)).color(muted)),
-                            div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(5))(
-                                icon("gh-branch.svg", 14),
-                                text("3 Branches").font(Sans).fontSize(S::pt(10)).color(muted)
-                            )
-                        ),
-                        div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
-                            button(subtle, text("Add file").font(SansBold).fontSize(S::pt(10)).color(fg), text("▾").font(Sans).fontSize(S::pt(9)).color(muted)),
-                            button(green, text("<> Code").font(SansBold).fontSize(S::pt(10)).color(canvas), text("▾").font(Sans).fontSize(S::pt(9)).color(canvas))
-                        )
-                    ),
-                    // file table
-                    div().marginTop(S::px(16)).cornerRadius(S::px(6)).borderColor(border).borderWidth(S::px(1)).overflow(gui::Overflow::Hidden)(
-                        div(S::autoSize(), S::px(44), subtle)
-                            .display(Display::Flex)
-                            .alignItems(AlignItems::Center)
-                            .justifyContent(JustifyContent::SpaceBetween)
-                            .paddingLeft(S::px(14)).paddingRight(S::px(14))
-                            .borderColor(border).borderWidth(S::px(1))
-                        (
-                            div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
-                                div(S::px(20), S::px(20), rgb(94, 106, 210)).cornerRadius(S::px(10))(),
-                                text("taanishr").font(SansBold).fontSize(S::pt(10.5)).color(fg),
-                                text("removal of measure, added an openURL binding").font(Sans).fontSize(S::pt(10.5)).color(muted)
-                            ),
-                            div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
-                                icon("gh-check.svg", 14),
-                                text("5f55633").font(SFMono).fontSize(S::pt(9.5)).color(muted),
-                                text("· 2 hours ago").font(Sans).fontSize(S::pt(10.5)).color(muted),
-                                counter("184 Commits")
-                            )
-                        ),
-                        fileRow("gh-folder.svg", "apple-extensions", "Swift AppKit/MTK bridge for the metal-cpp side",   "3 weeks ago"),
-                        fileRow("gh-folder.svg", "assets",           "Add plane.svg for resvg smoke test",                "2 months ago"),
-                        fileRow("gh-folder.svg", "blog",             "Post: SDF borders and why dashed corners are hard", "last week"),
-                        fileRow("gh-folder.svg", "scripts",          "ship.sh: add --frame-width/--frame-height",         "2 weeks ago"),
-                        fileRow("gh-folder.svg", "src",              "removal of measure, added an openURL binding",      "2 hours ago"),
-                        fileRow("gh-folder.svg", "tests",            "Layout: browser reference compare harness",         "3 weeks ago"),
-                        fileRow("gh-file.svg",   "AGENTS.md",        "Agent guidance",                                    "last month"),
-                        fileRow("gh-file.svg",   "CMakeLists.txt",   "Frame size cache variables",                        "2 weeks ago"),
-                        fileRow("gh-file.svg",   "CMakePresets.json","Add profile-inspector preset",                      "last month"),
-                        fileRow("gh-file.svg",   "LICENSE",          "Initial commit",                                    "last year"),
-                        fileRow("gh-file.svg",   "README.md",        "Fix typo in Scene I section of README",             "yesterday"),
-                        fileRow("gh-file.svg",   "ROADMAP.md",       "Roadmap: text shaping, grid dense packing",         "3 weeks ago")
-                    ),
-                    // README
-                    div().marginTop(S::px(16)).cornerRadius(S::px(6)).borderColor(border).borderWidth(S::px(1))(
-                        div(S::autoSize(), S::px(44), canvas)
-                            .display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(16))
-                            .paddingLeft(S::px(14))
-                            .borderColor(border).borderWidth(S::px(1))
-                        (
-                            text("README").font(SansBold).fontSize(S::pt(10.5)).color(fg),
-                            text("MIT license").font(Sans).fontSize(S::pt(10.5)).color(muted)
-                        ),
-                        div().padding(S::px(28))(
-                            readmeHeading("Butterfly - A declarative, GPU-rendered UI library", 20),
-                            readmeHeading("Synopsis:", 15),
-                            paragraph("Butterfly is a declarative, GPU-rendered UI library that aims to implement a useful enough subset of the HTML/CSS standard. The library itself loosely follows the CSS spec (it is a pain to read)."),
-                            paragraph("Butterfly is largely written in C++, with a few Swift bindings. It currently only supports MacOS, as it relies on Metal as its graphics api."),
-                            div().marginBottom(S::px(14))(
-                                text("Currently, there is support for:").font(Sans).fontSize(S::pt(11.5)).color(fg)
-                            ),
-                            div().paddingLeft(S::px(22)).display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(4))(
-                                text("•  Four semantic elements: SVGs, Images, Divs, Text").font(Sans).fontSize(S::pt(11.5)).color(fg),
-                                text("•  Display modes: Flexbox, Grid, Block, Inline").font(Sans).fontSize(S::pt(11.5)).color(fg),
-                                text("•  Positioning: Static, Relative, Absolute, Fixed, Sticky").font(Sans).fontSize(S::pt(11.5)).color(fg),
-                                text("•  Many many many borders").font(Sans).fontSize(S::pt(11.5)).color(fg),
-                                text("•  Super smooth text, unicode support, bidi support").font(Sans).fontSize(S::pt(11.5)).color(fg)
-                            )
-                        )
-                    )
-                ),
-                // sidebar
-                div().display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(14))(
-                    sideHeading("About"),
-                    div()(
-                        text("A declarative, GPU-rendered UI library for macOS. Flexbox, grid, sticky positioning, SDF borders, and real text — on Metal.")
-                            .font(Sans).fontSize(S::pt(10.5)).color(fg).lineHeight(1.5)
-                    ),
-                    div().display(Display::Flex).flexWrap(gui::FlexWrap::Wrap).flexGap(S::px(5))(
-                        pill("metal"), pill("cpp"), pill("gui"), pill("flexbox"), pill("css-grid"), pill("sdf"), pill("freetype")
-                    ),
-                    div().display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(8))(
-                        text("Readme").font(Sans).fontSize(S::pt(10.5)).color(muted),
-                        text("MIT license").font(Sans).fontSize(S::pt(10.5)).color(muted),
-                        div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(5))(
-                            icon("gh-star.svg", 14), text("318 stars").font(Sans).fontSize(S::pt(10.5)).color(muted)
-                        ),
-                        div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(5))(
-                            icon("gh-eye.svg", 14), text("4 watching").font(Sans).fontSize(S::pt(10.5)).color(muted)
-                        ),
-                        div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(5))(
-                            icon("gh-fork.svg", 14), text("12 forks").font(Sans).fontSize(S::pt(10.5)).color(muted)
-                        )
-                    ),
-                    div(S::percent(1.0), S::px(1), border).marginTop(S::px(6))(),
-                    div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(6))(
-                        sideHeading("Releases"), counter("3")
-                    ),
-                    div().display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(3))(
-                        text("v0.1.0 — Sticky & SDF borders").font(SansBold).fontSize(S::pt(10.5)).color(fg),
-                        text("Latest · 2 weeks ago").font(Sans).fontSize(S::pt(9.5)).color(muted)
-                    ),
-                    div(S::percent(1.0), S::px(1), border).marginTop(S::px(6))(),
-                    sideHeading("Languages"),
-                    div(S::percent(1.0), S::px(8), clear).cornerRadius(S::px(4)).overflow(gui::Overflow::Hidden).display(Display::Flex).flexGap(S::px(2))(
-                        div(S::percent(0.78), S::percent(1.0), rgb(243, 75, 125))(),
-                        div(S::percent(0.11), S::percent(1.0), rgb(240, 80, 50))(),
-                        div(S::percent(0.07), S::percent(1.0), rgb(175, 210, 155))(),
-                        div(S::percent(0.04), S::percent(1.0), rgb(218, 91, 11))()
-                    ),
-                    div().display(Display::Flex).flexWrap(gui::FlexWrap::Wrap).flexGap(S::px(12))(
-                        langDot(rgb(243, 75, 125), "C++", "78.4%"),
-                        langDot(rgb(240, 80, 50), "Swift", "10.9%"),
-                        langDot(rgb(175, 210, 155), "Metal", "6.8%"),
-                        langDot(rgb(218, 91, 11), "CMake", "3.9%")
-                    )
-                )
-            )
-        );
-    }
+    //         // ── Body ──
+    //         div()
+    //             .width(S::percent(1.0))
+    //             .padding(S::px(24))
+    //             .display(Display::Grid)
+    //             .gridTemplateColumns({S::fr(1), S::px(230)})
+    //             .gridColumnGap(S::px(24))
+    //         (
+    //             // main column
+    //             div()(
+    //                 // branch bar
+    //                 div().display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::SpaceBetween)(
+    //                     div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
+    //                         button(subtle, icon("gh-branch.svg"), text("main").font(SansBold).fontSize(S::pt(10)).color(fg), text("▾").font(Sans).fontSize(S::pt(9)).color(muted)),
+    //                         div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(5))(
+    //                             icon("gh-branch.svg", 14),
+    //                             text("3 Branches").font(Sans).fontSize(S::pt(10)).color(muted)
+    //                         )
+    //                     ),
+    //                     div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
+    //                         button(subtle, text("Add file").font(SansBold).fontSize(S::pt(10)).color(fg), text("▾").font(Sans).fontSize(S::pt(9)).color(muted)),
+    //                         button(green, text("<> Code").font(SansBold).fontSize(S::pt(10)).color(canvas), text("▾").font(Sans).fontSize(S::pt(9)).color(canvas))
+    //                     )
+    //                 ),
+    //                 // file table
+    //                 div().marginTop(S::px(16)).cornerRadius(S::px(6)).borderColor(border).borderWidth(S::px(1)).overflow(gui::Overflow::Hidden)(
+    //                     div(S::autoSize(), S::px(44), subtle)
+    //                         .display(Display::Flex)
+    //                         .alignItems(AlignItems::Center)
+    //                         .justifyContent(JustifyContent::SpaceBetween)
+    //                         .paddingLeft(S::px(14)).paddingRight(S::px(14))
+    //                         .borderColor(border).borderWidth(S::px(1))
+    //                     (
+    //                         div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
+    //                             div(S::px(20), S::px(20), rgb(94, 106, 210)).cornerRadius(S::px(10))(),
+    //                             text("taanishr").font(SansBold).fontSize(S::pt(10.5)).color(fg),
+    //                             text("removal of measure, added an openURL binding").font(Sans).fontSize(S::pt(10.5)).color(muted)
+    //                         ),
+    //                         div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
+    //                             icon("gh-check.svg", 14),
+    //                             text("5f55633").font(SFMono).fontSize(S::pt(9.5)).color(muted),
+    //                             text("· 2 hours ago").font(Sans).fontSize(S::pt(10.5)).color(muted),
+    //                             counter("184 Commits")
+    //                         )
+    //                     ),
+    //                     fileRow("gh-folder.svg", "apple-extensions", "Swift AppKit/MTK bridge for the metal-cpp side",   "3 weeks ago"),
+    //                     fileRow("gh-folder.svg", "assets",           "Add plane.svg for resvg smoke test",                "2 months ago"),
+    //                     fileRow("gh-folder.svg", "blog",             "Post: SDF borders and why dashed corners are hard", "last week"),
+    //                     fileRow("gh-folder.svg", "scripts",          "ship.sh: add --frame-width/--frame-height",         "2 weeks ago"),
+    //                     fileRow("gh-folder.svg", "src",              "removal of measure, added an openURL binding",      "2 hours ago"),
+    //                     fileRow("gh-folder.svg", "tests",            "Layout: browser reference compare harness",         "3 weeks ago"),
+    //                     fileRow("gh-file.svg",   "AGENTS.md",        "Agent guidance",                                    "last month"),
+    //                     fileRow("gh-file.svg",   "CMakeLists.txt",   "Frame size cache variables",                        "2 weeks ago"),
+    //                     fileRow("gh-file.svg",   "CMakePresets.json","Add profile-inspector preset",                      "last month"),
+    //                     fileRow("gh-file.svg",   "LICENSE",          "Initial commit",                                    "last year"),
+    //                     fileRow("gh-file.svg",   "README.md",        "Fix typo in Scene I section of README",             "yesterday"),
+    //                     fileRow("gh-file.svg",   "ROADMAP.md",       "Roadmap: text shaping, grid dense packing",         "3 weeks ago")
+    //                 ),
+    //                 // README
+    //                 div().marginTop(S::px(16)).cornerRadius(S::px(6)).borderColor(border).borderWidth(S::px(1))(
+    //                     div(S::autoSize(), S::px(44), canvas)
+    //                         .display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(16))
+    //                         .paddingLeft(S::px(14))
+    //                         .borderColor(border).borderWidth(S::px(1))
+    //                     (
+    //                         text("README").font(SansBold).fontSize(S::pt(10.5)).color(fg),
+    //                         text("MIT license").font(Sans).fontSize(S::pt(10.5)).color(muted)
+    //                     ),
+    //                     div().padding(S::px(28))(
+    //                         readmeHeading("Butterfly - A declarative, GPU-rendered UI library", 20),
+    //                         readmeHeading("Synopsis:", 15),
+    //                         paragraph("Butterfly is a declarative, GPU-rendered UI library that aims to implement a useful enough subset of the HTML/CSS standard. The library itself loosely follows the CSS spec (it is a pain to read)."),
+    //                         paragraph("Butterfly is largely written in C++, with a few Swift bindings. It currently only supports MacOS, as it relies on Metal as its graphics api."),
+    //                         div().marginBottom(S::px(14))(
+    //                             text("Currently, there is support for:").font(Sans).fontSize(S::pt(11.5)).color(fg)
+    //                         ),
+    //                         div().paddingLeft(S::px(22)).display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(4))(
+    //                             text("•  Four semantic elements: SVGs, Images, Divs, Text").font(Sans).fontSize(S::pt(11.5)).color(fg),
+    //                             text("•  Display modes: Flexbox, Grid, Block, Inline").font(Sans).fontSize(S::pt(11.5)).color(fg),
+    //                             text("•  Positioning: Static, Relative, Absolute, Fixed, Sticky").font(Sans).fontSize(S::pt(11.5)).color(fg),
+    //                             text("•  Many many many borders").font(Sans).fontSize(S::pt(11.5)).color(fg),
+    //                             text("•  Super smooth text, unicode support, bidi support").font(Sans).fontSize(S::pt(11.5)).color(fg)
+    //                         )
+    //                     )
+    //                 )
+    //             ),
+    //             // sidebar
+    //             div().display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(14))(
+    //                 sideHeading("About"),
+    //                 div()(
+    //                     text("A declarative, GPU-rendered UI library for macOS. Flexbox, grid, sticky positioning, SDF borders, and real text — on Metal.")
+    //                         .font(Sans).fontSize(S::pt(10.5)).color(fg).lineHeight(1.5)
+    //                 ),
+    //                 div().display(Display::Flex).flexWrap(gui::FlexWrap::Wrap).flexGap(S::px(5))(
+    //                     pill("metal"), pill("cpp"), pill("gui"), pill("flexbox"), pill("css-grid"), pill("sdf"), pill("freetype")
+    //                 ),
+    //                 div().display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(8))(
+    //                     text("Readme").font(Sans).fontSize(S::pt(10.5)).color(muted),
+    //                     text("MIT license").font(Sans).fontSize(S::pt(10.5)).color(muted),
+    //                     div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(5))(
+    //                         icon("gh-star.svg", 14), text("318 stars").font(Sans).fontSize(S::pt(10.5)).color(muted)
+    //                     ),
+    //                     div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(5))(
+    //                         icon("gh-eye.svg", 14), text("4 watching").font(Sans).fontSize(S::pt(10.5)).color(muted)
+    //                     ),
+    //                     div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(5))(
+    //                         icon("gh-fork.svg", 14), text("12 forks").font(Sans).fontSize(S::pt(10.5)).color(muted)
+    //                     )
+    //                 ),
+    //                 div(S::percent(1.0), S::px(1), border).marginTop(S::px(6))(),
+    //                 div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(6))(
+    //                     sideHeading("Releases"), counter("3")
+    //                 ),
+    //                 div().display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(3))(
+    //                     text("v0.1.0 — Sticky & SDF borders").font(SansBold).fontSize(S::pt(10.5)).color(fg),
+    //                     text("Latest · 2 weeks ago").font(Sans).fontSize(S::pt(9.5)).color(muted)
+    //                 ),
+    //                 div(S::percent(1.0), S::px(1), border).marginTop(S::px(6))(),
+    //                 sideHeading("Languages"),
+    //                 div(S::percent(1.0), S::px(8), clear).cornerRadius(S::px(4)).overflow(gui::Overflow::Hidden).display(Display::Flex).flexGap(S::px(2))(
+    //                     div(S::percent(0.78), S::percent(1.0), rgb(243, 75, 125))(),
+    //                     div(S::percent(0.11), S::percent(1.0), rgb(240, 80, 50))(),
+    //                     div(S::percent(0.07), S::percent(1.0), rgb(175, 210, 155))(),
+    //                     div(S::percent(0.04), S::percent(1.0), rgb(218, 91, 11))()
+    //                 ),
+    //                 div().display(Display::Flex).flexWrap(gui::FlexWrap::Wrap).flexGap(S::px(12))(
+    //                     langDot(rgb(243, 75, 125), "C++", "78.4%"),
+    //                     langDot(rgb(240, 80, 50), "Swift", "10.9%"),
+    //                     langDot(rgb(175, 210, 155), "Metal", "6.8%"),
+    //                     langDot(rgb(218, 91, 11), "CMake", "3.9%")
+    //                 )
+    //             )
+    //         )
+    //     );
+    // }
 
     // // ═══════════════════════════════════════════════════════════════════
     // // Clone: en.wikipedia.org article (Vector 2022 skin)

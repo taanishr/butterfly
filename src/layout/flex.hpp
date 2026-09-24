@@ -71,6 +71,8 @@ namespace layout {
         AlignItems alignment;
         float usedMainSize;
         float hypotheticalCrossSize;
+        float mainMargin;
+        float crossMargin;
     };
 
     struct FlexLine {
@@ -85,14 +87,14 @@ namespace layout {
 
         float totalWithGap(float gap) {
             float total = 0.0f;
-            for (const auto& item : items) total += std::get<float>(item.flexBaseSize);
+            for (const auto& item : items) total += std::get<float>(item.flexBaseSize) + item.mainMargin;
             return total + (count() > 1 ? gap * (count() - 1) : 0.0f);
         }
 
         float totalHypotheticalWithGap(float gap) {
             float total = 0.0f;
             for (const auto& item : items)  {
-                total += item.hypotheticalMainSize;
+                total += item.hypotheticalMainSize + item.mainMargin;
             }
             return total + (count() > 1 ? gap * (count() - 1) : 0.0f);
         }
@@ -101,8 +103,8 @@ namespace layout {
         // (see flex spec for this)
         float totalMinimumContributionWithGap(float gap) {
             float total = 0.0f;
-            for (const auto& item : items) 
-                total += std::get<float>(item.minimumMainSize);
+            for (const auto& item : items)
+                total += std::get<float>(item.minimumMainSize) + item.mainMargin;
             return total + (count() > 1 ? gap * (count() - 1) : 0.0f);
         }
 
@@ -122,8 +124,12 @@ namespace layout {
             ResolveResult result;
             std::vector<bool> frozen(items.size(), false);
 
-            for (auto& item : items)
+            float marginTotal = 0.0f;
+
+            for (auto& item : items) {
                 item.usedMainSize = std::get<float>(item.flexBaseSize);
+                marginTotal += item.mainMargin;
+            }
 
             // flex redistribution algo            
             while (true) {
@@ -147,7 +153,7 @@ namespace layout {
                     }
                 }
 
-                float space = availableMain - frozenTotal - unfrozenBaseTotal;
+                float space = availableMain - marginTotal - frozenTotal - unfrozenBaseTotal;
 
                 // redistribute space among unfrozen items
                 for (size_t i = 0; i < items.size(); ++i) {
@@ -204,7 +210,7 @@ namespace layout {
                 }
             }
 
-            for (const auto& item : items) result.totalAfter += item.usedMainSize;
+            for (const auto& item : items) result.totalAfter += item.usedMainSize + item.mainMargin;
             return result;
         }
     };
@@ -269,10 +275,14 @@ namespace layout {
             SizeState minimumMainSize,
             SizeState maximumMainSize,
             IntrinsicResult mainIntrinsicSizes,
+            ResolvedMargins margins,
             AlignItems alignment,
             const SizeState& availableMain,
             float gap
         ) {
+            float mainMargin = axis.isRow ? margins.left + margins.right : margins.top + margins.bottom;
+            float crossMargin = axis.isRow ? margins.top + margins.bottom : margins.left + margins.right;
+
             float hypotheticalMainSize = std::get<float>(flexBaseSize);
             if (std::holds_alternative<float>(maximumMainSize)) {
                 hypotheticalMainSize = std::min(hypotheticalMainSize, std::get<float>(maximumMainSize));
@@ -281,7 +291,7 @@ namespace layout {
 
             const float* availableMainSize = std::get_if<float>(&availableMain);
             if (flexWrap != FlexWrap::NoWrap && currentLine.count() > 0 && availableMainSize) {
-                if (currentLine.totalHypotheticalWithGap(gap) + gap + hypotheticalMainSize > *availableMainSize) {
+                if (currentLine.totalHypotheticalWithGap(gap) + gap + hypotheticalMainSize + mainMargin > *availableMainSize) {
                     lines.push_back(currentLine);
                     currentLine = FlexLine{};
                 }
@@ -298,6 +308,7 @@ namespace layout {
                 maximumMainContribution = std::min(maximumMainContribution, std::get<float>(maximumMainSize));
             }
             maximumMainContribution = std::max(maximumMainContribution, std::get<float>(minimumMainSize));
+            maximumMainContribution += mainMargin;
 
             currentLine.addItem({
                 .childIndex = childIndex,
@@ -310,7 +321,9 @@ namespace layout {
                 .scaledFlexShrink = scaledFlexShrink,
                 .alignment = alignment,
                 .usedMainSize = usedMainSize,
-                .hypotheticalCrossSize = 0.0f
+                .hypotheticalCrossSize = 0.0f,
+                .mainMargin = mainMargin,
+                .crossMargin = crossMargin
             });
         }
 
@@ -401,7 +414,7 @@ namespace layout {
                     placement.lineCrossSize = lineCross;
                     placement.alignment = item.alignment;
 
-                    float childCrossSize = item.hypotheticalCrossSize;
+                    float childCrossSize = item.hypotheticalCrossSize + item.crossMargin;
 
                     switch (item.alignment) {
                         case AlignItems::Stretch:
@@ -419,10 +432,10 @@ namespace layout {
                     }
 
                     if (axis.isReversed) {
-                        placement.mainOffset = availableMain - accumulated - placement.mainSize;
+                        placement.mainOffset = availableMain - accumulated - placement.mainSize - item.mainMargin;
                     }
 
-                    accumulated += item.usedMainSize + mainAlign.spaceBetween + gap;
+                    accumulated += item.usedMainSize + item.mainMargin + mainAlign.spaceBetween + gap;
                     placements.push_back(placement);
                 }
             }

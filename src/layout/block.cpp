@@ -290,8 +290,9 @@ namespace layout {
             std::visit([&](const auto& childLayout) {
             if (!childLayout.outOfFlow) {
                 if (sizeRequest.resolvingIntrinsicWidth) {
-                    intrinsicResult->minimum = std::max(intrinsicResult->minimum, childOutput.intrinsicSizes->minimum);
-                    intrinsicResult->maximum = std::max(intrinsicResult->maximum, childOutput.intrinsicSizes->maximum);
+                    const auto& margins = child->preLayout->resolvedMargins;
+                    intrinsicResult->minimum = std::max(intrinsicResult->minimum, margins.left + childOutput.intrinsicSizes->minimum + margins.right);
+                    intrinsicResult->maximum = std::max(intrinsicResult->maximum, margins.left + childOutput.intrinsicSizes->maximum + margins.right);
                 }
 
                 if (sizeRequest.resolvingIntrinsicHeight) {
