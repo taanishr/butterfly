@@ -15,9 +15,6 @@
 
 namespace tree {
     using layout::ContainingBlock;
-    using layout::FlexLayout;
-    using layout::FlexResolver;
-    using layout::GridResolver;
     using layout::LayoutResult;
     using layout::MarginMetadata;
     using layout::IntrinsicSizes;
@@ -706,47 +703,6 @@ namespace tree {
             childConstraints.scrollport = constraints.scrollport;
         }
 
-        std::optional<IntrinsicSizes> intrinsicResult;
-
-        if (sizeRequest.resolvingIntrinsicWidth || sizeRequest.resolvingIntrinsicHeight) {
-            intrinsicResult = IntrinsicSizes{};
-        }
-
-        if (std::holds_alternative<layout::BlockState>(layout)) {
-            if (std::holds_alternative<float>(sizeResult.outerSize.width)) {
-                float outerWidth = std::get<float>(sizeResult.outerSize.width);
-
-                if (sizeRequest.resolvingIntrinsicWidth) {
-                    intrinsicResult = IntrinsicSizes {.minimum = outerWidth, .maximum = outerWidth};
-                }
-            }
-
-            if (std::holds_alternative<float>(sizeResult.outerSize.height)) {
-                float outerHeight = std::get<float>(sizeResult.outerSize.height);
-
-                if (sizeRequest.resolvingIntrinsicHeight) {
-                    intrinsicResult = IntrinsicSizes {.minimum = outerHeight, .maximum = outerHeight};
-                }
-            }
-        }
-
-        if (std::holds_alternative<layout::InlineState>(layout)) {
-            const auto& inlineState = std::get<layout::InlineState>(layout);
-
-            if (inlineState.widthIntrinsicSizes) {
-                if (sizeRequest.resolvingIntrinsicWidth) {
-                    intrinsicResult = *inlineState.widthIntrinsicSizes;
-                }
-            }
-
-            if (inlineState.heightIntrinsicSizes) {
-                if (sizeRequest.resolvingIntrinsicHeight) {
-                    intrinsicResult = *inlineState.heightIntrinsicSizes;
-                }
-            }
-        }
-
-
         /*
             the arch problem
             producers:
@@ -806,125 +762,25 @@ namespace tree {
             we dont need to actually run resize; it will run resize itself when it needs the values
         */
 
-        auto flexPass = [&](const SizeResult& sr) {
-            auto flexDirection = node->getFlexDirection();
-            auto justifyContent = node->getJustifyContent();
-            auto alignItems = node->getAlignItems();
-            auto alignContentVal = node->getAlignContent();
-            auto flexWrap = node->getFlexWrap();
-
-            FlexLayout flexContext {flexDirection, justifyContent, alignItems, alignContentVal, flexWrap};
-            flexContext.axis.applyDirection(constraints.inheritedProperties.direction);
-
-            // temp variable for padding included available size
-
-            FlexResolver fr {
-                *this, node, constraints, childConstraints, flexContext, frameInfo, sr.innerSize, 
-                mutate, sizeCache
-            };
-
-            fr.phaseB();
-            auto result = fr.phaseC();
-
-            if (sizeRequest.resolvingIntrinsicWidth || sizeRequest.resolvingIntrinsicHeight) {
-                const IntrinsicResult& intrinsicSizes = sizeRequest.resolvingIntrinsicWidth
-                    ? (flexContext.axis.isRow ? result.mainIntrinsicSizes : result.crossIntrinsicSizes)
-                    : (flexContext.axis.isRow ? result.crossIntrinsicSizes : result.mainIntrinsicSizes);
-
-                intrinsicResult = IntrinsicSizes {
-                    .minimum = std::get<float>(intrinsicSizes.minimum),
-                    .maximum = std::get<float>(intrinsicSizes.maximum)
-                };
-            }
-        };
-
-
-        auto gridPass = [&](const SizeResult& sr) {
-            GridResolver gr {
-                *this, node, constraints, childConstraints, frameInfo, sr,
-                mutate, sizeCache
-            };
-
-            gr.phaseB();
-
-            gr.phaseC();
-            if (sizeRequest.resolvingIntrinsicWidth || sizeRequest.resolvingIntrinsicHeight) {
-                const IntrinsicSizes& intrinsicSizes = sizeRequest.resolvingIntrinsicWidth
-                    ? gr.gridLayout.columnIntrinsicSizes
-                    : gr.gridLayout.rowIntrinsicSizes;
-                intrinsicResult = intrinsicSizes;
-            }
-        };
-
-        auto normalPass = [&](const SizeResult& sr) {
-            InlineSizingInput inlineSizing {
-                .availableWidth = childConstraints.availableWidth,
-                .widthRequest = sizeRequest.intrinsicWidthRequest,
-                .trackIntrinsicWidth = sizeRequest.resolvingIntrinsicWidth,
-            };
-            
-            // right now, minimum & maximum content dont really get set?
-            // it only changes for flex/grid/etc...
-            // which provide different contributions not based on intrinsic size collection but
-            // min and max bounds; this needs to be fixed
-            auto inlineFormatting = buildInlineBoxes(*this, node, frameInfo, childConstraints, sizeRequest, inlineSizing, sizeCache);
-
-            if (inlineFormatting->intrinsicSizes) {
-                intrinsicResult = *inlineFormatting->intrinsicSizes;
-            }
-
-            // if (node->id == 32) {
-            //     std::println("red req: {} red h: {}", describeSizeState(sizeRequest.specified.height), describeSizeState(sr.outerSize.height));
-            // }   
-
-            // if (node->id == 33) {
-            //     std::println("yellow req: {} yellow h: {}", describeSizeState(sizeRequest.specified.height), describeSizeState(sr.outerSize.height));
-            // }   
-            for (uint64_t i = 0; i < node->children.size(); ++i) {
-                auto child = node->children[i].get();
-
-                childConstraints.inlineFormatting = {
-                    .context = inlineFormatting,
-                    .fragments = inlineFormatting->childFragments[i],
-                    .minFragments = inlineFormatting->minChildFragments.empty()
-                        ? layout::InlineFragmentRange{}
-                        : inlineFormatting->minChildFragments[i],
-                    .maxFragments = inlineFormatting->maxChildFragments.empty()
-                        ? layout::InlineFragmentRange{}
-                        : inlineFormatting->maxChildFragments[i],
-                };
-
-                auto childOutput = layoutRecursive(child, frameInfo, childConstraints, mutate, std::nullopt, sizeRequest.intrinsicWidthRequest, sizeRequest.intrinsicHeightRequest);
-
-                std::visit([&](const auto& childLayout) {
-                if (!childLayout.outOfFlow) {
-                    if (sizeRequest.resolvingIntrinsicWidth || sizeRequest.resolvingIntrinsicHeight) {
-                        intrinsicResult->minimum = std::max(intrinsicResult->minimum, childOutput.intrinsicSizes->minimum);
-                        intrinsicResult->maximum = std::max(intrinsicResult->maximum, childOutput.intrinsicSizes->maximum);
-                    }
-
-                    childConstraints.cursor = childLayout.siblingCursor;
-                    childConstraints.edgeIntent = childLayout.edgeIntent;
-                    childConstraints.prevInlineHeight = childLayout.prevInlineHeight;
-
-                }
-                }, childOutput.layout);
-            }
-        };
+        std::optional<IntrinsicSizes> intrinsicResult;
 
         auto display = node->getDisplay();
 
         switch (display) {
             case style::Display::Flex: {
-                flexPass(sizeResult);
+                intrinsicResult = layout::flexPass(*this, node, constraints, childConstraints, frameInfo, sizeResult, sizeRequest, mutate, sizeCache);
                 break;
             }
             case style::Display::Grid: {
-                gridPass(sizeResult);
+                intrinsicResult = layout::gridPass(*this, node, constraints, childConstraints, frameInfo, sizeResult, sizeRequest, mutate, sizeCache);
                 break;
             }
-            default: {
-                normalPass(sizeResult);
+            case style::Display::Block: {
+                intrinsicResult = layout::blockPass(*this, node, frameInfo, childConstraints, sizeRequest, sizeResult, mutate, sizeCache);
+                break;
+            }
+            case style::Display::Inline: {
+                intrinsicResult = layout::inlinePass(std::get<layout::InlineState>(layout), sizeRequest);
                 break;
             }
         }

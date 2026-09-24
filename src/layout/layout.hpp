@@ -491,4 +491,11 @@ namespace layout {
 
         static LayoutState resolve(Constraints& constraints, LayoutInput& layoutInput, Atomized atomized, const SizeResult& sizeResult);
     };
+
+    std::optional<IntrinsicSizes> blockPass(
+        tree::RenderTree& tree, tree::TreeNode* node, const FrameInfo& frameInfo,
+        Constraints childConstraints, const SizeRequest& sizeRequest, const SizeResult& sizeResult,
+        bool mutate, std::unordered_map<size_t, SizeResult>& sizeCache);
+
+    std::optional<IntrinsicSizes> inlinePass(const InlineState& state, const SizeRequest& sizeRequest);
 }

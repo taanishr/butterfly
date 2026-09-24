@@ -3653,7 +3653,7 @@ div()
     //     )
     // );
 
-    // layout_test::scenes::buildBrowser();
+    layout_test::scenes::buildBrowser();
 
     // using S = gui::Size;
 
@@ -5108,35 +5108,35 @@ div()
 //         );
 //     }
 
-    // Links: a link is just an inline text node with a Click listener that
-    // hands the URL to the OS. Sits in an inline formatting context with
-    // regular text on either side.
-    {
-        using S = gui::Size;
-        using runtime::EventType;
+    // // Links: a link is just an inline text node with a Click listener that
+    // // hands the URL to the OS. Sits in an inline formatting context with
+    // // regular text on either side.
+    // {
+    //     using S = gui::Size;
+    //     using runtime::EventType;
 
-        constexpr simd_float4 desk {0.941, 0.937, 0.925, 1.0};
-        constexpr simd_float4 ink  {0.129, 0.129, 0.153, 1.0};
-        constexpr simd_float4 blue {0.000, 0.400, 0.850, 1.0};
+    //     constexpr simd_float4 desk {0.941, 0.937, 0.925, 1.0};
+    //     constexpr simd_float4 ink  {0.129, 0.129, 0.153, 1.0};
+    //     constexpr simd_float4 blue {0.000, 0.400, 0.850, 1.0};
 
-        auto link = [&](const std::string& label, std::string url) {
-            return text(label).fontSize(S::pt(14)).color(blue)
-                .addEventListener(EventType::Click, [url = std::move(url)](auto&, Event&) {
-                    AppKit_Extensions::openURL(url.c_str());
-                });
-        };
+    //     auto link = [&](const std::string& label, std::string url) {
+    //         return text(label).fontSize(S::pt(14)).color(blue)
+    //             .addEventListener(EventType::Click, [url = std::move(url)](auto&, Event&) {
+    //                 AppKit_Extensions::openURL(url.c_str());
+    //             });
+    //     };
 
-        div(S::percent(1.0), S::percent(1.0), desk)
-            .padding(S::px(32))
-        (
-            div()
-            (
-                text("This paragraph has a ").fontSize(S::pt(14)).color(ink),
-                link("link to the repo", "https://github.com/taanishr/butterfly"),
-                text(" in the middle of it, and another one at the end: ").fontSize(S::pt(14)).color(ink),
-                link("apple.com", "https://www.apple.com")
-            )
-        );
-    }
+    //     div(S::percent(1.0), S::percent(1.0), desk)
+    //         .padding(S::px(32))
+    //     (
+    //         div()
+    //         (
+    //             text("This paragraph has a ").fontSize(S::pt(14)).color(ink),
+    //             link("link to the repo", "https://github.com/taanishr/butterfly"),
+    //             text(" in the middle of it, and another one at the end: ").fontSize(S::pt(14)).color(ink),
+    //             link("apple.com", "https://www.apple.com")
+    //         )
+    //     );
+    // }
 
 }

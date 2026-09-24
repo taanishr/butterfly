@@ -464,4 +464,9 @@ namespace layout {
         void phaseB();
         FlexResult phaseC();
     };
+
+    std::optional<IntrinsicSizes> flexPass(
+        RenderTree& tree, TreeNode* node, const Constraints& constraints, const Constraints& childConstraints,
+        const FrameInfo& frameInfo, const SizeResult& sizeResult, const SizeRequest& sizeRequest,
+        bool mutate, std::unordered_map<size_t, SizeResult>& sizeCache);
 }

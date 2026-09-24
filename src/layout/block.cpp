@@ -9,6 +9,8 @@
 #include "fragment_types.hpp"
 #include "overloaded.hpp"
 #include "layout/sizing.hpp"
+#include "render_tree.hpp"
+#include "tree_node.hpp"
 #include <algorithm>
 #include <optional>
 #include <simd/vector_types.h>
@@ -138,6 +140,83 @@ namespace layout {
         };
 
         return lr;
+    }
+
+    std::optional<IntrinsicSizes> blockPass(
+        tree::RenderTree& tree, tree::TreeNode* node, const FrameInfo& frameInfo,
+        Constraints childConstraints, const SizeRequest& sizeRequest, const SizeResult& sizeResult,
+        bool mutate, std::unordered_map<size_t, SizeResult>& sizeCache
+    ) {
+        std::optional<IntrinsicSizes> intrinsicResult;
+
+        if (sizeRequest.resolvingIntrinsicWidth || sizeRequest.resolvingIntrinsicHeight) {
+            intrinsicResult = IntrinsicSizes{};
+        }
+
+        if (std::holds_alternative<float>(sizeResult.outerSize.width)) {
+            float outerWidth = std::get<float>(sizeResult.outerSize.width);
+
+            if (sizeRequest.resolvingIntrinsicWidth) {
+                intrinsicResult = IntrinsicSizes {.minimum = outerWidth, .maximum = outerWidth};
+            }
+        }
+
+        if (std::holds_alternative<float>(sizeResult.outerSize.height)) {
+            float outerHeight = std::get<float>(sizeResult.outerSize.height);
+
+            if (sizeRequest.resolvingIntrinsicHeight) {
+                intrinsicResult = IntrinsicSizes {.minimum = outerHeight, .maximum = outerHeight};
+            }
+        }
+
+        InlineSizingInput inlineSizing {
+            .availableWidth = childConstraints.availableWidth,
+            .widthRequest = sizeRequest.intrinsicWidthRequest,
+            .trackIntrinsicWidth = sizeRequest.resolvingIntrinsicWidth,
+        };
+
+        // right now, minimum & maximum content dont really get set?
+        // it only changes for flex/grid/etc...
+        // which provide different contributions not based on intrinsic size collection but
+        // min and max bounds; this needs to be fixed
+        auto inlineFormatting = tree::buildInlineBoxes(tree, node, frameInfo, childConstraints, sizeRequest, inlineSizing, sizeCache);
+
+        if (inlineFormatting->intrinsicSizes) {
+            intrinsicResult = *inlineFormatting->intrinsicSizes;
+        }
+
+        for (uint64_t i = 0; i < node->children.size(); ++i) {
+            auto child = node->children[i].get();
+
+            childConstraints.inlineFormatting = {
+                .context = inlineFormatting,
+                .fragments = inlineFormatting->childFragments[i],
+                .minFragments = inlineFormatting->minChildFragments.empty()
+                    ? InlineFragmentRange{}
+                    : inlineFormatting->minChildFragments[i],
+                .maxFragments = inlineFormatting->maxChildFragments.empty()
+                    ? InlineFragmentRange{}
+                    : inlineFormatting->maxChildFragments[i],
+            };
+
+            auto childOutput = tree.layoutRecursive(child, frameInfo, childConstraints, mutate, std::nullopt, sizeRequest.intrinsicWidthRequest, sizeRequest.intrinsicHeightRequest);
+
+            std::visit([&](const auto& childLayout) {
+            if (!childLayout.outOfFlow) {
+                if (sizeRequest.resolvingIntrinsicWidth || sizeRequest.resolvingIntrinsicHeight) {
+                    intrinsicResult->minimum = std::max(intrinsicResult->minimum, childOutput.intrinsicSizes->minimum);
+                    intrinsicResult->maximum = std::max(intrinsicResult->maximum, childOutput.intrinsicSizes->maximum);
+                }
+
+                childConstraints.cursor = childLayout.siblingCursor;
+                childConstraints.edgeIntent = childLayout.edgeIntent;
+                childConstraints.prevInlineHeight = childLayout.prevInlineHeight;
+
+            }
+            }, childOutput.layout);
+        }
+
+        return intrinsicResult;
     }
 
 }

@@ -1918,4 +1918,27 @@ namespace layout {
             tree.layoutRecursive(childNode, frameInfo, preparedChildConstraints, mutate, childRequest);
         }
     }
+
+    std::optional<IntrinsicSizes> gridPass(
+        RenderTree& tree, TreeNode* node, const Constraints& constraints, const Constraints& childConstraints,
+        const FrameInfo& frameInfo, const SizeResult& sizeResult, const SizeRequest& sizeRequest,
+        bool mutate, std::unordered_map<size_t, SizeResult>& sizeCache
+    ) {
+        GridResolver gr {
+            tree, node, constraints, childConstraints, frameInfo, sizeResult,
+            mutate, sizeCache
+        };
+
+        gr.phaseB();
+
+        gr.phaseC();
+        if (sizeRequest.resolvingIntrinsicWidth || sizeRequest.resolvingIntrinsicHeight) {
+            const IntrinsicSizes& intrinsicSizes = sizeRequest.resolvingIntrinsicWidth
+                ? gr.gridLayout.columnIntrinsicSizes
+                : gr.gridLayout.rowIntrinsicSizes;
+            return intrinsicSizes;
+        }
+
+        return std::nullopt;
+    }
 }

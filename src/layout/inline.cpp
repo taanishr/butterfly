@@ -367,5 +367,26 @@ namespace layout {
         return lr;
     }
 
+    std::optional<IntrinsicSizes> inlinePass(const InlineState& state, const SizeRequest& sizeRequest) {
+        std::optional<IntrinsicSizes> intrinsicResult;
+
+        if (sizeRequest.resolvingIntrinsicWidth || sizeRequest.resolvingIntrinsicHeight) {
+            intrinsicResult = IntrinsicSizes{};
+        }
+
+        if (state.widthIntrinsicSizes) {
+            if (sizeRequest.resolvingIntrinsicWidth) {
+                intrinsicResult = *state.widthIntrinsicSizes;
+            }
+        }
+
+        if (state.heightIntrinsicSizes) {
+            if (sizeRequest.resolvingIntrinsicHeight) {
+                intrinsicResult = *state.heightIntrinsicSizes;
+            }
+        }
+
+        return intrinsicResult;
+    }
 
 }

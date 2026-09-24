@@ -462,4 +462,42 @@ namespace layout {
         };
     }
 
+    std::optional<IntrinsicSizes> flexPass(
+        RenderTree& tree, TreeNode* node, const Constraints& constraints, const Constraints& childConstraints,
+        const FrameInfo& frameInfo, const SizeResult& sizeResult, const SizeRequest& sizeRequest,
+        bool mutate, std::unordered_map<size_t, SizeResult>& sizeCache
+    ) {
+        auto flexDirection = node->getFlexDirection();
+        auto justifyContent = node->getJustifyContent();
+        auto alignItems = node->getAlignItems();
+        auto alignContentVal = node->getAlignContent();
+        auto flexWrap = node->getFlexWrap();
+
+        FlexLayout flexContext {flexDirection, justifyContent, alignItems, alignContentVal, flexWrap};
+        flexContext.axis.applyDirection(constraints.inheritedProperties.direction);
+
+        // temp variable for padding included available size
+
+        FlexResolver fr {
+            tree, node, constraints, childConstraints, flexContext, frameInfo, sizeResult.innerSize,
+            mutate, sizeCache
+        };
+
+        fr.phaseB();
+        auto result = fr.phaseC();
+
+        if (sizeRequest.resolvingIntrinsicWidth || sizeRequest.resolvingIntrinsicHeight) {
+            const IntrinsicResult& intrinsicSizes = sizeRequest.resolvingIntrinsicWidth
+                ? (flexContext.axis.isRow ? result.mainIntrinsicSizes : result.crossIntrinsicSizes)
+                : (flexContext.axis.isRow ? result.crossIntrinsicSizes : result.mainIntrinsicSizes);
+
+            return IntrinsicSizes {
+                .minimum = std::get<float>(intrinsicSizes.minimum),
+                .maximum = std::get<float>(intrinsicSizes.maximum)
+            };
+        }
+
+        return std::nullopt;
+    }
+
 }
