@@ -50,6 +50,57 @@ namespace layout {
             .height = computedHeight
         };
 
+        float computedPaddingBoxWidth = std::visit(Overloaded{
+            [&](float resolved){ return resolved; },
+            [&](auto&) { return 0.0f; }
+        }, sizeResult.paddingBoxSize.width);
+
+        float computedPaddingBoxHeight = std::visit(Overloaded{
+            [&](float resolved){ return resolved; },
+            [&](auto&) { return 0.0f; }
+        }, sizeResult.paddingBoxSize.height);
+
+        float computedInnerWidth = std::visit(Overloaded{
+            [&](float resolved){ return resolved; },
+            [&](auto&) { return 0.0f; }
+        }, sizeResult.innerSize.width);
+
+        float computedInnerHeight = std::visit(Overloaded{
+            [&](float resolved){ return resolved; },
+            [&](auto&) { return 0.0f; }
+        }, sizeResult.innerSize.height);
+
+        const auto* resolvedBorderWidth = std::get_if<float>(&sizeResult.borderWidth);
+        const auto* resolvedPaddingLeft = std::get_if<float>(&sizeResult.padding.left);
+        const auto* resolvedPaddingTop = std::get_if<float>(&sizeResult.padding.top);
+
+        lr.computedPaddingBox = {
+            .x = lr.computedBox.x,
+            .y = lr.computedBox.y,
+            .width = computedPaddingBoxWidth,
+            .height = computedPaddingBoxHeight
+        };
+
+        if (resolvedBorderWidth) {
+            lr.computedPaddingBox.x += *resolvedBorderWidth;
+            lr.computedPaddingBox.y += *resolvedBorderWidth;
+        }
+
+        lr.computedInnerBox = {
+            .x = lr.computedPaddingBox.x,
+            .y = lr.computedPaddingBox.y,
+            .width = computedInnerWidth,
+            .height = computedInnerHeight
+        };
+
+        if (resolvedPaddingLeft) {
+            lr.computedInnerBox.x += *resolvedPaddingLeft;
+        }
+
+        if (resolvedPaddingTop) {
+            lr.computedInnerBox.y += *resolvedPaddingTop;
+        }
+
         lr.atomOffsets = {
             position
         };
@@ -118,6 +169,57 @@ namespace layout {
             computedHeight
         };
 
+        float computedPaddingBoxWidth = std::visit(Overloaded{
+            [&](float resolved){ return resolved; },
+            [&](auto&) { return 0.0f; }
+        }, sizeResult.paddingBoxSize.width);
+
+        float computedPaddingBoxHeight = std::visit(Overloaded{
+            [&](float resolved){ return resolved; },
+            [&](auto&) { return 0.0f; }
+        }, sizeResult.paddingBoxSize.height);
+
+        float computedInnerWidth = std::visit(Overloaded{
+            [&](float resolved){ return resolved; },
+            [&](auto&) { return 0.0f; }
+        }, sizeResult.innerSize.width);
+
+        float computedInnerHeight = std::visit(Overloaded{
+            [&](float resolved){ return resolved; },
+            [&](auto&) { return 0.0f; }
+        }, sizeResult.innerSize.height);
+
+        const auto* resolvedBorderWidth = std::get_if<float>(&sizeResult.borderWidth);
+        const auto* resolvedPaddingLeft = std::get_if<float>(&sizeResult.padding.left);
+        const auto* resolvedPaddingTop = std::get_if<float>(&sizeResult.padding.top);
+
+        lr.computedPaddingBox = {
+            .x = lr.computedBox.x,
+            .y = lr.computedBox.y,
+            .width = computedPaddingBoxWidth,
+            .height = computedPaddingBoxHeight
+        };
+
+        if (resolvedBorderWidth) {
+            lr.computedPaddingBox.x += *resolvedBorderWidth;
+            lr.computedPaddingBox.y += *resolvedBorderWidth;
+        }
+
+        lr.computedInnerBox = {
+            .x = lr.computedPaddingBox.x,
+            .y = lr.computedPaddingBox.y,
+            .width = computedInnerWidth,
+            .height = computedInnerHeight
+        };
+
+        if (resolvedPaddingLeft) {
+            lr.computedInnerBox.x += *resolvedPaddingLeft;
+        }
+
+        if (resolvedPaddingTop) {
+            lr.computedInnerBox.y += *resolvedPaddingTop;
+        }
+
         lr.atomOffsets = {
             startingPos
         };
@@ -143,7 +245,7 @@ namespace layout {
     }
 
     std::optional<IntrinsicSizes> blockPass(
-        tree::RenderTree& tree, tree::TreeNode* node, const FrameInfo& frameInfo,
+        tree::RenderTree& tree, tree::TreeNode* node, const FrameInfo& frameInfo, BlockState& state,
         Constraints childConstraints, const SizeRequest& sizeRequest, const SizeResult& sizeResult,
         bool mutate, std::unordered_map<size_t, SizeResult>& sizeCache
     ) {
@@ -187,9 +289,15 @@ namespace layout {
 
             std::visit([&](const auto& childLayout) {
             if (!childLayout.outOfFlow) {
-                if (sizeRequest.resolvingIntrinsicWidth || sizeRequest.resolvingIntrinsicHeight) {
+                if (sizeRequest.resolvingIntrinsicWidth) {
                     intrinsicResult->minimum = std::max(intrinsicResult->minimum, childOutput.intrinsicSizes->minimum);
                     intrinsicResult->maximum = std::max(intrinsicResult->maximum, childOutput.intrinsicSizes->maximum);
+                }
+
+                if (sizeRequest.resolvingIntrinsicHeight) {
+                    float childOffset = childConstraints.cursor.y - childConstraints.origin.y;
+                    intrinsicResult->minimum = std::max(intrinsicResult->minimum, childOffset + childOutput.intrinsicSizes->minimum);
+                    intrinsicResult->maximum = std::max(intrinsicResult->maximum, childOffset + childOutput.intrinsicSizes->maximum);
                 }
 
                 childConstraints.cursor = childLayout.siblingCursor;
@@ -205,7 +313,13 @@ namespace layout {
         }
 
         if (sizeRequest.resolvingIntrinsicHeight) {
-            return resolveContributionHeight(*intrinsicResult, sizeResult);
+            IntrinsicSizes contribution = resolveContributionHeight(*intrinsicResult, sizeResult);
+
+            if (!state.outOfFlow && !std::holds_alternative<float>(sizeResult.outerSize.height)) {
+                state.siblingCursor.y += contribution.maximum;
+            }
+
+            return contribution;
         }
 
         return intrinsicResult;

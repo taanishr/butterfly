@@ -776,7 +776,7 @@ namespace tree {
                 break;
             }
             case style::Display::Block: {
-                intrinsicResult = layout::blockPass(*this, node, frameInfo, childConstraints, sizeRequest, sizeResult, mutate, sizeCache);
+                intrinsicResult = layout::blockPass(*this, node, frameInfo, std::get<layout::BlockState>(layout), childConstraints, sizeRequest, sizeResult, mutate, sizeCache);
                 break;
             }
             case style::Display::Inline: {
@@ -787,6 +787,8 @@ namespace tree {
 
         std::visit([](auto& state) {
             state.localComputedBox = state.computedBox;
+            state.localComputedPaddingBox = state.computedPaddingBox;
+            state.localComputedInnerBox = state.computedInnerBox;
             state.localAtomOffsets = state.atomOffsets;
         }, layout);
 
@@ -816,21 +818,7 @@ namespace tree {
         instrumentation::recordRecompute(node->id, instrumentation::Phase::PostLayout, reason);
 
         auto& result = *node->layout;
-        const auto& padding = result.sizeResult.padding;
-        float paddingTop = std::holds_alternative<float>(padding.top) ? std::get<float>(padding.top) : 0.0f;
-        float paddingRight = std::holds_alternative<float>(padding.right) ? std::get<float>(padding.right) : 0.0f;
-        float paddingBottom = std::holds_alternative<float>(padding.bottom) ? std::get<float>(padding.bottom) : 0.0f;
-        float paddingLeft = std::holds_alternative<float>(padding.left) ? std::get<float>(padding.left) : 0.0f;
-
-        float borderWidth = std::holds_alternative<float>(result.sizeResult.borderWidth) ? std::get<float>(result.sizeResult.borderWidth) : 0.0f;
-
-        const auto& outerSize = result.sizeResult.outerSize;
-        float outerWidth = std::holds_alternative<float>(outerSize.width) ? std::get<float>(outerSize.width) : 0.0f;
-        float outerHeight = std::holds_alternative<float>(outerSize.height) ? std::get<float>(outerSize.height) : 0.0f;
-        
         const auto& paddingBoxSize = result.sizeResult.paddingBoxSize;
-        float paddingBoxWidth = std::holds_alternative<float>(paddingBoxSize.width) ? std::max(0.0f, std::get<float>(paddingBoxSize.width)) : 0.0f;
-        float paddingBoxHeight = std::holds_alternative<float>(paddingBoxSize.height) ? std::max(0.0f, std::get<float>(paddingBoxSize.height)) : 0.0f;
 
 
         auto position = node->getPosition();
@@ -845,6 +833,8 @@ namespace tree {
         std::visit([&](auto& layout) {
             // reset computed box to local variants
             layout.computedBox = layout.localComputedBox;
+            layout.computedPaddingBox = layout.localComputedPaddingBox;
+            layout.computedInnerBox = layout.localComputedInnerBox;
             layout.atomOffsets = layout.localAtomOffsets;
 
             // resolve right / bottom positioning
@@ -860,7 +850,7 @@ namespace tree {
                     SizeState containingBlockWidth = calculateSize(containingBlock.width, std::monostate{});
                     SizeState right = calculateSize(*rightInset, containingBlock.width);
                     if (std::holds_alternative<float>(containingBlockWidth) && std::holds_alternative<float>(right)) {
-                        float newX = std::get<float>(containingBlockWidth) - margins.right - outerWidth - std::get<float>(right);
+                        float newX = std::get<float>(containingBlockWidth) - margins.right - layout.computedBox.width - std::get<float>(right);
                         float deltaX = newX - layout.computedBox.x;
                         layout.computedBox.x = newX;
                         for (auto& offset : layout.atomOffsets) {
@@ -873,7 +863,7 @@ namespace tree {
                     SizeState containingBlockHeight = calculateSize(containingBlock.height, std::monostate{});
                     SizeState bottom = calculateSize(*bottomInset, containingBlock.height);
                     if (std::holds_alternative<float>(containingBlockHeight) && std::holds_alternative<float>(bottom)) {
-                        float newY = std::get<float>(containingBlockHeight) - margins.bottom - outerHeight - std::get<float>(bottom);
+                        float newY = std::get<float>(containingBlockHeight) - margins.bottom - layout.computedBox.height - std::get<float>(bottom);
                         float deltaY = newY - layout.computedBox.y;
                         layout.computedBox.y = newY;
                         for (auto& offset : layout.atomOffsets) {
@@ -930,7 +920,7 @@ namespace tree {
                 if (std::holds_alternative<float>(bottom) && std::holds_alternative<float>(scrollportHeight)) {
                     auto resolvedBottom = std::get<float>(bottom);
                     auto resolvedScrollportHeight = std::get<float>(scrollportHeight);
-                    stickyY = std::min(stickyY, constraints.scrollport.origin.y + resolvedScrollportHeight - resolvedBottom - outerHeight);
+                    stickyY = std::min(stickyY, constraints.scrollport.origin.y + resolvedScrollportHeight - resolvedBottom - layout.computedBox.height);
                 }
 
                 if (std::holds_alternative<float>(left)) {
@@ -941,7 +931,7 @@ namespace tree {
                 if (std::holds_alternative<float>(right) && std::holds_alternative<float>(scrollportWidth)) {
                     auto resolvedRight = std::get<float>(right);
                     auto resolvedScrollportWidth = std::get<float>(scrollportWidth);
-                    stickyX = std::min(stickyX, constraints.scrollport.origin.x + resolvedScrollportWidth - resolvedRight - outerWidth);
+                    stickyX = std::min(stickyX, constraints.scrollport.origin.x + resolvedScrollportWidth - resolvedRight - layout.computedBox.width);
                 }
 
                 // clamp inside containing block
@@ -952,14 +942,14 @@ namespace tree {
                 if (std::holds_alternative<float>(containingBlockWidth)) {
                     auto resolvedContainingBlockWidth = std::get<float>(containingBlockWidth);
                     auto minimumX = std::min(layout.computedBox.x, containingBlock.origin.x + margins.left);
-                    auto maximumX = std::max(layout.computedBox.x, containingBlock.origin.x + resolvedContainingBlockWidth - margins.right - outerWidth);
+                    auto maximumX = std::max(layout.computedBox.x, containingBlock.origin.x + resolvedContainingBlockWidth - margins.right - layout.computedBox.width);
                     stickyX = std::clamp(stickyX, minimumX, maximumX);
                 }
 
                 if (std::holds_alternative<float>(containingBlockHeight)) {
                     auto resolvedContainingBlockHeight = std::get<float>(containingBlockHeight);
                     auto minimumY = std::min(layout.computedBox.y, containingBlock.origin.y + margins.top);
-                    auto maximumY = std::max(layout.computedBox.y, containingBlock.origin.y + resolvedContainingBlockHeight - margins.bottom - outerHeight);
+                    auto maximumY = std::max(layout.computedBox.y, containingBlock.origin.y + resolvedContainingBlockHeight - margins.bottom - layout.computedBox.height);
                     stickyY = std::clamp(stickyY, minimumY, maximumY);
                 }
 
@@ -973,6 +963,13 @@ namespace tree {
                     offset.y += deltaY;
                 }
             }
+
+            float deltaX = layout.computedBox.x - layout.localComputedBox.x;
+            float deltaY = layout.computedBox.y - layout.localComputedBox.y;
+            layout.computedPaddingBox.x += deltaX;
+            layout.computedPaddingBox.y += deltaY;
+            layout.computedInnerBox.x += deltaX;
+            layout.computedInnerBox.y += deltaY;
 
             // figure out CSS transform properties
             // firstly; we determine the transform origin
@@ -999,14 +996,14 @@ namespace tree {
 
             // prepare child constraints; add clipping uniforms
             simd_float2 currPaddingOrigin = {
-                layout.computedBox.x + borderWidth,
-                layout.computedBox.y + borderWidth
+                layout.computedPaddingBox.x,
+                layout.computedPaddingBox.y
             };
 
 
             simd_float2 currContentOrigin = {
-                layout.computedBox.x + borderWidth + paddingLeft,
-                layout.computedBox.y + borderWidth + paddingTop
+                layout.computedInnerBox.x,
+                layout.computedInnerBox.y
             };
 
             ContainingBlock childScrollport = constraints.scrollport;
@@ -1014,14 +1011,14 @@ namespace tree {
             if (node->shared.overflow == Overflow::Scroll) {
                 // compute scroll port size
                 node->scrollViewportSize = {
-                    paddingBoxWidth,
-                    paddingBoxHeight
+                    layout.computedPaddingBox.width,
+                    layout.computedPaddingBox.height
                 };
 
                 childScrollport = {
                     .origin = currPaddingOrigin,
                     .width = paddingBoxSize.width,
-                    .height = paddingBoxSize.width
+                    .height = paddingBoxSize.height
                 };
 
                 // adjust origins by scroll offsets
@@ -1052,20 +1049,20 @@ namespace tree {
                 childConstraints.textOverflow = node->shared.textOverflow;
 
                 simd_float2 halfExtent {
-                    paddingBoxWidth * 0.5f,
-                    paddingBoxHeight * 0.5f
+                    layout.computedPaddingBox.width * 0.5f,
+                    layout.computedPaddingBox.height * 0.5f
                 };
 
                 childConstraints.clipUniforms.push_back({
                     .rectCenter = {
-                        layout.computedBox.x + halfExtent.x,
-                        layout.computedBox.y + halfExtent.y
+                        layout.computedPaddingBox.x + halfExtent.x,
+                        layout.computedPaddingBox.y + halfExtent.y
                     },
                     .halfExtent = halfExtent,
                     .cornerRadius = style::resolveCornerRadii(
                         node->shared,
-                        outerWidth,
-                        outerHeight
+                        layout.computedBox.width,
+                        layout.computedBox.height
                     ),
                     .inverseTransform = node->inverseTransform
                 });
@@ -1107,9 +1104,6 @@ namespace tree {
                         }
 
                         const auto& childBox = childLayout.computedBox;
-                        const auto& childOuterSize = child->layout->sizeResult.outerSize;
-                        float childOuterWidth = std::holds_alternative<float>(childOuterSize.width) ? std::get<float>(childOuterSize.width) : 0.0f;
-                        float childOuterHeight = std::holds_alternative<float>(childOuterSize.height) ? std::get<float>(childOuterSize.height) : 0.0f;
 
                         // here; we have to include overflow of transforms
                         simd_float2 transformOrigin {
@@ -1127,8 +1121,8 @@ namespace tree {
                         simd_float3x3 childTransform = simd_mul(parentTransform, localTransform);
 
                         float left = childBox.x;
-                        float right = childBox.x + childOuterWidth;
-                        float bottom = childBox.y + childOuterHeight;
+                        float right = childBox.x + childBox.width;
+                        float bottom = childBox.y + childBox.height;
                         simd_float3 transformedTopLeft = simd_mul(childTransform, simd_float3{left, childBox.y, 1.0f});
                         simd_float3 transformedTopRight = simd_mul(childTransform, simd_float3{right, childBox.y, 1.0f});
                         simd_float3 transformedBottomLeft = simd_mul(childTransform, simd_float3{left, bottom, 1.0f});
@@ -1145,8 +1139,7 @@ namespace tree {
                                 contentSize.x,
                                 currContentOrigin.x
                                     + node->scrollViewportSize.x
-                                    - paddingLeft
-                                    - paddingRight
+                                    - (layout.computedPaddingBox.width - layout.computedInnerBox.width)
                                     - left
                             );
                         } else {
@@ -1180,11 +1173,11 @@ namespace tree {
                 node->scrollContentSize = {
                     std::max(
                         node->scrollViewportSize.x,
-                        contentSize.x + paddingLeft + paddingRight
+                        contentSize.x + (layout.computedPaddingBox.width - layout.computedInnerBox.width)
                     ),
                     std::max(
                         node->scrollViewportSize.y,
-                        contentSize.y + paddingTop + paddingBottom
+                        contentSize.y + (layout.computedPaddingBox.height - layout.computedInnerBox.height)
                     )
                 };
             }

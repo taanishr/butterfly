@@ -52,6 +52,9 @@ namespace layout {
         float totalWidth = 0;
         float currentTotalWidth = 0;
         float minX = newCursor.x;
+        float maxX = newCursor.x;
+        float minContentX = newCursor.x;
+        float maxContentX = newCursor.x;
         float minY = newCursor.y;
 
         bool isLtr = constraints.inheritedProperties.direction == Direction::ltr;
@@ -116,7 +119,23 @@ namespace layout {
 
             newCursor.x = startingX;
 
-            minX = std::min(minX, startingX - (isLtr ? fragment.leadingPadding : fragment.trailingPadding));
+            if (it == lineFragments.begin()) {
+                minX = startingX;
+                maxX = startingX;
+                minContentX = startingX;
+                maxContentX = startingX;
+            }
+
+            minContentX = std::min(minContentX, startingX);
+            maxContentX = std::max(maxContentX, startingX + fragment.width);
+
+            if (isLtr) {
+                minX = std::min(minX, startingX - fragment.leadingPadding);
+                maxX = std::max(maxX, startingX + fragment.width + fragment.trailingPadding);
+            } else {
+                minX = std::min(minX, startingX - fragment.trailingPadding);
+                maxX = std::max(maxX, startingX + fragment.width + fragment.leadingPadding);
+            }
 
             if (fragmentIdx == 0 && constraints.edgeIntent.edgeDisplayMode != Display::Inline) {
                 if (constraints.edgeIntent.collapsable) {
@@ -156,10 +175,31 @@ namespace layout {
         totalHeight += lineHeight;
         totalWidth = std::max(currentTotalWidth, totalWidth);
 
+        const auto* resolvedPaddingTop = std::get_if<float>(&sizeResult.padding.top);
+        const auto* resolvedPaddingBottom = std::get_if<float>(&sizeResult.padding.bottom);
+
         lr.computedBox = {
             minX,
             minY,
-            totalWidth,
+            maxX - minX,
+            totalHeight
+        };
+
+        if (resolvedPaddingTop) {
+            lr.computedBox.y -= *resolvedPaddingTop;
+            lr.computedBox.height += *resolvedPaddingTop;
+        }
+
+        if (resolvedPaddingBottom) {
+            lr.computedBox.height += *resolvedPaddingBottom;
+        }
+
+        lr.computedPaddingBox = lr.computedBox;
+
+        lr.computedInnerBox = {
+            minContentX,
+            minY,
+            maxContentX - minContentX,
             totalHeight
         };
 
@@ -250,6 +290,9 @@ namespace layout {
         float totalWidth = 0;
         float currentTotalWidth = 0;
         float minX = newCursor.x;
+        float maxX = newCursor.x;
+        float minContentX = newCursor.x;
+        float maxContentX = newCursor.x;
         float minY = newCursor.y;
 
         bool isLtr = constraints.inheritedProperties.direction == Direction::ltr;
@@ -284,7 +327,23 @@ namespace layout {
 
             newCursor.x = startingX;
 
-            minX = std::min(minX, startingX - (isLtr ? fragment.leadingPadding : fragment.trailingPadding));
+            if (it == lineFragments.begin()) {
+                minX = startingX;
+                maxX = startingX;
+                minContentX = startingX;
+                maxContentX = startingX;
+            }
+
+            minContentX = std::min(minContentX, startingX);
+            maxContentX = std::max(maxContentX, startingX + fragment.width);
+
+            if (isLtr) {
+                minX = std::min(minX, startingX - fragment.leadingPadding);
+                maxX = std::max(maxX, startingX + fragment.width + fragment.trailingPadding);
+            } else {
+                minX = std::min(minX, startingX - fragment.trailingPadding);
+                maxX = std::max(maxX, startingX + fragment.width + fragment.leadingPadding);
+            }
 
             if (fragment.lineBoxIndex != prevLineBoxIndex &&
                 prevLineBoxIndex != -1
@@ -321,10 +380,31 @@ namespace layout {
         totalHeight += lineHeight;
         totalWidth = std::max(currentTotalWidth, totalWidth);
 
+        const auto* resolvedPaddingTop = std::get_if<float>(&sizeResult.padding.top);
+        const auto* resolvedPaddingBottom = std::get_if<float>(&sizeResult.padding.bottom);
+
         lr.computedBox = {
             minX,
             minY,
-            totalWidth,
+            maxX - minX,
+            totalHeight
+        };
+
+        if (resolvedPaddingTop) {
+            lr.computedBox.y -= *resolvedPaddingTop;
+            lr.computedBox.height += *resolvedPaddingTop;
+        }
+
+        if (resolvedPaddingBottom) {
+            lr.computedBox.height += *resolvedPaddingBottom;
+        }
+
+        lr.computedPaddingBox = lr.computedBox;
+
+        lr.computedInnerBox = {
+            minContentX,
+            minY,
+            maxContentX - minContentX,
             totalHeight
         };
 

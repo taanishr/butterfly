@@ -416,6 +416,10 @@ namespace layout {
 
         LayoutBox computedBox;
         LayoutBox localComputedBox; // fine
+        LayoutBox computedPaddingBox;
+        LayoutBox localComputedPaddingBox;
+        LayoutBox computedInnerBox;
+        LayoutBox localComputedInnerBox;
 
         Constraints childConstraints; // child constraints
 
@@ -438,6 +442,10 @@ namespace layout {
 
         LayoutBox computedBox;
         LayoutBox localComputedBox; // fine
+        LayoutBox computedPaddingBox;
+        LayoutBox localComputedPaddingBox;
+        LayoutBox computedInnerBox;
+        LayoutBox localComputedInnerBox;
 
         Constraints childConstraints; // child constraints
 
@@ -461,6 +469,10 @@ namespace layout {
         { state.prevInlineHeight } -> std::same_as<float&>;
         { state.computedBox } -> std::same_as<LayoutBox&>;
         { state.localComputedBox } -> std::same_as<LayoutBox&>;
+        { state.computedPaddingBox } -> std::same_as<LayoutBox&>;
+        { state.localComputedPaddingBox } -> std::same_as<LayoutBox&>;
+        { state.computedInnerBox } -> std::same_as<LayoutBox&>;
+        { state.localComputedInnerBox } -> std::same_as<LayoutBox&>;
         { state.childConstraints } -> std::same_as<Constraints&>;
         { state.siblingCursor } -> std::same_as<simd_float2&>;
         { state.outOfFlow } -> std::same_as<bool&>;
@@ -499,7 +511,7 @@ namespace layout {
     };
 
     std::optional<IntrinsicSizes> blockPass(
-        tree::RenderTree& tree, tree::TreeNode* node, const FrameInfo& frameInfo,
+        tree::RenderTree& tree, tree::TreeNode* node, const FrameInfo& frameInfo, BlockState& state,
         Constraints childConstraints, const SizeRequest& sizeRequest, const SizeResult& sizeResult,
         bool mutate, std::unordered_map<size_t, SizeResult>& sizeCache);
 

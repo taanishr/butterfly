@@ -4108,10 +4108,10 @@ div()
     //     )
     // );
 
-    // Box shadows: a light desk with objects at different elevations.
-    // Exercises outer blur/spread/offset, hard-edged (blur 0) shadows, inset shadows
-    // on divs and images, spread against elliptical per-corner radii, percent-based
-    // offsets, and hover/press state driving shadow changes at finalize only.
+    // // Box shadows: a light desk with objects at different elevations.
+    // // Exercises outer blur/spread/offset, hard-edged (blur 0) shadows, inset shadows
+    // // on divs and images, spread against elliptical per-corner radii, percent-based
+    // // offsets, and hover/press state driving shadow changes at finalize only.
     // using S = gui::Size;
     // using gui::Display;
     // using gui::FlexDirection;
@@ -4349,8 +4349,8 @@ div()
     //     )
     // );
 
-    // Transforms: rendering, composition, origin, hit testing, clipping,
-    // containing blocks (none vs identity), and scrollable overflow.
+    // // Transforms: rendering, composition, origin, hit testing, clipping,
+    // // containing blocks (none vs identity), and scrollable overflow.
     // {
     //     using S = gui::Size;
     //     using gui::Display;
@@ -5383,6 +5383,974 @@ div()
     //         box()
     //         (
     //             text("alpha betabetabetabeta").font(Arial).fontSize(S::pt(18)).color(yellow)
+    //         )
+    //     );
+    // }
+
+    // // ═══════════════════════════════════════════════════════════════════
+    // // Clone: linear.app landing page
+    // // ═══════════════════════════════════════════════════════════════════
+    // {
+    //     using S = gui::Size;
+    //     using gui::Display;
+    //     using gui::FlexDirection;
+    //     using gui::AlignItems;
+    //     using gui::JustifyContent;
+    //     using gui::Position;
+
+    //     constexpr auto rgb = [](int r, int g, int b, float a = 1.0f) {
+    //         return simd_float4{r / 255.0f, g / 255.0f, b / 255.0f, a};
+    //     };
+
+    //     const auto bg        = rgb(8, 9, 10);
+    //     const auto panel     = rgb(16, 17, 19);
+    //     const auto panel2    = rgb(22, 23, 26);
+    //     const auto hairline  = rgb(255, 255, 255, 0.08f);
+    //     const auto hairline2 = rgb(255, 255, 255, 0.14f);
+    //     const auto white     = rgb(247, 248, 248);
+    //     const auto grey      = rgb(138, 143, 152);
+    //     const auto dim       = rgb(98, 102, 109);
+    //     const auto indigo    = rgb(94, 106, 210);
+    //     const auto clear     = rgb(0, 0, 0, 0.0f);
+
+    //     const std::string Inter     = Helvetica;
+    //     const std::string InterBold = ArialBold;
+    //     constexpr auto A = "/Users/treja/projects/gui/assets/clones/";
+
+    //     auto navLink = [&](const char* label) {
+    //         return text(label).font(Inter).fontSize(S::pt(11.5)).color(white);
+    //     };
+
+    //     auto issueRow = [&](const char* icon, const char* id, const char* title, const char* tag, simd_float4 tagColor) {
+    //         return div()
+    //             .width(S::percent(1.0))
+    //             .height(S::px(34))
+    //             .display(Display::Flex)
+    //             .alignItems(AlignItems::Center)
+    //             .flexGap(S::px(10))
+    //             .paddingLeft(S::px(14))
+    //             .paddingRight(S::px(14))
+    //             .borderColor(hairline)
+    //             .borderWidth(S::px(1))
+    //         (
+    //             text(id).font(SFMono).fontSize(S::pt(9)).color(dim),
+    //             svg(std::string(A) + icon, S::px(13), S::px(13)),
+    //             text(title).font(Inter).fontSize(S::pt(10.5)).color(white).flexGrow(S::px(1)),
+    //             div(S::autoSize(), S::autoSize(), clear)
+    //                 .display(Display::Flex)
+    //                 .alignItems(AlignItems::Center)
+    //                 .flexGap(S::px(5))
+    //                 .paddingLeft(S::px(7)).paddingRight(S::px(7))
+    //                 .paddingTop(S::px(2)).paddingBottom(S::px(2))
+    //                 .cornerRadius(S::px(4))
+    //                 .borderColor(hairline2)
+    //                 .borderWidth(S::px(1))
+    //             (
+    //                 div(S::px(7), S::px(7), tagColor).cornerRadius(S::px(4))(),
+    //                 text(tag).font(Inter).fontSize(S::pt(9)).color(grey)
+    //             ),
+    //             div(S::px(18), S::px(18), rgb(60, 64, 72)).cornerRadius(S::px(9))()
+    //         );
+    //     };
+
+    //     auto featureCard = [&](const char* icon, const char* title, const char* body) {
+    //         return div()
+    //             .flexGrow(S::px(1))
+    //             .minWidth(S::px(180))
+    //             .color(panel)
+    //             .cornerRadius(S::px(12))
+    //             .borderColor(hairline)
+    //             .borderWidth(S::px(1))
+    //             .padding(S::px(22))
+    //             .display(Display::Flex)
+    //             .flexDirection(FlexDirection::Col)
+    //             .flexGap(S::px(12))
+    //         (
+    //             svg(std::string(A) + icon, S::px(22), S::px(22)),
+    //             text(title).font(InterBold).fontSize(S::pt(13)).color(white),
+    //             div().width(S::percent(1.0))(
+    //                 text(body).font(Inter).fontSize(S::pt(11)).color(grey).lineHeight(1.5)
+    //             )
+    //         );
+    //     };
+
+    //     auto customer = [&](const char* name) {
+    //         return text(name).font(InterBold).fontSize(S::pt(13)).color(rgb(120, 124, 132));
+    //     };
+
+    //     div(S::percent(1.0), S::percent(1.0), bg)
+    //         .overflow(gui::Overflow::Scroll)
+    //     (
+    //         // ── Nav ──
+    //         div(S::percent(1.0), S::px(56), bg)
+    //             .position(Position::Sticky)
+    //             .top(S::px(0))
+    //             .zIndex(10)
+    //             .display(Display::Flex)
+    //             .alignItems(AlignItems::Center)
+    //             .justifyContent(JustifyContent::SpaceBetween)
+    //             .paddingLeft(S::px(28))
+    //             .paddingRight(S::px(28))
+    //             .borderColor(hairline)
+    //             .borderWidth(S::px(1))
+    //         (
+    //             div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(26))(
+    //                 div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
+    //                     svg(std::string(A) + "linear-logo.svg", S::px(20), S::px(20)),
+    //                     text("Linear").font(InterBold).fontSize(S::pt(13)).color(white)
+    //                 ),
+    //                 navLink("Product"),
+    //                 navLink("Resources"),
+    //                 navLink("Pricing"),
+    //                 navLink("Customers"),
+    //                 navLink("Now"),
+    //                 navLink("Contact")
+    //             ),
+    //             div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(16))(
+    //                 navLink("Log in"),
+    //                 div(S::autoSize(), S::px(30), white)
+    //                     .cornerRadius(S::px(8))
+    //                     .paddingLeft(S::px(12)).paddingRight(S::px(12))
+    //                     .display(Display::Flex)
+    //                     .alignItems(AlignItems::Center)
+    //                 (
+    //                     text("Sign up").font(InterBold).fontSize(S::pt(11)).color(bg)
+    //                 )
+    //             )
+    //         ),
+
+    //         // ── Hero ──
+    //         div()
+    //             .width(S::percent(1.0))
+    //             .paddingTop(S::px(88))
+    //             .paddingLeft(S::px(48))
+    //             .paddingRight(S::px(48))
+    //             .display(Display::Flex)
+    //             .flexDirection(FlexDirection::Col)
+    //             .flexGap(S::px(22))
+    //         (
+    //             div().maxWidth(S::px(620))(
+    //                 text("Linear is a purpose-built tool for planning and building products")
+    //                     .font(InterBold).fontSize(S::pt(40)).color(white).lineHeight(1.08)
+    //             ),
+    //             div().maxWidth(S::px(460))(
+    //                 text("Meet the system for modern software development. Streamline issues, projects, and product roadmaps.")
+    //                     .font(Inter).fontSize(S::pt(15)).color(grey).lineHeight(1.45)
+    //             ),
+    //             div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(18)).marginTop(S::px(6))(
+    //                 div(S::autoSize(), S::px(38), white)
+    //                     .cornerRadius(S::px(9))
+    //                     .paddingLeft(S::px(16)).paddingRight(S::px(16))
+    //                     .display(Display::Flex)
+    //                     .alignItems(AlignItems::Center)
+    //                 (
+    //                     text("Start building").font(InterBold).fontSize(S::pt(12)).color(bg)
+    //                 ),
+    //                 div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(4))(
+    //                     text("Introducing Linear for Agents").font(Inter).fontSize(S::pt(12)).color(grey),
+    //                     svg(std::string(A) + "chevron-right.svg", S::px(12), S::px(12))
+    //                 )
+    //             )
+    //         ),
+
+    //         // ── App mock ──
+    //         div()
+    //             .width(S::percent(1.0))
+    //             .paddingTop(S::px(64))
+    //             .paddingLeft(S::px(48))
+    //             .paddingRight(S::px(48))
+    //         (
+    //             div(S::percent(1.0), S::px(380), panel)
+    //                 .cornerRadius(S::px(14))
+    //                 .borderColor(hairline2)
+    //                 .borderWidth(S::px(1))
+    //                 .overflow(gui::Overflow::Hidden)
+    //                 .display(Display::Flex)
+    //                 .shadowOffsetY(S::px(30))
+    //                 .shadowBlur(S::px(80))
+    //                 .shadowColor(rgb(94, 106, 210, 0.18f))
+    //             (
+    //                 // sidebar
+    //                 div(S::px(170), S::percent(1.0), panel2)
+    //                     .flexShrink(S::px(0))
+    //                     .padding(S::px(14))
+    //                     .display(Display::Flex)
+    //                     .flexDirection(FlexDirection::Col)
+    //                     .flexGap(S::px(9))
+    //                 (
+    //                     div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(7)).marginBottom(S::px(10))(
+    //                         div(S::px(16), S::px(16), indigo).cornerRadius(S::px(4))(),
+    //                         text("Butterfly").font(InterBold).fontSize(S::pt(10)).color(white)
+    //                     ),
+    //                     text("Inbox").font(Inter).fontSize(S::pt(10)).color(grey),
+    //                     text("My issues").font(Inter).fontSize(S::pt(10)).color(grey),
+    //                     text("Views").font(Inter).fontSize(S::pt(10)).color(grey),
+    //                     text("Workspace").font(Inter).fontSize(S::pt(8.5)).color(dim).marginTop(S::px(10)),
+    //                     text("Initiatives").font(Inter).fontSize(S::pt(10)).color(grey),
+    //                     text("Projects").font(Inter).fontSize(S::pt(10)).color(grey),
+    //                     text("Teams").font(Inter).fontSize(S::pt(10)).color(grey),
+    //                     text("Your teams").font(Inter).fontSize(S::pt(8.5)).color(dim).marginTop(S::px(10)),
+    //                     div(S::autoSize(), S::px(24), rgb(255,255,255,0.05f)).cornerRadius(S::px(5))
+    //                         .paddingLeft(S::px(6)).display(Display::Flex).alignItems(AlignItems::Center)
+    //                     (
+    //                         text("Renderer").font(Inter).fontSize(S::pt(10)).color(white)
+    //                     ),
+    //                     text("Layout").font(Inter).fontSize(S::pt(10)).color(grey).marginLeft(S::px(6)),
+    //                     text("Text").font(Inter).fontSize(S::pt(10)).color(grey).marginLeft(S::px(6))
+    //                 ),
+    //                 // issue list
+    //                 div()
+    //                     .flexGrow(S::px(1))
+    //                     .display(Display::Flex)
+    //                     .flexDirection(FlexDirection::Col)
+    //                 (
+    //                     div(S::percent(1.0), S::px(40), panel)
+    //                         .display(Display::Flex)
+    //                         .alignItems(AlignItems::Center)
+    //                         .justifyContent(JustifyContent::SpaceBetween)
+    //                         .paddingLeft(S::px(14)).paddingRight(S::px(14))
+    //                         .borderColor(hairline)
+    //                         .borderWidth(S::px(1))
+    //                     (
+    //                         div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
+    //                             text("Renderer").font(InterBold).fontSize(S::pt(10.5)).color(white),
+    //                             svg(std::string(A) + "chevron-right.svg", S::px(11), S::px(11)),
+    //                             text("Active issues").font(Inter).fontSize(S::pt(10.5)).color(grey)
+    //                         ),
+    //                         div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
+    //                             text("Filter").font(Inter).fontSize(S::pt(9.5)).color(grey),
+    //                             text("Display").font(Inter).fontSize(S::pt(9.5)).color(grey)
+    //                         )
+    //                     ),
+    //                     div(S::percent(1.0), S::px(26), rgb(255,255,255,0.03f))
+    //                         .display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))
+    //                         .paddingLeft(S::px(14))
+    //                     (
+    //                         svg(std::string(A) + "lin-inprogress.svg", S::px(12), S::px(12)),
+    //                         text("In Progress").font(InterBold).fontSize(S::pt(9.5)).color(white),
+    //                         text("3").font(Inter).fontSize(S::pt(9.5)).color(dim)
+    //                     ),
+    //                     issueRow("lin-inprogress.svg", "BUT-142", "Sticky positioning inside nested scroll containers", "Layout", rgb(94,106,210)),
+    //                     issueRow("lin-inprogress.svg", "BUT-139", "SDF border joins for dashed elliptical corners", "Renderer", rgb(38,166,154)),
+    //                     issueRow("lin-inprogress.svg", "BUT-131", "Bidi reordering across inline spans", "Text", rgb(242,153,74)),
+    //                     div(S::percent(1.0), S::px(26), rgb(255,255,255,0.03f))
+    //                         .display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))
+    //                         .paddingLeft(S::px(14))
+    //                     (
+    //                         svg(std::string(A) + "lin-backlog.svg", S::px(12), S::px(12)),
+    //                         text("Todo").font(InterBold).fontSize(S::pt(9.5)).color(white),
+    //                         text("4").font(Inter).fontSize(S::pt(9.5)).color(dim)
+    //                     ),
+    //                     issueRow("lin-backlog.svg", "BUT-150", "Glyph atlas eviction under memory pressure", "Text", rgb(242,153,74)),
+    //                     issueRow("lin-backlog.svg", "BUT-148", "Grid auto-placement with dense packing", "Layout", rgb(94,106,210)),
+    //                     issueRow("lin-backlog.svg", "BUT-147", "Image rendition bins for HiDPI resizes", "Renderer", rgb(38,166,154)),
+    //                     issueRow("lin-done.svg",    "BUT-120", "openURL binding for link elements", "Runtime", rgb(235,87,87))
+    //                 )
+    //             )
+    //         ),
+
+    //         // ── Customers ──
+    //         div()
+    //             .width(S::percent(1.0))
+    //             .paddingTop(S::px(72))
+    //             .paddingLeft(S::px(48))
+    //             .paddingRight(S::px(48))
+    //             .display(Display::Flex)
+    //             .flexDirection(FlexDirection::Col)
+    //             .alignItems(AlignItems::Center)
+    //             .flexGap(S::px(26))
+    //         (
+    //             text("Powering the world's best product teams.").font(Inter).fontSize(S::pt(12)).color(grey),
+    //             div().display(Display::Flex).flexWrap(gui::FlexWrap::Wrap).justifyContent(JustifyContent::Center).flexGap(S::px(40))(
+    //                 customer("ramp"), customer("Vercel"), customer("CashApp"), customer("scale"),
+    //                 customer("perplexity"), customer("Retool"), customer("Mercury"), customer("Brex")
+    //             )
+    //         ),
+
+    //         // ── Features ──
+    //         div()
+    //             .width(S::percent(1.0))
+    //             .paddingTop(S::px(88))
+    //             .paddingBottom(S::px(96))
+    //             .paddingLeft(S::px(48))
+    //             .paddingRight(S::px(48))
+    //             .display(Display::Flex)
+    //             .flexDirection(FlexDirection::Col)
+    //             .flexGap(S::px(34))
+    //         (
+    //             div().maxWidth(S::px(520))(
+    //                 text("Made for modern product teams")
+    //                     .font(InterBold).fontSize(S::pt(28)).color(white).lineHeight(1.1)
+    //             ),
+    //             div().maxWidth(S::px(520))(
+    //                 text("Linear is shaped by the practices and principles that distinguish world-class product teams from the rest: relentless focus, fast execution, and a commitment to the quality of craft.")
+    //                     .font(Inter).fontSize(S::pt(12.5)).color(grey).lineHeight(1.5)
+    //             ),
+    //             div().width(S::percent(1.0)).display(Display::Flex).flexWrap(gui::FlexWrap::Wrap).flexGap(S::px(14))(
+    //                 featureCard("lin-bolt.svg",   "Purpose-built for product development", "Every part of Linear is designed to keep you in flow, from keyboard-first navigation to instant sync."),
+    //                 featureCard("lin-layers.svg", "Designed to move fast",                  "Optimistic updates and a local-first data layer make every interaction feel immediate."),
+    //                 featureCard("lin-doc.svg",    "Crafted to perfection",                  "Obsessive attention to typography, spacing, and motion, so the tool disappears behind the work.")
+    //             )
+    //         )
+    //     );
+    // }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // Clone: github.com repository page
+    // ═══════════════════════════════════════════════════════════════════
+    {
+        using S = gui::Size;
+        using gui::Display;
+        using gui::FlexDirection;
+        using gui::AlignItems;
+        using gui::JustifyContent;
+        using gui::Position;
+        using runtime::EventType;
+
+        constexpr auto rgb = [](int r, int g, int b, float a = 1.0f) {
+            return simd_float4{r / 255.0f, g / 255.0f, b / 255.0f, a};
+        };
+
+        const auto canvas   = rgb(255, 255, 255);
+        const auto subtle   = rgb(246, 248, 250);
+        const auto border   = rgb(209, 217, 224);
+        const auto fg       = rgb(31, 35, 40);
+        const auto muted    = rgb(89, 99, 110);
+        const auto link     = rgb(9, 105, 218);
+        const auto green    = rgb(31, 136, 61);
+        const auto orange   = rgb(253, 140, 115);
+        const auto clear    = rgb(0, 0, 0, 0.0f);
+
+        const std::string Sans     = Helvetica;
+        const std::string SansBold = ArialBold;
+        constexpr auto A = "/Users/treja/projects/gui/assets/clones/";
+
+        auto icon = [&](const char* name, float size = 16) {
+            return svg(std::string(A) + name, S::px(size), S::px(size)).flexShrink(S::px(0));
+        };
+
+        auto button = [&](simd_float4 bgColor, auto&&... contents) {
+            return div(S::autoSize(), S::px(28), bgColor)
+                .cornerRadius(S::px(6))
+                .borderColor(border)
+                .borderWidth(S::px(1))
+                .paddingLeft(S::px(10)).paddingRight(S::px(10))
+                .display(Display::Flex)
+                .alignItems(AlignItems::Center)
+                .flexGap(S::px(6))
+                .flexShrink(S::px(0))
+            (std::forward<decltype(contents)>(contents)...);
+        };
+
+        auto counter = [&](const char* n) {
+            return div(S::autoSize(), S::px(18), rgb(175, 184, 193, 0.2f))
+                .cornerRadius(S::px(9))
+                .paddingLeft(S::px(6)).paddingRight(S::px(6))
+                .display(Display::Flex)
+                .alignItems(AlignItems::Center)
+            (
+                text(n).font(SansBold).fontSize(S::pt(9)).color(fg)
+            );
+        };
+
+        auto tab = [&](const char* label, const char* count, bool active) {
+            auto t = div()
+                .height(S::px(46))
+                .paddingLeft(S::px(8)).paddingRight(S::px(8))
+                .display(Display::Flex)
+                .alignItems(AlignItems::Center)
+                .flexGap(S::px(8))
+                .flexShrink(S::px(0))
+                .position(Position::Relative)
+            (
+                text(label).font(active ? SansBold : Sans).fontSize(S::pt(10.5)).color(fg),
+                count ? counter(count) : div(S::px(0), S::px(0), clear)(),
+                div(S::percent(1.0), S::px(2), active ? orange : clear)
+                    .position(Position::Absolute)
+                    .bottom(S::px(0))
+                    .left(S::px(0))
+                    .cornerRadius(S::px(1))()
+            );
+            return t;
+        };
+
+        auto fileRow = [&](const char* iconName, const char* name, const char* message, const char* age) {
+            return div(S::autoSize(), S::px(38), canvas)
+                .display(Display::Flex)
+                .alignItems(AlignItems::Center)
+                .flexGap(S::px(10))
+                .paddingLeft(S::px(14)).paddingRight(S::px(14))
+                .borderColor(border)
+                .borderWidth(S::px(1))
+            (
+                icon(iconName),
+                div().width(S::px(150)).flexShrink(S::px(0)).overflow(gui::Overflow::Hidden)(
+                    text(name).font(Sans).fontSize(S::pt(10.5)).color(fg)
+                ),
+                div().flexGrow(S::px(1)).overflow(gui::Overflow::Hidden)(
+                    text(message).font(Sans).fontSize(S::pt(10.5)).color(muted).whiteSpace(gui::WhiteSpace::NoWrap)
+                ),
+                text(age).font(Sans).fontSize(S::pt(10.5)).color(muted).flexShrink(S::px(0))
+            );
+        };
+
+        auto pill = [&](const char* label) {
+            return div(S::autoSize(), S::px(22), rgb(221, 244, 255))
+                .cornerRadius(S::px(11))
+                .paddingLeft(S::px(9)).paddingRight(S::px(9))
+                .display(Display::Flex)
+                .alignItems(AlignItems::Center)
+            (
+                text(label).font(Sans).fontSize(S::pt(9.5)).color(link)
+            );
+        };
+
+        auto sideHeading = [&](const char* label) {
+            return text(label).font(SansBold).fontSize(S::pt(11.5)).color(fg);
+        };
+
+        auto langDot = [&](simd_float4 c, const char* name, const char* pct) {
+            return div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(6))(
+                div(S::px(8), S::px(8), c).cornerRadius(S::px(4))(),
+                text(name).font(SansBold).fontSize(S::pt(9.5)).color(fg),
+                text(pct).font(Sans).fontSize(S::pt(9.5)).color(muted)
+            );
+        };
+
+        auto paragraph = [&](const char* body) {
+            return div().marginBottom(S::px(14))(
+                text(body).font(Sans).fontSize(S::pt(11.5)).color(fg).lineHeight(1.55)
+            );
+        };
+
+        auto readmeHeading = [&](const char* title, float size) {
+            return div().paddingBottom(S::px(6)).marginBottom(S::px(14))
+                .borderColor(rgb(216, 222, 228)).borderWidth(S::px(1))
+            (
+                text(title).font(SansBold).fontSize(S::pt(size)).color(fg)
+            );
+        };
+
+        div(S::percent(1.0), S::percent(1.0), canvas)
+            .overflow(gui::Overflow::Scroll)
+        (
+            // ── Global header ──
+            div(S::percent(1.0), S::px(60), subtle)
+                .display(Display::Flex)
+                .alignItems(AlignItems::Center)
+                .flexGap(S::px(12))
+                .paddingLeft(S::px(16)).paddingRight(S::px(16))
+                .borderColor(border)
+                .borderWidth(S::px(1))
+            (
+                div(S::px(32), S::px(32), clear).cornerRadius(S::px(6)).borderColor(border).borderWidth(S::px(1))
+                    .display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::Center)
+                (
+                    div(S::px(14), S::px(2), fg).cornerRadius(S::px(1))()
+                ),
+                icon("gh-mark.svg", 32),
+                div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(4))(
+                    text("taanishr").font(Sans).fontSize(S::pt(11)).color(fg),
+                    text("/").font(Sans).fontSize(S::pt(11)).color(muted),
+                    text("butterfly").font(SansBold).fontSize(S::pt(11)).color(fg)
+                ),
+                div().flexGrow(S::px(1))(),
+                div(S::px(240), S::px(30), canvas)
+                    .cornerRadius(S::px(6))
+                    .borderColor(border)
+                    .borderWidth(S::px(1))
+                    .display(Display::Flex)
+                    .alignItems(AlignItems::Center)
+                    .justifyContent(JustifyContent::SpaceBetween)
+                    .paddingLeft(S::px(8)).paddingRight(S::px(6))
+                (
+                    div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(6))(
+                        icon("gh-search.svg", 14),
+                        text("Type / to search").font(Sans).fontSize(S::pt(10.5)).color(muted)
+                    ),
+                    div(S::px(20), S::px(20), clear).cornerRadius(S::px(4)).borderColor(border).borderWidth(S::px(1))
+                        .display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::Center)
+                    (
+                        text("/").font(Sans).fontSize(S::pt(9)).color(muted)
+                    )
+                ),
+                div(S::px(32), S::px(32), rgb(94, 106, 210)).cornerRadius(S::px(16))()
+            ),
+
+            // ── Repo header ──
+            div(S::percent(1.0), S::autoSize(), subtle)
+                .paddingLeft(S::px(24)).paddingRight(S::px(24))
+                .paddingTop(S::px(14))
+                .borderColor(border)
+                .borderWidth(S::px(1))
+                .display(Display::Flex)
+                .flexDirection(FlexDirection::Col)
+            (
+                div().display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::SpaceBetween)(
+                    div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
+                        icon("gh-repo.svg"),
+                        text("butterfly").font(SansBold).fontSize(S::pt(14)).color(fg)
+                            .addEventListener(EventType::Click, [](auto&, Event&) {
+                                AppKit_Extensions::openURL("https://github.com/taanishr/butterfly");
+                            }),
+                        div(S::autoSize(), S::px(20), clear)
+                            .cornerRadius(S::px(10))
+                            .borderColor(border).borderWidth(S::px(1))
+                            .paddingLeft(S::px(7)).paddingRight(S::px(7))
+                            .display(Display::Flex).alignItems(AlignItems::Center)
+                        (
+                            text("Public").font(Sans).fontSize(S::pt(9)).color(muted)
+                        )
+                    ),
+                    div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
+                        button(subtle, icon("gh-eye.svg"),  text("Watch").font(SansBold).fontSize(S::pt(10)).color(fg), counter("4")),
+                        button(subtle, icon("gh-fork.svg"), text("Fork").font(SansBold).fontSize(S::pt(10)).color(fg),  counter("12")),
+                        button(subtle, icon("gh-star.svg"), text("Star").font(SansBold).fontSize(S::pt(10)).color(fg),  counter("318"))
+                    )
+                ),
+                div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(6)).marginTop(S::px(10))(
+                    tab("Code", nullptr, true),
+                    tab("Issues", "7", false),
+                    tab("Pull requests", "2", false),
+                    tab("Actions", nullptr, false),
+                    tab("Projects", nullptr, false),
+                    tab("Wiki", nullptr, false),
+                    tab("Security", nullptr, false),
+                    tab("Insights", nullptr, false)
+                )
+            ),
+
+            // ── Body ──
+            div()
+                .width(S::percent(1.0))
+                .padding(S::px(24))
+                .display(Display::Grid)
+                .gridTemplateColumns({S::fr(1), S::px(230)})
+                .gridColumnGap(S::px(24))
+            (
+                // main column
+                div()(
+                    // branch bar
+                    div().display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::SpaceBetween)(
+                        div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
+                            button(subtle, icon("gh-branch.svg"), text("main").font(SansBold).fontSize(S::pt(10)).color(fg), text("▾").font(Sans).fontSize(S::pt(9)).color(muted)),
+                            div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(5))(
+                                icon("gh-branch.svg", 14),
+                                text("3 Branches").font(Sans).fontSize(S::pt(10)).color(muted)
+                            )
+                        ),
+                        div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
+                            button(subtle, text("Add file").font(SansBold).fontSize(S::pt(10)).color(fg), text("▾").font(Sans).fontSize(S::pt(9)).color(muted)),
+                            button(green, text("<> Code").font(SansBold).fontSize(S::pt(10)).color(canvas), text("▾").font(Sans).fontSize(S::pt(9)).color(canvas))
+                        )
+                    ),
+                    // file table
+                    div().marginTop(S::px(16)).cornerRadius(S::px(6)).borderColor(border).borderWidth(S::px(1)).overflow(gui::Overflow::Hidden)(
+                        div(S::autoSize(), S::px(44), subtle)
+                            .display(Display::Flex)
+                            .alignItems(AlignItems::Center)
+                            .justifyContent(JustifyContent::SpaceBetween)
+                            .paddingLeft(S::px(14)).paddingRight(S::px(14))
+                            .borderColor(border).borderWidth(S::px(1))
+                        (
+                            div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
+                                div(S::px(20), S::px(20), rgb(94, 106, 210)).cornerRadius(S::px(10))(),
+                                text("taanishr").font(SansBold).fontSize(S::pt(10.5)).color(fg),
+                                text("removal of measure, added an openURL binding").font(Sans).fontSize(S::pt(10.5)).color(muted)
+                            ),
+                            div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
+                                icon("gh-check.svg", 14),
+                                text("5f55633").font(SFMono).fontSize(S::pt(9.5)).color(muted),
+                                text("· 2 hours ago").font(Sans).fontSize(S::pt(10.5)).color(muted),
+                                counter("184 Commits")
+                            )
+                        ),
+                        fileRow("gh-folder.svg", "apple-extensions", "Swift AppKit/MTK bridge for the metal-cpp side",   "3 weeks ago"),
+                        fileRow("gh-folder.svg", "assets",           "Add plane.svg for resvg smoke test",                "2 months ago"),
+                        fileRow("gh-folder.svg", "blog",             "Post: SDF borders and why dashed corners are hard", "last week"),
+                        fileRow("gh-folder.svg", "scripts",          "ship.sh: add --frame-width/--frame-height",         "2 weeks ago"),
+                        fileRow("gh-folder.svg", "src",              "removal of measure, added an openURL binding",      "2 hours ago"),
+                        fileRow("gh-folder.svg", "tests",            "Layout: browser reference compare harness",         "3 weeks ago"),
+                        fileRow("gh-file.svg",   "AGENTS.md",        "Agent guidance",                                    "last month"),
+                        fileRow("gh-file.svg",   "CMakeLists.txt",   "Frame size cache variables",                        "2 weeks ago"),
+                        fileRow("gh-file.svg",   "CMakePresets.json","Add profile-inspector preset",                      "last month"),
+                        fileRow("gh-file.svg",   "LICENSE",          "Initial commit",                                    "last year"),
+                        fileRow("gh-file.svg",   "README.md",        "Fix typo in Scene I section of README",             "yesterday"),
+                        fileRow("gh-file.svg",   "ROADMAP.md",       "Roadmap: text shaping, grid dense packing",         "3 weeks ago")
+                    ),
+                    // README
+                    div().marginTop(S::px(16)).cornerRadius(S::px(6)).borderColor(border).borderWidth(S::px(1))(
+                        div(S::autoSize(), S::px(44), canvas)
+                            .display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(16))
+                            .paddingLeft(S::px(14))
+                            .borderColor(border).borderWidth(S::px(1))
+                        (
+                            text("README").font(SansBold).fontSize(S::pt(10.5)).color(fg),
+                            text("MIT license").font(Sans).fontSize(S::pt(10.5)).color(muted)
+                        ),
+                        div().padding(S::px(28))(
+                            readmeHeading("Butterfly - A declarative, GPU-rendered UI library", 20),
+                            readmeHeading("Synopsis:", 15),
+                            paragraph("Butterfly is a declarative, GPU-rendered UI library that aims to implement a useful enough subset of the HTML/CSS standard. The library itself loosely follows the CSS spec (it is a pain to read)."),
+                            paragraph("Butterfly is largely written in C++, with a few Swift bindings. It currently only supports MacOS, as it relies on Metal as its graphics api."),
+                            div().marginBottom(S::px(14))(
+                                text("Currently, there is support for:").font(Sans).fontSize(S::pt(11.5)).color(fg)
+                            ),
+                            div().paddingLeft(S::px(22)).display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(4))(
+                                text("•  Four semantic elements: SVGs, Images, Divs, Text").font(Sans).fontSize(S::pt(11.5)).color(fg),
+                                text("•  Display modes: Flexbox, Grid, Block, Inline").font(Sans).fontSize(S::pt(11.5)).color(fg),
+                                text("•  Positioning: Static, Relative, Absolute, Fixed, Sticky").font(Sans).fontSize(S::pt(11.5)).color(fg),
+                                text("•  Many many many borders").font(Sans).fontSize(S::pt(11.5)).color(fg),
+                                text("•  Super smooth text, unicode support, bidi support").font(Sans).fontSize(S::pt(11.5)).color(fg)
+                            )
+                        )
+                    )
+                ),
+                // sidebar
+                div().display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(14))(
+                    sideHeading("About"),
+                    div()(
+                        text("A declarative, GPU-rendered UI library for macOS. Flexbox, grid, sticky positioning, SDF borders, and real text — on Metal.")
+                            .font(Sans).fontSize(S::pt(10.5)).color(fg).lineHeight(1.5)
+                    ),
+                    div().display(Display::Flex).flexWrap(gui::FlexWrap::Wrap).flexGap(S::px(5))(
+                        pill("metal"), pill("cpp"), pill("gui"), pill("flexbox"), pill("css-grid"), pill("sdf"), pill("freetype")
+                    ),
+                    div().display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(8))(
+                        text("Readme").font(Sans).fontSize(S::pt(10.5)).color(muted),
+                        text("MIT license").font(Sans).fontSize(S::pt(10.5)).color(muted),
+                        div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(5))(
+                            icon("gh-star.svg", 14), text("318 stars").font(Sans).fontSize(S::pt(10.5)).color(muted)
+                        ),
+                        div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(5))(
+                            icon("gh-eye.svg", 14), text("4 watching").font(Sans).fontSize(S::pt(10.5)).color(muted)
+                        ),
+                        div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(5))(
+                            icon("gh-fork.svg", 14), text("12 forks").font(Sans).fontSize(S::pt(10.5)).color(muted)
+                        )
+                    ),
+                    div(S::percent(1.0), S::px(1), border).marginTop(S::px(6))(),
+                    div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(6))(
+                        sideHeading("Releases"), counter("3")
+                    ),
+                    div().display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(3))(
+                        text("v0.1.0 — Sticky & SDF borders").font(SansBold).fontSize(S::pt(10.5)).color(fg),
+                        text("Latest · 2 weeks ago").font(Sans).fontSize(S::pt(9.5)).color(muted)
+                    ),
+                    div(S::percent(1.0), S::px(1), border).marginTop(S::px(6))(),
+                    sideHeading("Languages"),
+                    div(S::percent(1.0), S::px(8), clear).cornerRadius(S::px(4)).overflow(gui::Overflow::Hidden).display(Display::Flex).flexGap(S::px(2))(
+                        div(S::percent(0.78), S::percent(1.0), rgb(243, 75, 125))(),
+                        div(S::percent(0.11), S::percent(1.0), rgb(240, 80, 50))(),
+                        div(S::percent(0.07), S::percent(1.0), rgb(175, 210, 155))(),
+                        div(S::percent(0.04), S::percent(1.0), rgb(218, 91, 11))()
+                    ),
+                    div().display(Display::Flex).flexWrap(gui::FlexWrap::Wrap).flexGap(S::px(12))(
+                        langDot(rgb(243, 75, 125), "C++", "78.4%"),
+                        langDot(rgb(240, 80, 50), "Swift", "10.9%"),
+                        langDot(rgb(175, 210, 155), "Metal", "6.8%"),
+                        langDot(rgb(218, 91, 11), "CMake", "3.9%")
+                    )
+                )
+            )
+        );
+    }
+
+    // // ═══════════════════════════════════════════════════════════════════
+    // // Clone: en.wikipedia.org article (Vector 2022 skin)
+    // // ═══════════════════════════════════════════════════════════════════
+    // {
+    //     using S = gui::Size;
+    //     using gui::Display;
+    //     using gui::FlexDirection;
+    //     using gui::AlignItems;
+    //     using gui::JustifyContent;
+    //     using gui::Position;
+
+    //     constexpr auto rgb = [](int r, int g, int b, float a = 1.0f) {
+    //         return simd_float4{r / 255.0f, g / 255.0f, b / 255.0f, a};
+    //     };
+
+    //     const auto paper    = rgb(255, 255, 255);
+    //     const auto chrome   = rgb(248, 249, 250);
+    //     const auto rule     = rgb(162, 169, 177);
+    //     const auto softRule = rgb(234, 236, 240);
+    //     const auto ink      = rgb(32, 33, 34);
+    //     const auto muted    = rgb(84, 89, 93);
+    //     const auto link     = rgb(51, 102, 204);
+    //     const auto visited  = rgb(121, 92, 161);
+    //     const auto infobox  = rgb(248, 249, 250);
+    //     const auto taxon    = rgb(211, 211, 211);
+    //     const auto clear    = rgb(0, 0, 0, 0.0f);
+
+    //     const std::string Sans     = Helvetica;
+    //     const std::string SansBold = ArialBold;
+    //     const std::string Serif    = "/System/Library/Fonts/Supplemental/Georgia.ttf";
+    //     constexpr auto A = "/Users/treja/projects/gui/assets/clones/";
+    //     constexpr auto butterflyPath = "/Users/treja/projects/gui/assets/butterfly.png";
+
+    //     auto body = [&](const char* s) { return text(s).font(Sans).fontSize(S::pt(11)).color(ink).lineHeight(1.6); };
+    //     auto a    = [&](const char* s) { return text(s).font(Sans).fontSize(S::pt(11)).color(link).lineHeight(1.6); };
+    //     auto sup  = [&](const char* s) { return text(s).font(Sans).fontSize(S::pt(7.5)).color(link); };
+
+    //     auto heading = [&](const char* title) {
+    //         return div().width(S::percent(1.0)).marginTop(S::px(22)).marginBottom(S::px(8))
+    //             .paddingBottom(S::px(3))
+    //             .borderColor(rule).borderWidth(S::px(1))
+    //         (
+    //             text(title).font(Serif).fontSize(S::pt(17)).color(ink)
+    //         );
+    //     };
+
+    //     auto tocItem = [&](const char* label, bool active, int indent = 0) {
+    //         return div().display(Display::Flex).alignItems(AlignItems::Center).paddingLeft(S::px(indent * 14))(
+    //             div(S::px(2), S::px(16), active ? rgb(51, 102, 204) : clear).marginRight(S::px(8))(),
+    //             text(label).font(Sans).fontSize(S::pt(10)).color(active ? ink : link)
+    //         );
+    //     };
+
+    //     auto tab = [&](const char* label, bool active) {
+    //         return div()
+    //             .height(S::px(38))
+    //             .paddingLeft(S::px(8)).paddingRight(S::px(8))
+    //             .display(Display::Flex)
+    //             .alignItems(AlignItems::Center)
+    //             .position(Position::Relative)
+    //         (
+    //             text(label).font(Sans).fontSize(S::pt(10.5)).color(active ? ink : link),
+    //             div(S::percent(1.0), S::px(1), active ? rgb(51, 102, 204) : clear)
+    //                 .position(Position::Absolute).bottom(S::px(0)).left(S::px(0))()
+    //         );
+    //     };
+
+    //     auto infoRow = [&](const char* k, const char* v, bool italic = false) {
+    //         return div().width(S::percent(1.0)).display(Display::Flex).alignItems(AlignItems::Center)
+    //             .paddingTop(S::px(1)).paddingBottom(S::px(1))
+    //         (
+    //             div().width(S::px(80)).flexShrink(S::px(0))(
+    //                 text(k).font(SansBold).fontSize(S::pt(9)).color(ink)
+    //             ),
+    //             text(v).font(Sans).fontSize(S::pt(9)).color(italic ? ink : link)
+    //         );
+    //     };
+
+    //     auto taxonHeader = [&](const char* label) {
+    //         return div(S::percent(1.0), S::autoSize(), taxon)
+    //             .paddingTop(S::px(3)).paddingBottom(S::px(3))
+    //             .display(Display::Flex).justifyContent(JustifyContent::Center)
+    //         (
+    //             text(label).font(SansBold).fontSize(S::pt(9.5)).color(ink)
+    //         );
+    //     };
+
+    //     div(S::percent(1.0), S::percent(1.0), paper)
+    //         .overflow(gui::Overflow::Scroll)
+    //     (
+    //         // ── Header ──
+    //         div(S::percent(1.0), S::px(50), paper)
+    //             .position(Position::Sticky)
+    //             .top(S::px(0))
+    //             .zIndex(10)
+    //             .display(Display::Flex)
+    //             .alignItems(AlignItems::Center)
+    //             .justifyContent(JustifyContent::SpaceBetween)
+    //             .paddingLeft(S::px(16)).paddingRight(S::px(16))
+    //             .borderColor(softRule).borderWidth(S::px(1))
+    //         (
+    //             div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(14))(
+    //                 div().display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(3)).width(S::px(16))(
+    //                     div(S::percent(1.0), S::px(2), ink)(),
+    //                     div(S::percent(1.0), S::px(2), ink)(),
+    //                     div(S::percent(1.0), S::px(2), ink)()
+    //                 ),
+    //                 div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
+    //                     div(S::px(36), S::px(36), rgb(230, 232, 235)).cornerRadius(S::px(18))
+    //                         .display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::Center)
+    //                     (
+    //                         text("W").font(Serif).fontSize(S::pt(20)).color(ink)
+    //                     ),
+    //                     div().display(Display::Flex).flexDirection(FlexDirection::Col)(
+    //                         text("WIKIPEDIA").font(Serif).fontSize(S::pt(15)).color(ink),
+    //                         text("The Free Encyclopedia").font(Serif).fontSize(S::pt(7.5)).color(ink)
+    //                     )
+    //                 ),
+    //                 div(S::px(300), S::px(32), paper)
+    //                     .cornerRadius(S::px(2))
+    //                     .borderColor(rule).borderWidth(S::px(1))
+    //                     .display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))
+    //                     .paddingLeft(S::px(8))
+    //                     .marginLeft(S::px(10))
+    //                 (
+    //                     svg(std::string(A) + "wiki-search.svg", S::px(14), S::px(14)),
+    //                     text("Search Wikipedia").font(Sans).fontSize(S::pt(10.5)).color(muted).flexGrow(S::px(1)),
+    //                     div(S::autoSize(), S::percent(1.0), chrome)
+    //                         .paddingLeft(S::px(10)).paddingRight(S::px(10))
+    //                         .borderColor(rule).borderWidth(S::px(1))
+    //                         .display(Display::Flex).alignItems(AlignItems::Center)
+    //                     (
+    //                         text("Search").font(Sans).fontSize(S::pt(10.5)).color(ink)
+    //                     )
+    //                 )
+    //             ),
+    //             div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(14))(
+    //                 text("Donate").font(Sans).fontSize(S::pt(10.5)).color(link),
+    //                 text("Create account").font(Sans).fontSize(S::pt(10.5)).color(link),
+    //                 text("Log in").font(Sans).fontSize(S::pt(10.5)).color(link),
+    //                 text("···").font(Sans).fontSize(S::pt(10.5)).color(muted)
+    //             )
+    //         ),
+
+    //         // ── Page grid: TOC | article ──
+    //         div()
+    //             .width(S::percent(1.0))
+    //             .display(Display::Grid)
+    //             .gridTemplateColumns({S::px(180), S::fr(1)})
+    //             .gridColumnGap(S::px(20))
+    //             .paddingLeft(S::px(16)).paddingRight(S::px(16))
+    //             .paddingTop(S::px(16))
+    //         (
+    //             // TOC
+    //             div().display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(9)).paddingTop(S::px(48))(
+    //                 div().display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::SpaceBetween).paddingBottom(S::px(6))(
+    //                     text("Contents").font(SansBold).fontSize(S::pt(10.5)).color(ink),
+    //                     text("hide").font(Sans).fontSize(S::pt(9)).color(link)
+    //                 ),
+    //                 tocItem("(Top)", true),
+    //                 tocItem("Etymology", false),
+    //                 tocItem("Distribution and diversity", false),
+    //                 tocItem("Phylogeny and evolution", false),
+    //                 tocItem("Life cycle", false),
+    //                 tocItem("Egg", false, 1),
+    //                 tocItem("Larva", false, 1),
+    //                 tocItem("Pupa", false, 1),
+    //                 tocItem("Adult", false, 1),
+    //                 tocItem("Ecology", false),
+    //                 tocItem("Behaviour", false),
+    //                 tocItem("In culture", false),
+    //                 tocItem("See also", false),
+    //                 tocItem("References", false)
+    //             ),
+
+    //             // Article
+    //             div().display(Display::Flex).flexDirection(FlexDirection::Col)(
+    //                 // title + tabs row
+    //                 div().width(S::percent(1.0)).display(Display::Flex).alignItems(AlignItems::FlexEnd).justifyContent(JustifyContent::SpaceBetween)
+    //                     .borderColor(rule).borderWidth(S::px(1))
+    //                 (
+    //                     div().display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(2)).paddingBottom(S::px(3))(
+    //                         text("Butterfly").font(Serif).fontSize(S::pt(25)).color(ink)
+    //                     ),
+    //                     div().display(Display::Flex).alignItems(AlignItems::Center)(
+    //                         tab("Article", true), tab("Talk", false),
+    //                         div(S::px(20), S::px(1), clear)(),
+    //                         tab("Read", true), tab("Edit", false), tab("View history", false), tab("Tools ▾", false)
+    //                     )
+    //                 ),
+    //                 div().marginTop(S::px(6)).marginBottom(S::px(12))(
+    //                     text("From Wikipedia, the free encyclopedia").font(Sans).fontSize(S::pt(9.5)).color(muted)
+    //                 ),
+
+    //                 // body grid: text | infobox
+    //                 div().width(S::percent(1.0)).display(Display::Flex).flexGap(S::px(20))(
+    //                     div().flexGrow(S::px(1)).minWidth(S::px(200))(
+    //                         div().width(S::percent(1.0)).marginBottom(S::px(12))(
+    //                             body("For other uses, see "), a("Butterfly (disambiguation)"), body(".")
+    //                         ),
+    //                         div().width(S::percent(1.0)).marginBottom(S::px(12))(
+    //                             text("Butterflies").font(SansBold).fontSize(S::pt(11)).color(ink).lineHeight(1.6),
+    //                             body(" are winged "), a("insects"), body(" from the "), a("lepidopteran"),
+    //                             body(" suborder "), a("Rhopalocera"),
+    //                             body(", characterized by large, often brightly coloured wings that often fold together when at rest, and a conspicuous, fluttering flight. The oldest butterfly fossils have been dated to the "),
+    //                             a("Paleocene"), body(", about 56 million years ago, though molecular evidence suggests that they may have originated in the "),
+    //                             a("Late Cretaceous"), body(".")
+    //                         ),
+    //                         div().width(S::percent(1.0)).marginBottom(S::px(12))(
+    //                             body("Butterflies have a four-stage "), a("life cycle"), body(", and like other "), a("holometabolous"),
+    //                             body(" insects they undergo complete "), a("metamorphosis"),
+    //                             body(". Winged adults lay eggs on the food plant on which their "), a("larvae"),
+    //                             body(", known as "), a("caterpillars"), body(", will feed. The caterpillars grow, sometimes very rapidly, and when fully developed, "),
+    //                             a("pupate"), body(" in a "), a("chrysalis"),
+    //                             body(". When metamorphosis is complete, the pupal skin splits, the adult insect climbs out, expands its wings to dry, and flies off."), sup("[1]")
+    //                         ),
+    //                         div().width(S::percent(1.0)).marginBottom(S::px(12))(
+    //                             body("Some butterflies, especially in the tropics, have several generations in a year, while others have a single generation, and a few in cold locations may take several years to pass through their entire life cycle. Butterflies are often "),
+    //                             a("polymorphic"), body(", and many species make use of "), a("camouflage"), body(", "), a("mimicry"),
+    //                             body(", and "), a("aposematism"), body(" to evade their predators."), sup("[2]")
+    //                         ),
+
+    //                         heading("Etymology"),
+    //                         div().width(S::percent(1.0)).marginBottom(S::px(12))(
+    //                             body("The "), a("Oxford English Dictionary"),
+    //                             body(" derives the word straightforwardly from "), a("Old English"),
+    //                             text(" butorflēoge").font(Sans).fontSize(S::pt(11)).color(ink).lineHeight(1.6),
+    //                             body(", butter-fly; similar names in Old Dutch and Old High German show that the name is ancient, but modern Dutch and German use different words ("),
+    //                             text("vlinder").font(Sans).fontSize(S::pt(11)).color(ink), body(" and "),
+    //                             text("Schmetterling").font(Sans).fontSize(S::pt(11)).color(ink),
+    //                             body("). Butterflies were thought to steal milk and butter, or that they fly around in fields during the spring, when the grass is green and the butter is yellow."), sup("[3]")
+    //                         ),
+
+    //                         heading("Distribution and diversity"),
+    //                         div().width(S::percent(1.0)).marginBottom(S::px(12))(
+    //                             body("Butterflies are distributed worldwide except "), a("Antarctica"),
+    //                             body(", totalling some 18,500 species. Of these, 775 are "), a("Nearctic"),
+    //                             body("; 7,700 "), a("Neotropical"), body("; 1,575 "), a("Palearctic"), body("; 3,650 "), a("Afrotropical"),
+    //                             body("; and 4,800 are distributed across the combined "), a("Oriental"), body(" and "), a("Australian/Oceania"),
+    //                             body(" regions."), sup("[4]"),
+    //                             body(" The "), a("monarch butterfly"),
+    //                             body(" is native to the Americas, but in the nineteenth century or before, spread across the world, and is now found in Australia, New Zealand, other parts of Oceania, and the Iberian Peninsula.")
+    //                         ),
+
+    //                         heading("Phylogeny and evolution"),
+    //                         div().width(S::percent(1.0)).marginBottom(S::px(12))(
+    //                             body("The earliest "), a("Lepidoptera"), body(" fossils date to the "), a("Triassic"), body("–"), a("Jurassic"),
+    //                             body(" boundary, around 200 million years ago."), sup("[5]"),
+    //                             body(" Butterflies evolved from "), a("moths"),
+    //                             body(", so while the butterflies are "), a("monophyletic"),
+    //                             body(" (forming a single clade), the moths are not. The oldest known butterfly is "),
+    //                             text("Protocoeliades kristenseni").font(Sans).fontSize(S::pt(11)).color(link),
+    //                             body(" from the Palaeocene aged "), a("Fur Formation"), body(" of Denmark, approximately 55 million years old.")
+    //                         )
+    //                     ),
+
+    //                     // infobox
+    //                     div(S::px(230), S::autoSize(), infobox)
+    //                         .flexShrink(S::px(0))
+    //                         .borderColor(rgb(162, 169, 177)).borderWidth(S::px(1))
+    //                         .padding(S::px(4))
+    //                         .display(Display::Flex)
+    //                         .flexDirection(FlexDirection::Col)
+    //                         .flexGap(S::px(4))
+    //                     (
+    //                         div(S::percent(1.0), S::autoSize(), rgb(211, 211, 211))
+    //                             .paddingTop(S::px(5)).paddingBottom(S::px(5))
+    //                             .display(Display::Flex).flexDirection(FlexDirection::Col).alignItems(AlignItems::Center)
+    //                         (
+    //                             text("Butterflies").font(SansBold).fontSize(S::pt(12)).color(ink),
+    //                             text("Temporal range: Paleocene–present").font(Sans).fontSize(S::pt(8)).color(ink)
+    //                         ),
+    //                         image(butterflyPath, S::percent(1.0), S::autoSize()).aspectRatio(1, 1),
+    //                         div().width(S::percent(1.0)).display(Display::Flex).justifyContent(JustifyContent::Center).paddingBottom(S::px(4))(
+    //                             text("A Peacock butterfly, Aglais io").font(Sans).fontSize(S::pt(8.5)).color(ink)
+    //                         ),
+    //                         taxonHeader("Scientific classification"),
+    //                         div().width(S::percent(1.0)).display(Display::Flex).flexDirection(FlexDirection::Col).paddingLeft(S::px(4))(
+    //                             infoRow("Kingdom:", "Animalia"),
+    //                             infoRow("Phylum:", "Arthropoda"),
+    //                             infoRow("Class:", "Insecta"),
+    //                             infoRow("Order:", "Lepidoptera"),
+    //                             infoRow("Suborder:", "Rhopalocera", true)
+    //                         ),
+    //                         taxonHeader("Superfamilies"),
+    //                         div().width(S::percent(1.0)).display(Display::Flex).flexDirection(FlexDirection::Col).alignItems(AlignItems::Center).flexGap(S::px(2)).paddingTop(S::px(2)).paddingBottom(S::px(4))(
+    //                             text("Hedyloidea").font(Sans).fontSize(S::pt(9)).color(link),
+    //                             text("Hesperioidea").font(Sans).fontSize(S::pt(9)).color(link),
+    //                             text("Papilionoidea").font(Sans).fontSize(S::pt(9)).color(visited)
+    //                         )
+    //                     )
+    //                 ),
+
+    //                 div(S::percent(1.0), S::px(64), clear)()
+    //             )
     //         )
     //     );
     // }
