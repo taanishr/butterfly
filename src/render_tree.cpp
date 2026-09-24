@@ -625,12 +625,12 @@ namespace tree {
                 .automaticMinimumHeight = AutomaticMinimum::Zero,
             };
 
-        if (intrinsicWidthRequestOverride) {
+        if (intrinsicWidthRequestOverride.value_or(IntrinsicRequest::None) != IntrinsicRequest::None) {
             sizeRequest.intrinsicWidthRequest = intrinsicWidthRequestOverride;
             sizeRequest.resolvingIntrinsicWidth = true;
         }
 
-        if (intrinsicHeightRequestOverride) {
+        if (intrinsicHeightRequestOverride.value_or(IntrinsicRequest::None) != IntrinsicRequest::None) {
             sizeRequest.intrinsicHeightRequest = intrinsicHeightRequestOverride;
             sizeRequest.resolvingIntrinsicHeight = true;
         }

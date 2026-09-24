@@ -147,8 +147,8 @@ namespace layout {
                                             ? AutomaticMinimum::Zero
                                             : AutomaticMinimum::ContentBased
                                           ),
-                .intrinsicWidthRequest = flex.axis.isRow ? std::optional{IntrinsicRequest::Both} : std::nullopt,
-                .intrinsicHeightRequest = flex.axis.isRow ? std::nullopt : std::optional{IntrinsicRequest::Both},
+                .intrinsicWidthRequest = flex.axis.isRow ? IntrinsicRequest::Both : IntrinsicRequest::None,
+                .intrinsicHeightRequest = flex.axis.isRow ? IntrinsicRequest::None : IntrinsicRequest::Both,
             };
 
             /*
@@ -266,8 +266,8 @@ namespace layout {
                     .automaticHeight = AutomaticSizing::UseContent,
                     .automaticMinimumWidth = AutomaticMinimum::Zero,
                     .automaticMinimumHeight = AutomaticMinimum::Zero,
-                    .intrinsicWidthRequest = flex.axis.isRow ? std::nullopt : std::optional{IntrinsicRequest::Both},
-                    .intrinsicHeightRequest = flex.axis.isRow ? std::optional{IntrinsicRequest::Both} : std::nullopt,
+                    .intrinsicWidthRequest = flex.axis.isRow ? IntrinsicRequest::None : IntrinsicRequest::Both,
+                    .intrinsicHeightRequest = flex.axis.isRow ? IntrinsicRequest::Both : IntrinsicRequest::None,
 
                 };
 
@@ -486,15 +486,26 @@ namespace layout {
         fr.phaseB();
         auto result = fr.phaseC();
 
-        if (sizeRequest.resolvingIntrinsicWidth || sizeRequest.resolvingIntrinsicHeight) {
-            const IntrinsicResult& intrinsicSizes = sizeRequest.resolvingIntrinsicWidth
-                ? (flexContext.axis.isRow ? result.mainIntrinsicSizes : result.crossIntrinsicSizes)
-                : (flexContext.axis.isRow ? result.crossIntrinsicSizes : result.mainIntrinsicSizes);
+        if (sizeRequest.resolvingIntrinsicWidth) {
+            const IntrinsicResult& widthSizes = flexContext.axis.isRow ? result.mainIntrinsicSizes : result.crossIntrinsicSizes;
 
-            return IntrinsicSizes {
-                .minimum = std::get<float>(intrinsicSizes.minimum),
-                .maximum = std::get<float>(intrinsicSizes.maximum)
+            IntrinsicSizes content {
+                .minimum = std::get<float>(widthSizes.minimum),
+                .maximum = std::get<float>(widthSizes.maximum)
             };
+
+            return resolveContributionWidth(content, sizeResult);
+        }
+
+        if (sizeRequest.resolvingIntrinsicHeight) {
+            const IntrinsicResult& heightSizes = flexContext.axis.isRow ? result.crossIntrinsicSizes : result.mainIntrinsicSizes;
+
+            IntrinsicSizes content {
+                .minimum = std::get<float>(heightSizes.minimum),
+                .maximum = std::get<float>(heightSizes.maximum)
+            };
+
+            return resolveContributionHeight(content, sizeResult);
         }
 
         return std::nullopt;

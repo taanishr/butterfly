@@ -153,22 +153,6 @@ namespace layout {
             intrinsicResult = IntrinsicSizes{};
         }
 
-        if (std::holds_alternative<float>(sizeResult.outerSize.width)) {
-            float outerWidth = std::get<float>(sizeResult.outerSize.width);
-
-            if (sizeRequest.resolvingIntrinsicWidth) {
-                intrinsicResult = IntrinsicSizes {.minimum = outerWidth, .maximum = outerWidth};
-            }
-        }
-
-        if (std::holds_alternative<float>(sizeResult.outerSize.height)) {
-            float outerHeight = std::get<float>(sizeResult.outerSize.height);
-
-            if (sizeRequest.resolvingIntrinsicHeight) {
-                intrinsicResult = IntrinsicSizes {.minimum = outerHeight, .maximum = outerHeight};
-            }
-        }
-
         InlineSizingInput inlineSizing {
             .availableWidth = childConstraints.availableWidth,
             .widthRequest = sizeRequest.intrinsicWidthRequest,
@@ -214,6 +198,14 @@ namespace layout {
 
             }
             }, childOutput.layout);
+        }
+
+        if (sizeRequest.resolvingIntrinsicWidth) {
+            return resolveContributionWidth(*intrinsicResult, sizeResult);
+        }
+
+        if (sizeRequest.resolvingIntrinsicHeight) {
+            return resolveContributionHeight(*intrinsicResult, sizeResult);
         }
 
         return intrinsicResult;

@@ -1539,6 +1539,7 @@ namespace layout {
                     : AutomaticMinimum::ContentBased,
                 .automaticMinimumHeight = AutomaticMinimum::Zero,
                 .intrinsicWidthRequest = IntrinsicRequest::Both,
+                .intrinsicHeightRequest = IntrinsicRequest::None,
             };
 
             preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(tree, childNode, frameInfo, preparedChildConstraints, childRequest, {
@@ -1669,6 +1670,7 @@ namespace layout {
                 .automaticMinimumHeight = childNode->shared.overflow == Overflow::Scroll
                     ? AutomaticMinimum::Zero
                     : AutomaticMinimum::ContentBased,
+                .intrinsicWidthRequest = IntrinsicRequest::None,
                 .intrinsicHeightRequest = IntrinsicRequest::Both,
             };
 
@@ -1932,11 +1934,12 @@ namespace layout {
         gr.phaseB();
 
         gr.phaseC();
-        if (sizeRequest.resolvingIntrinsicWidth || sizeRequest.resolvingIntrinsicHeight) {
-            const IntrinsicSizes& intrinsicSizes = sizeRequest.resolvingIntrinsicWidth
-                ? gr.gridLayout.columnIntrinsicSizes
-                : gr.gridLayout.rowIntrinsicSizes;
-            return intrinsicSizes;
+        if (sizeRequest.resolvingIntrinsicWidth) {
+            return resolveContributionWidth(gr.gridLayout.columnIntrinsicSizes, sizeResult);
+        }
+
+        if (sizeRequest.resolvingIntrinsicHeight) {
+            return resolveContributionHeight(gr.gridLayout.rowIntrinsicSizes, sizeResult);
         }
 
         return std::nullopt;

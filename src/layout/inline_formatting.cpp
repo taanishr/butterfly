@@ -597,7 +597,7 @@ namespace tree {
 
         reorderLineFragments(*context);
 
-        if (sizing.trackIntrinsicWidth) {
+        if (sizing.trackIntrinsicWidth && sizing.widthRequest != IntrinsicRequest::None) {
             if (sizing.widthRequest != IntrinsicRequest::Minimum) {
                 InlineSizingInput minimumSizing {
                     .availableWidth = std::monostate{},
@@ -720,8 +720,8 @@ namespace tree {
                         .automaticMinimumHeight = AutomaticMinimum::Zero,
                         .intrinsicWidthRequest = request.intrinsicWidthRequest,
                         .intrinsicHeightRequest = request.intrinsicHeightRequest,
-                        .resolvingIntrinsicWidth = request.intrinsicWidthRequest.has_value(),
-                        .resolvingIntrinsicHeight = request.intrinsicHeightRequest.has_value(),
+                        .resolvingIntrinsicWidth = request.intrinsicWidthRequest.value_or(IntrinsicRequest::None) != IntrinsicRequest::None,
+                        .resolvingIntrinsicHeight = request.intrinsicHeightRequest.value_or(IntrinsicRequest::None) != IntrinsicRequest::None,
                     };
                     const auto sizeResult = evaluateSize(tree, child.get(), frameInfo, constraints, childRequest, sizeCache);
                     const auto& run = child->textBidiInput->runs.front();
@@ -757,7 +757,7 @@ namespace tree {
 
         reorderLineFragments(*context);
 
-        if (sizing.trackIntrinsicWidth) {
+        if (sizing.trackIntrinsicWidth && sizing.widthRequest != IntrinsicRequest::None) {
             if (sizing.widthRequest != IntrinsicRequest::Minimum) {
                 InlineSizingInput minimumSizing {
                     .availableWidth = std::monostate{},

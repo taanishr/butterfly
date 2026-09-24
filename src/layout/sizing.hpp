@@ -321,8 +321,8 @@ struct SizeResult {
 //   - automatic using available size
 //   - automatic using content size
 // needs to be imbued with ctx
-auto resolveWidth(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic, const PaddingResult& padding, const SizeState& borderWidth) -> SizeState;
-auto resolveHeight(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic, const PaddingResult& padding, const SizeState& borderWidth) -> SizeState;
+auto resolveWidth(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic) -> SizeState;
+auto resolveHeight(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic) -> SizeState;
 
 // these ONLY exist because of different auto behavior fo min/max widht and height
 auto resolveMinWidth(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic) -> SizeState;
@@ -372,6 +372,9 @@ auto resolveIntrinsicHeight(const SizeState& size, const IntrinsicResult& intrin
 // issue 1: what if min > max? min wins
 // issue 2: does this create an implied fit content operation? basically, if neither is monostate
 auto clampSize(const SizeState& size, const SizeState& min, const SizeState& max) -> SizeState;
+
+auto resolveContributionWidth(const layout::IntrinsicSizes& content, const SizeResult& sizeResult) -> layout::IntrinsicSizes;
+auto resolveContributionHeight(const layout::IntrinsicSizes& content, const SizeResult& sizeResult) -> layout::IntrinsicSizes;
 
 // this will also probably end up as a massive function switching between possibilites
 // no height, no width
