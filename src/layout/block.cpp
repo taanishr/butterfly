@@ -37,12 +37,12 @@ namespace layout {
         float computedWidth = std::visit(Overloaded{
             [&](float resolved){ return resolved; },
             [&](auto&) { return 0.0f; }
-        }, sizeResult.outerSize.width);
+        }, sizeResult.borderBoxSize.width);
 
         float computedHeight = std::visit(Overloaded{
             [&](float resolved){ return resolved; },
             [&](auto&) { return 0.0f; }
-        }, sizeResult.outerSize.height);
+        }, sizeResult.borderBoxSize.height);
         lr.computedBox = {
             .x = position.x,
             .y = position.y,
@@ -155,12 +155,12 @@ namespace layout {
         float computedWidth = std::visit(Overloaded{
             [&](float resolved){ return resolved; },
             [&](auto&) { return 0.0f; }
-        }, sizeResult.outerSize.width);
+        }, sizeResult.borderBoxSize.width);
 
         float computedHeight = std::visit(Overloaded{
             [&](float resolved){ return resolved; },
             [&](auto&) { return 0.0f; }
-        }, sizeResult.outerSize.height);
+        }, sizeResult.borderBoxSize.height);
 
         lr.computedBox = {
             startingPos.x,
@@ -315,7 +315,7 @@ namespace layout {
         if (sizeRequest.resolvingIntrinsicHeight) {
             IntrinsicSizes contribution = resolveContributionHeight(*intrinsicResult, sizeResult);
 
-            if (!state.outOfFlow && !std::holds_alternative<float>(sizeResult.outerSize.height)) {
+            if (!state.outOfFlow && !std::holds_alternative<float>(sizeResult.borderBoxSize.height)) {
                 state.siblingCursor.y += contribution.maximum;
             }
 

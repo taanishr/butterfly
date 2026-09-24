@@ -154,12 +154,12 @@ auto calculateSize(const SizeState& size, const SizeState& available) -> SizeSta
 //   - specified or intrinsic
 //   - automatic from opposing insets
 //   - automatic using available size
-//   - automatic using outer size
+//   - automatic using border box size
 // resolve height
 //   - specified or intrinsic
 //   - automatic from opposing insets
 //   - automatic using available size
-//   - automatic using outer size
+//   - automatic using border box size
 // needs to be imbued with ctx
 auto resolveWidth(const SizeState& size, SizeRequest& req, const std::optional<IntrinsicResult>& intrinsic) -> SizeState {
     // run size through a calculate size pass (maybe avail too)
@@ -855,10 +855,10 @@ auto clampSize(const SizeState& size, const SizeState& min, const SizeState& max
 }
 
 auto resolveContributionWidth(const layout::IntrinsicSizes& content, const SizeResult& sizeResult) -> layout::IntrinsicSizes {
-    const auto* outerWidth = std::get_if<float>(&sizeResult.outerSize.width);
+    const auto* borderBoxWidth = std::get_if<float>(&sizeResult.borderBoxSize.width);
 
-    if (outerWidth) {
-        return {.minimum = *outerWidth, .maximum = *outerWidth};
+    if (borderBoxWidth) {
+        return {.minimum = *borderBoxWidth, .maximum = *borderBoxWidth};
     }
 
     float minimumWidth = content.minimum;
@@ -890,10 +890,10 @@ auto resolveContributionWidth(const layout::IntrinsicSizes& content, const SizeR
 }
 
 auto resolveContributionHeight(const layout::IntrinsicSizes& content, const SizeResult& sizeResult) -> layout::IntrinsicSizes {
-    const auto* outerHeight = std::get_if<float>(&sizeResult.outerSize.height);
+    const auto* borderBoxHeight = std::get_if<float>(&sizeResult.borderBoxSize.height);
 
-    if (outerHeight) {
-        return {.minimum = *outerHeight, .maximum = *outerHeight};
+    if (borderBoxHeight) {
+        return {.minimum = *borderBoxHeight, .maximum = *borderBoxHeight};
     }
 
     float minimumHeight = content.minimum;
@@ -1146,7 +1146,7 @@ auto evaluateSize(
     };
 
     SizeResult result = {
-        .outerSize = size,
+        .borderBoxSize = size,
         .paddingBoxSize = paddingBoxSize,
         .innerSize = innerSize,
         .minimum = minimum,

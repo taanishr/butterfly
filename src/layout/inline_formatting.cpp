@@ -330,12 +330,12 @@ namespace tree {
             return;
         }
 
-        if (std::holds_alternative<float>(sizeResult.outerSize.width)) {
-            atoms.front().width = std::get<float>(sizeResult.outerSize.width);
+        if (std::holds_alternative<float>(sizeResult.borderBoxSize.width)) {
+            atoms.front().width = std::get<float>(sizeResult.borderBoxSize.width);
         }
 
-        if (std::holds_alternative<float>(sizeResult.outerSize.height)) {
-            atoms.front().height = std::get<float>(sizeResult.outerSize.height);
+        if (std::holds_alternative<float>(sizeResult.borderBoxSize.height)) {
+            atoms.front().height = std::get<float>(sizeResult.borderBoxSize.height);
         }
         
         float width = margins.left + margins.right + atoms.front().width;

@@ -1553,7 +1553,7 @@ namespace layout {
             const auto& intrinsicWidths = *childSizing.widthIntrinsicSizes;
             float minContent = std::get<float>(intrinsicWidths.minimum);
             float maxContent = std::get<float>(intrinsicWidths.maximum);
-            const float* preferredWidth = std::get_if<float>(&childSizing.outerSize.width);
+            const float* preferredWidth = std::get_if<float>(&childSizing.borderBoxSize.width);
             const float* minWidth = std::get_if<float>(&childSizing.minimum.width);
             const float* maxWidth = std::get_if<float>(&childSizing.maximum.width);
 
@@ -1685,7 +1685,7 @@ namespace layout {
             const auto& intrinsicHeights = *childSizing.heightIntrinsicSizes;
             float minContent = std::get<float>(intrinsicHeights.minimum);
             float maxContent = std::get<float>(intrinsicHeights.maximum);
-            const float* preferredHeight = std::get_if<float>(&childSizing.outerSize.height);
+            const float* preferredHeight = std::get_if<float>(&childSizing.borderBoxSize.height);
             const float* minHeight = std::get_if<float>(&childSizing.minimum.height);
             const float* maxHeight = std::get_if<float>(&childSizing.maximum.height);
 
@@ -1842,26 +1842,26 @@ namespace layout {
             const SizeResult childSizing = evaluateSize(tree, childNode, frameInfo, preparedChildConstraints, childRequest, sizeCache);
 
             // positioning adjustments
-            if (std::holds_alternative<float>(childSizing.outerSize.width)) {
-                float outerSize = std::get<float>(childSizing.outerSize.width);
+            if (std::holds_alternative<float>(childSizing.borderBoxSize.width)) {
+                float borderBoxSize = std::get<float>(childSizing.borderBoxSize.width);
                 float dx = 0.0f;
                 if (effectiveJustify == JustifyItems::Center) {
-                    dx = (cellW - outerSize) / 2.0f;
+                    dx = (cellW - borderBoxSize) / 2.0f;
                 } else if (effectiveJustify == JustifyItems::End) {
-                    dx = cellW - outerSize;
+                    dx = cellW - borderBoxSize;
                 }
 
                 preparedChildConstraints.origin.x += dx;
                 preparedChildConstraints.cursor.x += dx;
             }
 
-            if (std::holds_alternative<float>(childSizing.outerSize.height)) {
-                float outerSize = std::get<float>(childSizing.outerSize.height);
+            if (std::holds_alternative<float>(childSizing.borderBoxSize.height)) {
+                float borderBoxSize = std::get<float>(childSizing.borderBoxSize.height);
                 float dy = 0.0f;
                 if (effectiveAlign == AlignItems::Center) {
-                    dy = (cellH - outerSize) / 2.0f;
+                    dy = (cellH - borderBoxSize) / 2.0f;
                 } else if (effectiveAlign == AlignItems::FlexEnd) {
-                    dy = cellH - outerSize;
+                    dy = cellH - borderBoxSize;
                 }
 
                 preparedChildConstraints.origin.y += dy;

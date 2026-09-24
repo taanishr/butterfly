@@ -178,7 +178,7 @@ namespace layout {
 
             SizeResult childSizing = evaluateSize(tree, childAsPtr, frameInfo, preparedChildConstraints, childRequest, sizeCache);
 
-            const SizeState& preferredMainSize = flex.axis.mainSize(childSizing.outerSize);
+            const SizeState& preferredMainSize = flex.axis.mainSize(childSizing.borderBoxSize);
             const auto& measuredMainIntrinsicSizes = flex.axis.isRow ? childSizing.widthIntrinsicSizes : childSizing.heightIntrinsicSizes;
             IntrinsicResult mainIntrinsicSizes {
                 .minimum = measuredMainIntrinsicSizes->minimum,
@@ -288,8 +288,8 @@ namespace layout {
 
                 SizeResult childSizing = evaluateSize(tree, childNode, frameInfo, preparedChildConstraints, childRequest, sizeCache);
 
-                if (std::holds_alternative<float>(flex.axis.crossSize(childSizing.outerSize))) {
-                    item.hypotheticalCrossSize = std::get<float>(flex.axis.crossSize(childSizing.outerSize));
+                if (std::holds_alternative<float>(flex.axis.crossSize(childSizing.borderBoxSize))) {
+                    item.hypotheticalCrossSize = std::get<float>(flex.axis.crossSize(childSizing.borderBoxSize));
                     lineMaximumCrossContribution = std::max(lineMaximumCrossContribution, item.hypotheticalCrossSize);
                     line.maxCrossSize = std::max(line.maxCrossSize, item.hypotheticalCrossSize);
                 }else {

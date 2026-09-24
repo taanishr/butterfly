@@ -106,8 +106,8 @@ namespace layout {
                         } else {
                             if (std::holds_alternative<float>(ctx.constraints.availableWidth)) {
                                 float availableWidth = std::get<float>(ctx.constraints.availableWidth);
-                                float width = std::holds_alternative<float>(ctx.sizeResult.outerSize.width)
-                                    ? std::get<float>(ctx.sizeResult.outerSize.width)
+                                float width = std::holds_alternative<float>(ctx.sizeResult.borderBoxSize.width)
+                                    ? std::get<float>(ctx.sizeResult.borderBoxSize.width)
                                     : availableWidth;
                                 startingX = ctx.constraints.origin.x + availableWidth - width - ctx.margins.right;
                             }

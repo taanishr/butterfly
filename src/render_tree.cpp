@@ -707,7 +707,7 @@ namespace tree {
             the arch problem
             producers:
                 - computedBox (text)
-                - outerSize (divs)
+                - border box size (divs)
                 - child contributions
             when to collect:
                 - always?
@@ -717,13 +717,13 @@ namespace tree {
                 - I think the target is clear: when requested
 
             what to collection:
-                I am fine with outer size and child contributions
+                I am fine with border box size and child contributions
                 I am NOT fine with the computed box
 
                 my plan to unify these would probably be:
                     initialization:
-                    if outersize:
-                        use outersize
+                    if border box size:
+                        use border box size
                     else:
                         use whatever the layout pass derived
                     
