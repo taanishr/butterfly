@@ -140,7 +140,7 @@ namespace layout {
     };
 
     std::optional<IntrinsicSizes> gridPass(
-        RenderTree& tree, TreeNode* node, const Constraints& constraints, const Constraints& childConstraints,
+        RenderTree& tree, TreeNode* node, BlockState& state, const Constraints& constraints, const Constraints& childConstraints,
         const FrameInfo& frameInfo, const SizeResult& sizeResult, const SizeRequest& sizeRequest,
         bool mutate, std::unordered_map<size_t, SizeResult>& sizeCache);
 }

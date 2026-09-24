@@ -768,11 +768,11 @@ namespace tree {
 
         switch (display) {
             case style::Display::Flex: {
-                intrinsicResult = layout::flexPass(*this, node, constraints, childConstraints, frameInfo, sizeResult, sizeRequest, mutate, sizeCache);
+                intrinsicResult = layout::flexPass(*this, node, std::get<layout::BlockState>(layout), constraints, childConstraints, frameInfo, sizeResult, sizeRequest, mutate, sizeCache);
                 break;
             }
             case style::Display::Grid: {
-                intrinsicResult = layout::gridPass(*this, node, constraints, childConstraints, frameInfo, sizeResult, sizeRequest, mutate, sizeCache);
+                intrinsicResult = layout::gridPass(*this, node, std::get<layout::BlockState>(layout), constraints, childConstraints, frameInfo, sizeResult, sizeRequest, mutate, sizeCache);
                 break;
             }
             case style::Display::Block: {

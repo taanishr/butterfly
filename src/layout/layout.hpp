@@ -279,7 +279,7 @@ namespace layout {
     };
 
     struct InheritedProperties {
-        Direction direction{Direction::ltr};
+        Direction direction{Direction::rtl};
         TextAlign textAlign{TextAlign::Start};
     };
 
@@ -335,6 +335,7 @@ namespace layout {
         ResolvedMargins resolvedMargins {};
 
         std::optional<Display> computedDisplay;
+        std::optional<Display> parentDisplay;
 
         float prevInlineHeight{};
         std::vector<ClipUniform> clipUniforms {};

@@ -1488,6 +1488,7 @@ namespace layout {
     Constraints GridResolver::prepareChildConstraints() {
         auto preparedChildConstraints = childConstraints;
         preparedChildConstraints.inheritedProperties = parentConstraints.inheritedProperties;
+        preparedChildConstraints.parentDisplay = Display::Grid;
 
         return preparedChildConstraints;
     }
@@ -1752,6 +1753,19 @@ namespace layout {
             float cellW = colTracks[*placement.colEnd - 1].offset + colTracks[*placement.colEnd - 1].size - cellX;
             float cellH = rowTracks[*placement.rowEnd - 1].offset + rowTracks[*placement.rowEnd - 1].size - cellY;
 
+            bool isRtl = parentConstraints.inheritedProperties.direction == Direction::rtl;
+
+            if (isRtl) {
+                const auto* resolvedInnerWidth = std::get_if<float>(&containerSize.innerSize.width);
+                float innerWidth = gridLayout.columnIntrinsicSizes.maximum;
+
+                if (resolvedInnerWidth) {
+                    innerWidth = *resolvedInnerWidth;
+                }
+
+                cellX = innerWidth - (cellX + cellW);
+            }
+
             preparedChildConstraints.origin = {cellX, cellY};
             preparedChildConstraints.cursor = {cellX, cellY};
 
@@ -1860,7 +1874,9 @@ namespace layout {
                 if (effectiveJustify == JustifyItems::Center) {
                     dx = (cellW - borderBoxSize - margins.left - margins.right) / 2.0f;
                 } else if (effectiveJustify == JustifyItems::End) {
-                    dx = cellW - borderBoxSize - margins.left - margins.right;
+                    dx = isRtl ? 0.0f : cellW - borderBoxSize - margins.left - margins.right;
+                } else if (effectiveJustify == JustifyItems::Start) {
+                    dx = isRtl ? cellW - borderBoxSize - margins.left - margins.right : 0.0f;
                 }
 
                 preparedChildConstraints.origin.x += dx;
@@ -1934,7 +1950,7 @@ namespace layout {
     }
 
     std::optional<IntrinsicSizes> gridPass(
-        RenderTree& tree, TreeNode* node, const Constraints& constraints, const Constraints& childConstraints,
+        RenderTree& tree, TreeNode* node, BlockState& state, const Constraints& constraints, const Constraints& childConstraints,
         const FrameInfo& frameInfo, const SizeResult& sizeResult, const SizeRequest& sizeRequest,
         bool mutate, std::unordered_map<size_t, SizeResult>& sizeCache
     ) {
@@ -1951,7 +1967,13 @@ namespace layout {
         }
 
         if (sizeRequest.resolvingIntrinsicHeight) {
-            return resolveContributionHeight(gr.gridLayout.rowIntrinsicSizes, sizeResult);
+            IntrinsicSizes contribution = resolveContributionHeight(gr.gridLayout.rowIntrinsicSizes, sizeResult);
+
+            if (!state.outOfFlow && !std::holds_alternative<float>(sizeResult.borderBoxSize.height)) {
+                state.siblingCursor.y += contribution.maximum;
+            }
+
+            return contribution;
         }
 
         return std::nullopt;

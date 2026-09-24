@@ -82,6 +82,7 @@ namespace layout {
     auto FlexResolver::prepareChildConstraints() -> Constraints {
         auto newChildConstraints = childConstraints;
         newChildConstraints.inheritedProperties = parentConstraints.inheritedProperties;
+        newChildConstraints.parentDisplay = Display::Flex;
 
         return newChildConstraints;
     }
@@ -338,7 +339,8 @@ namespace layout {
             resolvedMainSizes,
             availableMain,
             availableCross,
-            resolvedGap
+            resolvedGap,
+            parentConstraints.inheritedProperties.direction
         );
 
         for (auto& placement : placements) {
@@ -464,7 +466,7 @@ namespace layout {
     }
 
     std::optional<IntrinsicSizes> flexPass(
-        RenderTree& tree, TreeNode* node, const Constraints& constraints, const Constraints& childConstraints,
+        RenderTree& tree, TreeNode* node, BlockState& state, const Constraints& constraints, const Constraints& childConstraints,
         const FrameInfo& frameInfo, const SizeResult& sizeResult, const SizeRequest& sizeRequest,
         bool mutate, std::unordered_map<size_t, SizeResult>& sizeCache
     ) {
@@ -506,7 +508,13 @@ namespace layout {
                 .maximum = std::get<float>(heightSizes.maximum)
             };
 
-            return resolveContributionHeight(content, sizeResult);
+            IntrinsicSizes contribution = resolveContributionHeight(content, sizeResult);
+
+            if (!state.outOfFlow && !std::holds_alternative<float>(sizeResult.borderBoxSize.height)) {
+                state.siblingCursor.y += contribution.maximum;
+            }
+
+            return contribution;
         }
 
         return std::nullopt;

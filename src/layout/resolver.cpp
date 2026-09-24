@@ -101,15 +101,23 @@ namespace layout {
                             }
                         }
 
-                        if (ctx.constraints.inheritedProperties.direction == Direction::ltr) {
+                        bool placedByParent = ctx.constraints.parentDisplay == Display::Flex
+                            || ctx.constraints.parentDisplay == Display::Grid;
+                        bool isLtr = ctx.constraints.inheritedProperties.direction == Direction::ltr;
+
+                        if (placedByParent) {
                             startingX += ctx.margins.left;
                         } else {
-                            if (std::holds_alternative<float>(ctx.constraints.availableWidth)) {
-                                float availableWidth = std::get<float>(ctx.constraints.availableWidth);
-                                float width = std::holds_alternative<float>(ctx.sizeResult.borderBoxSize.width)
-                                    ? std::get<float>(ctx.sizeResult.borderBoxSize.width)
-                                    : availableWidth;
-                                startingX = ctx.constraints.origin.x + availableWidth - width - ctx.margins.right;
+                            if (isLtr) {
+                                startingX += ctx.margins.left;
+                            } else {
+                                if (std::holds_alternative<float>(ctx.constraints.availableWidth)) {
+                                    float availableWidth = std::get<float>(ctx.constraints.availableWidth);
+                                    float width = std::holds_alternative<float>(ctx.sizeResult.borderBoxSize.width)
+                                        ? std::get<float>(ctx.sizeResult.borderBoxSize.width)
+                                        : availableWidth;
+                                    startingX = ctx.constraints.origin.x + availableWidth - width - ctx.margins.right;
+                                }
                             }
                         }
 

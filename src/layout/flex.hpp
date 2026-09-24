@@ -345,7 +345,8 @@ namespace layout {
             const ResolveResult& resolved,
             float availableMain,
             float availableCross,
-            float gap
+            float gap,
+            Direction direction
         ) {
             size_t lineCount = lines.size();
 
@@ -431,6 +432,11 @@ namespace layout {
                             break;
                     }
 
+                    if (!axis.isRow && direction == Direction::rtl) {
+                        float outerCross = item.alignment == AlignItems::Stretch ? lineCross : childCrossSize;
+                        placement.crossOffset = availableCross - placement.crossOffset - outerCross;
+                    }
+
                     if (axis.isReversed) {
                         placement.mainOffset = availableMain - accumulated - placement.mainSize - item.mainMargin;
                     }
@@ -479,7 +485,7 @@ namespace layout {
     };
 
     std::optional<IntrinsicSizes> flexPass(
-        RenderTree& tree, TreeNode* node, const Constraints& constraints, const Constraints& childConstraints,
+        RenderTree& tree, TreeNode* node, BlockState& state, const Constraints& constraints, const Constraints& childConstraints,
         const FrameInfo& frameInfo, const SizeResult& sizeResult, const SizeRequest& sizeRequest,
         bool mutate, std::unordered_map<size_t, SizeResult>& sizeCache);
 }

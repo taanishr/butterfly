@@ -3653,7 +3653,7 @@ div()
     //     )
     // );
 
-    layout_test::scenes::buildBrowser();
+    // layout_test::scenes::buildBrowser();
 
     // using S = gui::Size;
 
@@ -6354,4 +6354,92 @@ div()
     //         )
     //     );
     // }
+
+    // ── rtl margins: block flow, flex row, grid alignment ──
+    // flip InheritedProperties::direction in layout.hpp to rtl for this scene.
+    {
+        using S = gui::Size;
+
+        const auto label = [&](const char* s) {
+            return text(s)
+                .font(Arial)
+                .fontSize(S::pt(12))
+                .color(simd_float4{0.38,0.92,0.56,1.0});
+        };
+
+        const auto panel = simd_float4{0.15,0.16,0.20,1.0};
+        const auto yellow = simd_float4{0.98,0.76,0.20,1.0};
+        const auto blue = simd_float4{0.45,0.80,0.98,1.0};
+        const auto pink = simd_float4{0.96,0.30,0.46,1.0};
+        const auto green = simd_float4{0.38,0.92,0.56,1.0};
+
+        div(S::percent(1.0), S::percent(1.0), simd_float4{0.06,0.07,0.09,1.0})
+            .padding(S::px(48))
+            .overflow(gui::Overflow::Scroll)
+        (
+            label("BLOCK FLOW: 200 WIDE, MARGIN LEFT 20 + RIGHT 40"),
+            div(S::px(480), S::autoSize(), panel)
+            (
+                div(S::px(200), S::px(30), yellow).marginLeft(S::px(20)).marginRight(S::px(40))()
+            ),
+
+            label("FLEX ROW: MARGIN LEFT 20 | MARGIN RIGHT 20 | NONE").marginTop(S::px(24)),
+            div(S::px(480), S::px(60), panel)
+                .display(gui::Display::Flex)
+                .alignItems(gui::AlignItems::FlexStart)
+            (
+                div(S::px(80), S::px(40), yellow).marginLeft(S::px(20))(),
+                div(S::px(80), S::px(40), blue).marginRight(S::px(20))(),
+                div(S::px(80), S::px(40), pink)()
+            ),
+
+            label("GRID: START | CENTER / END | CENTER, NO MARGIN").marginTop(S::px(24)),
+            div(S::px(480), S::autoSize(), panel)
+                .display(gui::Display::Grid)
+                .gridTemplateColumns({S::px(240), S::px(240)})
+                .gridTemplateRows({S::px(50), S::px(50)})
+            (
+                div(S::px(80), S::px(30), yellow).marginLeft(S::px(10)).marginRight(S::px(30)).justifySelf(gui::JustifySelf::Start)(),
+                div(S::px(80), S::px(30), blue).marginLeft(S::px(10)).marginRight(S::px(30)).justifySelf(gui::JustifySelf::Center)(),
+                div(S::px(80), S::px(30), pink).marginLeft(S::px(10)).marginRight(S::px(30)).justifySelf(gui::JustifySelf::End)(),
+                div(S::px(80), S::px(30), green).justifySelf(gui::JustifySelf::Center)()
+            ),
+
+            label("FLEX COLUMN, ALIGN START: MARGIN LEFT 10 | MARGIN RIGHT 10 | NONE").marginTop(S::px(24)),
+            div(S::px(480), S::autoSize(), panel)
+                .display(gui::Display::Flex)
+                .flexDirection(gui::FlexDirection::Col)
+                .alignItems(gui::AlignItems::FlexStart)
+            (
+                div(S::px(80), S::px(30), yellow).marginLeft(S::px(10))(),
+                div(S::px(80), S::px(30), blue).marginRight(S::px(10))(),
+                div(S::px(80), S::px(30), pink)()
+            ),
+
+            label("AUTO HEIGHT: FLEX ROW, THEN BAR").marginTop(S::px(24)),
+            div(S::px(480), S::autoSize(), panel)
+            (
+                div().display(gui::Display::Flex)
+                (
+                    div(S::px(80), S::px(40), yellow)(),
+                    div(S::px(80), S::px(40), blue)(),
+                    div(S::px(80), S::px(40), pink)()
+                ),
+                div(S::px(200), S::px(20), green)()
+            ),
+
+            label("AUTO HEIGHT: GRID, THEN BAR").marginTop(S::px(24)),
+            div(S::px(480), S::autoSize(), panel)
+            (
+                div()
+                    .display(gui::Display::Grid)
+                    .gridTemplateColumns({S::px(100), S::px(100)})
+                (
+                    div(S::px(80), S::px(40), yellow)(),
+                    div(S::px(80), S::px(40), blue)()
+                ),
+                div(S::px(200), S::px(20), green)()
+            )
+        );
+    }
 }
