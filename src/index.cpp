@@ -3653,7 +3653,7 @@ div()
     //     )
     // );
 
-    // layout_test::scenes::buildBrowser();
+    layout_test::scenes::buildBrowser();
 
     // using S = gui::Size;
 
@@ -6053,8 +6053,566 @@ div()
     //     );
     // }
 
+    // // ═══════════════════════════════════════════════════════════════════
+    // // Clone: en.wikipedia.org article (Vector 2022 skin)
+    // // ═══════════════════════════════════════════════════════════════════
+    // {
+    //     using S = gui::Size;
+    //     using gui::Display;
+    //     using gui::FlexDirection;
+    //     using gui::AlignItems;
+    //     using gui::JustifyContent;
+    //     using gui::Position;
+
+    //     constexpr auto rgb = [](int r, int g, int b, float a = 1.0f) {
+    //         return simd_float4{r / 255.0f, g / 255.0f, b / 255.0f, a};
+    //     };
+
+    //     const auto paper    = rgb(255, 255, 255);
+    //     const auto chrome   = rgb(248, 249, 250);
+    //     const auto rule     = rgb(162, 169, 177);
+    //     const auto softRule = rgb(234, 236, 240);
+    //     const auto ink      = rgb(32, 33, 34);
+    //     const auto muted    = rgb(84, 89, 93);
+    //     const auto link     = rgb(51, 102, 204);
+    //     const auto visited  = rgb(121, 92, 161);
+    //     const auto infobox  = rgb(248, 249, 250);
+    //     const auto taxon    = rgb(211, 211, 211);
+    //     const auto clear    = rgb(0, 0, 0, 0.0f);
+
+    //     const std::string Sans     = Helvetica;
+    //     const std::string SansBold = ArialBold;
+    //     const std::string Serif    = "/System/Library/Fonts/Supplemental/Georgia.ttf";
+    //     constexpr auto A = "/Users/treja/projects/gui/assets/clones/";
+    //     constexpr auto butterflyPath = "/Users/treja/projects/gui/assets/butterfly.png";
+
+    //     auto body = [&](const char* s) { return text(s).font(Sans).fontSize(S::pt(11)).color(ink).lineHeight(1.6); };
+    //     auto a    = [&](const char* s) { return text(s).font(Sans).fontSize(S::pt(11)).color(link).lineHeight(1.6); };
+    //     auto sup  = [&](const char* s) { return text(s).font(Sans).fontSize(S::pt(7.5)).color(link); };
+
+    //     auto heading = [&](const char* title) {
+    //         return div().width(S::percent(1.0)).marginTop(S::px(22)).marginBottom(S::px(8))
+    //             .paddingBottom(S::px(3))
+    //             .borderColor(rule).borderBottomWidth(S::px(1))
+    //         (
+    //             text(title).font(Serif).fontSize(S::pt(17)).color(ink)
+    //         );
+    //     };
+
+    //     auto tocItem = [&](const char* label, bool active, int indent = 0) {
+    //         return div().paddingLeft(S::px(indent * 14))(
+    //             text(label).font(active ? SansBold : Sans).fontSize(S::pt(10)).color(active ? ink : link)
+    //         );
+    //     };
+
+    //     auto tab = [&](const char* label, bool active) {
+    //         return div()
+    //             .height(S::px(38))
+    //             .paddingLeft(S::px(8)).paddingRight(S::px(8))
+    //             .display(Display::Flex)
+    //             .alignItems(AlignItems::Center)
+    //             .position(Position::Relative)
+    //         (
+    //             text(label).font(Sans).fontSize(S::pt(10.5)).color(active ? ink : link),
+    //             div(S::percent(1.0), S::px(2), active ? ink : clear)
+    //                 .position(Position::Absolute).bottom(S::px(0)).left(S::px(0))()
+    //         );
+    //     };
+
+    //     auto infoRow = [&](const char* k, const char* v, bool italic = false) {
+    //         return div().width(S::percent(1.0)).display(Display::Flex).alignItems(AlignItems::Center)
+    //             .paddingTop(S::px(1)).paddingBottom(S::px(1))
+    //         (
+    //             div().width(S::px(80)).flexShrink(S::px(0))(
+    //                 text(k).font(SansBold).fontSize(S::pt(9)).color(ink)
+    //             ),
+    //             text(v).font(Sans).fontSize(S::pt(9)).color(italic ? ink : link)
+    //         );
+    //     };
+
+    //     auto taxonHeader = [&](const char* label) {
+    //         return div(S::percent(1.0), S::autoSize(), taxon)
+    //             .paddingTop(S::px(3)).paddingBottom(S::px(3))
+    //             .display(Display::Flex).justifyContent(JustifyContent::Center)
+    //         (
+    //             text(label).font(SansBold).fontSize(S::pt(9.5)).color(ink)
+    //         );
+    //     };
+
+    //     div(S::percent(1.0), S::percent(1.0), paper)
+    //         .overflow(gui::Overflow::Scroll)
+    //     (
+    //         // ── Header ──
+    //         div(S::percent(1.0), S::px(50), paper)
+    //             .position(Position::Sticky)
+    //             .top(S::px(0))
+    //             .zIndex(10)
+    //             .display(Display::Flex)
+    //             .alignItems(AlignItems::Center)
+    //             .justifyContent(JustifyContent::SpaceBetween)
+    //             .paddingLeft(S::px(16)).paddingRight(S::px(16))
+    //             .borderColor(softRule).borderBottomWidth(S::px(1))
+    //         (
+    //             div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(14))(
+    //                 div().display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(3)).width(S::px(16))(
+    //                     div(S::percent(1.0), S::px(2), ink)(),
+    //                     div(S::percent(1.0), S::px(2), ink)(),
+    //                     div(S::percent(1.0), S::px(2), ink)()
+    //                 ),
+    //                 div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
+    //                     div(S::px(36), S::px(36), rgb(230, 232, 235)).cornerRadius(S::px(18))
+    //                         .display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::Center)
+    //                     (
+    //                         text("W").font(Serif).fontSize(S::pt(20)).color(ink)
+    //                     ),
+    //                     div().display(Display::Flex).flexDirection(FlexDirection::Col)(
+    //                         text("WIKIPEDIA").font(Serif).fontSize(S::pt(15)).color(ink),
+    //                         text("The Free Encyclopedia").font(Serif).fontSize(S::pt(7.5)).color(ink)
+    //                     )
+    //                 ),
+    //                 div(S::px(300), S::px(32), paper)
+    //                     .cornerRadius(S::px(2))
+    //                     .borderColor(rule).borderWidth(S::px(1))
+    //                     .display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))
+    //                     .paddingLeft(S::px(8))
+    //                     .marginLeft(S::px(10))
+    //                 (
+    //                     svg(std::string(A) + "wiki-search.svg", S::px(14), S::px(14)),
+    //                     text("Search Wikipedia").font(Sans).fontSize(S::pt(10.5)).color(muted).flexGrow(S::px(1)),
+    //                     div(S::autoSize(), S::percent(1.0), chrome)
+    //                         .paddingLeft(S::px(12)).paddingRight(S::px(12))
+    //                         .borderColor(rule).borderLeftWidth(S::px(1))
+    //                         .display(Display::Flex).alignItems(AlignItems::Center)
+    //                     (
+    //                         text("Search").font(Sans).fontSize(S::pt(10.5)).color(ink)
+    //                     )
+    //                 )
+    //             ),
+    //             div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(14))(
+    //                 text("Donate").font(Sans).fontSize(S::pt(10.5)).color(link),
+    //                 text("Create account").font(Sans).fontSize(S::pt(10.5)).color(link),
+    //                 text("Log in").font(Sans).fontSize(S::pt(10.5)).color(link),
+    //                 text("···").font(Sans).fontSize(S::pt(10.5)).color(muted)
+    //             )
+    //         ),
+
+    //         // ── Page grid: TOC | article ──
+    //         div()
+    //             .width(S::percent(1.0))
+    //             .display(Display::Grid)
+    //             .gridTemplateColumns({S::px(180), S::fr(1)})
+    //             .gridColumnGap(S::px(20))
+    //             .paddingLeft(S::px(16)).paddingRight(S::px(16))
+    //             .paddingTop(S::px(16))
+    //         (
+    //             // TOC
+    //             div().display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(9)).paddingTop(S::px(48))(
+    //                 div().display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::SpaceBetween).paddingBottom(S::px(6))(
+    //                     text("Contents").font(SansBold).fontSize(S::pt(10.5)).color(ink),
+    //                     text("hide").font(Sans).fontSize(S::pt(9)).color(link)
+    //                 ),
+    //                 tocItem("(Top)", true),
+    //                 tocItem("Etymology", false),
+    //                 tocItem("Distribution and diversity", false),
+    //                 tocItem("Phylogeny and evolution", false),
+    //                 tocItem("Life cycle", false),
+    //                 tocItem("Egg", false, 1),
+    //                 tocItem("Larva", false, 1),
+    //                 tocItem("Pupa", false, 1),
+    //                 tocItem("Adult", false, 1),
+    //                 tocItem("Ecology", false),
+    //                 tocItem("Behaviour", false),
+    //                 tocItem("In culture", false),
+    //                 tocItem("See also", false),
+    //                 tocItem("References", false)
+    //             ),
+
+    //             // Article
+    //             div().display(Display::Flex).flexDirection(FlexDirection::Col)(
+    //                 // title
+    //                 div().width(S::percent(1.0)).paddingBottom(S::px(4))
+    //                     .borderColor(rule).borderBottomWidth(S::px(1))
+    //                 (
+    //                     text("Butterfly").font(Serif).fontSize(S::pt(25)).color(ink)
+    //                 ),
+    //                 // tabs
+    //                 div().width(S::percent(1.0)).display(Display::Flex).justifyContent(JustifyContent::SpaceBetween)(
+    //                     div().display(Display::Flex)(
+    //                         tab("Article", true), tab("Talk", false)
+    //                     ),
+    //                     div().display(Display::Flex)(
+    //                         tab("Read", true), tab("Edit", false), tab("View history", false), tab("Tools ▾", false)
+    //                     )
+    //                 ),
+    //                 div().marginTop(S::px(12)).marginBottom(S::px(12))(
+    //                     text("From Wikipedia, the free encyclopedia").font(Sans).fontSize(S::pt(9.5)).color(muted)
+    //                 ),
+
+    //                 // body grid: text | infobox
+    //                 div().width(S::percent(1.0)).display(Display::Flex).flexGap(S::px(20))(
+    //                     div().flexGrow(S::px(1)).minWidth(S::px(200))(
+    //                         div().width(S::percent(1.0)).marginBottom(S::px(12))(
+    //                             body("For other uses, see "), a("Butterfly (disambiguation)"), body(".")
+    //                         ),
+    //                         div().width(S::percent(1.0)).marginBottom(S::px(12))(
+    //                             text("Butterflies").font(SansBold).fontSize(S::pt(11)).color(ink).lineHeight(1.6),
+    //                             body(" are winged "), a("insects"), body(" from the "), a("lepidopteran"),
+    //                             body(" suborder "), a("Rhopalocera"),
+    //                             body(", characterized by large, often brightly coloured wings that often fold together when at rest, and a conspicuous, fluttering flight. The oldest butterfly fossils have been dated to the "),
+    //                             a("Paleocene"), body(", about 56 million years ago, though molecular evidence suggests that they may have originated in the "),
+    //                             a("Late Cretaceous"), body(".")
+    //                         ),
+    //                         div().width(S::percent(1.0)).marginBottom(S::px(12))(
+    //                             body("Butterflies have a four-stage "), a("life cycle"), body(", and like other "), a("holometabolous"),
+    //                             body(" insects they undergo complete "), a("metamorphosis"),
+    //                             body(". Winged adults lay eggs on the food plant on which their "), a("larvae"),
+    //                             body(", known as "), a("caterpillars"), body(", will feed. The caterpillars grow, sometimes very rapidly, and when fully developed, "),
+    //                             a("pupate"), body(" in a "), a("chrysalis"),
+    //                             body(". When metamorphosis is complete, the pupal skin splits, the adult insect climbs out, expands its wings to dry, and flies off."), sup("[1]")
+    //                         ),
+    //                         div().width(S::percent(1.0)).marginBottom(S::px(12))(
+    //                             body("Some butterflies, especially in the tropics, have several generations in a year, while others have a single generation, and a few in cold locations may take several years to pass through their entire life cycle. Butterflies are often "),
+    //                             a("polymorphic"), body(", and many species make use of "), a("camouflage"), body(", "), a("mimicry"),
+    //                             body(", and "), a("aposematism"), body(" to evade their predators."), sup("[2]")
+    //                         ),
+
+    //                         heading("Etymology"),
+    //                         div().width(S::percent(1.0)).marginBottom(S::px(12))(
+    //                             body("The "), a("Oxford English Dictionary"),
+    //                             body(" derives the word straightforwardly from "), a("Old English"),
+    //                             text(" butorflēoge").font(Sans).fontSize(S::pt(11)).color(ink).lineHeight(1.6),
+    //                             body(", butter-fly; similar names in Old Dutch and Old High German show that the name is ancient, but modern Dutch and German use different words ("),
+    //                             text("vlinder").font(Sans).fontSize(S::pt(11)).color(ink), body(" and "),
+    //                             text("Schmetterling").font(Sans).fontSize(S::pt(11)).color(ink),
+    //                             body("). Butterflies were thought to steal milk and butter, or that they fly around in fields during the spring, when the grass is green and the butter is yellow."), sup("[3]")
+    //                         ),
+
+    //                         heading("Distribution and diversity"),
+    //                         div().width(S::percent(1.0)).marginBottom(S::px(12))(
+    //                             body("Butterflies are distributed worldwide except "), a("Antarctica"),
+    //                             body(", totalling some 18,500 species. Of these, 775 are "), a("Nearctic"),
+    //                             body("; 7,700 "), a("Neotropical"), body("; 1,575 "), a("Palearctic"), body("; 3,650 "), a("Afrotropical"),
+    //                             body("; and 4,800 are distributed across the combined "), a("Oriental"), body(" and "), a("Australian/Oceania"),
+    //                             body(" regions."), sup("[4]"),
+    //                             body(" The "), a("monarch butterfly"),
+    //                             body(" is native to the Americas, but in the nineteenth century or before, spread across the world, and is now found in Australia, New Zealand, other parts of Oceania, and the Iberian Peninsula.")
+    //                         ),
+
+    //                         heading("Phylogeny and evolution"),
+    //                         div().width(S::percent(1.0)).marginBottom(S::px(12))(
+    //                             body("The earliest "), a("Lepidoptera"), body(" fossils date to the "), a("Triassic"), body("–"), a("Jurassic"),
+    //                             body(" boundary, around 200 million years ago."), sup("[5]"),
+    //                             body(" Butterflies evolved from "), a("moths"),
+    //                             body(", so while the butterflies are "), a("monophyletic"),
+    //                             body(" (forming a single clade), the moths are not. The oldest known butterfly is "),
+    //                             text("Protocoeliades kristenseni").font(Sans).fontSize(S::pt(11)).color(link),
+    //                             body(" from the Palaeocene aged "), a("Fur Formation"), body(" of Denmark, approximately 55 million years old.")
+    //                         )
+    //                     ),
+
+    //                     // infobox
+    //                     div(S::px(264), S::autoSize(), infobox)
+    //                         .flexShrink(S::px(0))
+    //                         .alignSelf(gui::AlignSelf::FlexStart)
+    //                         .borderColor(rgb(162, 169, 177)).borderWidth(S::px(1))
+    //                         .padding(S::px(4))
+    //                         .display(Display::Flex)
+    //                         .flexDirection(FlexDirection::Col)
+    //                         .flexGap(S::px(4))
+    //                     (
+    //                         div(S::percent(1.0), S::autoSize(), rgb(211, 211, 211))
+    //                             .paddingTop(S::px(5)).paddingBottom(S::px(5))
+    //                             .display(Display::Flex).flexDirection(FlexDirection::Col).alignItems(AlignItems::Center)
+    //                         (
+    //                             text("Butterflies").font(SansBold).fontSize(S::pt(12)).color(ink),
+    //                             text("Temporal range: Paleocene–present").font(Sans).fontSize(S::pt(8)).color(ink)
+    //                         ),
+    //                         image(butterflyPath, S::percent(1.0), S::autoSize()).aspectRatio(1, 1),
+    //                         div().width(S::percent(1.0)).display(Display::Flex).justifyContent(JustifyContent::Center).paddingBottom(S::px(4))(
+    //                             text("A Peacock butterfly, Aglais io").font(Sans).fontSize(S::pt(8.5)).color(ink)
+    //                         ),
+    //                         taxonHeader("Scientific classification"),
+    //                         div().width(S::percent(1.0)).display(Display::Flex).flexDirection(FlexDirection::Col).paddingLeft(S::px(4))(
+    //                             infoRow("Kingdom:", "Animalia"),
+    //                             infoRow("Phylum:", "Arthropoda"),
+    //                             infoRow("Class:", "Insecta"),
+    //                             infoRow("Order:", "Lepidoptera"),
+    //                             infoRow("Suborder:", "Rhopalocera", true)
+    //                         ),
+    //                         taxonHeader("Superfamilies"),
+    //                         div().width(S::percent(1.0)).display(Display::Flex).flexDirection(FlexDirection::Col).alignItems(AlignItems::Center).flexGap(S::px(2)).paddingTop(S::px(2)).paddingBottom(S::px(4))(
+    //                             text("Hedyloidea").font(Sans).fontSize(S::pt(9)).color(link),
+    //                             text("Hesperioidea").font(Sans).fontSize(S::pt(9)).color(link),
+    //                             text("Papilionoidea").font(Sans).fontSize(S::pt(9)).color(visited)
+    //                         )
+    //                     )
+    //                 ),
+
+    //                 div(S::percent(1.0), S::px(64), clear)()
+    //             )
+    //         )
+    //     );
+    // }
+
+    // // ── rtl margins: block flow, flex row, grid alignment ──
+    // // flip InheritedProperties::direction in layout.hpp to rtl for this scene.
+    // {
+    //     using S = gui::Size;
+
+    //     const auto label = [&](const char* s) {
+    //         return text(s)
+    //             .font(Arial)
+    //             .fontSize(S::pt(12))
+    //             .color(simd_float4{0.38,0.92,0.56,1.0});
+    //     };
+
+    //     const auto panel = simd_float4{0.15,0.16,0.20,1.0};
+    //     const auto yellow = simd_float4{0.98,0.76,0.20,1.0};
+    //     const auto blue = simd_float4{0.45,0.80,0.98,1.0};
+    //     const auto pink = simd_float4{0.96,0.30,0.46,1.0};
+    //     const auto green = simd_float4{0.38,0.92,0.56,1.0};
+
+    //     div(S::percent(1.0), S::percent(1.0), simd_float4{0.06,0.07,0.09,1.0})
+    //         .padding(S::px(48))
+    //         .overflow(gui::Overflow::Scroll)
+    //     (
+    //         label("BLOCK FLOW: 200 WIDE, MARGIN LEFT 20 + RIGHT 40"),
+    //         div(S::px(480), S::autoSize(), panel)
+    //         (
+    //             div(S::px(200), S::px(30), yellow).marginLeft(S::px(20)).marginRight(S::px(40))()
+    //         ),
+
+    //         label("FLEX ROW: MARGIN LEFT 20 | MARGIN RIGHT 20 | NONE").marginTop(S::px(24)),
+    //         div(S::px(480), S::px(60), panel)
+    //             .display(gui::Display::Flex)
+    //             .alignItems(gui::AlignItems::FlexStart)
+    //         (
+    //             div(S::px(80), S::px(40), yellow).marginLeft(S::px(20))(),
+    //             div(S::px(80), S::px(40), blue).marginRight(S::px(20))(),
+    //             div(S::px(80), S::px(40), pink)()
+    //         ),
+
+    //         label("GRID: START | CENTER / END | CENTER, NO MARGIN").marginTop(S::px(24)),
+    //         div(S::px(480), S::autoSize(), panel)
+    //             .display(gui::Display::Grid)
+    //             .gridTemplateColumns({S::px(240), S::px(240)})
+    //             .gridTemplateRows({S::px(50), S::px(50)})
+    //         (
+    //             div(S::px(80), S::px(30), yellow).marginLeft(S::px(10)).marginRight(S::px(30)).justifySelf(gui::JustifySelf::Start)(),
+    //             div(S::px(80), S::px(30), blue).marginLeft(S::px(10)).marginRight(S::px(30)).justifySelf(gui::JustifySelf::Center)(),
+    //             div(S::px(80), S::px(30), pink).marginLeft(S::px(10)).marginRight(S::px(30)).justifySelf(gui::JustifySelf::End)(),
+    //             div(S::px(80), S::px(30), green).justifySelf(gui::JustifySelf::Center)()
+    //         ),
+
+    //         label("FLEX COLUMN, ALIGN START: MARGIN LEFT 10 | MARGIN RIGHT 10 | NONE").marginTop(S::px(24)),
+    //         div(S::px(480), S::autoSize(), panel)
+    //             .display(gui::Display::Flex)
+    //             .flexDirection(gui::FlexDirection::Col)
+    //             .alignItems(gui::AlignItems::FlexStart)
+    //         (
+    //             div(S::px(80), S::px(30), yellow).marginLeft(S::px(10))(),
+    //             div(S::px(80), S::px(30), blue).marginRight(S::px(10))(),
+    //             div(S::px(80), S::px(30), pink)()
+    //         ),
+
+    //         label("AUTO HEIGHT: FLEX ROW, THEN BAR").marginTop(S::px(24)),
+    //         div(S::px(480), S::autoSize(), panel)
+    //         (
+    //             div().display(gui::Display::Flex)
+    //             (
+    //                 div(S::px(80), S::px(40), yellow)(),
+    //                 div(S::px(80), S::px(40), blue)(),
+    //                 div(S::px(80), S::px(40), pink)()
+    //             ),
+    //             div(S::px(200), S::px(20), green)()
+    //         ),
+
+    //         label("AUTO HEIGHT: GRID, THEN BAR").marginTop(S::px(24)),
+    //         div(S::px(480), S::autoSize(), panel)
+    //         (
+    //             div()
+    //                 .display(gui::Display::Grid)
+    //                 .gridTemplateColumns({S::px(100), S::px(100)})
+    //             (
+    //                 div(S::px(80), S::px(40), yellow)(),
+    //                 div(S::px(80), S::px(40), blue)()
+    //             ),
+    //             div(S::px(200), S::px(20), green)()
+    //         )
+    //     );
+    // }
+
+    // // ═══════════════════════════════════════════════════════════════════
+    // // Clone: news.ycombinator.com front page
+    // // ═══════════════════════════════════════════════════════════════════
+    // {
+    //     using S = gui::Size;
+    //     using gui::Display;
+    //     using gui::FlexDirection;
+    //     using gui::AlignItems;
+    //     using gui::JustifyContent;
+
+    //     constexpr auto rgb = [](int r, int g, int b, float a = 1.0f) {
+    //         return simd_float4{r / 255.0f, g / 255.0f, b / 255.0f, a};
+    //     };
+
+    //     const auto page   = rgb(255, 255, 255);
+    //     const auto paper  = rgb(246, 246, 239);
+    //     const auto orange = rgb(255, 102, 0);
+    //     const auto ink    = rgb(0, 0, 0);
+    //     const auto muted  = rgb(130, 130, 130);
+    //     const auto white  = rgb(255, 255, 255);
+
+    //     const std::string Verdana     = "/System/Library/Fonts/Supplemental/Verdana.ttf";
+    //     const std::string VerdanaBold = "/System/Library/Fonts/Supplemental/Verdana Bold.ttf";
+    //     constexpr auto A = "/Users/treja/projects/gui/assets/clones/";
+
+    //     struct Story {
+    //         std::string title;
+    //         std::string site;
+    //         int points;
+    //         std::string user;
+    //         std::string age;
+    //         int comments;
+    //     };
+
+    //     const std::vector<Story> stories {
+    //         {"Show HN: A declarative, GPU-rendered UI library that follows the CSS spec", "github.com/taanishr", 412, "taanishr", "3 hours ago", 128},
+    //         {"Signed distance functions for rounded rectangles, explained", "iquilezles.org", 287, "sdfnerd", "5 hours ago", 64},
+    //         {"The CSS flexbox algorithm is smaller than you think", "drafts.csswg.org", 203, "rachelandrew", "6 hours ago", 91},
+    //         {"Why text shaping is still hard in 2026", "harfbuzz.github.io", 356, "behdad", "7 hours ago", 142},
+    //         {"Metal 4 performance notes from a year of shipping", "developer.apple.com", 118, "gpu_person", "8 hours ago", 37},
+    //         {"Ask HN: What are you building on weekends?", "", 94, "dang_fan", "9 hours ago", 311},
+    //         {"A tour of grid track sizing, with diagrams", "css-tricks.com", 176, "jensimmons", "10 hours ago", 48},
+    //         {"FreeType 2.14 released", "freetype.org", 88, "wlemberg", "11 hours ago", 22},
+    //         {"How browsers decide what 'auto' means", "web.dev", 241, "tabatkins", "12 hours ago", 77},
+    //         {"Writing a bidi algorithm from scratch", "unicode.org", 132, "rtlwriter", "13 hours ago", 29},
+    //         {"Show HN: I cloned Wikipedia with my own layout engine", "github.com/taanishr", 67, "taanishr", "14 hours ago", 18},
+    //         {"The surprising cost of anti-aliasing in fragment shaders", "blog.demofox.org", 154, "atrix256", "15 hours ago", 41},
+    //         {"Sticky positioning is a scroll-container story", "developer.mozilla.org", 99, "mdn_writer", "16 hours ago", 25},
+    //         {"Launch HN: Butterfly (YC S26) - native UI with web-grade layout", "butterfly.dev", 188, "founder", "17 hours ago", 103},
+    //         {"Percentages, cycles, and intrinsic sizes", "w3.org", 73, "fantasai", "18 hours ago", 16},
+    //     };
+
+    //     auto navLink = [&](const char* label) {
+    //         return text(label).font(Verdana).fontSize(S::pt(10)).color(ink);
+    //     };
+
+    //     auto navSeparator = [&]() {
+    //         return text("|").font(Verdana).fontSize(S::pt(10)).color(ink);
+    //     };
+
+    //     auto footerLink = [&](const char* label) {
+    //         return text(label).font(Verdana).fontSize(S::pt(8)).color(ink);
+    //     };
+
+    //     auto footerSeparator = [&]() {
+    //         return text("|").font(Verdana).fontSize(S::pt(8)).color(ink);
+    //     };
+
+    //     auto storyRow = [&](int rank, const Story& story) {
+    //         std::string subtext = std::to_string(story.points) + " points by " + story.user + " " + story.age
+    //             + " | hide | " + std::to_string(story.comments) + " comments";
+
+    //         auto titleLine = div().display(Display::Flex).alignItems(AlignItems::Center)(
+    //             div().width(S::px(26)).flexShrink(S::px(0)).display(Display::Flex).justifyContent(JustifyContent::FlexEnd)(
+    //                 text(std::to_string(rank) + ".").font(Verdana).fontSize(S::pt(10)).color(muted)
+    //             ),
+    //             div().width(S::px(18)).flexShrink(S::px(0)).display(Display::Flex).justifyContent(JustifyContent::Center)(
+    //                 svg(std::string(A) + "hn-upvote.svg", S::px(10), S::px(10))
+    //             ),
+    //             text(story.title).font(Verdana).fontSize(S::pt(10)).color(ink)
+    //         );
+
+    //         if (!story.site.empty()) {
+    //             titleLine(
+    //                 text("(" + story.site + ")").font(Verdana).fontSize(S::pt(8)).color(muted).marginLeft(S::px(5))
+    //             );
+    //         }
+
+    //         return div().width(S::percent(1.0)).marginBottom(S::px(6))(
+    //             titleLine,
+    //             div().paddingLeft(S::px(44)).marginTop(S::px(2))(
+    //                 text(subtext).font(Verdana).fontSize(S::pt(7)).color(muted)
+    //             )
+    //         );
+    //     };
+
+    //     auto storyList = div().width(S::percent(1.0)).paddingTop(S::px(8));
+
+    //     for (size_t i = 0; i < stories.size(); ++i) {
+    //         storyList(storyRow(static_cast<int>(i) + 1, stories[i]));
+    //     }
+
+    //     div(S::percent(1.0), S::percent(1.0), page)
+    //         .overflow(gui::Overflow::Scroll)
+    //         .display(Display::Flex)
+    //         .justifyContent(JustifyContent::Center)
+    //         .paddingTop(S::px(8))
+    //     (
+    //         div(S::percent(0.85), S::autoSize(), paper)(
+    //             // ── Header ──
+    //             div(S::percent(1.0), S::autoSize(), orange)
+    //                 .display(Display::Flex)
+    //                 .alignItems(AlignItems::Center)
+    //                 .justifyContent(JustifyContent::SpaceBetween)
+    //                 .padding(S::px(2))
+    //                 .paddingRight(S::px(6))
+    //             (
+    //                 div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(4))(
+    //                     div(S::px(18), S::px(18), orange)
+    //                         .borderColor(white).borderWidth(S::px(1))
+    //                         .marginRight(S::px(2))
+    //                         .display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::Center)
+    //                     (
+    //                         text("Y").font(VerdanaBold).fontSize(S::pt(9)).color(white)
+    //                     ),
+    //                     text("Hacker News").font(VerdanaBold).fontSize(S::pt(10)).color(ink).marginRight(S::px(6)),
+    //                     navLink("new"), navSeparator(),
+    //                     navLink("past"), navSeparator(),
+    //                     navLink("comments"), navSeparator(),
+    //                     navLink("ask"), navSeparator(),
+    //                     navLink("show"), navSeparator(),
+    //                     navLink("jobs"), navSeparator(),
+    //                     navLink("submit")
+    //                 ),
+    //                 navLink("login")
+    //             ),
+
+    //             // ── Stories ──
+    //             storyList,
+
+    //             div().paddingLeft(S::px(44)).paddingTop(S::px(4)).paddingBottom(S::px(12))(
+    //                 text("More").font(Verdana).fontSize(S::pt(10)).color(ink)
+    //             ),
+
+    //             // ── Footer ──
+    //             div().width(S::percent(1.0)).paddingTop(S::px(10)).paddingBottom(S::px(24))
+    //                 .borderColor(orange).borderTopWidth(S::px(2))
+    //                 .display(Display::Flex).flexDirection(FlexDirection::Col).alignItems(AlignItems::Center).flexGap(S::px(12))
+    //             (
+    //                 div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(4))(
+    //                     footerLink("Guidelines"), footerSeparator(),
+    //                     footerLink("FAQ"), footerSeparator(),
+    //                     footerLink("Lists"), footerSeparator(),
+    //                     footerLink("API"), footerSeparator(),
+    //                     footerLink("Security"), footerSeparator(),
+    //                     footerLink("Legal"), footerSeparator(),
+    //                     footerLink("Apply to YC"), footerSeparator(),
+    //                     footerLink("Contact")
+    //                 ),
+    //                 div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(6))(
+    //                     text("Search:").font(Verdana).fontSize(S::pt(10)).color(muted),
+    //                     div(S::px(160), S::px(18), white).borderColor(rgb(118, 118, 118)).borderWidth(S::px(1))()
+    //                 )
+    //             )
+    //         )
+    //     );
+    // }
+
+    /*
     // ═══════════════════════════════════════════════════════════════════
-    // Clone: en.wikipedia.org article (Vector 2022 skin)
+    // Clone: stripe.com landing page
     // ═══════════════════════════════════════════════════════════════════
     {
         using S = gui::Size;
@@ -6068,377 +6626,192 @@ div()
             return simd_float4{r / 255.0f, g / 255.0f, b / 255.0f, a};
         };
 
-        const auto paper    = rgb(255, 255, 255);
-        const auto chrome   = rgb(248, 249, 250);
-        const auto rule     = rgb(162, 169, 177);
-        const auto softRule = rgb(234, 236, 240);
-        const auto ink      = rgb(32, 33, 34);
-        const auto muted    = rgb(84, 89, 93);
-        const auto link     = rgb(51, 102, 204);
-        const auto visited  = rgb(121, 92, 161);
-        const auto infobox  = rgb(248, 249, 250);
-        const auto taxon    = rgb(211, 211, 211);
-        const auto clear    = rgb(0, 0, 0, 0.0f);
+        const auto white   = rgb(255, 255, 255);
+        const auto navy    = rgb(10, 37, 64);
+        const auto slate   = rgb(66, 84, 102);
+        const auto blurple = rgb(99, 91, 255);
+        const auto mist    = rgb(246, 249, 252);
+        const auto haze    = rgb(173, 189, 204);
+        const auto clear   = rgb(0, 0, 0, 0.0f);
 
         const std::string Sans     = Helvetica;
         const std::string SansBold = ArialBold;
-        const std::string Serif    = "/System/Library/Fonts/Supplemental/Georgia.ttf";
         constexpr auto A = "/Users/treja/projects/gui/assets/clones/";
-        constexpr auto butterflyPath = "/Users/treja/projects/gui/assets/butterfly.png";
 
-        auto body = [&](const char* s) { return text(s).font(Sans).fontSize(S::pt(11)).color(ink).lineHeight(1.6); };
-        auto a    = [&](const char* s) { return text(s).font(Sans).fontSize(S::pt(11)).color(link).lineHeight(1.6); };
-        auto sup  = [&](const char* s) { return text(s).font(Sans).fontSize(S::pt(7.5)).color(link); };
+        auto navItem = [&](const char* label) {
+            return text(label).font(SansBold).fontSize(S::pt(11)).color(navy);
+        };
 
-        auto heading = [&](const char* title) {
-            return div().width(S::percent(1.0)).marginTop(S::px(22)).marginBottom(S::px(8))
-                .paddingBottom(S::px(3))
-                .borderColor(rule).borderBottomWidth(S::px(1))
+        auto arrowButton = [&](const char* label, simd_float4 fill, simd_float4 labelColor, const char* arrow) {
+            return div(S::autoSize(), S::px(38), fill)
+                .cornerRadius(S::px(19))
+                .paddingLeft(S::px(18)).paddingRight(S::px(14))
+                .display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(6))
             (
-                text(title).font(Serif).fontSize(S::pt(17)).color(ink)
+                text(label).font(SansBold).fontSize(S::pt(11)).color(labelColor),
+                svg(std::string(A) + arrow, S::px(10), S::px(10))
             );
         };
 
-        auto tocItem = [&](const char* label, bool active, int indent = 0) {
-            return div().paddingLeft(S::px(indent * 14))(
-                text(label).font(active ? SansBold : Sans).fontSize(S::pt(10)).color(active ? ink : link)
+        auto band = [&](simd_float4 color) {
+            return div(S::percent(1.0), S::px(130), color).opacity(0.9f)();
+        };
+
+        auto logo = [&](const char* name) {
+            return div().display(Display::Flex).justifyContent(JustifyContent::Center)(
+                text(name).font(SansBold).fontSize(S::pt(17)).color(rgb(10, 37, 64, 0.55f))
             );
         };
 
-        auto tab = [&](const char* label, bool active) {
+        auto productCard = [&](simd_float4 accent, const char* title, const char* body) {
+            return div(S::autoSize(), S::autoSize(), white)
+                .cornerRadius(S::px(8))
+                .padding(S::px(24))
+                .shadowOffsetY(S::px(15)).shadowBlur(S::px(35)).shadowColor(rgb(50, 50, 93, 0.12f))
+                .display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(12))
+            (
+                div(S::px(32), S::px(32), accent).cornerRadius(S::px(8))(),
+                text(title).font(SansBold).fontSize(S::pt(13)).color(navy),
+                text(body).font(Sans).fontSize(S::pt(11)).color(slate).lineHeight(1.55),
+                div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(4))(
+                    text("Learn more").font(SansBold).fontSize(S::pt(10.5)).color(blurple),
+                    svg(std::string(A) + "stripe-arrow-dark.svg", S::px(10), S::px(10))
+                )
+            );
+        };
+
+        auto stat = [&](const char* value, const char* label) {
             return div()
-                .height(S::px(38))
-                .paddingLeft(S::px(8)).paddingRight(S::px(8))
-                .display(Display::Flex)
-                .alignItems(AlignItems::Center)
-                .position(Position::Relative)
+                .paddingLeft(S::px(16))
+                .borderColor(blurple).borderLeftWidth(S::px(1))
+                .display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(8))
             (
-                text(label).font(Sans).fontSize(S::pt(10.5)).color(active ? ink : link),
-                div(S::percent(1.0), S::px(2), active ? ink : clear)
-                    .position(Position::Absolute).bottom(S::px(0)).left(S::px(0))()
+                text(value).font(SansBold).fontSize(S::pt(26)).color(white),
+                text(label).font(Sans).fontSize(S::pt(11)).color(haze).lineHeight(1.5)
             );
         };
 
-        auto infoRow = [&](const char* k, const char* v, bool italic = false) {
-            return div().width(S::percent(1.0)).display(Display::Flex).alignItems(AlignItems::Center)
-                .paddingTop(S::px(1)).paddingBottom(S::px(1))
-            (
-                div().width(S::px(80)).flexShrink(S::px(0))(
-                    text(k).font(SansBold).fontSize(S::pt(9)).color(ink)
-                ),
-                text(v).font(Sans).fontSize(S::pt(9)).color(italic ? ink : link)
-            );
-        };
-
-        auto taxonHeader = [&](const char* label) {
-            return div(S::percent(1.0), S::autoSize(), taxon)
-                .paddingTop(S::px(3)).paddingBottom(S::px(3))
-                .display(Display::Flex).justifyContent(JustifyContent::Center)
-            (
-                text(label).font(SansBold).fontSize(S::pt(9.5)).color(ink)
-            );
-        };
-
-        div(S::percent(1.0), S::percent(1.0), paper)
+        div(S::percent(1.0), S::percent(1.0), white)
             .overflow(gui::Overflow::Scroll)
         (
-            // ── Header ──
-            div(S::percent(1.0), S::px(50), paper)
-                .position(Position::Sticky)
-                .top(S::px(0))
-                .zIndex(10)
-                .display(Display::Flex)
-                .alignItems(AlignItems::Center)
-                .justifyContent(JustifyContent::SpaceBetween)
-                .paddingLeft(S::px(16)).paddingRight(S::px(16))
-                .borderColor(softRule).borderBottomWidth(S::px(1))
+            // ── Hero ──
+            div(S::percent(1.0), S::px(640), white)
+                .position(Position::Relative)
+                .overflow(gui::Overflow::Hidden)
             (
-                div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(14))(
-                    div().display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(3)).width(S::px(16))(
-                        div(S::percent(1.0), S::px(2), ink)(),
-                        div(S::percent(1.0), S::px(2), ink)(),
-                        div(S::percent(1.0), S::px(2), ink)()
+                div(S::px(1800), S::autoSize(), clear)
+                    .position(Position::Absolute)
+                    .top(S::px(-360)).left(S::percent(0.3))
+                    .rotate(-0.21f)
+                (
+                    band(rgb(169, 96, 238)),
+                    band(rgb(255, 51, 61)),
+                    band(rgb(255, 203, 87)),
+                    band(rgb(144, 224, 255)),
+                    band(rgb(169, 96, 238))
+                ),
+
+                // nav
+                div(S::percent(1.0), S::px(72), clear)
+                    .position(Position::Relative)
+                    .paddingLeft(S::px(64)).paddingRight(S::px(64))
+                    .display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::SpaceBetween)
+                (
+                    div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(32))(
+                        text("stripe").font(SansBold).fontSize(S::pt(22)).color(navy),
+                        navItem("Products"),
+                        navItem("Solutions"),
+                        navItem("Developers"),
+                        navItem("Resources"),
+                        navItem("Pricing")
                     ),
-                    div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
-                        div(S::px(36), S::px(36), rgb(230, 232, 235)).cornerRadius(S::px(18))
-                            .display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::Center)
-                        (
-                            text("W").font(Serif).fontSize(S::pt(20)).color(ink)
-                        ),
-                        div().display(Display::Flex).flexDirection(FlexDirection::Col)(
-                            text("WIKIPEDIA").font(Serif).fontSize(S::pt(15)).color(ink),
-                            text("The Free Encyclopedia").font(Serif).fontSize(S::pt(7.5)).color(ink)
-                        )
-                    ),
-                    div(S::px(300), S::px(32), paper)
-                        .cornerRadius(S::px(2))
-                        .borderColor(rule).borderWidth(S::px(1))
-                        .display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))
-                        .paddingLeft(S::px(8))
-                        .marginLeft(S::px(10))
-                    (
-                        svg(std::string(A) + "wiki-search.svg", S::px(14), S::px(14)),
-                        text("Search Wikipedia").font(Sans).fontSize(S::pt(10.5)).color(muted).flexGrow(S::px(1)),
-                        div(S::autoSize(), S::percent(1.0), chrome)
-                            .paddingLeft(S::px(12)).paddingRight(S::px(12))
-                            .borderColor(rule).borderLeftWidth(S::px(1))
-                            .display(Display::Flex).alignItems(AlignItems::Center)
-                        (
-                            text("Search").font(Sans).fontSize(S::pt(10.5)).color(ink)
-                        )
+                    div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(12))(
+                        arrowButton("Sign in", rgb(255, 255, 255, 0.25f), white, "stripe-arrow.svg"),
+                        arrowButton("Contact sales", white, blurple, "stripe-arrow-dark.svg")
                     )
                 ),
-                div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(14))(
-                    text("Donate").font(Sans).fontSize(S::pt(10.5)).color(link),
-                    text("Create account").font(Sans).fontSize(S::pt(10.5)).color(link),
-                    text("Log in").font(Sans).fontSize(S::pt(10.5)).color(link),
-                    text("···").font(Sans).fontSize(S::pt(10.5)).color(muted)
+
+                // headline
+                div()
+                    .position(Position::Relative)
+                    .paddingLeft(S::px(64))
+                    .paddingTop(S::px(96))
+                    .maxWidth(S::px(760))
+                    .display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(28))
+                (
+                    text("Financial infrastructure to grow your revenue").font(SansBold).fontSize(S::pt(52)).color(navy).lineHeight(1.05),
+                    div().maxWidth(S::px(540))(
+                        text("Join the millions of companies that use Stripe to accept payments online and in person, embed financial services, power custom revenue models, and build a more profitable business.")
+                            .font(Sans).fontSize(S::pt(14)).color(slate).lineHeight(1.55)
+                    ),
+                    div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(16))(
+                        arrowButton("Start now", blurple, white, "stripe-arrow.svg"),
+                        arrowButton("Contact sales", clear, blurple, "stripe-arrow-dark.svg")
+                    )
                 )
             ),
 
-            // ── Page grid: TOC | article ──
+            // ── Logos ──
             div()
                 .width(S::percent(1.0))
+                .paddingLeft(S::px(64)).paddingRight(S::px(64))
+                .paddingTop(S::px(32)).paddingBottom(S::px(48))
                 .display(Display::Grid)
-                .gridTemplateColumns({S::px(180), S::fr(1)})
-                .gridColumnGap(S::px(20))
-                .paddingLeft(S::px(16)).paddingRight(S::px(16))
-                .paddingTop(S::px(16))
+                .gridTemplateColumns({S::fr(1), S::fr(1), S::fr(1), S::fr(1)})
+                .gridRowGap(S::px(32))
             (
-                // TOC
-                div().display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(9)).paddingTop(S::px(48))(
-                    div().display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::SpaceBetween).paddingBottom(S::px(6))(
-                        text("Contents").font(SansBold).fontSize(S::pt(10.5)).color(ink),
-                        text("hide").font(Sans).fontSize(S::pt(9)).color(link)
-                    ),
-                    tocItem("(Top)", true),
-                    tocItem("Etymology", false),
-                    tocItem("Distribution and diversity", false),
-                    tocItem("Phylogeny and evolution", false),
-                    tocItem("Life cycle", false),
-                    tocItem("Egg", false, 1),
-                    tocItem("Larva", false, 1),
-                    tocItem("Pupa", false, 1),
-                    tocItem("Adult", false, 1),
-                    tocItem("Ecology", false),
-                    tocItem("Behaviour", false),
-                    tocItem("In culture", false),
-                    tocItem("See also", false),
-                    tocItem("References", false)
+                logo("OpenAI"), logo("amazon"), logo("Google"), logo("Marriott"),
+                logo("shopify"), logo("airbnb"), logo("URBN"), logo("lyft")
+            ),
+
+            // ── Products ──
+            div(S::percent(1.0), S::autoSize(), mist)
+                .paddingLeft(S::px(64)).paddingRight(S::px(64))
+                .paddingTop(S::px(96)).paddingBottom(S::px(96))
+                .display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(20))
+            (
+                text("Modular solutions").font(SansBold).fontSize(S::pt(13)).color(blurple),
+                div().maxWidth(S::px(720))(
+                    text("A fully integrated suite of financial and payments products").font(SansBold).fontSize(S::pt(34)).color(navy).lineHeight(1.15)
                 ),
+                div().maxWidth(S::px(620)).marginBottom(S::px(28))(
+                    text("Reduce costs, grow revenue, and run your business more efficiently on a fully integrated, AI-powered platform. Use Stripe to handle all of your payments-related needs.")
+                        .font(Sans).fontSize(S::pt(13)).color(slate).lineHeight(1.55)
+                ),
+                div()
+                    .width(S::percent(1.0))
+                    .display(Display::Grid)
+                    .gridTemplateColumns({S::fr(1), S::fr(1), S::fr(1)})
+                    .gridColumnGap(S::px(24))
+                (
+                    productCard(blurple, "Payments", "Accept and optimize payments globally, online and in person."),
+                    productCard(rgb(0, 212, 255), "Billing", "Manage subscriptions, invoicing, and usage-based pricing."),
+                    productCard(rgb(255, 91, 145), "Connect", "Build and scale a multiparty payments platform or marketplace.")
+                )
+            ),
 
-                // Article
-                div().display(Display::Flex).flexDirection(FlexDirection::Col)(
-                    // title
-                    div().width(S::percent(1.0)).paddingBottom(S::px(4))
-                        .borderColor(rule).borderBottomWidth(S::px(1))
-                    (
-                        text("Butterfly").font(Serif).fontSize(S::pt(25)).color(ink)
-                    ),
-                    // tabs
-                    div().width(S::percent(1.0)).display(Display::Flex).justifyContent(JustifyContent::SpaceBetween)(
-                        div().display(Display::Flex)(
-                            tab("Article", true), tab("Talk", false)
-                        ),
-                        div().display(Display::Flex)(
-                            tab("Read", true), tab("Edit", false), tab("View history", false), tab("Tools ▾", false)
-                        )
-                    ),
-                    div().marginTop(S::px(12)).marginBottom(S::px(12))(
-                        text("From Wikipedia, the free encyclopedia").font(Sans).fontSize(S::pt(9.5)).color(muted)
-                    ),
-
-                    // body grid: text | infobox
-                    div().width(S::percent(1.0)).display(Display::Flex).flexGap(S::px(20))(
-                        div().flexGrow(S::px(1)).minWidth(S::px(200))(
-                            div().width(S::percent(1.0)).marginBottom(S::px(12))(
-                                body("For other uses, see "), a("Butterfly (disambiguation)"), body(".")
-                            ),
-                            div().width(S::percent(1.0)).marginBottom(S::px(12))(
-                                text("Butterflies").font(SansBold).fontSize(S::pt(11)).color(ink).lineHeight(1.6),
-                                body(" are winged "), a("insects"), body(" from the "), a("lepidopteran"),
-                                body(" suborder "), a("Rhopalocera"),
-                                body(", characterized by large, often brightly coloured wings that often fold together when at rest, and a conspicuous, fluttering flight. The oldest butterfly fossils have been dated to the "),
-                                a("Paleocene"), body(", about 56 million years ago, though molecular evidence suggests that they may have originated in the "),
-                                a("Late Cretaceous"), body(".")
-                            ),
-                            div().width(S::percent(1.0)).marginBottom(S::px(12))(
-                                body("Butterflies have a four-stage "), a("life cycle"), body(", and like other "), a("holometabolous"),
-                                body(" insects they undergo complete "), a("metamorphosis"),
-                                body(". Winged adults lay eggs on the food plant on which their "), a("larvae"),
-                                body(", known as "), a("caterpillars"), body(", will feed. The caterpillars grow, sometimes very rapidly, and when fully developed, "),
-                                a("pupate"), body(" in a "), a("chrysalis"),
-                                body(". When metamorphosis is complete, the pupal skin splits, the adult insect climbs out, expands its wings to dry, and flies off."), sup("[1]")
-                            ),
-                            div().width(S::percent(1.0)).marginBottom(S::px(12))(
-                                body("Some butterflies, especially in the tropics, have several generations in a year, while others have a single generation, and a few in cold locations may take several years to pass through their entire life cycle. Butterflies are often "),
-                                a("polymorphic"), body(", and many species make use of "), a("camouflage"), body(", "), a("mimicry"),
-                                body(", and "), a("aposematism"), body(" to evade their predators."), sup("[2]")
-                            ),
-
-                            heading("Etymology"),
-                            div().width(S::percent(1.0)).marginBottom(S::px(12))(
-                                body("The "), a("Oxford English Dictionary"),
-                                body(" derives the word straightforwardly from "), a("Old English"),
-                                text(" butorflēoge").font(Sans).fontSize(S::pt(11)).color(ink).lineHeight(1.6),
-                                body(", butter-fly; similar names in Old Dutch and Old High German show that the name is ancient, but modern Dutch and German use different words ("),
-                                text("vlinder").font(Sans).fontSize(S::pt(11)).color(ink), body(" and "),
-                                text("Schmetterling").font(Sans).fontSize(S::pt(11)).color(ink),
-                                body("). Butterflies were thought to steal milk and butter, or that they fly around in fields during the spring, when the grass is green and the butter is yellow."), sup("[3]")
-                            ),
-
-                            heading("Distribution and diversity"),
-                            div().width(S::percent(1.0)).marginBottom(S::px(12))(
-                                body("Butterflies are distributed worldwide except "), a("Antarctica"),
-                                body(", totalling some 18,500 species. Of these, 775 are "), a("Nearctic"),
-                                body("; 7,700 "), a("Neotropical"), body("; 1,575 "), a("Palearctic"), body("; 3,650 "), a("Afrotropical"),
-                                body("; and 4,800 are distributed across the combined "), a("Oriental"), body(" and "), a("Australian/Oceania"),
-                                body(" regions."), sup("[4]"),
-                                body(" The "), a("monarch butterfly"),
-                                body(" is native to the Americas, but in the nineteenth century or before, spread across the world, and is now found in Australia, New Zealand, other parts of Oceania, and the Iberian Peninsula.")
-                            ),
-
-                            heading("Phylogeny and evolution"),
-                            div().width(S::percent(1.0)).marginBottom(S::px(12))(
-                                body("The earliest "), a("Lepidoptera"), body(" fossils date to the "), a("Triassic"), body("–"), a("Jurassic"),
-                                body(" boundary, around 200 million years ago."), sup("[5]"),
-                                body(" Butterflies evolved from "), a("moths"),
-                                body(", so while the butterflies are "), a("monophyletic"),
-                                body(" (forming a single clade), the moths are not. The oldest known butterfly is "),
-                                text("Protocoeliades kristenseni").font(Sans).fontSize(S::pt(11)).color(link),
-                                body(" from the Palaeocene aged "), a("Fur Formation"), body(" of Denmark, approximately 55 million years old.")
-                            )
-                        ),
-
-                        // infobox
-                        div(S::px(264), S::autoSize(), infobox)
-                            .flexShrink(S::px(0))
-                            .alignSelf(gui::AlignSelf::FlexStart)
-                            .borderColor(rgb(162, 169, 177)).borderWidth(S::px(1))
-                            .padding(S::px(4))
-                            .display(Display::Flex)
-                            .flexDirection(FlexDirection::Col)
-                            .flexGap(S::px(4))
-                        (
-                            div(S::percent(1.0), S::autoSize(), rgb(211, 211, 211))
-                                .paddingTop(S::px(5)).paddingBottom(S::px(5))
-                                .display(Display::Flex).flexDirection(FlexDirection::Col).alignItems(AlignItems::Center)
-                            (
-                                text("Butterflies").font(SansBold).fontSize(S::pt(12)).color(ink),
-                                text("Temporal range: Paleocene–present").font(Sans).fontSize(S::pt(8)).color(ink)
-                            ),
-                            image(butterflyPath, S::percent(1.0), S::autoSize()).aspectRatio(1, 1),
-                            div().width(S::percent(1.0)).display(Display::Flex).justifyContent(JustifyContent::Center).paddingBottom(S::px(4))(
-                                text("A Peacock butterfly, Aglais io").font(Sans).fontSize(S::pt(8.5)).color(ink)
-                            ),
-                            taxonHeader("Scientific classification"),
-                            div().width(S::percent(1.0)).display(Display::Flex).flexDirection(FlexDirection::Col).paddingLeft(S::px(4))(
-                                infoRow("Kingdom:", "Animalia"),
-                                infoRow("Phylum:", "Arthropoda"),
-                                infoRow("Class:", "Insecta"),
-                                infoRow("Order:", "Lepidoptera"),
-                                infoRow("Suborder:", "Rhopalocera", true)
-                            ),
-                            taxonHeader("Superfamilies"),
-                            div().width(S::percent(1.0)).display(Display::Flex).flexDirection(FlexDirection::Col).alignItems(AlignItems::Center).flexGap(S::px(2)).paddingTop(S::px(2)).paddingBottom(S::px(4))(
-                                text("Hedyloidea").font(Sans).fontSize(S::pt(9)).color(link),
-                                text("Hesperioidea").font(Sans).fontSize(S::pt(9)).color(link),
-                                text("Papilionoidea").font(Sans).fontSize(S::pt(9)).color(visited)
-                            )
-                        )
-                    ),
-
-                    div(S::percent(1.0), S::px(64), clear)()
+            // ── Stats ──
+            div(S::percent(1.0), S::autoSize(), navy)
+                .paddingLeft(S::px(64)).paddingRight(S::px(64))
+                .paddingTop(S::px(96)).paddingBottom(S::px(96))
+                .display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(48))
+            (
+                div().maxWidth(S::px(640))(
+                    text("The backbone of global commerce").font(SansBold).fontSize(S::pt(30)).color(white).lineHeight(1.15)
+                ),
+                div()
+                    .width(S::percent(1.0))
+                    .display(Display::Grid)
+                    .gridTemplateColumns({S::fr(1), S::fr(1), S::fr(1), S::fr(1)})
+                    .gridColumnGap(S::px(32))
+                (
+                    stat("500M+", "API requests per day, peaking at 13,000 requests a second."),
+                    stat("99.999%", "historical uptime for Stripe services."),
+                    stat("47+", "countries with local acquiring, optimizing acceptance rates."),
+                    stat("135+", "currencies and payment methods supported.")
                 )
             )
         );
     }
-
-    // ── rtl margins: block flow, flex row, grid alignment ──
-    // flip InheritedProperties::direction in layout.hpp to rtl for this scene.
-    {
-        using S = gui::Size;
-
-        const auto label = [&](const char* s) {
-            return text(s)
-                .font(Arial)
-                .fontSize(S::pt(12))
-                .color(simd_float4{0.38,0.92,0.56,1.0});
-        };
-
-        const auto panel = simd_float4{0.15,0.16,0.20,1.0};
-        const auto yellow = simd_float4{0.98,0.76,0.20,1.0};
-        const auto blue = simd_float4{0.45,0.80,0.98,1.0};
-        const auto pink = simd_float4{0.96,0.30,0.46,1.0};
-        const auto green = simd_float4{0.38,0.92,0.56,1.0};
-
-        div(S::percent(1.0), S::percent(1.0), simd_float4{0.06,0.07,0.09,1.0})
-            .padding(S::px(48))
-            .overflow(gui::Overflow::Scroll)
-        (
-            label("BLOCK FLOW: 200 WIDE, MARGIN LEFT 20 + RIGHT 40"),
-            div(S::px(480), S::autoSize(), panel)
-            (
-                div(S::px(200), S::px(30), yellow).marginLeft(S::px(20)).marginRight(S::px(40))()
-            ),
-
-            label("FLEX ROW: MARGIN LEFT 20 | MARGIN RIGHT 20 | NONE").marginTop(S::px(24)),
-            div(S::px(480), S::px(60), panel)
-                .display(gui::Display::Flex)
-                .alignItems(gui::AlignItems::FlexStart)
-            (
-                div(S::px(80), S::px(40), yellow).marginLeft(S::px(20))(),
-                div(S::px(80), S::px(40), blue).marginRight(S::px(20))(),
-                div(S::px(80), S::px(40), pink)()
-            ),
-
-            label("GRID: START | CENTER / END | CENTER, NO MARGIN").marginTop(S::px(24)),
-            div(S::px(480), S::autoSize(), panel)
-                .display(gui::Display::Grid)
-                .gridTemplateColumns({S::px(240), S::px(240)})
-                .gridTemplateRows({S::px(50), S::px(50)})
-            (
-                div(S::px(80), S::px(30), yellow).marginLeft(S::px(10)).marginRight(S::px(30)).justifySelf(gui::JustifySelf::Start)(),
-                div(S::px(80), S::px(30), blue).marginLeft(S::px(10)).marginRight(S::px(30)).justifySelf(gui::JustifySelf::Center)(),
-                div(S::px(80), S::px(30), pink).marginLeft(S::px(10)).marginRight(S::px(30)).justifySelf(gui::JustifySelf::End)(),
-                div(S::px(80), S::px(30), green).justifySelf(gui::JustifySelf::Center)()
-            ),
-
-            label("FLEX COLUMN, ALIGN START: MARGIN LEFT 10 | MARGIN RIGHT 10 | NONE").marginTop(S::px(24)),
-            div(S::px(480), S::autoSize(), panel)
-                .display(gui::Display::Flex)
-                .flexDirection(gui::FlexDirection::Col)
-                .alignItems(gui::AlignItems::FlexStart)
-            (
-                div(S::px(80), S::px(30), yellow).marginLeft(S::px(10))(),
-                div(S::px(80), S::px(30), blue).marginRight(S::px(10))(),
-                div(S::px(80), S::px(30), pink)()
-            ),
-
-            label("AUTO HEIGHT: FLEX ROW, THEN BAR").marginTop(S::px(24)),
-            div(S::px(480), S::autoSize(), panel)
-            (
-                div().display(gui::Display::Flex)
-                (
-                    div(S::px(80), S::px(40), yellow)(),
-                    div(S::px(80), S::px(40), blue)(),
-                    div(S::px(80), S::px(40), pink)()
-                ),
-                div(S::px(200), S::px(20), green)()
-            ),
-
-            label("AUTO HEIGHT: GRID, THEN BAR").marginTop(S::px(24)),
-            div(S::px(480), S::autoSize(), panel)
-            (
-                div()
-                    .display(gui::Display::Grid)
-                    .gridTemplateColumns({S::px(100), S::px(100)})
-                (
-                    div(S::px(80), S::px(40), yellow)(),
-                    div(S::px(80), S::px(40), blue)()
-                ),
-                div(S::px(200), S::px(20), green)()
-            )
-        );
-    }
+    */
 }

@@ -621,7 +621,7 @@ namespace tree {
 
         if (node->element->isInline()) {
             auto textResp = getText(node);
-            auto margins = node->preLayout->resolvedMargins;
+            ResolvedMargins margins {};
             auto& atoms = node->atomized->atoms;
             PaddingResult padding {};
 

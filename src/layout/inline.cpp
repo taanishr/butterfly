@@ -58,6 +58,7 @@ namespace layout {
         float minY = newCursor.y;
 
         bool isLtr = constraints.inheritedProperties.direction == Direction::ltr;
+        bool placedByParent = constraints.parentDisplay == Display::Flex || constraints.parentDisplay == Display::Grid;
         size_t prevLineBoxIndex = -1;
 
         /*
@@ -137,7 +138,7 @@ namespace layout {
                 maxX = std::max(maxX, startingX + fragment.width + fragment.leadingPadding);
             }
 
-            if (fragmentIdx == 0 && constraints.edgeIntent.edgeDisplayMode != Display::Inline) {
+            if (fragmentIdx == 0 && !placedByParent && constraints.edgeIntent.edgeDisplayMode != Display::Inline) {
                 if (constraints.edgeIntent.collapsable) {
                     newCursor.y += std::max(margins.top, constraints.edgeIntent.intent);
                 } else {

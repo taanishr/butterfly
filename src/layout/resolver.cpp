@@ -37,15 +37,15 @@ namespace layout {
                     }
                 }
 
-                resolvedPosition = {0.0f, 0.0f};
+                resolvedPosition = {ctx.margins.left, ctx.margins.top};
 
                 // Only resolve left/top during layout.
                 // right/bottom depend on element size and are resolved in postLayout.
                 if (left.has_value()) {
-                    resolvedPosition.x = *left + ctx.margins.left;
+                    resolvedPosition.x += *left;
                 }
                 if (top.has_value()) {
-                    resolvedPosition.y = *top + ctx.margins.top;
+                    resolvedPosition.y += *top;
                 }
 
                 break;
@@ -68,19 +68,19 @@ namespace layout {
                     }
                 }
 
-                resolvedPosition = {0.0f, 0.0f};
+                resolvedPosition = {ctx.margins.left, ctx.margins.top};
 
                 // Only resolve left/top during layout.
                 // right/bottom depend on element size and are resolved in postLayout.
                 if (left.has_value()) {
-                    resolvedPosition.x = *left + ctx.margins.left;
+                    resolvedPosition.x += *left;
                 }
                 if (top.has_value()) {
-                    resolvedPosition.y = *top + ctx.margins.top;
+                    resolvedPosition.y += *top;
                 }
 
                 break;
-            }   
+            }
             case layout::Position::Relative:
             case layout::Position::Sticky:
             case layout::Position::Static: {
@@ -91,23 +91,21 @@ namespace layout {
                         float startingX = ctx.constraints.origin.x;
                         float startingY = ctx.constraints.cursor.y;
 
-                        if (ctx.constraints.edgeIntent.edgeDisplayMode == Display::Inline) {
-                            startingY += ctx.constraints.prevInlineHeight;
-                        }else if (ctx.constraints.edgeIntent.edgeDisplayMode == Display::Block) {
-                            if (ctx.constraints.edgeIntent.collapsable && !ctx.layoutInput.marginTop.isAuto()) {
-                                startingY += std::max(ctx.constraints.edgeIntent.intent, ctx.margins.top);
-                            } else {
-                                startingY += ctx.constraints.edgeIntent.intent + ctx.margins.top;
-                            }
-                        }
-
                         bool placedByParent = ctx.constraints.parentDisplay == Display::Flex
                             || ctx.constraints.parentDisplay == Display::Grid;
                         bool isLtr = ctx.constraints.inheritedProperties.direction == Direction::ltr;
 
-                        if (placedByParent) {
-                            startingX += ctx.margins.left;
-                        } else {
+                        if (!placedByParent) {
+                            if (ctx.constraints.edgeIntent.edgeDisplayMode == Display::Inline) {
+                                startingY += ctx.constraints.prevInlineHeight;
+                            }else if (ctx.constraints.edgeIntent.edgeDisplayMode == Display::Block) {
+                                if (ctx.constraints.edgeIntent.collapsable && !ctx.layoutInput.marginTop.isAuto()) {
+                                    startingY += std::max(ctx.constraints.edgeIntent.intent, ctx.margins.top);
+                                } else {
+                                    startingY += ctx.constraints.edgeIntent.intent + ctx.margins.top;
+                                }
+                            }
+
                             if (isLtr) {
                                 startingX += ctx.margins.left;
                             } else {

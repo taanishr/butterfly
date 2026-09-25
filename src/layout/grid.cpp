@@ -1985,7 +1985,12 @@ namespace layout {
                 preparedChildConstraints.origin.y += dy;
                 preparedChildConstraints.cursor.y += dy;
             }
-            
+
+            preparedChildConstraints.origin.x += margins.left;
+            preparedChildConstraints.cursor.x += margins.left;
+            preparedChildConstraints.origin.y += margins.top;
+            preparedChildConstraints.cursor.y += margins.top;
+
             tree.layoutRecursive(
                 childNode, frameInfo, preparedChildConstraints,
                 mutate, childRequest

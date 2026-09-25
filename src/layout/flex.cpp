@@ -6,6 +6,7 @@
 #include "render_tree.hpp"
 #include <algorithm>
 #include <optional>
+#include <print>
 #include <utility>
 #include <variant>
 
@@ -189,7 +190,8 @@ namespace layout {
                 .maximum = measuredMainIntrinsicSizes->maximum
             };
 
-            const SizeState& flexBaseSize = std::holds_alternative<float>(preferredMainSize) ? preferredMainSize : mainIntrinsicSizes.maximum;            const SizeState& minimumMainSize = flex.axis.mainSize(childSizing.minimum);
+            const SizeState& flexBaseSize = std::holds_alternative<float>(preferredMainSize) ? preferredMainSize : mainIntrinsicSizes.maximum;
+            const SizeState& minimumMainSize = flex.axis.mainSize(childSizing.minimum);
             const SizeState& maximumMainSize = flex.axis.mainSize(childSizing.maximum);
 
             flex.addItem(
@@ -226,7 +228,29 @@ namespace layout {
         }
 
 
-        resolvedMainSizes = flex.resolveSizes(availableMain, resolvedGap);    }
+        resolvedMainSizes = flex.resolveSizes(availableMain, resolvedGap);
+
+        // TEMP: hacker news wrap
+        bool isGroup = false;
+        bool isHeader = false;
+        for (auto& child : node->children) {
+            if (child->id == 157) isGroup = true;
+            for (auto& grandchild : child->children) {
+                if (grandchild->id == 157) isHeader = true;
+            }
+        }
+        if (isGroup || isHeader) {
+            std::println("[{}] node={} availableMain={} containerMain={} gap={}",
+                isGroup ? "group" : "header", node->id, availableMain, describeSizeState(flex.axis.mainSize(availableSize)), resolvedGap);
+            for (auto& line : flex.lines) {
+                for (auto& item : line.items) {
+                    std::println("    child={} base={} maxContribution={} hypothetical={} min={} used={} margin={}",
+                        node->children[item.childIndex]->id, describeSizeState(item.flexBaseSize), item.maximumMainContribution,
+                        item.hypotheticalMainSize, describeSizeState(item.minimumMainSize), item.usedMainSize, item.mainMargin);
+                }
+            }
+        }
+    }
 
     auto FlexResolver::phaseC() -> FlexResolver::FlexResult {
         float minimumCrossContribution = 0.0f;
@@ -293,6 +317,7 @@ namespace layout {
 
 
                 SizeResult childSizing = evaluateSize(tree, childNode, frameInfo, preparedChildConstraints, childRequest, sizeCache);
+
                 if (std::holds_alternative<float>(flex.axis.crossSize(childSizing.borderBoxSize))) {
                     item.hypotheticalCrossSize = std::get<float>(flex.axis.crossSize(childSizing.borderBoxSize));
                     lineMaximumCrossContribution = std::max(lineMaximumCrossContribution, item.hypotheticalCrossSize + item.crossMargin);
@@ -366,6 +391,10 @@ namespace layout {
                 placement.mainOffset,
                 placement.crossOffset
             );
+
+            const auto& margins = childNode->preLayout->resolvedMargins;
+            childPosition.x += margins.left;
+            childPosition.y += margins.top;
 
             preparedChildConstraints.origin = childPosition;
             preparedChildConstraints.cursor = childPosition;
