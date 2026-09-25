@@ -54,6 +54,7 @@ namespace style {
         static Size fitContent()      { return {0.0f, Unit::FitContent}; }
 
         bool isAuto() const { return unit == Unit::Auto; }
+        bool isPercent() const { return unit == Unit::Percent; }
         bool isFr() const { return unit == Unit::Fr; }
         bool isMinContent() const { return unit == Unit::MinContent; }
         bool isMaxContent() const { return unit == Unit::MaxContent; }

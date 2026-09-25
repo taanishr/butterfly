@@ -1552,14 +1552,33 @@ namespace layout {
             const SizeResult childSizing = evaluateSize(tree, childNode, frameInfo, preparedChildConstraints, childRequest, sizeCache);
 
             const auto& intrinsicWidths = *childSizing.widthIntrinsicSizes;
-            float minContent = std::get<float>(intrinsicWidths.minimum);
-            float maxContent = std::get<float>(intrinsicWidths.maximum);
             const float* preferredWidth = std::get_if<float>(&childSizing.borderBoxSize.width);
             const float* minWidth = std::get_if<float>(&childSizing.minimum.width);
             const float* maxWidth = std::get_if<float>(&childSizing.maximum.width);
 
-            if (preferredWidth)
-                minContent = maxContent = *preferredWidth;
+            // css-sizing-3 5.2: contributions are the item's size inside an auto-sized float;
+            // a definite preferred size holds, auto shrinks to content. 5.2.1: cyclic percentages
+            // (grid items resolve against the grid area being sized) contribute as auto
+            auto [minContent, maxContent] = std::visit(Overloaded {
+                [&](const Size& size) -> std::pair<float, float> {
+                    if (size.isAuto()) {
+                        return {std::get<float>(intrinsicWidths.minimum), std::get<float>(intrinsicWidths.maximum)};
+                    } else if (size.isPercent()) {
+                        return {std::get<float>(intrinsicWidths.minimum), std::get<float>(intrinsicWidths.maximum)};
+                    } else {
+                        return {*preferredWidth, *preferredWidth};
+                    }
+                },
+                [&](float) -> std::pair<float, float> {
+                    return {*preferredWidth, *preferredWidth};
+                },
+                [&](SizeError) -> std::pair<float, float> {
+                    return {std::get<float>(intrinsicWidths.minimum), std::get<float>(intrinsicWidths.maximum)};
+                },
+                [&](std::monostate) -> std::pair<float, float> {
+                    return {std::get<float>(intrinsicWidths.minimum), std::get<float>(intrinsicWidths.maximum)};
+                },
+            }, childRequest.specified.width);
 
             if (maxWidth) {
                 minContent = std::min(minContent, *maxWidth);
@@ -1582,18 +1601,15 @@ namespace layout {
                 [&](const Size& size) {
                     if (size.isAuto()) {
                         return std::get<float>(childSizing.minimum.width);
-                    }else {
-                        return minContent;
-                    }
-                },
-                [&](SizeError error) {
-                    if (error == SizeError::Auto) {
+                    } else if (size.isPercent()) {
                         return std::get<float>(childSizing.minimum.width);
-                    }else {
+                    } else {
                         return minContent;
                     }
                 },
-                [&](const auto&) { return minContent; },
+                [&](float) { return minContent; },
+                [&](SizeError) { return std::get<float>(childSizing.minimum.width); },
+                [&](std::monostate) { return std::get<float>(childSizing.minimum.width); },
             }, childRequest.specified.width);
 
             if (maxWidth)
@@ -1713,14 +1729,32 @@ namespace layout {
             SizeResult childSizing = evaluateSize( tree, childNode, frameInfo, preparedChildConstraints, childRequest, sizeCache);
 
             const auto& intrinsicHeights = *childSizing.heightIntrinsicSizes;
-            float minContent = std::get<float>(intrinsicHeights.minimum);
-            float maxContent = std::get<float>(intrinsicHeights.maximum);
             const float* preferredHeight = std::get_if<float>(&childSizing.borderBoxSize.height);
             const float* minHeight = std::get_if<float>(&childSizing.minimum.height);
             const float* maxHeight = std::get_if<float>(&childSizing.maximum.height);
 
-            if (preferredHeight)
-                minContent = maxContent = *preferredHeight;
+            // same explanation as the width contributions above
+            auto [minContent, maxContent] = std::visit(Overloaded {
+                [&](const Size& size) -> std::pair<float, float> {
+                    if (size.isAuto()) {
+                        return {std::get<float>(intrinsicHeights.minimum), std::get<float>(intrinsicHeights.maximum)};
+                    } else if (size.isPercent()) {
+                        return {std::get<float>(intrinsicHeights.minimum), std::get<float>(intrinsicHeights.maximum)};
+                    } else {
+                        return {*preferredHeight, *preferredHeight};
+                    }
+                },
+                [&](float) -> std::pair<float, float> {
+                    return {*preferredHeight, *preferredHeight};
+                },
+                [&](SizeError) -> std::pair<float, float> {
+                    return {std::get<float>(intrinsicHeights.minimum), std::get<float>(intrinsicHeights.maximum)};
+                },
+                [&](std::monostate) -> std::pair<float, float> {
+                    return {std::get<float>(intrinsicHeights.minimum), std::get<float>(intrinsicHeights.maximum)};
+                },
+            }, childRequest.specified.height);
+
             if (maxHeight) {
                 minContent = std::min(minContent, *maxHeight);
                 maxContent = std::min(maxContent, *maxHeight);
@@ -1735,18 +1769,15 @@ namespace layout {
                 [&](const Size& size) {
                     if (size.isAuto()) {
                         return std::get<float>(childSizing.minimum.height);
-                    }else {
-                        return minContent;
-                    }
-                },
-                [&](SizeError error) {
-                    if (error == SizeError::Auto) {
+                    } else if (size.isPercent()) {
                         return std::get<float>(childSizing.minimum.height);
-                    }else {
+                    } else {
                         return minContent;
                     }
                 },
-                [&](const auto&) { return minContent; },
+                [&](float) { return minContent; },
+                [&](SizeError) { return std::get<float>(childSizing.minimum.height); },
+                [&](std::monostate) { return std::get<float>(childSizing.minimum.height); },
             }, childRequest.specified.height);
             if (maxHeight)
                 minimum = std::min(minimum, *maxHeight);
