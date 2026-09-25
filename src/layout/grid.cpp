@@ -417,6 +417,14 @@ namespace layout {
             containerHasMaxContentConstraint = std::get<Size>(available).isMaxContent();
         }
 
+        // css-grid-1 5.2: "In both inline and block formatting contexts,
+        // the grid container's auto block size is its max-content size."
+        if (!isCol) {
+            if (std::holds_alternative<SizeError>(available)) {
+                containerHasMaxContentConstraint = std::get<SizeError>(available) == SizeError::ContentDependent;
+            }
+        }
+
         // phase 1: determine sizing functions
         auto numTracks = sizingFunctionReqs.size();
 

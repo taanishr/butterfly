@@ -189,8 +189,7 @@ namespace layout {
                 .maximum = measuredMainIntrinsicSizes->maximum
             };
 
-            const SizeState& flexBaseSize = std::holds_alternative<float>(preferredMainSize) ? preferredMainSize : mainIntrinsicSizes.maximum;
-            const SizeState& minimumMainSize = flex.axis.mainSize(childSizing.minimum);
+            const SizeState& flexBaseSize = std::holds_alternative<float>(preferredMainSize) ? preferredMainSize : mainIntrinsicSizes.maximum;            const SizeState& minimumMainSize = flex.axis.mainSize(childSizing.minimum);
             const SizeState& maximumMainSize = flex.axis.mainSize(childSizing.maximum);
 
             flex.addItem(
@@ -227,8 +226,7 @@ namespace layout {
         }
 
 
-        resolvedMainSizes = flex.resolveSizes(availableMain, resolvedGap);
-    }
+        resolvedMainSizes = flex.resolveSizes(availableMain, resolvedGap);    }
 
     auto FlexResolver::phaseC() -> FlexResolver::FlexResult {
         float minimumCrossContribution = 0.0f;
@@ -295,7 +293,6 @@ namespace layout {
 
 
                 SizeResult childSizing = evaluateSize(tree, childNode, frameInfo, preparedChildConstraints, childRequest, sizeCache);
-
                 if (std::holds_alternative<float>(flex.axis.crossSize(childSizing.borderBoxSize))) {
                     item.hypotheticalCrossSize = std::get<float>(flex.axis.crossSize(childSizing.borderBoxSize));
                     lineMaximumCrossContribution = std::max(lineMaximumCrossContribution, item.hypotheticalCrossSize + item.crossMargin);
@@ -311,8 +308,18 @@ namespace layout {
                     continue;
                 }
 
-                float childMinimumCrossContribution = std::get<float>(measuredCrossIntrinsicSizes->minimum) + item.crossMargin;
-                float childMaximumCrossContribution = std::get<float>(measuredCrossIntrinsicSizes->maximum) + item.crossMargin;
+                float childMinimumCrossContribution = std::get<float>(measuredCrossIntrinsicSizes->minimum);
+                float childMaximumCrossContribution = std::get<float>(measuredCrossIntrinsicSizes->maximum);
+
+                SizeState preferredCross = calculateSize(flex.axis.crossSize(childRequest.specified), flex.axis.crossSize(availableSize));
+
+                if (std::holds_alternative<float>(preferredCross)) {
+                    childMinimumCrossContribution = item.hypotheticalCrossSize;
+                    childMaximumCrossContribution = item.hypotheticalCrossSize;
+                }
+
+                childMinimumCrossContribution += item.crossMargin;
+                childMaximumCrossContribution += item.crossMargin;
 
                 lineMinimumCrossContribution = std::max(lineMinimumCrossContribution, childMinimumCrossContribution);
                 lineMaximumCrossContribution = std::max(lineMaximumCrossContribution, childMaximumCrossContribution);
