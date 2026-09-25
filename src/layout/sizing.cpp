@@ -58,7 +58,10 @@ auto hashSizeRequest(const SizeRequest& sizeRequest, std::size_t& key) -> void {
     hashSize(sizeRequest.paddingRight, key);
     hashSize(sizeRequest.paddingBottom, key);
     hashSize(sizeRequest.paddingLeft, key);
-    hashSize(sizeRequest.borderWidth, key);
+    hashSize(sizeRequest.borderTop, key);
+    hashSize(sizeRequest.borderRight, key);
+    hashSize(sizeRequest.borderBottom, key);
+    hashSize(sizeRequest.borderLeft, key);
 
     hash_combine(key, sizeRequest.margins.top);
     hash_combine(key, sizeRequest.margins.right);
@@ -279,14 +282,30 @@ auto resolvePadding(const SizeRequest& req) -> PaddingResult {
     };
 }
 
-auto resolveBorderWidth(const SizeRequest& req) -> SizeState {
-    return calculateSize(req.borderWidth, req.available.width);
+auto resolveBorder(const SizeRequest& req) -> BorderResult {
+    SizeState top = calculateSize(req.borderTop, req.available.width);
+    SizeState right = calculateSize(req.borderRight, req.available.width);
+    SizeState bottom = calculateSize(req.borderBottom, req.available.width);
+    SizeState left = calculateSize(req.borderLeft, req.available.width);
+
+    const auto* resolvedTop = std::get_if<float>(&top);
+    const auto* resolvedRight = std::get_if<float>(&right);
+    const auto* resolvedBottom = std::get_if<float>(&bottom);
+    const auto* resolvedLeft = std::get_if<float>(&left);
+
+    return {
+        .top = resolvedTop ? *resolvedTop : 0.0f,
+        .right = resolvedRight ? *resolvedRight : 0.0f,
+        .bottom = resolvedBottom ? *resolvedBottom : 0.0f,
+        .left = resolvedLeft ? *resolvedLeft : 0.0f,
+    };
 }
 
-auto resolveInnerWidth(const SizeState& size, const PaddingResult& padding, const SizeState& borderWidth) -> SizeState {
+auto resolveInnerWidth(const SizeState& size, const PaddingResult& padding, const BorderResult& border) -> SizeState {
     const auto* resolvedPaddingLeft = std::get_if<float>(&padding.left);
     const auto* resolvedPaddingRight = std::get_if<float>(&padding.right);
-    const auto* resolvedBorderWidth = std::get_if<float>(&borderWidth);
+    const auto* resolvedBorderLeft = std::get_if<float>(&border.left);
+    const auto* resolvedBorderRight = std::get_if<float>(&border.right);
 
     // copy inner size & modify
     return std::visit(Overloaded{
@@ -298,9 +317,13 @@ auto resolveInnerWidth(const SizeState& size, const PaddingResult& padding, cons
             if (resolvedPaddingRight) {
                 innerSize -= *resolvedPaddingRight;
             }
-    
-            if (resolvedBorderWidth) {
-                innerSize -= 2 * *resolvedBorderWidth;
+
+            if (resolvedBorderLeft) {
+                innerSize -= *resolvedBorderLeft;
+            }
+
+            if (resolvedBorderRight) {
+                innerSize -= *resolvedBorderRight;
             }
 
             return innerSize;
@@ -419,10 +442,11 @@ auto resolveHeight(const SizeState& size, SizeRequest& req, const std::optional<
     return resolved;
 }
 
-auto resolveInnerHeight(const SizeState& size, const PaddingResult& padding, const SizeState& borderWidth) -> SizeState {
+auto resolveInnerHeight(const SizeState& size, const PaddingResult& padding, const BorderResult& border) -> SizeState {
     const auto* resolvedPaddingTop = std::get_if<float>(&padding.top);
     const auto* resolvedPaddingBottom = std::get_if<float>(&padding.bottom);
-    const auto* resolvedBorderWidth = std::get_if<float>(&borderWidth);
+    const auto* resolvedBorderTop = std::get_if<float>(&border.top);
+    const auto* resolvedBorderBottom = std::get_if<float>(&border.bottom);
 
     // copy inner size & modify
     return std::visit(Overloaded{
@@ -434,9 +458,13 @@ auto resolveInnerHeight(const SizeState& size, const PaddingResult& padding, con
             if (resolvedPaddingBottom) {
                 innerSize -= *resolvedPaddingBottom;
             }
-    
-            if (resolvedBorderWidth) {
-                innerSize -= 2 * *resolvedBorderWidth;
+
+            if (resolvedBorderTop) {
+                innerSize -= *resolvedBorderTop;
+            }
+
+            if (resolvedBorderBottom) {
+                innerSize -= *resolvedBorderBottom;
             }
 
             return innerSize;
@@ -447,11 +475,34 @@ auto resolveInnerHeight(const SizeState& size, const PaddingResult& padding, con
     }, size);
 }
 
-auto resolvePaddingBoxSize(const SizeState& size, const SizeState& borderWidth) -> SizeState {
+auto resolvePaddingBoxWidth(const SizeState& size, const BorderResult& border) -> SizeState {
     return std::visit(Overloaded{
         [&](float paddingBoxSize) -> SizeState {
-            if (std::holds_alternative<float>(borderWidth)) {
-                paddingBoxSize -= 2 * std::get<float>(borderWidth);
+            if (std::holds_alternative<float>(border.left)) {
+                paddingBoxSize -= std::get<float>(border.left);
+            }
+
+            if (std::holds_alternative<float>(border.right)) {
+                paddingBoxSize -= std::get<float>(border.right);
+            }
+
+            return paddingBoxSize;
+        },
+        [&](auto& other) -> SizeState {
+            return other;
+        }
+    }, size);
+}
+
+auto resolvePaddingBoxHeight(const SizeState& size, const BorderResult& border) -> SizeState {
+    return std::visit(Overloaded{
+        [&](float paddingBoxSize) -> SizeState {
+            if (std::holds_alternative<float>(border.top)) {
+                paddingBoxSize -= std::get<float>(border.top);
+            }
+
+            if (std::holds_alternative<float>(border.bottom)) {
+                paddingBoxSize -= std::get<float>(border.bottom);
             }
 
             return paddingBoxSize;
@@ -866,7 +917,8 @@ auto resolveContributionWidth(const layout::IntrinsicSizes& content, const SizeR
 
     const auto* resolvedPaddingLeft = std::get_if<float>(&sizeResult.padding.left);
     const auto* resolvedPaddingRight = std::get_if<float>(&sizeResult.padding.right);
-    const auto* resolvedBorderWidth = std::get_if<float>(&sizeResult.borderWidth);
+    const auto* resolvedBorderLeft = std::get_if<float>(&sizeResult.border.left);
+    const auto* resolvedBorderRight = std::get_if<float>(&sizeResult.border.right);
 
     if (resolvedPaddingLeft) {
         minimumWidth += *resolvedPaddingLeft;
@@ -878,9 +930,14 @@ auto resolveContributionWidth(const layout::IntrinsicSizes& content, const SizeR
         maximumWidth += *resolvedPaddingRight;
     }
 
-    if (resolvedBorderWidth) {
-        minimumWidth += 2 * *resolvedBorderWidth;
-        maximumWidth += 2 * *resolvedBorderWidth;
+    if (resolvedBorderLeft) {
+        minimumWidth += *resolvedBorderLeft;
+        maximumWidth += *resolvedBorderLeft;
+    }
+
+    if (resolvedBorderRight) {
+        minimumWidth += *resolvedBorderRight;
+        maximumWidth += *resolvedBorderRight;
     }
 
     SizeState clampedMinimum = clampSize(minimumWidth, sizeResult.minimum.width, sizeResult.maximum.width);
@@ -901,7 +958,8 @@ auto resolveContributionHeight(const layout::IntrinsicSizes& content, const Size
 
     const auto* resolvedPaddingTop = std::get_if<float>(&sizeResult.padding.top);
     const auto* resolvedPaddingBottom = std::get_if<float>(&sizeResult.padding.bottom);
-    const auto* resolvedBorderWidth = std::get_if<float>(&sizeResult.borderWidth);
+    const auto* resolvedBorderTop = std::get_if<float>(&sizeResult.border.top);
+    const auto* resolvedBorderBottom = std::get_if<float>(&sizeResult.border.bottom);
 
     if (resolvedPaddingTop) {
         minimumHeight += *resolvedPaddingTop;
@@ -913,9 +971,14 @@ auto resolveContributionHeight(const layout::IntrinsicSizes& content, const Size
         maximumHeight += *resolvedPaddingBottom;
     }
 
-    if (resolvedBorderWidth) {
-        minimumHeight += 2 * *resolvedBorderWidth;
-        maximumHeight += 2 * *resolvedBorderWidth;
+    if (resolvedBorderTop) {
+        minimumHeight += *resolvedBorderTop;
+        maximumHeight += *resolvedBorderTop;
+    }
+
+    if (resolvedBorderBottom) {
+        minimumHeight += *resolvedBorderBottom;
+        maximumHeight += *resolvedBorderBottom;
     }
 
     SizeState clampedMinimum = clampSize(minimumHeight, sizeResult.minimum.height, sizeResult.maximum.height);
@@ -1025,7 +1088,7 @@ auto evaluateSize(
     bool automaticHeight = (requestedHeightSize && requestedHeightSize->isAuto()) || (requestedHeightError && *requestedHeightError == SizeError::Auto);
 
     PaddingResult padding = resolvePadding(req);
-    SizeState borderWidth = resolveBorderWidth(req);
+    BorderResult border = resolveBorder(req);
 
     SizePair size {
         .width = resolveWidth(requestedWidth, req, std::nullopt),
@@ -1135,14 +1198,14 @@ auto evaluateSize(
     size.height = clampSize(size.height, minimum.height, maximum.height);
 
     SizePair paddingBoxSize {
-        .width = resolvePaddingBoxSize(size.width, borderWidth),
-        .height = resolvePaddingBoxSize(size.height, borderWidth)
+        .width = resolvePaddingBoxWidth(size.width, border),
+        .height = resolvePaddingBoxHeight(size.height, border)
     };
 
     // inner sizes
     SizePair innerSize {
-        .width = resolveInnerWidth(size.width, padding, borderWidth),
-        .height = resolveInnerHeight(size.height, padding, borderWidth)
+        .width = resolveInnerWidth(size.width, padding, border),
+        .height = resolveInnerHeight(size.height, padding, border)
     };
 
     SizeResult result = {
@@ -1152,7 +1215,7 @@ auto evaluateSize(
         .minimum = minimum,
         .maximum = maximum,
         .padding = padding,
-        .borderWidth = borderWidth,
+        .border = border,
         .widthIntrinsicSizes = widthIntrinsic,
         .heightIntrinsicSizes = heightIntrinsic,
     };

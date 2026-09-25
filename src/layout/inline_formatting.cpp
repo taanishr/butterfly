@@ -785,7 +785,10 @@ namespace tree {
                     .paddingRight = child->shared.paddingRight.value_or(child->shared.padding),
                     .paddingBottom = child->shared.paddingBottom.value_or(child->shared.padding),
                     .paddingLeft = child->shared.paddingLeft.value_or(child->shared.padding),
-                    .borderWidth = child->shared.border.width,
+                    .borderTop = child->shared.border.topWidth.value_or(child->shared.border.width),
+                    .borderRight = child->shared.border.rightWidth.value_or(child->shared.border.width),
+                    .borderBottom = child->shared.border.bottomWidth.value_or(child->shared.border.width),
+                    .borderLeft = child->shared.border.leftWidth.value_or(child->shared.border.width),
                     .margins = margins,
                     .aspectRatio = child->shared.aspectRatio,
                     .automaticWidth = (child->getPosition() == Position::Absolute || child->getPosition() == Position::Fixed)

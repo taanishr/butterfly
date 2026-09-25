@@ -437,15 +437,9 @@ namespace elements {
         }
 
         template <LayoutStateType L>
-        Finalized<U> finalize(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, SVGDescriptor& desc, Atomized& atomized, L& layout, Placed& placed) {
-            float borderWidth = 0.0;
-
-            if (shared.border.width.unit == Unit::Px) {
-                SizeState resolvedBorderWidth = calculateSize(shared.border.width, constraints.availableWidth);
-                if (std::holds_alternative<float>(resolvedBorderWidth)) {
-                    borderWidth = std::get<float>(resolvedBorderWidth);
-                }
-            }
+        Finalized<U> finalize(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, SVGDescriptor& desc, Atomized& atomized, L& layout, const SizeResult& sizeResult, Placed& placed) {
+            const auto& border = sizeResult.border;
+            simd_float4 borderWidths {std::get<float>(border.top), std::get<float>(border.right), std::get<float>(border.bottom), std::get<float>(border.left)};
 
             CornerRadii cornerRadius = style::resolveCornerRadii(
                 shared,
@@ -477,7 +471,7 @@ namespace elements {
 
             SVGStyleUniforms styleUniforms {
                 .cornerRadius = cornerRadius,
-                .border = { .width = borderWidth, .color = shared.border.color, .style = shared.border.style },
+                .border = { .widths = borderWidths, .color = shared.border.color, .style = shared.border.style },
                 .shadow = shadow,
                 .opacity = constraints.opacity
             };

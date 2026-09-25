@@ -78,10 +78,10 @@ fragment float4 fragment_div(
 
     float outerMask = clamp(0.5 - d/px, 0.0, 1.0);
 
-    float innerD = d + uniforms->style.border.width;
+    float innerD = inset_rounded_rect_sdf(localPosition, uniforms->geometry.halfExtent, uniforms->style.cornerRadius, uniforms->style.border.widths);
     float innerMask = clamp(0.5 - innerD/px, 0.0, 1.0);
 
-    float borderD = border_pattern(localPosition, d, uniforms->geometry.halfExtent, uniforms->style.cornerRadius, uniforms->style.border);
+    float borderD = border_pattern(localPosition, d, innerD, uniforms->geometry.halfExtent, uniforms->style.cornerRadius, uniforms->style.border);
     float borderMask = clamp(0.5 - borderD/px, 0.0, 1.0);
     float fillMask = outerMask;
 
@@ -90,10 +90,10 @@ fragment float4 fragment_div(
     ShadowUniform shadow = uniforms->style.shadow;
 
     float outerCoverage = shadow_coverage(localPosition - shadow.offset, uniforms->geometry.halfExtent,
-                                          uniforms->style.cornerRadius, shadow.sigma, shadow.spread, 0.0);
+                                          uniforms->style.cornerRadius, shadow.sigma, shadow.spread, float4(0.0));
     float innerCoverage = shadow_coverage(localPosition - shadow.offset, uniforms->geometry.halfExtent,
                                           uniforms->style.cornerRadius, shadow.sigma, -shadow.spread,
-                                          uniforms->style.border.width);
+                                          uniforms->style.border.widths);
     
     float outerShadowMask = outerCoverage * (1.0 - outerMask) * float(shadow.inset == 0);
     float insetShadowMask = (1.0 - innerCoverage) * innerMask * float(shadow.inset != 0);

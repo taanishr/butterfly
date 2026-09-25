@@ -26,6 +26,7 @@ namespace elements {
     using layout::Constraints;
     using layout::Finalized;
     using layout::LayoutState;
+    using layout::LayoutResult;
     using layout::Placed;
     using runtime::HitTestContext;
     using runtime::UIContext;
@@ -75,7 +76,7 @@ namespace elements {
 
         { proc.place(fragment, constraints, shared, desc, atomized, blockState) } -> std::same_as<Placed>;
 
-        { proc.finalize(fragment, constraints, shared, desc, atomized, blockState, placed) } -> std::same_as<Finalized<U>>;
+        { proc.finalize(fragment, constraints, shared, desc, atomized, blockState, sizeResult, placed) } -> std::same_as<Finalized<U>>;
         { proc.setupHitTestFunction() } -> std::same_as<std::function<bool(HitTestContext<U>&, simd_float2)>>;
         proc.encode(encoder, fragment, finalized);
     };
@@ -85,7 +86,7 @@ namespace elements {
         virtual LayoutState layout(Constraints& constraints, SharedDescriptor& shared, Atomized& atomized, const SizeResult& sizeResult) = 0;
         virtual Atomized postLayout(Constraints& constraints, SharedDescriptor& shared, Atomized& atomized, LayoutState& layout) = 0;
         virtual Placed place(Constraints& constraints, SharedDescriptor& shared, Atomized& atomized, LayoutState& layout) = 0;
-        virtual std::any finalize(Constraints& constraints, SharedDescriptor& shared, Atomized& atomized, LayoutState& layout, Placed& placed) = 0;
+        virtual std::any finalize(Constraints& constraints, SharedDescriptor& shared, Atomized& atomized, LayoutResult& layout, Placed& placed) = 0;
         virtual std::any request(RequestTarget target, std::any& payload) = 0;
         virtual void encode(MTL::RenderCommandEncoder* encoder, std::any& finalized) = 0;
         virtual std::string_view elementTypeName() const = 0;
@@ -131,10 +132,10 @@ namespace elements {
             }, layout);
         }
 
-        std::any finalize(Constraints& constraints, SharedDescriptor& shared, Atomized& atomized, LayoutState& layout, Placed& placed) override {
+        std::any finalize(Constraints& constraints, SharedDescriptor& shared, Atomized& atomized, LayoutResult& layout, Placed& placed) override {
             auto finalized = std::visit([&](auto& state) {
-                return processor.finalize(element.getFragment(), constraints, shared, element.getDescriptor(), atomized, state, placed);
-            }, layout);
+                return processor.finalize(element.getFragment(), constraints, shared, element.getDescriptor(), atomized, state, layout.sizeResult, placed);
+            }, layout.layout);
             auto finalizedErased = finalized;
             return finalizedErased;
         }

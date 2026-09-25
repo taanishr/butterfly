@@ -45,7 +45,7 @@ enum class BorderStyle : uint {
 };
 
 struct BorderUniform {
-    float width;
+    float4 widths; // top, right, bottom, left
     float4 color;
     BorderStyle style;
 };
@@ -132,6 +132,28 @@ inline CornerRadii spread_radii(CornerRadii radii, float growth) {
     return result;
 }
 
+inline CornerRadii inset_radii(CornerRadii radii, float4 inset) {
+    CornerRadii result;
+    result.topLeft = max(radii.topLeft - float2(inset.w, inset.x), 0.0);
+    result.topRight = max(radii.topRight - float2(inset.y, inset.x), 0.0);
+    result.bottomRight = max(radii.bottomRight - float2(inset.y, inset.z), 0.0);
+    result.bottomLeft = max(radii.bottomLeft - float2(inset.w, inset.z), 0.0);
+    return result;
+}
+
+// the rect's center moves toward the thinner side when opposing insets differ
+inline float2 inset_center(float4 inset) {
+    return float2(inset.w - inset.y, inset.x - inset.z) / 2.0;
+}
+
+inline float2 inset_half_extent(float2 halfExtent, float4 inset) {
+    return max(halfExtent - float2(inset.y + inset.w, inset.x + inset.z) / 2.0, 0.0);
+}
+
+inline float inset_rounded_rect_sdf(float2 pt, float2 halfExtent, CornerRadii radii, float4 inset) {
+    return rounded_rect_sdf(pt - inset_center(inset), inset_half_extent(halfExtent, inset), inset_radii(radii, inset));
+}
+
 inline float circle_sdf(float2 pt, float2 center, float radius) {
     return length(pt - center) - radius;
 }
@@ -165,27 +187,32 @@ inline float ellipse_arc_angle(float2 radius, float arcLength, float quarterArcL
 }
 
 // return 
-inline float border_pattern(float2 pt, float d, float2 halfExtent, CornerRadii radii, BorderUniform border) {
-    if (border.width <= 0.0) {
+inline float border_pattern(float2 pt, float d, float innerD, float2 halfExtent, CornerRadii radii, BorderUniform border) {
+    float4 widths = border.widths;
+    float width = max(max(widths.x, widths.y), max(widths.z, widths.w));
+
+    if (width <= 0.0) {
         return 1e20;
     }
 
+    float ring = max(d, -innerD);
+
     if (border.style == BorderStyle::Solid) {
-        return max(d, -d - border.width);
+        return ring;
     }
 
     if (border.style == BorderStyle::Double) {
-        float outerThird = max(d, -d - border.width / 3.0);
-        float innerThird = max(d + 2.0 * border.width / 3.0, -d - border.width);
+        float outerThird = max(d, -inset_rounded_rect_sdf(pt, halfExtent, radii, widths / 3.0));
+        float innerThird = max(inset_rounded_rect_sdf(pt, halfExtent, radii, 2.0 * widths / 3.0), -innerD);
         return min(outerThird, innerThird);
     }
-    
+
     const float epsilon = 0.0001;
 
     // dash and gap ratios; switch based on dashed v dotted
-    float dashLength = select(3.0 * border.width, border.width, border.style == BorderStyle::Dotted);
-    float gapLength = select(2.0 * border.width, border.width, border.style == BorderStyle::Dotted);
-    
+    float dashLength = select(3.0 * width, width, border.style == BorderStyle::Dotted);
+    float gapLength = select(2.0 * width, width, border.style == BorderStyle::Dotted);
+
     // figure out extent and corners of center line
     /*
     /---------- <- border edge
@@ -195,8 +222,9 @@ inline float border_pattern(float2 pt, float d, float2 halfExtent, CornerRadii r
      |
      center line
      */
-    float2 centerlineExtent = max(halfExtent - border.width / 2.0, 0.0);
-    CornerRadii centerlineRadii = spread_radii(radii, -border.width / 2.0);
+    float2 centerlineExtent = inset_half_extent(halfExtent, widths / 2.0);
+    CornerRadii centerlineRadii = inset_radii(radii, widths / 2.0);
+    pt -= inset_center(widths / 2.0);
     
     // compute the perimeter of the rounded rect (we compute the corners, arc lengths of corners, and the side lengths)
     float4 rx = max(float4(centerlineRadii.topLeft.x, centerlineRadii.topRight.x, centerlineRadii.bottomRight.x, centerlineRadii.bottomLeft.x), epsilon);
@@ -353,7 +381,7 @@ inline float border_pattern(float2 pt, float d, float2 halfExtent, CornerRadii r
     // if dashed; job done, just return the period calc
     if (border.style == BorderStyle::Dashed) {
         float dash = abs(s - nearest * period) - dashLength / 2.0;
-        return max(max(d, -d - border.width), dash);
+        return max(ring, dash);
     }
 
     // now we have to compute the dots
@@ -427,15 +455,16 @@ inline float border_pattern(float2 pt, float d, float2 halfExtent, CornerRadii r
             }
         }
 
-        nearestDot = min(nearestDot, circle_sdf(pt, center, border.width / 2.0));
+        nearestDot = min(nearestDot, circle_sdf(pt, center, width / 2.0));
     }
 
-    return nearestDot;
+    return max(ring, nearestDot);
 }
 
-inline float shadow_coverage(float2 p, float2 halfExtent, CornerRadii radii, float sigma, float spread, float borderWidth) {
-    halfExtent = max(halfExtent - borderWidth + spread, 0.0);
-    radii = spread_radii(spread_radii(radii, -borderWidth), spread);
+inline float shadow_coverage(float2 p, float2 halfExtent, CornerRadii radii, float sigma, float spread, float4 borderWidths) {
+    p -= inset_center(borderWidths);
+    halfExtent = max(inset_half_extent(halfExtent, borderWidths) + spread, 0.0);
+    radii = spread_radii(inset_radii(radii, borderWidths), spread);
     float d = rounded_rect_sdf(p, halfExtent, radii);
 
     // harsh shadow handling

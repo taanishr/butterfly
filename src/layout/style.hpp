@@ -174,12 +174,13 @@ namespace style {
 
     struct Border {
         Size width{};
+        std::optional<Size> topWidth, rightWidth, bottomWidth, leftWidth;
         simd_float4 color{0, 0, 0, 1};
         BorderStyle style{BorderStyle::Solid};
     };
 
     struct BorderUniform {
-        float width{0};
+        simd_float4 widths{0, 0, 0, 0}; // top, right, bottom, left
         simd_float4 color{0, 0, 0, 1};
         BorderStyle style{BorderStyle::Solid};
     };

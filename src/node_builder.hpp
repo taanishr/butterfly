@@ -580,6 +580,50 @@ namespace elements {
 
         Derived& borderWidth(Size width) {
             node->shared.border.width = width;
+            node->shared.border.topWidth = width;
+            node->shared.border.rightWidth = width;
+            node->shared.border.bottomWidth = width;
+            node->shared.border.leftWidth = width;
+            markDirty(layoutDirtyBits());
+            return self();
+        }
+
+        std::optional<Size> borderTopWidth() const {
+            return node->shared.border.topWidth;
+        }
+
+        Derived& borderTopWidth(Size width) {
+            node->shared.border.topWidth = width;
+            markDirty(layoutDirtyBits());
+            return self();
+        }
+
+        std::optional<Size> borderRightWidth() const {
+            return node->shared.border.rightWidth;
+        }
+
+        Derived& borderRightWidth(Size width) {
+            node->shared.border.rightWidth = width;
+            markDirty(layoutDirtyBits());
+            return self();
+        }
+
+        std::optional<Size> borderBottomWidth() const {
+            return node->shared.border.bottomWidth;
+        }
+
+        Derived& borderBottomWidth(Size width) {
+            node->shared.border.bottomWidth = width;
+            markDirty(layoutDirtyBits());
+            return self();
+        }
+
+        std::optional<Size> borderLeftWidth() const {
+            return node->shared.border.leftWidth;
+        }
+
+        Derived& borderLeftWidth(Size width) {
+            node->shared.border.leftWidth = width;
             markDirty(layoutDirtyBits());
             return self();
         }

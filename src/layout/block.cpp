@@ -70,7 +70,8 @@ namespace layout {
             [&](auto&) { return 0.0f; }
         }, sizeResult.innerSize.height);
 
-        const auto* resolvedBorderWidth = std::get_if<float>(&sizeResult.borderWidth);
+        const auto* resolvedBorderLeft = std::get_if<float>(&sizeResult.border.left);
+        const auto* resolvedBorderTop = std::get_if<float>(&sizeResult.border.top);
         const auto* resolvedPaddingLeft = std::get_if<float>(&sizeResult.padding.left);
         const auto* resolvedPaddingTop = std::get_if<float>(&sizeResult.padding.top);
 
@@ -81,9 +82,12 @@ namespace layout {
             .height = computedPaddingBoxHeight
         };
 
-        if (resolvedBorderWidth) {
-            lr.computedPaddingBox.x += *resolvedBorderWidth;
-            lr.computedPaddingBox.y += *resolvedBorderWidth;
+        if (resolvedBorderLeft) {
+            lr.computedPaddingBox.x += *resolvedBorderLeft;
+        }
+
+        if (resolvedBorderTop) {
+            lr.computedPaddingBox.y += *resolvedBorderTop;
         }
 
         lr.computedInnerBox = {
@@ -189,7 +193,8 @@ namespace layout {
             [&](auto&) { return 0.0f; }
         }, sizeResult.innerSize.height);
 
-        const auto* resolvedBorderWidth = std::get_if<float>(&sizeResult.borderWidth);
+        const auto* resolvedBorderLeft = std::get_if<float>(&sizeResult.border.left);
+        const auto* resolvedBorderTop = std::get_if<float>(&sizeResult.border.top);
         const auto* resolvedPaddingLeft = std::get_if<float>(&sizeResult.padding.left);
         const auto* resolvedPaddingTop = std::get_if<float>(&sizeResult.padding.top);
 
@@ -200,9 +205,12 @@ namespace layout {
             .height = computedPaddingBoxHeight
         };
 
-        if (resolvedBorderWidth) {
-            lr.computedPaddingBox.x += *resolvedBorderWidth;
-            lr.computedPaddingBox.y += *resolvedBorderWidth;
+        if (resolvedBorderLeft) {
+            lr.computedPaddingBox.x += *resolvedBorderLeft;
+        }
+
+        if (resolvedBorderTop) {
+            lr.computedPaddingBox.y += *resolvedBorderTop;
         }
 
         lr.computedInnerBox = {

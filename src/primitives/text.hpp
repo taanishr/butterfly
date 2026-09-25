@@ -674,7 +674,7 @@ namespace elements {
         }
         
         template <LayoutStateType L>
-        Finalized<U> finalize(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, TextDescriptor& desc, Atomized& atomized, L& layout, Placed& placed) {
+        Finalized<U> finalize(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, TextDescriptor& desc, Atomized& atomized, L& layout, const SizeResult&, Placed& placed) {
             float fontSize;
 
             if (desc.fontSize.unit == Unit::Pt) {

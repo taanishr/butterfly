@@ -321,17 +321,10 @@ namespace elements {
         }
 
         template <LayoutStateType L>
-        Finalized<U> finalize(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, DivDescriptor& desc, Atomized& atomized, L& layout, Placed& placed)
+        Finalized<U> finalize(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, DivDescriptor& desc, Atomized& atomized, L& layout, const SizeResult& sizeResult, Placed& placed)
         {
-            // border width calculation
-            float borderWidth = 0.0;
-
-            if (shared.border.width.unit == Unit::Px) {
-                SizeState resolvedBorderWidth = calculateSize(shared.border.width, constraints.availableWidth);
-                if (std::holds_alternative<float>(resolvedBorderWidth)) {
-                    borderWidth = std::get<float>(resolvedBorderWidth);
-                }
-            }
+            const auto& border = sizeResult.border;
+            simd_float4 borderWidths {std::get<float>(border.top), std::get<float>(border.right), std::get<float>(border.bottom), std::get<float>(border.left)};
 
             // radius calculation
             CornerRadii cornerRadius = style::resolveCornerRadii(
@@ -367,7 +360,7 @@ namespace elements {
             DivStyleUniforms styleUniforms{
                 .color = desc.color,
                 .cornerRadius = cornerRadius,
-                .border = { .width = borderWidth, .color = shared.border.color, .style = shared.border.style },
+                .border = { .widths = borderWidths, .color = shared.border.color, .style = shared.border.style },
                 .shadow = shadow,
                 .opacity = constraints.opacity
             };

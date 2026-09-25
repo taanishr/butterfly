@@ -616,7 +616,10 @@ namespace tree {
                 .paddingRight = node->shared.paddingRight.value_or(node->shared.padding),
                 .paddingBottom = node->shared.paddingBottom.value_or(node->shared.padding),
                 .paddingLeft = node->shared.paddingLeft.value_or(node->shared.padding),
-                .borderWidth = node->shared.border.width,
+                .borderTop = node->shared.border.topWidth.value_or(node->shared.border.width),
+                .borderRight = node->shared.border.rightWidth.value_or(node->shared.border.width),
+                .borderBottom = node->shared.border.bottomWidth.value_or(node->shared.border.width),
+                .borderLeft = node->shared.border.leftWidth.value_or(node->shared.border.width),
                 .margins = prelayout.resolvedMargins,
                 .aspectRatio = node->shared.aspectRatio,
                 .automaticWidth = (node->getPosition() == Position::Absolute || node->getPosition() == Position::Fixed) ? AutomaticSizing::UseContent : AutomaticSizing::UseAvailable,
@@ -1212,7 +1215,7 @@ namespace tree {
         if (reason != instrumentation::RecomputeReason::None) {
             instrumentation::recordRecompute(node->id, instrumentation::Phase::Finalize, reason);
             auto& atomized = *node->atomized;
-            auto& layout = node->layout->layout;
+            auto& layout = *node->layout;
             auto& placed = *node->placed;
             auto finalizedConstraints = constraints;
             finalizedConstraints.transform = node->transform;

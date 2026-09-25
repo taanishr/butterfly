@@ -219,7 +219,11 @@ struct SizeRequest {
     SizeState paddingBottom;
     SizeState paddingLeft;
 
-    SizeState borderWidth;
+    SizeState borderTop;
+    SizeState borderRight;
+    SizeState borderBottom;
+    SizeState borderLeft;
+
     ResolvedMargins margins; // margins (req for some sizing)
 
     std::optional<float> aspectRatio;
@@ -249,6 +253,13 @@ struct PaddingResult {
     SizeState left;
 };
 
+struct BorderResult {
+    SizeState top;
+    SizeState right;
+    SizeState bottom;
+    SizeState left;
+};
+
 // central evaluator gives back a coherently shaped SizeSpec resolution
 // SizeSpec *may or may not* be fully resolved; that is fine
 struct SizeResult {
@@ -258,8 +269,8 @@ struct SizeResult {
     SizePair minimum;   // min dim constraints evaluated against content box
     SizePair maximum; // max dim constraints evaluated against content box
     PaddingResult padding;
-    SizeState borderWidth;
-    
+    BorderResult border;
+
     std::optional<IntrinsicResult> widthIntrinsicSizes;
     std::optional<IntrinsicResult> heightIntrinsicSizes;
 };
@@ -392,14 +403,15 @@ auto transferAspectRatio(const SizePair& pair, float ratio) -> SizePair;
 auto calculateSize(const SizeState& size, const SizeState& available) -> SizeState;
 
 auto resolvePadding(const SizeRequest& req) -> PaddingResult;
-auto resolveBorderWidth(const SizeRequest& req) -> SizeState;
+auto resolveBorder(const SizeRequest& req) -> BorderResult;
 
 // resolve inner sizes (w padding)
-auto resolveInnerWidth(const SizeState& size, const PaddingResult& padding, const SizeState& borderWidth) -> SizeState;
-auto resolveInnerHeight(const SizeState& size, const PaddingResult& padding, const SizeState& borderWidth) -> SizeState;
+auto resolveInnerWidth(const SizeState& size, const PaddingResult& padding, const BorderResult& border) -> SizeState;
+auto resolveInnerHeight(const SizeState& size, const PaddingResult& padding, const BorderResult& border) -> SizeState;
 
-// resolve paddding box size (does not depend on w/h bc border is same across; padding box size is border box size - borders)
-auto resolvePaddingBoxSize(const SizeState& size, const SizeState& borderWidth) -> SizeState;
+// resolve paddding box size (padding box size is border box size - borders)
+auto resolvePaddingBoxWidth(const SizeState& size, const BorderResult& border) -> SizeState;
+auto resolvePaddingBoxHeight(const SizeState& size, const BorderResult& border) -> SizeState;
 
 auto hashSize(const SizeState& size, std::size_t& key) -> void;
 auto hashSizePair(const SizePair& size, std::size_t& key) -> void;
