@@ -1570,10 +1570,31 @@ namespace layout {
                 maxContent = std::max(maxContent, *minWidth);
             }
 
-            float minimum = std::get<float>(childSizing.minimum.width);
-
-            if (preferredWidth)
-                minimum = *preferredWidth;
+            /*
+            The minimum contribution of an item is the smallest outer size it can have.
+            Specifically, if the item’s computed preferred size behaves as auto or depends 
+            on the size of its containing block in the relevant axis, its minimum contribution 
+            is the outer size that would result from assuming the item’s used minimum size
+            as its preferred size;  else the item’s minimum contribution is its min-content 
+            contribution.
+            */            
+            float minimum = std::visit(Overloaded {
+                [&](const Size& size) {
+                    if (size.isAuto()) {
+                        return std::get<float>(childSizing.minimum.width);
+                    }else {
+                        return minContent;
+                    }
+                },
+                [&](SizeError error) {
+                    if (error == SizeError::Auto) {
+                        return std::get<float>(childSizing.minimum.width);
+                    }else {
+                        return minContent;
+                    }
+                },
+                [&](const auto&) { return minContent; },
+            }, childRequest.specified.width);
 
             if (maxWidth)
                 minimum = std::min(minimum, *maxWidth);
@@ -1709,11 +1730,24 @@ namespace layout {
                 maxContent = std::max(maxContent, *minHeight);
             }
 
-            float minimum = std::get<float>(childSizing.minimum.height);
-
-            if (preferredHeight)
-                minimum = *preferredHeight;
-
+            // same explanation as above
+            float minimum = std::visit(Overloaded {
+                [&](const Size& size) {
+                    if (size.isAuto()) {
+                        return std::get<float>(childSizing.minimum.height);
+                    }else {
+                        return minContent;
+                    }
+                },
+                [&](SizeError error) {
+                    if (error == SizeError::Auto) {
+                        return std::get<float>(childSizing.minimum.height);
+                    }else {
+                        return minContent;
+                    }
+                },
+                [&](const auto&) { return minContent; },
+            }, childRequest.specified.height);
             if (maxHeight)
                 minimum = std::min(minimum, *maxHeight);
 
