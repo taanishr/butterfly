@@ -233,5 +233,8 @@ This is a really cool example that stressed a lot of the layout features in my l
 *I let Claude choose whatever it wanted to built; it built a record collection. I don't know why. I wonder how DJ Shadow got in the training dataset*
 <img width="1469" height="842" alt="image" src="https://github.com/user-attachments/assets/ba4ce770-0bee-446d-9222-1051ee4934bf" />
 
+### The Wikipedia Clone
+<img width="1109" height="874" alt="Screenshot 2026-09-24 at 8 48 34 PM" src="https://github.com/user-attachments/assets/b4f37158-a11a-4bed-a588-bf854a18809b" />
+
 # Future Work
 I hope to add an animation subsystem too (lots of work), clean up some of the file structure, clean up some of my style conventions, and add more semantic elements. I also hope to release a series of blogs detailing the development process and some of the architectural decisions I made over time. This has been in the works for more than a year at this point (a year and two months).
