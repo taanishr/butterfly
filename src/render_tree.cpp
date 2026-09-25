@@ -597,6 +597,14 @@ namespace tree {
         auto& atomized = *node->atomized;
         auto& prelayout = *node->preLayout;
 
+        SizePair available {.width = constraints.availableWidth, .height = constraints.availableHeight};
+
+        if (node->getPosition() == Position::Absolute) {
+            available = {.width = constraints.absoluteContainingBlock.width, .height = constraints.absoluteContainingBlock.height};
+        } else if (node->getPosition() == Position::Fixed) {
+            available = {.width = constraints.fixedContainingBlock.width, .height = constraints.fixedContainingBlock.height};
+        }
+
         SizeRequest sizeRequest = sizeRequestOverride
             ? std::move(*sizeRequestOverride)
             : SizeRequest {
@@ -607,7 +615,7 @@ namespace tree {
                     .width = node->shared.maxWidth ? SizeState{*node->shared.maxWidth} : SizeState{std::monostate{}},
                     .height = node->shared.maxHeight ? SizeState{*node->shared.maxHeight} : SizeState{std::monostate{}},
                 },
-                .available = {.width = constraints.availableWidth, .height = constraints.availableHeight},
+                .available = available,
                 .top = node->shared.top,
                 .right = node->shared.right,
                 .bottom = node->shared.bottom,

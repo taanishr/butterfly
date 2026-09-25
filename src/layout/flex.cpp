@@ -422,6 +422,9 @@ namespace layout {
                 continue;
 
             auto preparedChildConstraints = prepareChildConstraints();
+            const auto& containingBlock = position == Position::Fixed
+                ? preparedChildConstraints.fixedContainingBlock
+                : preparedChildConstraints.absoluteContainingBlock;
 
             SizeRequest childRequest {
                 .position = childNode->shared.position,
@@ -432,7 +435,7 @@ namespace layout {
                     .width = childNode->shared.maxWidth ? SizeState{*childNode->shared.maxWidth} : SizeState{std::monostate{}},
                     .height = childNode->shared.maxHeight ? SizeState{*childNode->shared.maxHeight} : SizeState{std::monostate{}},
                 },
-                .available = availableSize,
+                .available = {.width = containingBlock.width, .height = containingBlock.height},
                 .top = childNode->shared.top,
                 .right = childNode->shared.right,
                 .bottom = childNode->shared.bottom,
@@ -454,7 +457,7 @@ namespace layout {
             };
 
             preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(tree, childNode, frameInfo, preparedChildConstraints, childRequest, {
-                .availableWidth = availableSize.width,
+                .availableWidth = childRequest.available.width,
                 .widthRequest = childRequest.intrinsicWidthRequest,
                 .trackIntrinsicWidth = false,
             }, sizeCache);

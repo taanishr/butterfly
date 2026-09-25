@@ -1993,6 +1993,9 @@ namespace layout {
                 continue;
 
             preparedChildConstraints = prepareChildConstraints();
+            const auto& containingBlock = childPos == Position::Fixed
+                ? preparedChildConstraints.fixedContainingBlock
+                : preparedChildConstraints.absoluteContainingBlock;
 
             SizeRequest childRequest {
                 .position = childNode->shared.position,
@@ -2003,7 +2006,7 @@ namespace layout {
                     .width = childNode->shared.maxWidth ? SizeState{*childNode->shared.maxWidth} : SizeState{std::monostate{}},
                     .height = childNode->shared.maxHeight ? SizeState{*childNode->shared.maxHeight} : SizeState{std::monostate{}},
                 },
-                .available = containerSize.innerSize,
+                .available = {.width = containingBlock.width, .height = containingBlock.height},
                 .top = childNode->shared.top,
                 .right = childNode->shared.right,
                 .bottom = childNode->shared.bottom,
