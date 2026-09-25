@@ -5781,7 +5781,7 @@ div()
     //             .flexGap(S::px(10))
     //             .paddingLeft(S::px(14)).paddingRight(S::px(14))
     //             .borderColor(border)
-    //             .borderWidth(S::px(1))
+    //             .borderTopWidth(S::px(1))
     //         (
     //             icon(iconName),
     //             div().width(S::px(150)).flexShrink(S::px(0)).overflow(gui::Overflow::Hidden)(
@@ -5824,8 +5824,8 @@ div()
     //     };
 
     //     auto readmeHeading = [&](const char* title, float size) {
-    //         return div().paddingBottom(S::px(6)).marginBottom(S::px(14))
-    //             .borderColor(rgb(216, 222, 228)).borderWidth(S::px(1))
+    //         return div().paddingBottom(S::px(6)).marginTop(S::px(10)).marginBottom(S::px(14))
+    //             .borderColor(rgb(209, 217, 224, 0.7f)).borderBottomWidth(S::px(1))
     //         (
     //             text(title).font(SansBold).fontSize(S::pt(size)).color(fg)
     //         );
@@ -5840,8 +5840,6 @@ div()
     //             .alignItems(AlignItems::Center)
     //             .flexGap(S::px(12))
     //             .paddingLeft(S::px(16)).paddingRight(S::px(16))
-    //             .borderColor(border)
-    //             .borderWidth(S::px(1))
     //         (
     //             div(S::px(32), S::px(32), clear).cornerRadius(S::px(6)).borderColor(border).borderWidth(S::px(1))
     //                 .display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::Center)
@@ -5880,9 +5878,9 @@ div()
     //         // ── Repo header ──
     //         div(S::percent(1.0), S::autoSize(), subtle)
     //             .paddingLeft(S::px(24)).paddingRight(S::px(24))
-    //             .paddingTop(S::px(14))
+    //             .paddingTop(S::px(4))
     //             .borderColor(border)
-    //             .borderWidth(S::px(1))
+    //             .borderBottomWidth(S::px(1))
     //             .display(Display::Flex)
     //             .flexDirection(FlexDirection::Col)
     //         (
@@ -5946,12 +5944,11 @@ div()
     //                 ),
     //                 // file table
     //                 div().marginTop(S::px(16)).cornerRadius(S::px(6)).borderColor(border).borderWidth(S::px(1)).overflow(gui::Overflow::Hidden)(
-    //                     div(S::autoSize(), S::px(44), subtle)
+    //                     div(S::autoSize(), S::px(52), subtle)
     //                         .display(Display::Flex)
     //                         .alignItems(AlignItems::Center)
     //                         .justifyContent(JustifyContent::SpaceBetween)
     //                         .paddingLeft(S::px(14)).paddingRight(S::px(14))
-    //                         .borderColor(border).borderWidth(S::px(1))
     //                     (
     //                         div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
     //                             div(S::px(20), S::px(20), rgb(94, 106, 210)).cornerRadius(S::px(10))(),
@@ -5962,7 +5959,7 @@ div()
     //                             icon("gh-check.svg", 14),
     //                             text("5f55633").font(SFMono).fontSize(S::pt(9.5)).color(muted),
     //                             text("· 2 hours ago").font(Sans).fontSize(S::pt(10.5)).color(muted),
-    //                             counter("184 Commits")
+    //                             text("184 Commits").font(SansBold).fontSize(S::pt(10.5)).color(fg).marginLeft(S::px(8))
     //                         )
     //                     ),
     //                     fileRow("gh-folder.svg", "apple-extensions", "Swift AppKit/MTK bridge for the metal-cpp side",   "3 weeks ago"),
@@ -5983,7 +5980,7 @@ div()
     //                     div(S::autoSize(), S::px(44), canvas)
     //                         .display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(16))
     //                         .paddingLeft(S::px(14))
-    //                         .borderColor(border).borderWidth(S::px(1))
+    //                         .borderColor(border).borderBottomWidth(S::px(1))
     //                     (
     //                         text("README").font(SansBold).fontSize(S::pt(10.5)).color(fg),
     //                         text("MIT license").font(Sans).fontSize(S::pt(10.5)).color(muted)
@@ -6103,9 +6100,8 @@ div()
         };
 
         auto tocItem = [&](const char* label, bool active, int indent = 0) {
-            return div().display(Display::Flex).alignItems(AlignItems::Center).paddingLeft(S::px(indent * 14))(
-                div(S::px(2), S::px(16), active ? rgb(51, 102, 204) : clear).marginRight(S::px(8))(),
-                text(label).font(Sans).fontSize(S::pt(10)).color(active ? ink : link)
+            return div().paddingLeft(S::px(indent * 14))(
+                text(label).font(active ? SansBold : Sans).fontSize(S::pt(10)).color(active ? ink : link)
             );
         };
 
@@ -6118,7 +6114,7 @@ div()
                 .position(Position::Relative)
             (
                 text(label).font(Sans).fontSize(S::pt(10.5)).color(active ? ink : link),
-                div(S::percent(1.0), S::px(1), active ? rgb(51, 102, 204) : clear)
+                div(S::percent(1.0), S::px(2), active ? ink : clear)
                     .position(Position::Absolute).bottom(S::px(0)).left(S::px(0))()
             );
         };
@@ -6184,8 +6180,8 @@ div()
                         svg(std::string(A) + "wiki-search.svg", S::px(14), S::px(14)),
                         text("Search Wikipedia").font(Sans).fontSize(S::pt(10.5)).color(muted).flexGrow(S::px(1)),
                         div(S::autoSize(), S::percent(1.0), chrome)
-                            .paddingLeft(S::px(10)).paddingRight(S::px(10))
-                            .borderColor(rule).borderWidth(S::px(1))
+                            .paddingLeft(S::px(12)).paddingRight(S::px(12))
+                            .borderColor(rule).borderLeftWidth(S::px(1))
                             .display(Display::Flex).alignItems(AlignItems::Center)
                         (
                             text("Search").font(Sans).fontSize(S::pt(10.5)).color(ink)
@@ -6233,20 +6229,22 @@ div()
 
                 // Article
                 div().display(Display::Flex).flexDirection(FlexDirection::Col)(
-                    // title + tabs row
-                    div().width(S::percent(1.0)).display(Display::Flex).alignItems(AlignItems::FlexEnd).justifyContent(JustifyContent::SpaceBetween)
+                    // title
+                    div().width(S::percent(1.0)).paddingBottom(S::px(4))
                         .borderColor(rule).borderBottomWidth(S::px(1))
                     (
-                        div().display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(2)).paddingBottom(S::px(3))(
-                            text("Butterfly").font(Serif).fontSize(S::pt(25)).color(ink)
+                        text("Butterfly").font(Serif).fontSize(S::pt(25)).color(ink)
+                    ),
+                    // tabs
+                    div().width(S::percent(1.0)).display(Display::Flex).justifyContent(JustifyContent::SpaceBetween)(
+                        div().display(Display::Flex)(
+                            tab("Article", true), tab("Talk", false)
                         ),
-                        div().display(Display::Flex).alignItems(AlignItems::Center)(
-                            tab("Article", true), tab("Talk", false),
-                            div(S::px(20), S::px(1), clear)(),
+                        div().display(Display::Flex)(
                             tab("Read", true), tab("Edit", false), tab("View history", false), tab("Tools ▾", false)
                         )
                     ),
-                    div().marginTop(S::px(6)).marginBottom(S::px(12))(
+                    div().marginTop(S::px(12)).marginBottom(S::px(12))(
                         text("From Wikipedia, the free encyclopedia").font(Sans).fontSize(S::pt(9.5)).color(muted)
                     ),
 
@@ -6313,8 +6311,9 @@ div()
                         ),
 
                         // infobox
-                        div(S::px(230), S::autoSize(), infobox)
+                        div(S::px(264), S::autoSize(), infobox)
                             .flexShrink(S::px(0))
+                            .alignSelf(gui::AlignSelf::FlexStart)
                             .borderColor(rgb(162, 169, 177)).borderWidth(S::px(1))
                             .padding(S::px(4))
                             .display(Display::Flex)

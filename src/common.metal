@@ -186,8 +186,8 @@ inline float ellipse_arc_angle(float2 radius, float arcLength, float quarterArcL
     return angle;
 }
 
-// return 
-inline float border_pattern(float2 pt, float d, float innerD, float2 halfExtent, CornerRadii radii, BorderUniform border) {
+// pattern only; caller clips to the ring
+inline float border_pattern(float2 pt, float2 halfExtent, CornerRadii radii, BorderUniform border) {
     float4 widths = border.widths;
     float width = max(max(widths.x, widths.y), max(widths.z, widths.w));
 
@@ -195,16 +195,14 @@ inline float border_pattern(float2 pt, float d, float innerD, float2 halfExtent,
         return 1e20;
     }
 
-    float ring = max(d, -innerD);
-
     if (border.style == BorderStyle::Solid) {
-        return ring;
+        return -1e20;
     }
 
     if (border.style == BorderStyle::Double) {
-        float outerThird = max(d, -inset_rounded_rect_sdf(pt, halfExtent, radii, widths / 3.0));
-        float innerThird = max(inset_rounded_rect_sdf(pt, halfExtent, radii, 2.0 * widths / 3.0), -innerD);
-        return min(outerThird, innerThird);
+        float middleThird = max(inset_rounded_rect_sdf(pt, halfExtent, radii, widths / 3.0),
+                                -inset_rounded_rect_sdf(pt, halfExtent, radii, 2.0 * widths / 3.0));
+        return -middleThird;
     }
 
     const float epsilon = 0.0001;
@@ -381,7 +379,7 @@ inline float border_pattern(float2 pt, float d, float innerD, float2 halfExtent,
     // if dashed; job done, just return the period calc
     if (border.style == BorderStyle::Dashed) {
         float dash = abs(s - nearest * period) - dashLength / 2.0;
-        return max(ring, dash);
+        return dash;
     }
 
     // now we have to compute the dots
@@ -458,7 +456,7 @@ inline float border_pattern(float2 pt, float d, float innerD, float2 halfExtent,
         nearestDot = min(nearestDot, circle_sdf(pt, center, width / 2.0));
     }
 
-    return max(ring, nearestDot);
+    return nearestDot;
 }
 
 inline float shadow_coverage(float2 p, float2 halfExtent, CornerRadii radii, float sigma, float spread, float4 borderWidths) {

@@ -87,8 +87,9 @@ fragment float4 fragment_image(
     float innerD = inset_rounded_rect_sdf(localPosition, uniforms->geometry.halfExtent, uniforms->style.cornerRadius, uniforms->style.border.widths);
     float innerMask = clamp(0.5 - innerD/px, 0.0, 1.0);
 
-    float borderD = border_pattern(localPosition, d, innerD, uniforms->geometry.halfExtent, uniforms->style.cornerRadius, uniforms->style.border);
-    float borderMask = clamp(0.5 - borderD/px, 0.0, 1.0);
+    float ringMask = clamp(outerMask - innerMask, 0.0, 1.0);
+    float borderD = border_pattern(localPosition, uniforms->geometry.halfExtent, uniforms->style.cornerRadius, uniforms->style.border);
+    float borderMask = ringMask * clamp(0.5 - borderD/px, 0.0, 1.0);
     float fillMask = outerMask;
 
     float4 fillColor = color;
