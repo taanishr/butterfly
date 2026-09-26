@@ -508,7 +508,7 @@ namespace layout {
         static InlineState layoutInlineOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
         static LayoutState resolveOutOfFlow(Constraints& constraints, simd_float2 currentCursor, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
 
-        static LayoutState resolve(Constraints& constraints, LayoutInput& layoutInput, Atomized atomized, const SizeResult& sizeResult);
+        static LayoutState resolve(Constraints& constraints, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult);
     };
 
     std::optional<IntrinsicSizes> blockPass(

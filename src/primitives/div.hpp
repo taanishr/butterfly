@@ -258,7 +258,7 @@ namespace elements {
             
             return Atomized{
                 .id = fragment.id,
-                .atoms = atoms
+                .atoms = std::move(atoms)
             };
         }
 
@@ -290,7 +290,7 @@ namespace elements {
             
             return Atomized{
                 .id = fragment.id,
-                .atoms = atoms
+                .atoms = std::move(atoms)
             };
         }
         
@@ -298,8 +298,9 @@ namespace elements {
         Placed place(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, DivDescriptor& desc, Atomized& atomized, L& lr)
         {
             std::vector<AtomPlacement> placements;
-            auto offsets = lr.atomOffsets;
-            
+            const auto& offsets = lr.atomOffsets;
+            placements.reserve(offsets.size());
+
             
             // copy placements into buffer
             size_t bufferLen = offsets.size()*sizeof(simd_float2);
@@ -316,7 +317,7 @@ namespace elements {
             
             return Placed{
                 .id = fragment.id,
-                .placements = placements
+                .placements = std::move(placements)
             };
         }
 

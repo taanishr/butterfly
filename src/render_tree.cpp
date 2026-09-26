@@ -424,7 +424,7 @@ namespace tree {
         );
         if (!childBidiInputs) return std::unexpected{childBidiInputs.error()};
         for (size_t i = 0; i < node->children.size(); ++i) {
-            childConstraints.textBidiInput = (*childBidiInputs)[i];
+            childConstraints.textBidiInput = std::move((*childBidiInputs)[i]);
             auto result = atomizePhase(node->children[i].get(), childConstraints);
             if (!result) return result;
         }

@@ -136,8 +136,7 @@ namespace elements {
             auto finalized = std::visit([&](auto& state) {
                 return processor.finalize(element.getFragment(), constraints, shared, element.getDescriptor(), atomized, state, layout.sizeResult, placed);
             }, layout.layout);
-            auto finalizedErased = finalized;
-            return finalizedErased;
+            return std::any{std::move(finalized)};
         }
 
         std::any request(RequestTarget target, std::any& payload) override {
@@ -145,7 +144,7 @@ namespace elements {
         };
 
         void encode(MTL::RenderCommandEncoder* encoder, std::any& finalizedErased) override {
-            auto finalized = std::any_cast<Finalized<typename E::UniformsType>>(finalizedErased);
+            auto& finalized = *std::any_cast<Finalized<typename E::UniformsType>>(&finalizedErased);
             return processor.encode(encoder, element.getFragment(), finalized);
         }
 
@@ -174,7 +173,7 @@ namespace elements {
         bool preciseHitTest(simd_float2 point, const LayoutState& layout, const std::any& finalized) override {
             if (hitTestFunction) {
                 HitTestContext<U> ctx {
-                    .finalized = std::any_cast<Finalized<U>>(finalized),
+                    .finalized = *std::any_cast<Finalized<U>>(&finalized),
                     .layout = layout
                 };
 

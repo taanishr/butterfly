@@ -310,7 +310,7 @@ namespace elements {
             atom.height = height;
             atoms.push_back(atom);
 
-            return Atomized{ .id = fragment.id, .atoms = atoms };
+            return Atomized{ .id = fragment.id, .atoms = std::move(atoms) };
         }
 
         LayoutState layout(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, ImageDescriptor& desc, Atomized& atomized, const SizeResult& sizeResult) {
@@ -347,7 +347,7 @@ namespace elements {
             
             return Atomized{
                 .id = fragment.id,
-                .atoms = atoms
+                .atoms = std::move(atoms)
             };
         };
 
@@ -355,7 +355,8 @@ namespace elements {
         Placed place(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, ImageDescriptor& desc, Atomized& atomized, L& lr) {
             std::vector<AtomPlacement> placements;
 
-            auto offsets = lr.atomOffsets;
+            const auto& offsets = lr.atomOffsets;
+            placements.reserve(offsets.size());
         
             size_t bufferLen = offsets.size() * sizeof(simd_float2);
             if (bufferLen > 0) {
@@ -370,7 +371,7 @@ namespace elements {
                 });
             }
 
-            return Placed{ .id = fragment.id, .placements = placements };
+            return Placed{ .id = fragment.id, .placements = std::move(placements) };
         }
 
         template <LayoutStateType L>

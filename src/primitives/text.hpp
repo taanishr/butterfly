@@ -365,7 +365,7 @@ namespace elements {
 
                     GlyphQuery glyphQuery { shapedGlyph.glyphId, desc.font };
 
-                    auto glyph = glyphCache.retrieve(glyphQuery);
+                    const auto& glyph = glyphCache.retrieve(glyphQuery);
                     size_t pointsLenBytes = glyph.points.size() * sizeof(simd_float2);
                     size_t offset = 0;
 
@@ -656,7 +656,7 @@ namespace elements {
             const auto& offsets = atomized.usesDrawableAtoms
                 ? lr.drawableAtomOffsets
                 : lr.atomOffsets;
-
+            placements.reserve(offsets.size());
 
             size_t bufferLen = offsets.size() * sizeof(simd_float2);
 
@@ -670,7 +670,7 @@ namespace elements {
                 });
             }
 
-            return Placed{ .id = fragment.id, .placements = placements };
+            return Placed{ .id = fragment.id, .placements = std::move(placements) };
         }
         
         template <LayoutStateType L>

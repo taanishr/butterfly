@@ -261,7 +261,7 @@ namespace layout {
         return layoutInlineNormalFlow(constraints, current_cursor, layoutInput, atomized, sizeResult);
     }
 
-    LayoutState LayoutEngine::resolve(Constraints& constraints, LayoutInput& layoutInput, Atomized atomized, const SizeResult& sizeResult)
+    LayoutState LayoutEngine::resolve(Constraints& constraints, LayoutInput& layoutInput, Atomized& atomized, const SizeResult& sizeResult)
     {
         if (layoutInput.direction.has_value()) {
             constraints.inheritedProperties.direction = *layoutInput.direction;

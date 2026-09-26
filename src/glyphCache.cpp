@@ -49,7 +49,7 @@ GlyphCache::~GlyphCache() {
     FT_Done_FreeType(this->ft);
 }
 
-const Glyph& GlyphCache::retrieve(GlyphQuery glyphQuery) {
+const Glyph& GlyphCache::retrieve(const GlyphQuery& glyphQuery) {
     return GlyphCache::retrieve(glyphQuery.fontName, glyphQuery.glyphId);
 }
                                   

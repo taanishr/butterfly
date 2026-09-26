@@ -27,7 +27,7 @@ struct GlyphCache {
     
     ~GlyphCache();
     
-    const Glyph& retrieve(GlyphQuery glyphQuery);
+    const Glyph& retrieve(const GlyphQuery& glyphQuery);
     const Glyph& retrieve(const FontName& font, uint32_t glyphId);
     float lineHeight(const FontName& font);
     
