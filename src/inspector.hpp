@@ -48,6 +48,9 @@ namespace Inspector {
         std::optional<MousePayload> lastMouse;
         std::optional<KeyboardPayload> lastKeyboard;
         std::optional<ScrollPayload> lastScroll;
+        float panelRight = 12.0f;
+        float panelTop = 12.0f;
+        simd_float2 dragLastPosition{0.0f, 0.0f};
         NodeBuilder<Text<TextStorage>, TextProcessor<TextStorage, TextUniforms>> mouseXText;
         NodeBuilder<Text<TextStorage>, TextProcessor<TextStorage, TextUniforms>> mouseYText;
         NodeBuilder<Text<TextStorage>, TextProcessor<TextStorage, TextUniforms>> nodeIDText;
@@ -74,6 +77,7 @@ namespace Inspector {
         NodeBuilder<Div<DivStorage>, DivProcessor<DivStorage, DivUniforms>> paddingOverlayState;
         NodeBuilder<Div<DivStorage>, DivProcessor<DivStorage, DivUniforms>> contentOverlayState;
         NodeBuilder<Div<DivStorage>, DivProcessor<DivStorage, DivUniforms>> selectionLabelState;
+        NodeBuilder<Div<DivStorage>, DivProcessor<DivStorage, DivUniforms>> panelHeaderState;
         NodeBuilder<Div<DivStorage>, DivProcessor<DivStorage, DivUniforms>> panelState;
         NodeBuilder<Div<DivStorage>, DivProcessor<DivStorage, DivUniforms>> visualizerState;
         uint64_t inspectorNodeID;

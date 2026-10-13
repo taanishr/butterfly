@@ -25,6 +25,7 @@ struct HandlerState {
     std::function<void(float x, float y, runtime::MouseButton button, runtime::Modifiers modifiers)> mouseDownHandler;
     std::function<void(float x, float y, runtime::MouseButton button, runtime::Modifiers modifiers)> mouseUpHandler;
     std::function<void(float x, float y, runtime::Modifiers modifiers)> mouseMovedHandler;
+    std::function<void(float x, float y, runtime::MouseButton button, runtime::Modifiers modifiers)> mouseDraggedHandler;
     std::function<void(float dx, float dy, float x, float y, runtime::Modifiers modifiers)> scrollWheelHandler;
 };
 

@@ -42,6 +42,7 @@ enum class EventType {
     MouseDown,
     MouseUp,
     MouseMove,
+    MouseDrag,
     MouseEnter,
     MouseLeave,
     Click,
@@ -111,6 +112,7 @@ template<EventType E> struct event_payload;
 template<> struct event_payload<EventType::MouseDown> { using type = MousePayload; };
 template<> struct event_payload<EventType::MouseUp> { using type = MousePayload; };
 template<> struct event_payload<EventType::MouseMove> { using type = MousePayload; };
+template<> struct event_payload<EventType::MouseDrag> { using type = MousePayload; };
 template<> struct event_payload<EventType::MouseEnter> { using type = MousePayload; };
 template<> struct event_payload<EventType::MouseLeave> { using type = MousePayload; };
 template<> struct event_payload<EventType::Click> { using type = MousePayload; };

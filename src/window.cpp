@@ -110,6 +110,13 @@ extern "C" void mouseMoved(id self, SEL _cmd, id event) {
     hs.mouseMovedHandler(point.x, point.y, modifiersFromEvent(event));
 }
 
+extern "C" void mouseDragged(id self, SEL _cmd, id event) {
+    LocationFunc f = reinterpret_cast<LocationFunc>(objc_msgSend);
+    auto point = f(event, sel_registerName("locationInWindow"));
+
+    hs.mouseDraggedHandler(point.x, point.y, mouseButtonFromEvent(event), modifiersFromEvent(event));
+}
+
 extern "C" void scrollWheel(id self, SEL _cmd, id event) {
     ScrollWheelFunc f = reinterpret_cast<ScrollWheelFunc>(objc_msgSend);
     LocationFunc pointFunc = reinterpret_cast<LocationFunc>(objc_msgSend);
@@ -406,6 +413,29 @@ void AppDelegate::applicationDidFinishLaunching(NS::Notification* notification)
         }
     };
 
+    hs.mouseDraggedHandler = [this](float x, float y, MouseButton button, Modifiers modifiers){
+        if (!this->mouseDownTarget) {
+            return;
+        }
+
+        simd_float2 testPoint{0.0f, 0.0f};
+        this->hitTest(x, y, testPoint);
+
+        Event e;
+        e.type = EventType::MouseDrag;
+        e.payload = MousePayload{
+            .position = testPoint,
+            .button = button,
+            .modifiers = modifiers
+        };
+
+        if (this->inspector) {
+            this->inspector->observe(e);
+        }
+
+        this->mouseDownTarget->dispatch(e);
+    };
+
     hs.scrollWheelHandler = [this](float dx, float dy, float x, float y, Modifiers modifiers) {
         simd_float2 testPoint{0.0f, 0.0f};
         auto* scrollNode = this->hitTest(x, y, testPoint);
@@ -448,6 +478,9 @@ void AppDelegate::applicationDidFinishLaunching(NS::Notification* notification)
     class_addMethod( cls , sel_registerName("rightMouseUp:"), reinterpret_cast<IMP>(mouseUp), "v@:@");
     class_addMethod( cls , sel_registerName("otherMouseUp:"), reinterpret_cast<IMP>(mouseUp), "v@:@");
     class_addMethod( cls , sel_registerName("mouseMoved:"), reinterpret_cast<IMP>(mouseMoved), "v@:@");
+    class_addMethod( cls , sel_registerName("mouseDragged:"), reinterpret_cast<IMP>(mouseDragged), "v@:@");
+    class_addMethod( cls , sel_registerName("rightMouseDragged:"), reinterpret_cast<IMP>(mouseDragged), "v@:@");
+    class_addMethod( cls , sel_registerName("otherMouseDragged:"), reinterpret_cast<IMP>(mouseDragged), "v@:@");
     class_addMethod( cls , sel_registerName("scrollWheel:"), reinterpret_cast<IMP>(scrollWheel), "v@:@");
 
     using SetBoolFunc = void(*)(id, SEL, bool);
@@ -462,7 +495,7 @@ void AppDelegate::applicationDidFinishLaunching(NS::Notification* notification)
     // index(ctx);
     
     
-    window->setTitle(NS::String::string("window", NS::StringEncoding::UTF8StringEncoding ));
+    // window->setTitle(NS::String::string("window", NS::StringEncoding::UTF8StringEncoding ));
 
     window->makeKeyAndOrderFront(nullptr);
     

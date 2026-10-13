@@ -174,6 +174,16 @@ namespace Inspector {
                 selectionLabelText
             )
         },
+        panelHeaderState{
+            div()
+                .display(style::Display::Flex)
+                .alignItems(style::AlignItems::Center)
+                .justifyContent(style::JustifyContent::SpaceBetween)
+            (
+                text("Inspector").fontSize(style::Size::pt(22.0)).font(ArialBold),
+                frameStatsText
+            )
+        },
         panelState{
             div()
                 .color(simd_float4{0.035,0.045,0.07,0.8})
@@ -181,8 +191,8 @@ namespace Inspector {
                 .width(style::Size::px(420))
                 .position(style::Position::Fixed)
                 .padding(style::Size::px(14.0))
-                .right(style::Size::px(12))
-                .top(style::Size::px(12))
+                .right(style::Size::px(panelRight))
+                .top(style::Size::px(panelTop))
                 .cornerRadius(style::Size::px(14.0))
                 .borderWidth(style::Size::px(1.0))
                 .borderColor(simd_float4{0.22,0.27,0.38,0.9})
@@ -193,14 +203,7 @@ namespace Inspector {
                     .flexDirection(FlexDirection::Col)
                     .flexGap(style::Size::px(12.0))
                 (
-                    div()
-                        .display(style::Display::Flex)
-                        .alignItems(style::AlignItems::Center)
-                        .justifyContent(style::JustifyContent::SpaceBetween)
-                    (
-                        text("Inspector").fontSize(style::Size::pt(22.0)).font(ArialBold),
-                        frameStatsText
-                    ),
+                    panelHeaderState,
                     div()
                         .color(simd_float4{0.075,0.09,0.13,0.9})
                         .padding(style::Size::px(10.0))
@@ -303,6 +306,22 @@ namespace Inspector {
         }
     {
         inspectorNodeID = visualizerState.treeNode()->id;
+
+        panelHeaderState
+            .addEventListener(EventType::MouseDown, [this](auto&, Event& event) {
+                dragLastPosition = event.get<EventType::MouseDown>().position;
+            })
+            .addEventListener(EventType::MouseDrag, [this](auto&, Event& event) {
+                auto position = event.get<EventType::MouseDrag>().position;
+                auto delta = position - dragLastPosition;
+                dragLastPosition = position;
+
+                panelRight -= delta.x;
+                panelTop += delta.y;
+                panelState
+                    .right(style::Size::px(panelRight))
+                    .top(style::Size::px(panelTop));
+            });
     }
 
     void Inspector::observe(const Event& event) {
@@ -312,6 +331,7 @@ namespace Inspector {
             case EventType::MouseDown:
             case EventType::MouseUp:
             case EventType::MouseMove:
+            case EventType::MouseDrag:
             case EventType::MouseEnter:
             case EventType::MouseLeave:
             case EventType::Click:
