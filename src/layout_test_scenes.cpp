@@ -1026,7 +1026,7 @@ namespace layout_test::scenes {
             .width(S::percent(1.0))
             .height(S::percent(1.0));
 
-        std::vector<tree::TreeNode*> panels;
+        std::vector<decltype(div())> panels;
         panels.reserve(sceneNames.size());
 
         for (size_t index = 0; index < sceneNames.size(); ++index) {
@@ -1040,7 +1040,7 @@ namespace layout_test::scenes {
             auto* scene = build(sceneNames[index]);
             decltype(panel)::reparent(panel.treeNode(), scene);
             browser(panel);
-            panels.push_back(panel.treeNode());
+            panels.push_back(panel);
         }
 
         auto sceneName = text(std::string{sceneNames.front()})
@@ -1059,21 +1059,20 @@ namespace layout_test::scenes {
         browser(label);
 
         browser.addEventListener(EventType::KeyDown,
-            [panels, sceneName, selected = size_t{0}](auto& browserNode, Event& event) mutable {
+            [panels, sceneName, selected = size_t{0}](auto&, Event& event) mutable {
                 const int keyCode = event.get<EventType::KeyDown>().keyCode;
                 const bool previous = keyCode == leftArrow || keyCode == upArrow;
                 const bool next = keyCode == rightArrow || keyCode == downArrow;
                 if (!previous && !next) return;
 
-                panels[selected]->shared.left = S::px(offscreen);
+                panels[selected].left(S::px(offscreen));
                 selected = previous
                     ? (selected + panels.size() - 1) % panels.size()
                     : (selected + 1) % panels.size();
-                panels[selected]->shared.left = S::px(0);
+                panels[selected].left(S::px(0));
 
                 sceneName.text(std::string{sceneNames[selected]});
                 std::ofstream{"/tmp/gui-layout-current-scene"} << sceneNames[selected];
-                browserNode.markDirty();
                 event.stopPropagation();
                 std::println("layout scene [{}/{}]: {}", selected + 1, panels.size(), sceneNames[selected]);
             }

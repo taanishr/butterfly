@@ -53,9 +53,6 @@ namespace elements {
     concept HasFont = requires { std::declval<T&>().font; };
 
     template<typename T>
-    concept HasColor = requires { std::declval<T&>().color; };
-
-    template<typename T>
     concept HasFontSize = requires { std::declval<T&>().fontSize; };
 
     template<typename T>
@@ -138,6 +135,20 @@ namespace elements {
             return self();
         }
 
+        Derived& animateWidth(Size target, double duration, animation::Easing easing = animation::Easing::Linear, std::optional<Size> from = std::nullopt) {
+            auto& manager = renderTree.animationManager;
+            auto& slot = node->animations[animation::Animatable::Width];
+            Size initial = from.value_or(manager.width(slot, node->getWidth()));
+
+            if (initial.unit == target.unit) {
+                slot = animation::AnimationState{manager.now, manager.now + duration, easing, initial};
+            } else {
+                slot.reset();
+            }
+
+            return width(target);
+        }
+
         Size minWidth() const {
             return node->shared.minWidth;
         }
@@ -166,6 +177,20 @@ namespace elements {
             node->shared.height = height;
             markDirty(layoutDirtyBits());
             return self();
+        }
+
+        Derived& animateHeight(Size target, double duration, animation::Easing easing = animation::Easing::Linear, std::optional<Size> from = std::nullopt) {
+            auto& manager = renderTree.animationManager;
+            auto& slot = node->animations[animation::Animatable::Height];
+            Size initial = from.value_or(manager.height(slot, node->getHeight()));
+
+            if (initial.unit == target.unit) {
+                slot = animation::AnimationState{manager.now, manager.now + duration, easing, initial};
+            } else {
+                slot.reset();
+            }
+
+            return height(target);
         }
 
         Derived& aspectRatio(float width, float height = 1.0f) {
@@ -343,6 +368,16 @@ namespace elements {
             return self();
         }
 
+        Derived& animateTranslate(simd_float2 target, double duration, animation::Easing easing = animation::Easing::Linear, std::optional<simd_float2> from = std::nullopt) {
+            auto& manager = renderTree.animationManager;
+            auto& slot = node->animations[animation::Animatable::Translate];
+            simd_float2 initial = from.value_or(manager.transform(slot, node->getTransform()).columns[2].xy);
+
+            slot = animation::AnimationState{manager.now, manager.now + duration, easing, initial};
+
+            return translate(target);
+        }
+
         std::optional<float> rotate() const {
             return node->shared.rotate;
         }
@@ -394,6 +429,16 @@ namespace elements {
             node->shared.opacity = std::clamp(opacity, 0.0f, 1.0f);
             markDirty(DirtyBits::PostLayout | DirtyBits::Finalize | DirtyBits::PaintOrder);
             return self();
+        }
+
+        Derived& animateOpacity(float target, double duration, animation::Easing easing = animation::Easing::Linear, std::optional<float> from = std::nullopt) {
+            auto& manager = renderTree.animationManager;
+            auto& slot = node->animations[animation::Animatable::Opacity];
+            float initial = from.value_or(manager.opacity(slot, node->getOpacity()));
+
+            slot = animation::AnimationState{manager.now, manager.now + duration, easing, initial};
+
+            return opacity(target);
         }
 
         std::optional<simd_float3x3> transform() const {
@@ -842,14 +887,24 @@ namespace elements {
             return self();
         }
 
-        simd_float4 color() const requires HasColor<typename E::DescriptorType> {
-            return descriptor().color;
+        simd_float4 color() const {
+            return node->shared.color;
         }
 
-        Derived& color(simd_float4 color) requires HasColor<typename E::DescriptorType> {
-            descriptor().color = color;
+        Derived& color(simd_float4 color) {
+            node->shared.color = color;
             markDirty(DirtyBits::Finalize);
             return self();
+        }
+
+        Derived& animateColor(simd_float4 target, double duration, animation::Easing easing = animation::Easing::Linear, std::optional<simd_float4> from = std::nullopt) {
+            auto& manager = renderTree.animationManager;
+            auto& slot = node->animations[animation::Animatable::Color];
+            simd_float4 initial = from.value_or(manager.color(slot, node->getColor()));
+
+            slot = animation::AnimationState{manager.now, manager.now + duration, easing, initial};
+
+            return color(target);
         }
 
         const std::string& text() const requires HasText<typename E::DescriptorType> {

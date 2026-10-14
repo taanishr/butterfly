@@ -36,7 +36,6 @@ Renderer::Renderer(MTL::Device* device, MTK::View* view):
     rootTree{}
 {
     auto rootElem = elements::Div(ctx);
-    rootElem.getDescriptor().color = simd_float4{0,0,0,0};
 
     auto* rootNode = rootTree.createRoot(ctx, std::move(rootElem), runtime::getDivProcessor(ctx));
     rootNode->shared.width = style::Size::percent(1.0);
@@ -78,6 +77,7 @@ void Renderer::registerInspector(Inspector::Inspector& inspector)
 }
 
 void Renderer::draw() {
+    rootTree.animationManager.advance(std::chrono::duration<double>(clock.now().time_since_epoch()).count());
     auto frameInfo = getFrameInfo();
     if (!rootTree.requiresFrame(frameInfo)) return;
 

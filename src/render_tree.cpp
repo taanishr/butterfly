@@ -148,12 +148,43 @@ namespace tree {
         }
     }
 
+    static DirtyBits animationDirtyBits(size_t animatable) {
+        switch (animatable) {
+            case animation::Animatable::Width:
+            case animation::Animatable::Height:
+                return DirtyBits::Measure | DirtyBits::Atomize | DirtyBits::Layout |
+                    DirtyBits::PostLayout | DirtyBits::Place | DirtyBits::Finalize;
+            case animation::Animatable::Translate:
+                return DirtyBits::PostLayout | DirtyBits::Finalize;
+            case animation::Animatable::Opacity:
+                return DirtyBits::PostLayout | DirtyBits::Finalize | DirtyBits::PaintOrder;
+            case animation::Animatable::Color:
+                return DirtyBits::Finalize;
+        }
+        return DirtyBits::None;
+    }
+
     void RenderTree::clearDirty(TreeNode* node) {
         if (!node) return;
         node->dirtySelf = DirtyBits::None;
         node->dirtySubtree = DirtyBits::None;
         for (auto& child : node->children) {
             clearDirty(child.get());
+        }
+
+        DirtyBits sticky = DirtyBits::None;
+        for (size_t i = 0; i < animation::Animatable::Count; ++i) {
+            auto& state = node->animations[i];
+            if (state) {
+                sticky |= animationDirtyBits(i);
+                if (!animationManager.nextAnimationStickyState(*state)) {
+                    state.reset();
+                }
+            }
+        }
+
+        if (sticky != DirtyBits::None) {
+            markDirty(node, sticky);
         }
     }
 
@@ -609,7 +640,10 @@ namespace tree {
             ? std::move(*sizeRequestOverride)
             : SizeRequest {
                 .position = node->shared.position,
-                .specified = {.width = node->shared.width, .height = node->shared.height},
+                .specified = {
+                    .width = animationManager.width(node->animations[animation::Animatable::Width], node->getWidth()),
+                    .height = animationManager.height(node->animations[animation::Animatable::Height], node->getHeight()),
+                },
                 .minimum = {.width = node->shared.minWidth, .height = node->shared.minHeight},
                 .maximum = {
                     .width = node->shared.maxWidth ? SizeState{*node->shared.maxWidth} : SizeState{std::monostate{}},
@@ -997,11 +1031,12 @@ namespace tree {
 
             // we do NOT want to move the actual shape; the goal of a CSS transform is explicitly to modify geomertry
             // so we subtract the origin (right mat-mult), apply the transform, then readd the origin (left mat-mult)
-            simd_float3x3 localTransform = simd_mul(fromTransformOrigin, simd_mul(node->shared.transform.value_or(matrix_identity_float3x3), toTransformOrigin));
+            simd_float3x3 transform = animationManager.transform(node->animations[animation::Animatable::Translate], node->getTransform());
+            simd_float3x3 localTransform = simd_mul(fromTransformOrigin, simd_mul(transform, toTransformOrigin));
         
             node->transform = simd_mul(constraints.transform, localTransform);
             node->inverseTransform = simd_inverse(node->transform);
-            node->effectiveOpacity = constraints.opacity * node->shared.opacity;
+            node->effectiveOpacity = constraints.opacity * animationManager.opacity(node->animations[animation::Animatable::Opacity], node->getOpacity());
 
             node->atomized = node->element->postLayout(constraints, node->shared,*node->atomized, result.layout);
 
@@ -1128,7 +1163,8 @@ namespace tree {
                         simd_float3x3 fromTransformOrigin = matrix_identity_float3x3;
                         fromTransformOrigin.columns[2] = {transformOrigin.x, transformOrigin.y, 1.0f};
 
-                        simd_float3x3 localTransform = simd_mul(fromTransformOrigin, simd_mul(child->shared.transform.value_or(matrix_identity_float3x3), toTransformOrigin));
+                        simd_float3x3 transform = animationManager.transform(child->animations[animation::Animatable::Translate], child->getTransform());
+                        simd_float3x3 localTransform = simd_mul(fromTransformOrigin, simd_mul(transform, toTransformOrigin));
                         simd_float3x3 childTransform = simd_mul(parentTransform, localTransform);
 
                         float left = childBox.x;
@@ -1228,6 +1264,7 @@ namespace tree {
             auto finalizedConstraints = constraints;
             finalizedConstraints.transform = node->transform;
             finalizedConstraints.opacity = node->effectiveOpacity;
+            finalizedConstraints.color = animationManager.color(node->animations[animation::Animatable::Color], node->getColor());
             auto finalized = node->element->finalize(finalizedConstraints, node->shared, atomized, layout, placed);
             node->finalized = finalized;
             node->constraintsKey = key;

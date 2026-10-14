@@ -77,7 +77,7 @@ namespace tree {
                 contentHeight = std::max(contentHeight, atom.height);
             }
 
-            SizeState resolvedWidth = calculateSize(node->shared.width, constraints.availableWidth);
+            SizeState resolvedWidth = calculateSize(tree.animationManager.width(node->animations[animation::Animatable::Width], node->getWidth()), constraints.availableWidth);
             if (std::holds_alternative<float>(resolvedWidth)) {
                 contentWidth = std::get<float>(resolvedWidth);
             } else if (std::holds_alternative<float>(constraints.availableWidth)) {
@@ -107,7 +107,10 @@ namespace tree {
 
         SizeRequest sizeRequest {
             .position = node->shared.position,
-            .specified = {.width = node->shared.width, .height = node->shared.height},
+            .specified = {
+                .width = tree.animationManager.width(node->animations[animation::Animatable::Width], node->getWidth()),
+                .height = tree.animationManager.height(node->animations[animation::Animatable::Height], node->getHeight()),
+            },
             .minimum = {.width = node->shared.minWidth, .height = node->shared.minHeight},
             .maximum = {
                 .width = node->shared.maxWidth ? SizeState{*node->shared.maxWidth} : SizeState{std::monostate{}},

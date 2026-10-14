@@ -1522,7 +1522,10 @@ namespace layout {
 
             SizeRequest childRequest {
                 .position = childNode->shared.position,
-                .specified = {.width = childNode->shared.width, .height = childNode->shared.height},
+                .specified = {
+                    .width = tree.animationManager.width(childNode->animations[animation::Animatable::Width], childNode->getWidth()),
+                    .height = tree.animationManager.height(childNode->animations[animation::Animatable::Height], childNode->getHeight()),
+                },
                 .override = {.width = std::monostate{}, .height = std::monostate{}},
                 .minimum = {.width = childNode->shared.minWidth, .height = childNode->shared.minHeight},
                 .maximum = {
@@ -1700,7 +1703,10 @@ namespace layout {
 
             SizeRequest childRequest {
                 .position = childNode->shared.position,
-                .specified = {.width = childNode->shared.width, .height = childNode->shared.height},
+                .specified = {
+                    .width = tree.animationManager.width(childNode->animations[animation::Animatable::Width], childNode->getWidth()),
+                    .height = tree.animationManager.height(childNode->animations[animation::Animatable::Height], childNode->getHeight()),
+                },
                 .override = {.width = std::monostate{}, .height = std::monostate{}},
                 .minimum = {.width = childNode->shared.minWidth, .height = childNode->shared.minHeight},
                 .maximum = {
@@ -1914,7 +1920,10 @@ namespace layout {
 
             SizeRequest childRequest {
                 .position = childNode->shared.position,
-                .specified = {.width = childNode->shared.width, .height = childNode->shared.height},
+                .specified = {
+                    .width = tree.animationManager.width(childNode->animations[animation::Animatable::Width], childNode->getWidth()),
+                    .height = tree.animationManager.height(childNode->animations[animation::Animatable::Height], childNode->getHeight()),
+                },
                 .override = {.width = std::monostate{}, .height = std::monostate{}},
                 .minimum = {.width = childNode->shared.minWidth, .height = childNode->shared.minHeight},
                 .maximum = {
@@ -2012,7 +2021,10 @@ namespace layout {
 
             SizeRequest childRequest {
                 .position = childNode->shared.position,
-                .specified = {.width = childNode->shared.width, .height = childNode->shared.height},
+                .specified = {
+                    .width = tree.animationManager.width(childNode->animations[animation::Animatable::Width], childNode->getWidth()),
+                    .height = tree.animationManager.height(childNode->animations[animation::Animatable::Height], childNode->getHeight()),
+                },
                 .override = {.width = std::monostate{}, .height = std::monostate{}},
                 .minimum = {.width = childNode->shared.minWidth, .height = childNode->shared.minHeight},
                 .maximum = {

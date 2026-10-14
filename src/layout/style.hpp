@@ -248,6 +248,8 @@ namespace style {
         // Grid item properties
         GridPlacement gridPlacement{};
 
+        simd_float4 color{0, 0, 0, 0};
+
         Size cornerRadius{};
         std::optional<Size> cornerRadiusTopLeft, cornerRadiusTopRight;
         std::optional<Size> cornerRadiusBottomRight, cornerRadiusBottomLeft;

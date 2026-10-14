@@ -69,6 +69,8 @@ namespace tree {
             std::optional<IntrinsicRequest> intrinsicWidthRequestOverride = std::nullopt,
             std::optional<IntrinsicRequest> intrinsicHeightRequestOverride = std::nullopt
         );
+
+        animation::AnimationManager animationManager;
     private:
         bool isFrameInfoChanged(const FrameInfo& frameInfo) const;
         ConstraintsKey makeConstraintsKey(const Constraints& constraints) const;

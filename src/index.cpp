@@ -6053,306 +6053,306 @@ div()
     //     );
     // }
 
-    // ═══════════════════════════════════════════════════════════════════
-    // Clone: en.wikipedia.org article (Vector 2022 skin)
-    // ═══════════════════════════════════════════════════════════════════
-    {
-        using S = gui::Size;
-        using gui::Display;
-        using gui::FlexDirection;
-        using gui::AlignItems;
-        using gui::JustifyContent;
-        using gui::Position;
+    // // ═══════════════════════════════════════════════════════════════════
+    // // Clone: en.wikipedia.org article (Vector 2022 skin)
+    // // ═══════════════════════════════════════════════════════════════════
+    // {
+    //     using S = gui::Size;
+    //     using gui::Display;
+    //     using gui::FlexDirection;
+    //     using gui::AlignItems;
+    //     using gui::JustifyContent;
+    //     using gui::Position;
 
-        constexpr auto rgb = [](int r, int g, int b, float a = 1.0f) {
-            return simd_float4{r / 255.0f, g / 255.0f, b / 255.0f, a};
-        };
+    //     constexpr auto rgb = [](int r, int g, int b, float a = 1.0f) {
+    //         return simd_float4{r / 255.0f, g / 255.0f, b / 255.0f, a};
+    //     };
 
-        const auto paper    = rgb(255, 255, 255);
-        const auto chrome   = rgb(248, 249, 250);
-        const auto rule     = rgb(162, 169, 177);
-        const auto softRule = rgb(234, 236, 240);
-        const auto ink      = rgb(32, 33, 34);
-        const auto muted    = rgb(84, 89, 93);
-        const auto link     = rgb(51, 102, 204);
-        const auto visited  = rgb(121, 92, 161);
-        const auto infobox  = rgb(248, 249, 250);
-        const auto taxon    = rgb(211, 211, 211);
-        const auto clear    = rgb(0, 0, 0, 0.0f);
+    //     const auto paper    = rgb(255, 255, 255);
+    //     const auto chrome   = rgb(248, 249, 250);
+    //     const auto rule     = rgb(162, 169, 177);
+    //     const auto softRule = rgb(234, 236, 240);
+    //     const auto ink      = rgb(32, 33, 34);
+    //     const auto muted    = rgb(84, 89, 93);
+    //     const auto link     = rgb(51, 102, 204);
+    //     const auto visited  = rgb(121, 92, 161);
+    //     const auto infobox  = rgb(248, 249, 250);
+    //     const auto taxon    = rgb(211, 211, 211);
+    //     const auto clear    = rgb(0, 0, 0, 0.0f);
 
-        const std::string Sans     = Helvetica;
-        const std::string SansBold = ArialBold;
-        const std::string Serif    = "/System/Library/Fonts/Supplemental/Georgia.ttf";
-        constexpr auto A = "/Users/treja/projects/gui/assets/clones/";
-        constexpr auto butterflyPath = "/Users/treja/projects/gui/assets/butterfly.png";
+    //     const std::string Sans     = Helvetica;
+    //     const std::string SansBold = ArialBold;
+    //     const std::string Serif    = "/System/Library/Fonts/Supplemental/Georgia.ttf";
+    //     constexpr auto A = "/Users/treja/projects/gui/assets/clones/";
+    //     constexpr auto butterflyPath = "/Users/treja/projects/gui/assets/butterfly.png";
 
-        auto body = [&](const char* s) { return text(s).font(Sans).fontSize(S::pt(11)).color(ink).lineHeight(1.6); };
-        auto a    = [&](const char* s) { return text(s).font(Sans).fontSize(S::pt(11)).color(link).lineHeight(1.6); };
-        auto sup  = [&](const char* s) { return text(s).font(Sans).fontSize(S::pt(7.5)).color(link); };
+    //     auto body = [&](const char* s) { return text(s).font(Sans).fontSize(S::pt(11)).color(ink).lineHeight(1.6); };
+    //     auto a    = [&](const char* s) { return text(s).font(Sans).fontSize(S::pt(11)).color(link).lineHeight(1.6); };
+    //     auto sup  = [&](const char* s) { return text(s).font(Sans).fontSize(S::pt(7.5)).color(link); };
 
-        auto heading = [&](const char* title) {
-            return div().width(S::percent(1.0)).marginTop(S::px(22)).marginBottom(S::px(8))
-                .paddingBottom(S::px(3))
-                .borderColor(rule).borderBottomWidth(S::px(1))
-            (
-                text(title).font(Serif).fontSize(S::pt(17)).color(ink)
-            );
-        };
+    //     auto heading = [&](const char* title) {
+    //         return div().width(S::percent(1.0)).marginTop(S::px(22)).marginBottom(S::px(8))
+    //             .paddingBottom(S::px(3))
+    //             .borderColor(rule).borderBottomWidth(S::px(1))
+    //         (
+    //             text(title).font(Serif).fontSize(S::pt(17)).color(ink)
+    //         );
+    //     };
 
-        auto tocItem = [&](const char* label, bool active, int indent = 0) {
-            return div().paddingLeft(S::px(indent * 14))(
-                text(label).font(active ? SansBold : Sans).fontSize(S::pt(10)).color(active ? ink : link)
-            );
-        };
+    //     auto tocItem = [&](const char* label, bool active, int indent = 0) {
+    //         return div().paddingLeft(S::px(indent * 14))(
+    //             text(label).font(active ? SansBold : Sans).fontSize(S::pt(10)).color(active ? ink : link)
+    //         );
+    //     };
 
-        auto tab = [&](const char* label, bool active) {
-            return div()
-                .height(S::px(38))
-                .paddingLeft(S::px(8)).paddingRight(S::px(8))
-                .display(Display::Flex)
-                .alignItems(AlignItems::Center)
-                .position(Position::Relative)
-            (
-                text(label).font(Sans).fontSize(S::pt(10.5)).color(active ? ink : link),
-                div(S::percent(1.0), S::px(2), active ? ink : clear)
-                    .position(Position::Absolute).bottom(S::px(0)).left(S::px(0))()
-            );
-        };
+    //     auto tab = [&](const char* label, bool active) {
+    //         return div()
+    //             .height(S::px(38))
+    //             .paddingLeft(S::px(8)).paddingRight(S::px(8))
+    //             .display(Display::Flex)
+    //             .alignItems(AlignItems::Center)
+    //             .position(Position::Relative)
+    //         (
+    //             text(label).font(Sans).fontSize(S::pt(10.5)).color(active ? ink : link),
+    //             div(S::percent(1.0), S::px(2), active ? ink : clear)
+    //                 .position(Position::Absolute).bottom(S::px(0)).left(S::px(0))()
+    //         );
+    //     };
 
-        auto infoRow = [&](const char* k, const char* v, bool italic = false) {
-            return div().width(S::percent(1.0)).display(Display::Flex).alignItems(AlignItems::Center)
-                .paddingTop(S::px(1)).paddingBottom(S::px(1))
-            (
-                div().width(S::px(80)).flexShrink(S::px(0))(
-                    text(k).font(SansBold).fontSize(S::pt(9)).color(ink)
-                ),
-                text(v).font(Sans).fontSize(S::pt(9)).color(italic ? ink : link)
-            );
-        };
+    //     auto infoRow = [&](const char* k, const char* v, bool italic = false) {
+    //         return div().width(S::percent(1.0)).display(Display::Flex).alignItems(AlignItems::Center)
+    //             .paddingTop(S::px(1)).paddingBottom(S::px(1))
+    //         (
+    //             div().width(S::px(80)).flexShrink(S::px(0))(
+    //                 text(k).font(SansBold).fontSize(S::pt(9)).color(ink)
+    //             ),
+    //             text(v).font(Sans).fontSize(S::pt(9)).color(italic ? ink : link)
+    //         );
+    //     };
 
-        auto taxonHeader = [&](const char* label) {
-            return div(S::percent(1.0), S::autoSize(), taxon)
-                .paddingTop(S::px(3)).paddingBottom(S::px(3))
-                .display(Display::Flex).justifyContent(JustifyContent::Center)
-            (
-                text(label).font(SansBold).fontSize(S::pt(9.5)).color(ink)
-            );
-        };
+    //     auto taxonHeader = [&](const char* label) {
+    //         return div(S::percent(1.0), S::autoSize(), taxon)
+    //             .paddingTop(S::px(3)).paddingBottom(S::px(3))
+    //             .display(Display::Flex).justifyContent(JustifyContent::Center)
+    //         (
+    //             text(label).font(SansBold).fontSize(S::pt(9.5)).color(ink)
+    //         );
+    //     };
 
-        div(S::percent(1.0), S::percent(1.0), paper)
-            .overflow(gui::Overflow::Scroll)
-        (
-            // ── Header ──
-            div(S::percent(1.0), S::px(50), paper)
-                .position(Position::Sticky)
-                .top(S::px(0))
-                .zIndex(10)
-                .display(Display::Flex)
-                .alignItems(AlignItems::Center)
-                .justifyContent(JustifyContent::SpaceBetween)
-                .paddingLeft(S::px(16)).paddingRight(S::px(16))
-                .borderColor(softRule).borderBottomWidth(S::px(1))
-            (
-                div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(14))(
-                    div().display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(3)).width(S::px(16))(
-                        div(S::percent(1.0), S::px(2), ink)(),
-                        div(S::percent(1.0), S::px(2), ink)(),
-                        div(S::percent(1.0), S::px(2), ink)()
-                    ),
-                    div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
-                        div(S::px(36), S::px(36), rgb(230, 232, 235)).cornerRadius(S::px(18))
-                            .display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::Center)
-                        (
-                            text("W").font(Serif).fontSize(S::pt(20)).color(ink)
-                        ),
-                        div().display(Display::Flex).flexDirection(FlexDirection::Col)(
-                            text("WIKIPEDIA").font(Serif).fontSize(S::pt(15)).color(ink),
-                            text("The Free Encyclopedia").font(Serif).fontSize(S::pt(7.5)).color(ink)
-                        )
-                    ),
-                    div(S::px(300), S::px(32), paper)
-                        .cornerRadius(S::px(2))
-                        .borderColor(rule).borderWidth(S::px(1))
-                        .display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))
-                        .paddingLeft(S::px(8))
-                        .marginLeft(S::px(10))
-                    (
-                        svg(std::string(A) + "wiki-search.svg", S::px(14), S::px(14)),
-                        text("Search Wikipedia").font(Sans).fontSize(S::pt(10.5)).color(muted).flexGrow(S::px(1)),
-                        div(S::autoSize(), S::percent(1.0), chrome)
-                            .paddingLeft(S::px(12)).paddingRight(S::px(12))
-                            .borderColor(rule).borderLeftWidth(S::px(1))
-                            .display(Display::Flex).alignItems(AlignItems::Center)
-                        (
-                            text("Search").font(Sans).fontSize(S::pt(10.5)).color(ink)
-                        )
-                    )
-                ),
-                div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(14))(
-                    text("Donate").font(Sans).fontSize(S::pt(10.5)).color(link),
-                    text("Create account").font(Sans).fontSize(S::pt(10.5)).color(link),
-                    text("Log in").font(Sans).fontSize(S::pt(10.5)).color(link),
-                    text("···").font(Sans).fontSize(S::pt(10.5)).color(muted)
-                )
-            ),
+    //     div(S::percent(1.0), S::percent(1.0), paper)
+    //         .overflow(gui::Overflow::Scroll)
+    //     (
+    //         // ── Header ──
+    //         div(S::percent(1.0), S::px(50), paper)
+    //             .position(Position::Sticky)
+    //             .top(S::px(0))
+    //             .zIndex(10)
+    //             .display(Display::Flex)
+    //             .alignItems(AlignItems::Center)
+    //             .justifyContent(JustifyContent::SpaceBetween)
+    //             .paddingLeft(S::px(16)).paddingRight(S::px(16))
+    //             .borderColor(softRule).borderBottomWidth(S::px(1))
+    //         (
+    //             div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(14))(
+    //                 div().display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(3)).width(S::px(16))(
+    //                     div(S::percent(1.0), S::px(2), ink)(),
+    //                     div(S::percent(1.0), S::px(2), ink)(),
+    //                     div(S::percent(1.0), S::px(2), ink)()
+    //                 ),
+    //                 div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
+    //                     div(S::px(36), S::px(36), rgb(230, 232, 235)).cornerRadius(S::px(18))
+    //                         .display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::Center)
+    //                     (
+    //                         text("W").font(Serif).fontSize(S::pt(20)).color(ink)
+    //                     ),
+    //                     div().display(Display::Flex).flexDirection(FlexDirection::Col)(
+    //                         text("WIKIPEDIA").font(Serif).fontSize(S::pt(15)).color(ink),
+    //                         text("The Free Encyclopedia").font(Serif).fontSize(S::pt(7.5)).color(ink)
+    //                     )
+    //                 ),
+    //                 div(S::px(300), S::px(32), paper)
+    //                     .cornerRadius(S::px(2))
+    //                     .borderColor(rule).borderWidth(S::px(1))
+    //                     .display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))
+    //                     .paddingLeft(S::px(8))
+    //                     .marginLeft(S::px(10))
+    //                 (
+    //                     svg(std::string(A) + "wiki-search.svg", S::px(14), S::px(14)),
+    //                     text("Search Wikipedia").font(Sans).fontSize(S::pt(10.5)).color(muted).flexGrow(S::px(1)),
+    //                     div(S::autoSize(), S::percent(1.0), chrome)
+    //                         .paddingLeft(S::px(12)).paddingRight(S::px(12))
+    //                         .borderColor(rule).borderLeftWidth(S::px(1))
+    //                         .display(Display::Flex).alignItems(AlignItems::Center)
+    //                     (
+    //                         text("Search").font(Sans).fontSize(S::pt(10.5)).color(ink)
+    //                     )
+    //                 )
+    //             ),
+    //             div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(14))(
+    //                 text("Donate").font(Sans).fontSize(S::pt(10.5)).color(link),
+    //                 text("Create account").font(Sans).fontSize(S::pt(10.5)).color(link),
+    //                 text("Log in").font(Sans).fontSize(S::pt(10.5)).color(link),
+    //                 text("···").font(Sans).fontSize(S::pt(10.5)).color(muted)
+    //             )
+    //         ),
 
-            // ── Page grid: TOC | article ──
-            div()
-                .width(S::percent(1.0))
-                .display(Display::Grid)
-                .gridTemplateColumns({S::px(180), S::fr(1)})
-                .gridColumnGap(S::px(20))
-                .paddingLeft(S::px(16)).paddingRight(S::px(16))
-                .paddingTop(S::px(16))
-            (
-                // TOC
-                div().display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(9)).paddingTop(S::px(48))(
-                    div().display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::SpaceBetween).paddingBottom(S::px(6))(
-                        text("Contents").font(SansBold).fontSize(S::pt(10.5)).color(ink),
-                        text("hide").font(Sans).fontSize(S::pt(9)).color(link)
-                    ),
-                    tocItem("(Top)", true),
-                    tocItem("Etymology", false),
-                    tocItem("Distribution and diversity", false),
-                    tocItem("Phylogeny and evolution", false),
-                    tocItem("Life cycle", false),
-                    tocItem("Egg", false, 1),
-                    tocItem("Larva", false, 1),
-                    tocItem("Pupa", false, 1),
-                    tocItem("Adult", false, 1),
-                    tocItem("Ecology", false),
-                    tocItem("Behaviour", false),
-                    tocItem("In culture", false),
-                    tocItem("See also", false),
-                    tocItem("References", false)
-                ),
+    //         // ── Page grid: TOC | article ──
+    //         div()
+    //             .width(S::percent(1.0))
+    //             .display(Display::Grid)
+    //             .gridTemplateColumns({S::px(180), S::fr(1)})
+    //             .gridColumnGap(S::px(20))
+    //             .paddingLeft(S::px(16)).paddingRight(S::px(16))
+    //             .paddingTop(S::px(16))
+    //         (
+    //             // TOC
+    //             div().display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(9)).paddingTop(S::px(48))(
+    //                 div().display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::SpaceBetween).paddingBottom(S::px(6))(
+    //                     text("Contents").font(SansBold).fontSize(S::pt(10.5)).color(ink),
+    //                     text("hide").font(Sans).fontSize(S::pt(9)).color(link)
+    //                 ),
+    //                 tocItem("(Top)", true),
+    //                 tocItem("Etymology", false),
+    //                 tocItem("Distribution and diversity", false),
+    //                 tocItem("Phylogeny and evolution", false),
+    //                 tocItem("Life cycle", false),
+    //                 tocItem("Egg", false, 1),
+    //                 tocItem("Larva", false, 1),
+    //                 tocItem("Pupa", false, 1),
+    //                 tocItem("Adult", false, 1),
+    //                 tocItem("Ecology", false),
+    //                 tocItem("Behaviour", false),
+    //                 tocItem("In culture", false),
+    //                 tocItem("See also", false),
+    //                 tocItem("References", false)
+    //             ),
 
-                // Article
-                div().display(Display::Flex).flexDirection(FlexDirection::Col)(
-                    // title
-                    div().width(S::percent(1.0)).paddingBottom(S::px(4))
-                        .borderColor(rule).borderBottomWidth(S::px(1))
-                    (
-                        text("Butterfly").font(Serif).fontSize(S::pt(25)).color(ink)
-                    ),
-                    // tabs
-                    div().width(S::percent(1.0)).display(Display::Flex).justifyContent(JustifyContent::SpaceBetween)(
-                        div().display(Display::Flex)(
-                            tab("Article", true), tab("Talk", false)
-                        ),
-                        div().display(Display::Flex)(
-                            tab("Read", true), tab("Edit", false), tab("View history", false), tab("Tools ▾", false)
-                        )
-                    ),
-                    div().marginTop(S::px(12)).marginBottom(S::px(12))(
-                        text("From Wikipedia, the free encyclopedia").font(Sans).fontSize(S::pt(9.5)).color(muted)
-                    ),
+    //             // Article
+    //             div().display(Display::Flex).flexDirection(FlexDirection::Col)(
+    //                 // title
+    //                 div().width(S::percent(1.0)).paddingBottom(S::px(4))
+    //                     .borderColor(rule).borderBottomWidth(S::px(1))
+    //                 (
+    //                     text("Butterfly").font(Serif).fontSize(S::pt(25)).color(ink)
+    //                 ),
+    //                 // tabs
+    //                 div().width(S::percent(1.0)).display(Display::Flex).justifyContent(JustifyContent::SpaceBetween)(
+    //                     div().display(Display::Flex)(
+    //                         tab("Article", true), tab("Talk", false)
+    //                     ),
+    //                     div().display(Display::Flex)(
+    //                         tab("Read", true), tab("Edit", false), tab("View history", false), tab("Tools ▾", false)
+    //                     )
+    //                 ),
+    //                 div().marginTop(S::px(12)).marginBottom(S::px(12))(
+    //                     text("From Wikipedia, the free encyclopedia").font(Sans).fontSize(S::pt(9.5)).color(muted)
+    //                 ),
 
-                    // body grid: text | infobox
-                    div().width(S::percent(1.0)).display(Display::Flex).flexGap(S::px(20))(
-                        div().flexGrow(S::px(1)).minWidth(S::px(200))(
-                            div().width(S::percent(1.0)).marginBottom(S::px(12))(
-                                body("For other uses, see "), a("Butterfly (disambiguation)"), body(".")
-                            ),
-                            div().width(S::percent(1.0)).marginBottom(S::px(12))(
-                                text("Butterflies").font(SansBold).fontSize(S::pt(11)).color(ink).lineHeight(1.6),
-                                body(" are winged "), a("insects"), body(" from the "), a("lepidopteran"),
-                                body(" suborder "), a("Rhopalocera"),
-                                body(", characterized by large, often brightly coloured wings that often fold together when at rest, and a conspicuous, fluttering flight. The oldest butterfly fossils have been dated to the "),
-                                a("Paleocene"), body(", about 56 million years ago, though molecular evidence suggests that they may have originated in the "),
-                                a("Late Cretaceous"), body(".")
-                            ),
-                            div().width(S::percent(1.0)).marginBottom(S::px(12))(
-                                body("Butterflies have a four-stage "), a("life cycle"), body(", and like other "), a("holometabolous"),
-                                body(" insects they undergo complete "), a("metamorphosis"),
-                                body(". Winged adults lay eggs on the food plant on which their "), a("larvae"),
-                                body(", known as "), a("caterpillars"), body(", will feed. The caterpillars grow, sometimes very rapidly, and when fully developed, "),
-                                a("pupate"), body(" in a "), a("chrysalis"),
-                                body(". When metamorphosis is complete, the pupal skin splits, the adult insect climbs out, expands its wings to dry, and flies off."), sup("[1]")
-                            ),
-                            div().width(S::percent(1.0)).marginBottom(S::px(12))(
-                                body("Some butterflies, especially in the tropics, have several generations in a year, while others have a single generation, and a few in cold locations may take several years to pass through their entire life cycle. Butterflies are often "),
-                                a("polymorphic"), body(", and many species make use of "), a("camouflage"), body(", "), a("mimicry"),
-                                body(", and "), a("aposematism"), body(" to evade their predators."), sup("[2]")
-                            ),
+    //                 // body grid: text | infobox
+    //                 div().width(S::percent(1.0)).display(Display::Flex).flexGap(S::px(20))(
+    //                     div().flexGrow(S::px(1)).minWidth(S::px(200))(
+    //                         div().width(S::percent(1.0)).marginBottom(S::px(12))(
+    //                             body("For other uses, see "), a("Butterfly (disambiguation)"), body(".")
+    //                         ),
+    //                         div().width(S::percent(1.0)).marginBottom(S::px(12))(
+    //                             text("Butterflies").font(SansBold).fontSize(S::pt(11)).color(ink).lineHeight(1.6),
+    //                             body(" are winged "), a("insects"), body(" from the "), a("lepidopteran"),
+    //                             body(" suborder "), a("Rhopalocera"),
+    //                             body(", characterized by large, often brightly coloured wings that often fold together when at rest, and a conspicuous, fluttering flight. The oldest butterfly fossils have been dated to the "),
+    //                             a("Paleocene"), body(", about 56 million years ago, though molecular evidence suggests that they may have originated in the "),
+    //                             a("Late Cretaceous"), body(".")
+    //                         ),
+    //                         div().width(S::percent(1.0)).marginBottom(S::px(12))(
+    //                             body("Butterflies have a four-stage "), a("life cycle"), body(", and like other "), a("holometabolous"),
+    //                             body(" insects they undergo complete "), a("metamorphosis"),
+    //                             body(". Winged adults lay eggs on the food plant on which their "), a("larvae"),
+    //                             body(", known as "), a("caterpillars"), body(", will feed. The caterpillars grow, sometimes very rapidly, and when fully developed, "),
+    //                             a("pupate"), body(" in a "), a("chrysalis"),
+    //                             body(". When metamorphosis is complete, the pupal skin splits, the adult insect climbs out, expands its wings to dry, and flies off."), sup("[1]")
+    //                         ),
+    //                         div().width(S::percent(1.0)).marginBottom(S::px(12))(
+    //                             body("Some butterflies, especially in the tropics, have several generations in a year, while others have a single generation, and a few in cold locations may take several years to pass through their entire life cycle. Butterflies are often "),
+    //                             a("polymorphic"), body(", and many species make use of "), a("camouflage"), body(", "), a("mimicry"),
+    //                             body(", and "), a("aposematism"), body(" to evade their predators."), sup("[2]")
+    //                         ),
 
-                            heading("Etymology"),
-                            div().width(S::percent(1.0)).marginBottom(S::px(12))(
-                                body("The "), a("Oxford English Dictionary"),
-                                body(" derives the word straightforwardly from "), a("Old English"),
-                                text(" butorflēoge").font(Sans).fontSize(S::pt(11)).color(ink).lineHeight(1.6),
-                                body(", butter-fly; similar names in Old Dutch and Old High German show that the name is ancient, but modern Dutch and German use different words ("),
-                                text("vlinder").font(Sans).fontSize(S::pt(11)).color(ink), body(" and "),
-                                text("Schmetterling").font(Sans).fontSize(S::pt(11)).color(ink),
-                                body("). Butterflies were thought to steal milk and butter, or that they fly around in fields during the spring, when the grass is green and the butter is yellow."), sup("[3]")
-                            ),
+    //                         heading("Etymology"),
+    //                         div().width(S::percent(1.0)).marginBottom(S::px(12))(
+    //                             body("The "), a("Oxford English Dictionary"),
+    //                             body(" derives the word straightforwardly from "), a("Old English"),
+    //                             text(" butorflēoge").font(Sans).fontSize(S::pt(11)).color(ink).lineHeight(1.6),
+    //                             body(", butter-fly; similar names in Old Dutch and Old High German show that the name is ancient, but modern Dutch and German use different words ("),
+    //                             text("vlinder").font(Sans).fontSize(S::pt(11)).color(ink), body(" and "),
+    //                             text("Schmetterling").font(Sans).fontSize(S::pt(11)).color(ink),
+    //                             body("). Butterflies were thought to steal milk and butter, or that they fly around in fields during the spring, when the grass is green and the butter is yellow."), sup("[3]")
+    //                         ),
 
-                            heading("Distribution and diversity"),
-                            div().width(S::percent(1.0)).marginBottom(S::px(12))(
-                                body("Butterflies are distributed worldwide except "), a("Antarctica"),
-                                body(", totalling some 18,500 species. Of these, 775 are "), a("Nearctic"),
-                                body("; 7,700 "), a("Neotropical"), body("; 1,575 "), a("Palearctic"), body("; 3,650 "), a("Afrotropical"),
-                                body("; and 4,800 are distributed across the combined "), a("Oriental"), body(" and "), a("Australian/Oceania"),
-                                body(" regions."), sup("[4]"),
-                                body(" The "), a("monarch butterfly"),
-                                body(" is native to the Americas, but in the nineteenth century or before, spread across the world, and is now found in Australia, New Zealand, other parts of Oceania, and the Iberian Peninsula.")
-                            ),
+    //                         heading("Distribution and diversity"),
+    //                         div().width(S::percent(1.0)).marginBottom(S::px(12))(
+    //                             body("Butterflies are distributed worldwide except "), a("Antarctica"),
+    //                             body(", totalling some 18,500 species. Of these, 775 are "), a("Nearctic"),
+    //                             body("; 7,700 "), a("Neotropical"), body("; 1,575 "), a("Palearctic"), body("; 3,650 "), a("Afrotropical"),
+    //                             body("; and 4,800 are distributed across the combined "), a("Oriental"), body(" and "), a("Australian/Oceania"),
+    //                             body(" regions."), sup("[4]"),
+    //                             body(" The "), a("monarch butterfly"),
+    //                             body(" is native to the Americas, but in the nineteenth century or before, spread across the world, and is now found in Australia, New Zealand, other parts of Oceania, and the Iberian Peninsula.")
+    //                         ),
 
-                            heading("Phylogeny and evolution"),
-                            div().width(S::percent(1.0)).marginBottom(S::px(12))(
-                                body("The earliest "), a("Lepidoptera"), body(" fossils date to the "), a("Triassic"), body("–"), a("Jurassic"),
-                                body(" boundary, around 200 million years ago."), sup("[5]"),
-                                body(" Butterflies evolved from "), a("moths"),
-                                body(", so while the butterflies are "), a("monophyletic"),
-                                body(" (forming a single clade), the moths are not. The oldest known butterfly is "),
-                                text("Protocoeliades kristenseni").font(Sans).fontSize(S::pt(11)).color(link),
-                                body(" from the Palaeocene aged "), a("Fur Formation"), body(" of Denmark, approximately 55 million years old.")
-                            )
-                        ),
+    //                         heading("Phylogeny and evolution"),
+    //                         div().width(S::percent(1.0)).marginBottom(S::px(12))(
+    //                             body("The earliest "), a("Lepidoptera"), body(" fossils date to the "), a("Triassic"), body("–"), a("Jurassic"),
+    //                             body(" boundary, around 200 million years ago."), sup("[5]"),
+    //                             body(" Butterflies evolved from "), a("moths"),
+    //                             body(", so while the butterflies are "), a("monophyletic"),
+    //                             body(" (forming a single clade), the moths are not. The oldest known butterfly is "),
+    //                             text("Protocoeliades kristenseni").font(Sans).fontSize(S::pt(11)).color(link),
+    //                             body(" from the Palaeocene aged "), a("Fur Formation"), body(" of Denmark, approximately 55 million years old.")
+    //                         )
+    //                     ),
 
-                        // infobox
-                        div(S::px(264), S::autoSize(), infobox)
-                            .flexShrink(S::px(0))
-                            .alignSelf(gui::AlignSelf::FlexStart)
-                            .borderColor(rgb(162, 169, 177)).borderWidth(S::px(1))
-                            .padding(S::px(4))
-                            .display(Display::Flex)
-                            .flexDirection(FlexDirection::Col)
-                            .flexGap(S::px(4))
-                        (
-                            div(S::percent(1.0), S::autoSize(), rgb(211, 211, 211))
-                                .paddingTop(S::px(5)).paddingBottom(S::px(5))
-                                .display(Display::Flex).flexDirection(FlexDirection::Col).alignItems(AlignItems::Center)
-                            (
-                                text("Butterflies").font(SansBold).fontSize(S::pt(12)).color(ink),
-                                text("Temporal range: Paleocene–present").font(Sans).fontSize(S::pt(8)).color(ink)
-                            ),
-                            image(butterflyPath, S::percent(1.0), S::autoSize()).aspectRatio(1, 1),
-                            div().width(S::percent(1.0)).display(Display::Flex).justifyContent(JustifyContent::Center).paddingBottom(S::px(4))(
-                                text("A Peacock butterfly, Aglais io").font(Sans).fontSize(S::pt(8.5)).color(ink)
-                            ),
-                            taxonHeader("Scientific classification"),
-                            div().width(S::percent(1.0)).display(Display::Flex).flexDirection(FlexDirection::Col).paddingLeft(S::px(4))(
-                                infoRow("Kingdom:", "Animalia"),
-                                infoRow("Phylum:", "Arthropoda"),
-                                infoRow("Class:", "Insecta"),
-                                infoRow("Order:", "Lepidoptera"),
-                                infoRow("Suborder:", "Rhopalocera", true)
-                            ),
-                            taxonHeader("Superfamilies"),
-                            div().width(S::percent(1.0)).display(Display::Flex).flexDirection(FlexDirection::Col).alignItems(AlignItems::Center).flexGap(S::px(2)).paddingTop(S::px(2)).paddingBottom(S::px(4))(
-                                text("Hedyloidea").font(Sans).fontSize(S::pt(9)).color(link),
-                                text("Hesperioidea").font(Sans).fontSize(S::pt(9)).color(link),
-                                text("Papilionoidea").font(Sans).fontSize(S::pt(9)).color(visited)
-                            )
-                        )
-                    ),
+    //                     // infobox
+    //                     div(S::px(264), S::autoSize(), infobox)
+    //                         .flexShrink(S::px(0))
+    //                         .alignSelf(gui::AlignSelf::FlexStart)
+    //                         .borderColor(rgb(162, 169, 177)).borderWidth(S::px(1))
+    //                         .padding(S::px(4))
+    //                         .display(Display::Flex)
+    //                         .flexDirection(FlexDirection::Col)
+    //                         .flexGap(S::px(4))
+    //                     (
+    //                         div(S::percent(1.0), S::autoSize(), rgb(211, 211, 211))
+    //                             .paddingTop(S::px(5)).paddingBottom(S::px(5))
+    //                             .display(Display::Flex).flexDirection(FlexDirection::Col).alignItems(AlignItems::Center)
+    //                         (
+    //                             text("Butterflies").font(SansBold).fontSize(S::pt(12)).color(ink),
+    //                             text("Temporal range: Paleocene–present").font(Sans).fontSize(S::pt(8)).color(ink)
+    //                         ),
+    //                         image(butterflyPath, S::percent(1.0), S::autoSize()).aspectRatio(1, 1),
+    //                         div().width(S::percent(1.0)).display(Display::Flex).justifyContent(JustifyContent::Center).paddingBottom(S::px(4))(
+    //                             text("A Peacock butterfly, Aglais io").font(Sans).fontSize(S::pt(8.5)).color(ink)
+    //                         ),
+    //                         taxonHeader("Scientific classification"),
+    //                         div().width(S::percent(1.0)).display(Display::Flex).flexDirection(FlexDirection::Col).paddingLeft(S::px(4))(
+    //                             infoRow("Kingdom:", "Animalia"),
+    //                             infoRow("Phylum:", "Arthropoda"),
+    //                             infoRow("Class:", "Insecta"),
+    //                             infoRow("Order:", "Lepidoptera"),
+    //                             infoRow("Suborder:", "Rhopalocera", true)
+    //                         ),
+    //                         taxonHeader("Superfamilies"),
+    //                         div().width(S::percent(1.0)).display(Display::Flex).flexDirection(FlexDirection::Col).alignItems(AlignItems::Center).flexGap(S::px(2)).paddingTop(S::px(2)).paddingBottom(S::px(4))(
+    //                             text("Hedyloidea").font(Sans).fontSize(S::pt(9)).color(link),
+    //                             text("Hesperioidea").font(Sans).fontSize(S::pt(9)).color(link),
+    //                             text("Papilionoidea").font(Sans).fontSize(S::pt(9)).color(visited)
+    //                         )
+    //                     )
+    //                 ),
 
-                    div(S::percent(1.0), S::px(64), clear)()
-                )
-            )
-        );
-    }
+    //                 div(S::percent(1.0), S::px(64), clear)()
+    //             )
+    //         )
+    //     );
+    // }
 
     // // ── rtl margins: block flow, flex row, grid alignment ──
     // // flip InheritedProperties::direction in layout.hpp to rtl for this scene.
@@ -6814,4 +6814,223 @@ div()
         );
     }
     */
+
+    // ═══════════════════════════════════════════════════════════════════
+    // Animations: settings panel
+    //   sidebar collapse   -> width (content reflows)
+    //   advanced section   -> height (cards below reflow)
+    //   toggle knob        -> translate, toggle track -> color
+    //   nav items/buttons  -> color on hover
+    //   banner dismiss     -> opacity + height
+    // ═══════════════════════════════════════════════════════════════════
+    {
+        using S = gui::Size;
+        using gui::Display;
+        using gui::FlexDirection;
+        using gui::AlignItems;
+        using gui::JustifyContent;
+        using gui::Overflow;
+        using gui::PointerEvents;
+        using gui::WhiteSpace;
+        using animation::Easing;
+        using runtime::EventType;
+
+        constexpr auto rgb = [](int r, int g, int b, float a = 1.0f) {
+            return simd_float4{r / 255.0f, g / 255.0f, b / 255.0f, a};
+        };
+
+        const auto background  = rgb(15, 17, 21);
+        const auto surface     = rgb(24, 27, 33);
+        const auto raised      = rgb(36, 40, 49);
+        const auto rule        = rgb(48, 53, 63);
+        const auto ink         = rgb(236, 238, 242);
+        const auto muted       = rgb(139, 146, 158);
+        const auto accent      = rgb(88, 101, 242);
+        const auto accentHover = rgb(118, 130, 255);
+        const auto green       = rgb(46, 196, 128);
+        const auto off         = rgb(72, 78, 90);
+        const auto notice      = rgb(40, 52, 92);
+        const auto clear       = rgb(0, 0, 0, 0.0f);
+
+        auto navItem = [&](const std::string& label, bool active) {
+            const auto rest = active ? raised : clear;
+
+            return div(S::percent(1.0), S::px(36), rest)
+                .cornerRadius(S::px(8))
+                .paddingLeft(S::px(12))
+                .display(Display::Flex).alignItems(AlignItems::Center)
+                .addEventListener(EventType::MouseEnter, [raised](auto& node, Event&) {
+                    node.animateColor(raised, 0.12);
+                })
+                .addEventListener(EventType::MouseLeave, [rest](auto& node, Event&) {
+                    node.animateColor(rest, 0.2);
+                })
+            (
+                text(label).font(Arial).fontSize(S::pt(12)).color(active ? ink : muted)
+                    .whiteSpace(WhiteSpace::NoWrap)
+                    .pointerEvents(PointerEvents::None)
+            );
+        };
+
+        auto toggle = [&](const std::string& label, const std::string& detail, bool on) {
+            auto knob = div(S::px(20), S::px(20), ink)
+                .cornerRadius(S::px(10))
+                .translate(simd_float2{on ? 20.0f : 0.0f, 0.0f})
+                .pointerEvents(PointerEvents::None);
+
+            return div()
+                .display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::SpaceBetween)
+                .paddingTop(S::px(14)).paddingBottom(S::px(14))
+            (
+                div().display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(4))(
+                    text(label).font(ArialBold).fontSize(S::pt(13)).color(ink),
+                    text(detail).font(Arial).fontSize(S::pt(11)).color(muted)
+                ),
+                div(S::px(44), S::px(24), on ? green : off)
+                    .cornerRadius(S::px(12))
+                    .padding(S::px(2))
+                    .flexShrink(S::px(0))
+                    .addEventListener(EventType::MouseDown, [knob, green, off](auto& track, Event&) mutable {
+                        bool isOn = knob.translate().value_or(simd_float2{0.0f, 0.0f}).x > 0.0f;
+                        knob.animateTranslate(simd_float2{isOn ? 0.0f : 20.0f, 0.0f}, 0.18, Easing::EaseOutQuad);
+                        track.animateColor(isOn ? off : green, 0.18);
+                    })
+                (
+                    knob
+                )
+            );
+        };
+
+        auto button = [&](const std::string& label, simd_float4 rest, simd_float4 hover) {
+            return div(S::px(136), S::px(38), rest)
+                .cornerRadius(S::px(8))
+                .display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::Center)
+                .addEventListener(EventType::MouseEnter, [hover](auto& node, Event&) {
+                    node.animateColor(hover, 0.15);
+                })
+                .addEventListener(EventType::MouseLeave, [rest](auto& node, Event&) {
+                    node.animateColor(rest, 0.2);
+                })
+            (
+                text(label).font(ArialBold).fontSize(S::pt(12)).color(ink).pointerEvents(PointerEvents::None)
+            );
+        };
+
+        // ── sidebar ──
+        auto collapse = div(S::px(32), S::px(32), raised)
+            .cornerRadius(S::px(8))
+            .flexShrink(S::px(0))
+            .display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::Center)
+        (
+            text("≡").font(ArialBold).fontSize(S::pt(14)).color(ink).pointerEvents(PointerEvents::None)
+        );
+
+        auto sidebar = div(S::px(232), S::autoSize(), surface)
+            .flexShrink(S::px(0))
+            .overflow(Overflow::Hidden)
+            .borderColor(rule).borderRightWidth(S::px(1))
+            .padding(S::px(16))
+            .display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(4))
+        (
+            div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(12)).marginBottom(S::px(16))(
+                collapse,
+                text("butterfly").font(ArialBold).fontSize(S::pt(15)).color(ink).whiteSpace(WhiteSpace::NoWrap)
+            ),
+            navItem("General", false),
+            navItem("Appearance", true),
+            navItem("Rendering", false),
+            navItem("Shortcuts", false),
+            navItem("About", false)
+        );
+
+        collapse.addEventListener(EventType::MouseDown, [sidebar](auto&, Event&) mutable {
+            bool expanded = sidebar.width().value > 72.0f;
+            sidebar.animateWidth(S::px(expanded ? 64.0f : 232.0f), 0.28, Easing::EaseInOutQuad);
+        });
+
+        // ── banner ──
+        auto banner = div(S::percent(1.0), S::px(44), notice)
+            .cornerRadius(S::px(8))
+            .overflow(Overflow::Hidden)
+            .paddingLeft(S::px(16))
+            .flexShrink(S::px(0))
+            .display(Display::Flex).alignItems(AlignItems::Center)
+        (
+            text("Changes are saved automatically. Click to dismiss.").font(Arial).fontSize(S::pt(12)).color(ink)
+                .whiteSpace(WhiteSpace::NoWrap)
+                .pointerEvents(PointerEvents::None)
+        );
+
+        banner.addEventListener(EventType::MouseDown, [](auto& node, Event&) {
+            node.animateOpacity(0.0f, 0.2)
+                .animateHeight(S::px(0.0f), 0.3, Easing::EaseInOutQuad);
+        });
+
+        // ── advanced section ──
+        auto details = div(S::percent(1.0), S::px(0), clear)
+            .overflow(Overflow::Hidden)
+            .flexShrink(S::px(0))
+            .display(Display::Flex).flexDirection(FlexDirection::Col)
+        (
+            toggle("Hardware acceleration", "Composite layers and text on the GPU", true),
+            toggle("Phase overlay", "Draw per-phase timings over the window", false)
+        );
+
+        auto advancedHeader = div()
+            .display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::SpaceBetween)
+            .paddingTop(S::px(14)).paddingBottom(S::px(14))
+        (
+            text("Advanced").font(ArialBold).fontSize(S::pt(13)).color(ink).pointerEvents(PointerEvents::None),
+            text("show / hide").font(Arial).fontSize(S::pt(11)).color(muted).pointerEvents(PointerEvents::None)
+        );
+
+        advancedHeader.addEventListener(EventType::MouseDown, [details](auto&, Event&) mutable {
+            bool open = details.height().value > 0.0f;
+            details.animateHeight(S::px(open ? 0.0f : 136.0f), 0.3, Easing::EaseInOutQuad);
+        });
+
+        div(S::percent(1.0), S::percent(1.0), background)
+            .display(Display::Flex)
+        (
+            sidebar,
+            div()
+                .flexGrow(S::px(1))
+                .padding(S::px(40))
+                .display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(20))
+            (
+                div().display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(6))(
+                    text("Appearance").font(ArialBold).fontSize(S::pt(24)).color(ink),
+                    text("Tune how the window looks and renders.").font(Arial).fontSize(S::pt(13)).color(muted)
+                ),
+
+                banner,
+
+                div(S::percent(1.0), S::autoSize(), surface)
+                    .cornerRadius(S::px(12))
+                    .borderColor(rule).borderWidth(S::px(1))
+                    .paddingLeft(S::px(20)).paddingRight(S::px(20))
+                    .display(Display::Flex).flexDirection(FlexDirection::Col)
+                (
+                    toggle("Dark mode", "Use the dark color scheme everywhere", true),
+                    toggle("Reduce motion", "Shorten or skip interface animations", false),
+                    toggle("Show scrollbars", "Always show scrollbars in scroll views", false)
+                ),
+
+                div(S::percent(1.0), S::autoSize(), surface)
+                    .cornerRadius(S::px(12))
+                    .borderColor(rule).borderWidth(S::px(1))
+                    .paddingLeft(S::px(20)).paddingRight(S::px(20))
+                    .display(Display::Flex).flexDirection(FlexDirection::Col)
+                (
+                    advancedHeader,
+                    details
+                ),
+
+                div().display(Display::Flex).flexGap(S::px(12))(
+                    button("Save changes", accent, accentHover),
+                    button("Cancel", raised, rule)
+                )
+            )
+        );
+    }
 }

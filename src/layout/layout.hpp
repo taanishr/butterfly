@@ -344,6 +344,7 @@ namespace layout {
 
         simd_float3x3 transform {matrix_identity_float3x3};
         float opacity{1.0f};
+        simd_float4 color{0, 0, 0, 0};
     };
 
     struct LayoutInput {

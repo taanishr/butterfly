@@ -74,7 +74,6 @@ namespace elements {
                         if (f.name == "text")     return std::any{this->text};
                         if (f.name == "font")     return std::any{this->font};
                         if (f.name == "fontSize") return std::any{this->fontSize};
-                        if (f.name == "color")    return std::any{this->color};
                         if (f.name == "whiteSpace") return std::any{this->whiteSpace};
                         if (f.name == "wordBreak")  return std::any{this->wordBreak};
                         return std::any{};
@@ -86,7 +85,6 @@ namespace elements {
 
         std::string text;
         std::string font;
-        simd_float4 color;
         Size fontSize;
         std::optional<float> lineHeight;
         WhiteSpace whiteSpace{WhiteSpace::Normal};
@@ -682,7 +680,7 @@ namespace elements {
             }
 
             TextUniforms uniforms {
-                .color = desc.color,
+                .color = constraints.color,
                 .fontSize = fontSize,
                 .numClips = static_cast<uint32_t>(layout.clipUniforms.size()),
                 .opacity = constraints.opacity,

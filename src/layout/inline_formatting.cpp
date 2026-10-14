@@ -770,7 +770,10 @@ namespace tree {
 
                 SizeRequest childRequest {
                     .position = child->shared.position,
-                    .specified = {.width = child->shared.width, .height = child->shared.height},
+                    .specified = {
+                        .width = tree.animationManager.width(child->animations[animation::Animatable::Width], child->getWidth()),
+                        .height = tree.animationManager.height(child->animations[animation::Animatable::Height], child->getHeight()),
+                    },
                     .minimum = {.width = child->shared.minWidth, .height = child->shared.minHeight},
                     .maximum = {
                         .width = child->shared.maxWidth ? SizeState{*child->shared.maxWidth} : SizeState{std::monostate{}},

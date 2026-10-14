@@ -67,16 +67,13 @@ namespace elements {
             if (auto payloadPtr = std::any_cast<DescriptorPayload>(&payloadAny)) {
                 return std::visit(Overloaded{
                     [this](GetFull const&) -> std::any { return std::any(*this); },
-                    [this](GetField const& f) -> std::any {
-                        if (f.name == "color") return std::any{this->color};
+                    [](GetField const&) -> std::any {
                         return std::any{};
                     }
                 }, *payloadPtr);
             }
             return std::any{};
         }
-
-        simd_float4 color;
     };
 
     struct DivStyleUniforms {
@@ -359,7 +356,7 @@ namespace elements {
 
             // push style uniforms
             DivStyleUniforms styleUniforms{
-                .color = desc.color,
+                .color = constraints.color,
                 .cornerRadius = cornerRadius,
                 .border = { .widths = borderWidths, .color = shared.border.color, .style = shared.border.style },
                 .shadow = shadow,

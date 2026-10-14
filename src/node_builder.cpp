@@ -29,13 +29,13 @@ namespace elements {
         auto& ctx = ContextManager::getContext();
         auto& proc = getDivProcessor(ctx);
         Div elem {ctx};
-        elem.getDescriptor().color = color;
 
         auto currTree = TreeStack::getCurrentTree();
 
         auto builder = NodeBuilder(ctx, *currTree, std::move(elem), proc);
         builder.width(width);
         builder.height(height);
+        builder.color(color);
         return builder;
     }
 
@@ -49,12 +49,12 @@ namespace elements {
         auto& desc = elem.getDescriptor();
         desc.text = text;
         desc.fontSize = fontSize;
-        desc.color = color;
         desc.font = font;
 
         auto currTree = TreeStack::getCurrentTree();
         auto builder = NodeBuilder(ctx, *currTree, std::move(elem), proc);
         builder.display(Display::Inline);
+        builder.color(color);
         return builder;
     }
 

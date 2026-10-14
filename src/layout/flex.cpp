@@ -110,7 +110,10 @@ namespace layout {
 
             SizeRequest childRequest {
                 .position = childAsPtr->shared.position,
-                .specified = {.width = childAsPtr->shared.width, .height = childAsPtr->shared.height},
+                .specified = {
+                    .width = tree.animationManager.width(childAsPtr->animations[animation::Animatable::Width], childAsPtr->getWidth()),
+                    .height = tree.animationManager.height(childAsPtr->animations[animation::Animatable::Height], childAsPtr->getHeight()),
+                },
                 .override = {.width = std::monostate{}, .height = std::monostate{}},
                 .minimum = {.width = childAsPtr->shared.minWidth, .height = childAsPtr->shared.minHeight},
                 .maximum = {
@@ -249,7 +252,10 @@ namespace layout {
     
                 SizeRequest childRequest {
                     .position = childNode->shared.position,
-                    .specified = {.width = childNode->shared.width, .height = childNode->shared.height},
+                    .specified = {
+                        .width = tree.animationManager.width(childNode->animations[animation::Animatable::Width], childNode->getWidth()),
+                        .height = tree.animationManager.height(childNode->animations[animation::Animatable::Height], childNode->getHeight()),
+                    },
                     .override = {.width = std::monostate{}, .height = std::monostate{}},
                     .minimum = {.width = childNode->shared.minWidth, .height = childNode->shared.minHeight},
                     .maximum = {
@@ -383,7 +389,10 @@ namespace layout {
             flex.axis.crossSize(childAvailableSize) = placement.lineCrossSize;
             SizeRequest childRequest {
                 .position = childNode->shared.position,
-                .specified = {.width = childNode->shared.width, .height = childNode->shared.height},
+                .specified = {
+                    .width = tree.animationManager.width(childNode->animations[animation::Animatable::Width], childNode->getWidth()),
+                    .height = tree.animationManager.height(childNode->animations[animation::Animatable::Height], childNode->getHeight()),
+                },
                 .override = {.width = std::monostate{}, .height = std::monostate{}},
                 .minimum = {.width = childNode->shared.minWidth, .height = childNode->shared.minHeight},
                 .maximum = {
@@ -443,7 +452,10 @@ namespace layout {
 
             SizeRequest childRequest {
                 .position = childNode->shared.position,
-                .specified = {.width = childNode->shared.width, .height = childNode->shared.height},
+                .specified = {
+                    .width = tree.animationManager.width(childNode->animations[animation::Animatable::Width], childNode->getWidth()),
+                    .height = tree.animationManager.height(childNode->animations[animation::Animatable::Height], childNode->getHeight()),
+                },
                 .override = {.width = std::monostate{}, .height = std::monostate{}},
                 .minimum = {.width = childNode->shared.minWidth, .height = childNode->shared.minHeight},
                 .maximum = {
