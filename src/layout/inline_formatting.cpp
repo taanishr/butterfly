@@ -155,9 +155,7 @@ namespace tree {
         size_t clusterStart,
         size_t clusterEnd,
         float totalWidth,
-        std::vector<LineFragment>& fragments,
-        LineBox& lineBox,
-        size_t lineBoxIndex
+        std::vector<LineFragment>& fragments
     ) {
         if (clusterStart == clusterEnd) {
             return;
@@ -213,14 +211,8 @@ namespace tree {
                 .textByteStart = byteStart,
                 .textByteLength = byteEnd - byteStart,
                 .bidiLevel = run.bidiLevel,
-                .lineBoxIndex = lineBoxIndex
             };
 
-            if (lineBox.fragmentCount == 0) {
-                lineBox.fragmentStart = fragments.size();
-            }
-
-            lineBox.pushFragment(fragment);
             fragments.push_back(fragment);
         }
     }
@@ -299,18 +291,63 @@ namespace tree {
 
     bool shouldTakeSoftBreak(
         std::optional<IntrinsicRequest> widthRequest,
-        bool hasBreakOpportunity,
         bool lineHasContent,
         float prospectiveWidth,
         const SizeState& availableWidth
     ) {
-        if (!hasBreakOpportunity || !lineHasContent) return false;
+        if (!lineHasContent) {
+            return false;
+        }
 
-        if (widthRequest == IntrinsicRequest::Minimum) return true;
-        if (widthRequest == IntrinsicRequest::Maximum) return false;
+        if (widthRequest == IntrinsicRequest::Minimum) {
+            return true;
+        }
+
+        if (widthRequest == IntrinsicRequest::Maximum) {
+            return false;
+        }
 
         const auto* resolvedAvailableWidth = std::get_if<float>(&availableWidth);
         return resolvedAvailableWidth && prospectiveWidth > *resolvedAvailableWidth;
+    }
+
+    void commitPendingFragments(
+        std::optional<IntrinsicRequest> widthRequest,
+        const SizeState& availableWidth,
+        std::vector<LineFragment>& fragments,
+        std::vector<LineBox>& lineBoxes,
+        LineBox& currentLineBox,
+        size_t& currentLineBoxIndex,
+        size_t& pendingStart,
+        float& pendingWidth
+    ) {
+        if (pendingStart == fragments.size()) {
+            return;
+        }
+
+        if (shouldTakeSoftBreak(
+                widthRequest,
+                currentLineBox.fragmentCount > 0,
+                currentLineBox.width + pendingWidth,
+                availableWidth
+            )) {
+            lineBoxes.push_back(std::move(currentLineBox));
+            currentLineBox = {};
+            currentLineBoxIndex++;
+        }
+
+        if (currentLineBox.fragmentCount == 0) {
+            currentLineBox.fragmentStart = pendingStart;
+        }
+
+        for (size_t f = pendingStart; f < fragments.size(); ++f) {
+            fragments[f].lineBoxIndex = currentLineBoxIndex;
+        }
+
+        currentLineBox.fragmentCount += fragments.size() - pendingStart;
+        currentLineBox.width += pendingWidth;
+        pendingStart = fragments.size();
+        pendingWidth = 0.0f;
     }
 
     void appendAtomicInlineFragment(
@@ -324,7 +361,8 @@ namespace tree {
         std::vector<LineBox>& lineBoxes,
         LineBox& currentLineBox,
         size_t& currentLineBoxIndex,
-        bool& lastFragmentHasBreakOpportunity
+        size_t& pendingStart,
+        float& pendingWidth
     ) {
         if (atoms.empty()) {
             return;
@@ -338,35 +376,37 @@ namespace tree {
             atoms.front().height = std::get<float>(sizeResult.borderBoxSize.height);
         }
         
-        float width = margins.left + margins.right + atoms.front().width;
-
-        if (shouldTakeSoftBreak(
-                widthRequest,
-                true,
-                currentLineBox.fragmentCount > 0,
-                currentLineBox.width + width,
-                availableWidth
-            )) {
-            lineBoxes.push_back(std::move(currentLineBox));
-            currentLineBox = {};
-            currentLineBoxIndex++;
-        }
+        commitPendingFragments(
+            widthRequest,
+            availableWidth,
+            fragments,
+            lineBoxes,
+            currentLineBox,
+            currentLineBoxIndex,
+            pendingStart,
+            pendingWidth
+        );
 
         LineFragment fragment {
             .width = atoms.front().width,
             .atomStart = 0,
             .atomCount = atoms.size(),
             .bidiLevel = run.level,
-            .lineBoxIndex = currentLineBoxIndex
         };
-        if (currentLineBox.fragmentCount == 0) {
-            currentLineBox.fragmentStart = fragments.size();
-        }
 
-        currentLineBox.pushFragment(fragment);
-        currentLineBox.width += margins.left + margins.right;
         fragments.push_back(fragment);
-        lastFragmentHasBreakOpportunity = true;
+        pendingWidth += margins.left + margins.right + atoms.front().width;
+
+        commitPendingFragments(
+            widthRequest,
+            availableWidth,
+            fragments,
+            lineBoxes,
+            currentLineBox,
+            currentLineBoxIndex,
+            pendingStart,
+            pendingWidth
+        );
     }
 
     void appendTextLineFragments(
@@ -384,7 +424,8 @@ namespace tree {
         std::vector<LineBox>& lineBoxes,
         LineBox& currentLineBox,
         size_t& currentLineBoxIndex,
-        bool& lastFragmentHasBreakOpportunity
+        size_t& pendingStart,
+        float& pendingWidth
     ) {
         const float marginStart = isLtr ? margins.left : margins.right;
         const float marginEnd = isLtr ? margins.right : margins.left;
@@ -430,34 +471,30 @@ namespace tree {
 
                 runningAtomCount += cluster.glyphCount;
 
-                if (allowSoftWrap && shouldTakeSoftBreak(
-                        widthRequest,
-                        lastFragmentHasBreakOpportunity,
-                        currentLineBox.fragmentCount > 0,
-                        currentLineBox.width + runningWidth,
-                        availableWidth
-                    )) {
-                    lineBoxes.push_back(std::move(currentLineBox));
-                    currentLineBox = {};
-                    currentLineBoxIndex++;
-                }
-
                 pushRunFragments(
                     shapedRun,
                     atoms,
                     runningClusterStart,
                     idx + 1,
                     runningWidth - runningEdge,
-                    fragments,
-                    currentLineBox,
-                    currentLineBoxIndex
+                    fragments
                 );
-                currentLineBox.width += runningEdge;
+                pendingWidth += runningWidth;
+
+                commitPendingFragments(
+                    widthRequest,
+                    availableWidth,
+                    fragments,
+                    lineBoxes,
+                    currentLineBox,
+                    currentLineBoxIndex,
+                    pendingStart,
+                    pendingWidth
+                );
 
                 lineBoxes.push_back(std::move(currentLineBox));
                 currentLineBox = {};
                 currentLineBoxIndex++;
-                lastFragmentHasBreakOpportunity = false;
 
                 runningWidth = 0.0;
                 runningEdge = 0.0;
@@ -468,46 +505,44 @@ namespace tree {
             }
 
             if (breakInsideWords && !isTextWhitespace(ch)) {
-                float prospectiveWidth = currentLineBox.width + runningWidth + width;
+                runningWidth += width;
 
-                if (shouldTakeSoftBreak(
-                        widthRequest,
-                        true,
-                        currentLineBox.fragmentCount > 0 || runningAtomCount > 0,
-                        prospectiveWidth,
-                        availableWidth
-                    )) {
-                    bool hadPendingAtoms = runningAtomCount > 0;
-                    if (runningAtomCount > 0) {
-                        pushRunFragments(
-                            shapedRun,
-                            atoms,
-                            runningClusterStart,
-                            idx,
-                            runningWidth - runningEdge,
-                            fragments,
-                            currentLineBox,
-                            currentLineBoxIndex
-                        );
-                        currentLineBox.width += runningEdge;
+                if (idx + 1 >= shapedRun.clusters.size()) {
+                    runningWidth += marginEnd;
+                    runningEdge += marginEnd;
+
+                    if (paddingEnd) {
+                        runningWidth += *paddingEnd;
+                        runningEdge += *paddingEnd;
                     }
-
-                    lineBoxes.push_back(std::move(currentLineBox));
-                    currentLineBox = {};
-                    currentLineBoxIndex++;
-                    lastFragmentHasBreakOpportunity = false;
-
-                    if (hadPendingAtoms) {
-                        runningWidth = 0.0f;
-                        runningEdge = 0.0f;
-                    }
-                    runningAtomCount = 0;
-                    runningClusterStart = idx;
                 }
 
-                runningWidth += width;
-                runningAtomCount += cluster.glyphCount;
+                pushRunFragments(
+                    shapedRun,
+                    atoms,
+                    runningClusterStart,
+                    idx + 1,
+                    runningWidth - runningEdge,
+                    fragments
+                );
+                pendingWidth += runningWidth;
+
+                commitPendingFragments(
+                    widthRequest,
+                    availableWidth,
+                    fragments,
+                    lineBoxes,
+                    currentLineBox,
+                    currentLineBoxIndex,
+                    pendingStart,
+                    pendingWidth
+                );
+
+                runningWidth = 0.0f;
+                runningEdge = 0.0f;
+                runningAtomCount = 0;
                 idx++;
+                runningClusterStart = idx;
                 continue;
             }
 
@@ -538,30 +573,28 @@ namespace tree {
                 }
             }
 
-            if (allowSoftWrap && shouldTakeSoftBreak(
-                    widthRequest,
-                    lastFragmentHasBreakOpportunity,
-                    currentLineBox.fragmentCount > 0,
-                    currentLineBox.width + runningWidth,
-                    availableWidth
-                )) {
-                lineBoxes.push_back(std::move(currentLineBox));
-                currentLineBox = {};
-                currentLineBoxIndex++;
-            }
-
             pushRunFragments(
                 shapedRun,
                 atoms,
                 runningClusterStart,
                 idx,
                 runningWidth - runningEdge,
-                fragments,
-                currentLineBox,
-                currentLineBoxIndex
+                fragments
             );
-            currentLineBox.width += runningEdge;
-            lastFragmentHasBreakOpportunity = true;
+            pendingWidth += runningWidth;
+
+            if (allowSoftWrap) {
+                commitPendingFragments(
+                    widthRequest,
+                    availableWidth,
+                    fragments,
+                    lineBoxes,
+                    currentLineBox,
+                    currentLineBoxIndex,
+                    pendingStart,
+                    pendingWidth
+                );
+            }
 
             runningWidth = 0.0;
             runningEdge = 0.0;
@@ -578,30 +611,15 @@ namespace tree {
                 runningEdge += *paddingEnd;
             }
 
-            if (allowSoftWrap && shouldTakeSoftBreak(
-                    widthRequest,
-                    lastFragmentHasBreakOpportunity,
-                    currentLineBox.fragmentCount > 0,
-                    currentLineBox.width + runningWidth,
-                    availableWidth
-                )) {
-                lineBoxes.push_back(std::move(currentLineBox));
-                currentLineBox = {};
-                currentLineBoxIndex++;
-            }
-
             pushRunFragments(
                 shapedRun,
                 atoms,
                 runningClusterStart,
                 shapedRun.clusters.size(),
                 runningWidth - runningEdge,
-                fragments,
-                currentLineBox,
-                currentLineBoxIndex
+                fragments
             );
-            currentLineBox.width += runningEdge;
-            lastFragmentHasBreakOpportunity = false;
+            pendingWidth += runningWidth;
         }
     }
     
@@ -615,7 +633,8 @@ namespace tree {
         auto& lineBoxes = context->lineBoxes;
         LineBox currentLineBox{};
         size_t currentLineBoxIndex = 0;
-        bool lastFragmentHasBreakOpportunity = false;
+        size_t pendingStart = 0;
+        float pendingWidth = 0.0f;
         SizeState availableWidth = calculateSize(sizing.availableWidth, std::monostate{});
         const bool isLtr = constraints.inheritedProperties.direction == layout::Direction::ltr;
 
@@ -643,7 +662,8 @@ namespace tree {
                     lineBoxes,
                     currentLineBox,
                     currentLineBoxIndex,
-                    lastFragmentHasBreakOpportunity
+                    pendingStart,
+                    pendingWidth
                 );
             } else {
                 const auto sizeResult = evaluateSize(tree, node, frameInfo, constraints, request, sizeCache);
@@ -659,7 +679,8 @@ namespace tree {
                     lineBoxes,
                     currentLineBox,
                     currentLineBoxIndex,
-                    lastFragmentHasBreakOpportunity
+                    pendingStart,
+                    pendingWidth
                 );
             }
 
@@ -683,8 +704,20 @@ namespace tree {
             }
         }
 
-        if (currentLineBox.fragmentCount > 0)
+        commitPendingFragments(
+            sizing.widthRequest,
+            availableWidth,
+            fragments,
+            lineBoxes,
+            currentLineBox,
+            currentLineBoxIndex,
+            pendingStart,
+            pendingWidth
+        );
+
+        if (currentLineBox.fragmentCount > 0) {
             lineBoxes.push_back(std::move(currentLineBox));
+        }
 
         reorderLineFragments(*context, isLtr);
 
@@ -747,7 +780,8 @@ namespace tree {
         auto& childFragments = context->childFragments;
         LineBox currentLineBox {};
         size_t currentLineBoxIndex = 0;
-        bool lastFragmentHasBreakOpportunity = false;
+        size_t pendingStart = 0;
+        float pendingWidth = 0.0f;
         SizeState availableWidth = calculateSize(sizing.availableWidth, std::monostate{});
         const bool isLtr = constraints.inheritedProperties.direction == layout::Direction::ltr;
 
@@ -824,7 +858,8 @@ namespace tree {
                         childrenLineBoxes,
                         currentLineBox,
                         currentLineBoxIndex,
-                        lastFragmentHasBreakOpportunity
+                        pendingStart,
+                        pendingWidth
                     );
                 } else {
                     const auto sizeResult = evaluateSize(tree, child.get(), frameInfo, constraints, childRequest, sizeCache);
@@ -840,7 +875,8 @@ namespace tree {
                         childrenLineBoxes,
                         currentLineBox,
                         currentLineBoxIndex,
-                        lastFragmentHasBreakOpportunity
+                        pendingStart,
+                        pendingWidth
                     );
                 }
 
@@ -865,7 +901,17 @@ namespace tree {
                 }
 
                 prevInline = true;
-            }else {
+            } else {
+                commitPendingFragments(
+                    sizing.widthRequest,
+                    availableWidth,
+                    fragments,
+                    childrenLineBoxes,
+                    currentLineBox,
+                    currentLineBoxIndex,
+                    pendingStart,
+                    pendingWidth
+                );
                 prevInline = false;
             }
 
@@ -874,6 +920,17 @@ namespace tree {
                 .count = fragments.size() - childFragmentStart
             });
         }
+
+        commitPendingFragments(
+            sizing.widthRequest,
+            availableWidth,
+            fragments,
+            childrenLineBoxes,
+            currentLineBox,
+            currentLineBoxIndex,
+            pendingStart,
+            pendingWidth
+        );
 
         if (currentLineBox.fragmentCount > 0) {
             childrenLineBoxes.push_back(std::move(currentLineBox));

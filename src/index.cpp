@@ -6442,173 +6442,173 @@ div()
     //     );
     // }
 
-    // // ═══════════════════════════════════════════════════════════════════
-    // // Clone: news.ycombinator.com front page
-    // // ═══════════════════════════════════════════════════════════════════
-    // {
-    //     using S = gui::Size;
-    //     using gui::Display;
-    //     using gui::FlexDirection;
-    //     using gui::AlignItems;
-    //     using gui::JustifyContent;
+    // ═══════════════════════════════════════════════════════════════════
+    // Clone: news.ycombinator.com front page
+    // ═══════════════════════════════════════════════════════════════════
+    {
+        using S = gui::Size;
+        using gui::Display;
+        using gui::FlexDirection;
+        using gui::AlignItems;
+        using gui::JustifyContent;
 
-    //     constexpr auto rgb = [](int r, int g, int b, float a = 1.0f) {
-    //         return simd_float4{r / 255.0f, g / 255.0f, b / 255.0f, a};
-    //     };
+        constexpr auto rgb = [](int r, int g, int b, float a = 1.0f) {
+            return simd_float4{r / 255.0f, g / 255.0f, b / 255.0f, a};
+        };
 
-    //     const auto page   = rgb(255, 255, 255);
-    //     const auto paper  = rgb(246, 246, 239);
-    //     const auto orange = rgb(255, 102, 0);
-    //     const auto ink    = rgb(0, 0, 0);
-    //     const auto muted  = rgb(130, 130, 130);
-    //     const auto white  = rgb(255, 255, 255);
+        const auto page   = rgb(255, 255, 255);
+        const auto paper  = rgb(246, 246, 239);
+        const auto orange = rgb(255, 102, 0);
+        const auto ink    = rgb(0, 0, 0);
+        const auto muted  = rgb(130, 130, 130);
+        const auto white  = rgb(255, 255, 255);
 
-    //     const std::string Verdana     = "/System/Library/Fonts/Supplemental/Verdana.ttf";
-    //     const std::string VerdanaBold = "/System/Library/Fonts/Supplemental/Verdana Bold.ttf";
-    //     constexpr auto A = "/Users/treja/projects/gui/assets/clones/";
+        const std::string Verdana     = "/System/Library/Fonts/Supplemental/Verdana.ttf";
+        const std::string VerdanaBold = "/System/Library/Fonts/Supplemental/Verdana Bold.ttf";
+        constexpr auto A = "/Users/treja/projects/gui/assets/clones/";
 
-    //     struct Story {
-    //         std::string title;
-    //         std::string site;
-    //         int points;
-    //         std::string user;
-    //         std::string age;
-    //         int comments;
-    //     };
+        struct Story {
+            std::string title;
+            std::string site;
+            int points;
+            std::string user;
+            std::string age;
+            int comments;
+        };
 
-    //     const std::vector<Story> stories {
-    //         {"Show HN: A declarative, GPU-rendered UI library that follows the CSS spec", "github.com/taanishr", 412, "taanishr", "3 hours ago", 128},
-    //         {"Signed distance functions for rounded rectangles, explained", "iquilezles.org", 287, "sdfnerd", "5 hours ago", 64},
-    //         {"The CSS flexbox algorithm is smaller than you think", "drafts.csswg.org", 203, "rachelandrew", "6 hours ago", 91},
-    //         {"Why text shaping is still hard in 2026", "harfbuzz.github.io", 356, "behdad", "7 hours ago", 142},
-    //         {"Metal 4 performance notes from a year of shipping", "developer.apple.com", 118, "gpu_person", "8 hours ago", 37},
-    //         {"Ask HN: What are you building on weekends?", "", 94, "dang_fan", "9 hours ago", 311},
-    //         {"A tour of grid track sizing, with diagrams", "css-tricks.com", 176, "jensimmons", "10 hours ago", 48},
-    //         {"FreeType 2.14 released", "freetype.org", 88, "wlemberg", "11 hours ago", 22},
-    //         {"How browsers decide what 'auto' means", "web.dev", 241, "tabatkins", "12 hours ago", 77},
-    //         {"Writing a bidi algorithm from scratch", "unicode.org", 132, "rtlwriter", "13 hours ago", 29},
-    //         {"Show HN: I cloned Wikipedia with my own layout engine", "github.com/taanishr", 67, "taanishr", "14 hours ago", 18},
-    //         {"The surprising cost of anti-aliasing in fragment shaders", "blog.demofox.org", 154, "atrix256", "15 hours ago", 41},
-    //         {"Sticky positioning is a scroll-container story", "developer.mozilla.org", 99, "mdn_writer", "16 hours ago", 25},
-    //         {"Launch HN: Butterfly (YC S26) - native UI with web-grade layout", "butterfly.dev", 188, "founder", "17 hours ago", 103},
-    //         {"Percentages, cycles, and intrinsic sizes", "w3.org", 73, "fantasai", "18 hours ago", 16},
-    //     };
+        const std::vector<Story> stories {
+            {"Show HN: A declarative, GPU-rendered UI library that follows the CSS spec", "github.com/taanishr", 412, "taanishr", "3 hours ago", 128},
+            {"Signed distance functions for rounded rectangles, explained", "iquilezles.org", 287, "sdfnerd", "5 hours ago", 64},
+            {"The CSS flexbox algorithm is smaller than you think", "drafts.csswg.org", 203, "rachelandrew", "6 hours ago", 91},
+            {"Why text shaping is still hard in 2026", "harfbuzz.github.io", 356, "behdad", "7 hours ago", 142},
+            {"Metal 4 performance notes from a year of shipping", "developer.apple.com", 118, "gpu_person", "8 hours ago", 37},
+            {"Ask HN: What are you building on weekends?", "", 94, "dang_fan", "9 hours ago", 311},
+            {"A tour of grid track sizing, with diagrams", "css-tricks.com", 176, "jensimmons", "10 hours ago", 48},
+            {"FreeType 2.14 released", "freetype.org", 88, "wlemberg", "11 hours ago", 22},
+            {"How browsers decide what 'auto' means", "web.dev", 241, "tabatkins", "12 hours ago", 77},
+            {"Writing a bidi algorithm from scratch", "unicode.org", 132, "rtlwriter", "13 hours ago", 29},
+            {"Show HN: I cloned Wikipedia with my own layout engine", "github.com/taanishr", 67, "taanishr", "14 hours ago", 18},
+            {"The surprising cost of anti-aliasing in fragment shaders", "blog.demofox.org", 154, "atrix256", "15 hours ago", 41},
+            {"Sticky positioning is a scroll-container story", "developer.mozilla.org", 99, "mdn_writer", "16 hours ago", 25},
+            {"Launch HN: Butterfly (YC S26) - native UI with web-grade layout", "butterfly.dev", 188, "founder", "17 hours ago", 103},
+            {"Percentages, cycles, and intrinsic sizes", "w3.org", 73, "fantasai", "18 hours ago", 16},
+        };
 
-    //     auto navLink = [&](const char* label) {
-    //         return text(label).font(Verdana).fontSize(S::pt(10)).color(ink);
-    //     };
+        auto navLink = [&](const char* label) {
+            return text(label).font(Verdana).fontSize(S::pt(10)).color(ink);
+        };
 
-    //     auto navSeparator = [&]() {
-    //         return text("|").font(Verdana).fontSize(S::pt(10)).color(ink);
-    //     };
+        auto navSeparator = [&]() {
+            return text("|").font(Verdana).fontSize(S::pt(10)).color(ink);
+        };
 
-    //     auto footerLink = [&](const char* label) {
-    //         return text(label).font(Verdana).fontSize(S::pt(8)).color(ink);
-    //     };
+        auto footerLink = [&](const char* label) {
+            return text(label).font(Verdana).fontSize(S::pt(8)).color(ink);
+        };
 
-    //     auto footerSeparator = [&]() {
-    //         return text("|").font(Verdana).fontSize(S::pt(8)).color(ink);
-    //     };
+        auto footerSeparator = [&]() {
+            return text("|").font(Verdana).fontSize(S::pt(8)).color(ink);
+        };
 
-    //     auto storyRow = [&](int rank, const Story& story) {
-    //         std::string subtext = std::to_string(story.points) + " points by " + story.user + " " + story.age
-    //             + " | hide | " + std::to_string(story.comments) + " comments";
+        auto storyRow = [&](int rank, const Story& story) {
+            std::string subtext = std::to_string(story.points) + " points by " + story.user + " " + story.age
+                + " | hide | " + std::to_string(story.comments) + " comments";
 
-    //         auto titleLine = div().display(Display::Flex).alignItems(AlignItems::Center)(
-    //             div().width(S::px(26)).flexShrink(S::px(0)).display(Display::Flex).justifyContent(JustifyContent::FlexEnd)(
-    //                 text(std::to_string(rank) + ".").font(Verdana).fontSize(S::pt(10)).color(muted)
-    //             ),
-    //             div().width(S::px(18)).flexShrink(S::px(0)).display(Display::Flex).justifyContent(JustifyContent::Center)(
-    //                 svg(std::string(A) + "hn-upvote.svg", S::px(10), S::px(10))
-    //             ),
-    //             text(story.title).font(Verdana).fontSize(S::pt(10)).color(ink)
-    //         );
+            auto titleLine = div().display(Display::Flex).alignItems(AlignItems::Center)(
+                div().width(S::px(26)).flexShrink(S::px(0)).display(Display::Flex).justifyContent(JustifyContent::FlexEnd)(
+                    text(std::to_string(rank) + ".").font(Verdana).fontSize(S::pt(10)).color(muted)
+                ),
+                div().width(S::px(18)).flexShrink(S::px(0)).display(Display::Flex).justifyContent(JustifyContent::Center)(
+                    svg(std::string(A) + "hn-upvote.svg", S::px(10), S::px(10))
+                ),
+                text(story.title).font(Verdana).fontSize(S::pt(10)).color(ink)
+            );
 
-    //         if (!story.site.empty()) {
-    //             titleLine(
-    //                 text("(" + story.site + ")").font(Verdana).fontSize(S::pt(8)).color(muted).marginLeft(S::px(5))
-    //             );
-    //         }
+            if (!story.site.empty()) {
+                titleLine(
+                    text("(" + story.site + ")").font(Verdana).fontSize(S::pt(8)).color(muted).marginLeft(S::px(5))
+                );
+            }
 
-    //         return div().width(S::percent(1.0)).marginBottom(S::px(6))(
-    //             titleLine,
-    //             div().paddingLeft(S::px(44)).marginTop(S::px(2))(
-    //                 text(subtext).font(Verdana).fontSize(S::pt(7)).color(muted)
-    //             )
-    //         );
-    //     };
+            return div().width(S::percent(1.0)).marginBottom(S::px(6))(
+                titleLine,
+                div().paddingLeft(S::px(44)).marginTop(S::px(2))(
+                    text(subtext).font(Verdana).fontSize(S::pt(7)).color(muted)
+                )
+            );
+        };
 
-    //     auto storyList = div().width(S::percent(1.0)).paddingTop(S::px(8));
+        auto storyList = div().width(S::percent(1.0)).paddingTop(S::px(8));
 
-    //     for (size_t i = 0; i < stories.size(); ++i) {
-    //         storyList(storyRow(static_cast<int>(i) + 1, stories[i]));
-    //     }
+        for (size_t i = 0; i < stories.size(); ++i) {
+            storyList(storyRow(static_cast<int>(i) + 1, stories[i]));
+        }
 
-    //     div(S::percent(1.0), S::percent(1.0), page)
-    //         .overflow(gui::Overflow::Scroll)
-    //         .display(Display::Flex)
-    //         .justifyContent(JustifyContent::Center)
-    //         .paddingTop(S::px(8))
-    //     (
-    //         div(S::percent(0.85), S::autoSize(), paper)(
-    //             // ── Header ──
-    //             div(S::percent(1.0), S::autoSize(), orange)
-    //                 .display(Display::Flex)
-    //                 .alignItems(AlignItems::Center)
-    //                 .justifyContent(JustifyContent::SpaceBetween)
-    //                 .padding(S::px(2))
-    //                 .paddingRight(S::px(6))
-    //             (
-    //                 div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(4))(
-    //                     div(S::px(18), S::px(18), orange)
-    //                         .borderColor(white).borderWidth(S::px(1))
-    //                         .marginRight(S::px(2))
-    //                         .display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::Center)
-    //                     (
-    //                         text("Y").font(VerdanaBold).fontSize(S::pt(9)).color(white)
-    //                     ),
-    //                     text("Hacker News").font(VerdanaBold).fontSize(S::pt(10)).color(ink).marginRight(S::px(6)),
-    //                     navLink("new"), navSeparator(),
-    //                     navLink("past"), navSeparator(),
-    //                     navLink("comments"), navSeparator(),
-    //                     navLink("ask"), navSeparator(),
-    //                     navLink("show"), navSeparator(),
-    //                     navLink("jobs"), navSeparator(),
-    //                     navLink("submit")
-    //                 ),
-    //                 navLink("login")
-    //             ),
+        div(S::percent(1.0), S::percent(1.0), page)
+            .overflow(gui::Overflow::Scroll)
+            .display(Display::Flex)
+            .justifyContent(JustifyContent::Center)
+            .paddingTop(S::px(8))
+        (
+            div(S::percent(0.85), S::autoSize(), paper)(
+                // ── Header ──
+                div(S::percent(1.0), S::autoSize(), orange)
+                    .display(Display::Flex)
+                    .alignItems(AlignItems::Center)
+                    .justifyContent(JustifyContent::SpaceBetween)
+                    .padding(S::px(2))
+                    .paddingRight(S::px(6))
+                (
+                    div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(4))(
+                        div(S::px(18), S::px(18), orange)
+                            .borderColor(white).borderWidth(S::px(1))
+                            .marginRight(S::px(2))
+                            .display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::Center)
+                        (
+                            text("Y").font(VerdanaBold).fontSize(S::pt(9)).color(white)
+                        ),
+                        text("Hacker News").font(VerdanaBold).fontSize(S::pt(10)).color(ink).marginRight(S::px(6)),
+                        navLink("new"), navSeparator(),
+                        navLink("past"), navSeparator(),
+                        navLink("comments"), navSeparator(),
+                        navLink("ask"), navSeparator(),
+                        navLink("show"), navSeparator(),
+                        navLink("jobs"), navSeparator(),
+                        navLink("submit")
+                    ),
+                    navLink("login")
+                ),
 
-    //             // ── Stories ──
-    //             storyList,
+                // ── Stories ──
+                storyList,
 
-    //             div().paddingLeft(S::px(44)).paddingTop(S::px(4)).paddingBottom(S::px(12))(
-    //                 text("More").font(Verdana).fontSize(S::pt(10)).color(ink)
-    //             ),
+                div().paddingLeft(S::px(44)).paddingTop(S::px(4)).paddingBottom(S::px(12))(
+                    text("More").font(Verdana).fontSize(S::pt(10)).color(ink)
+                ),
 
-    //             // ── Footer ──
-    //             div().width(S::percent(1.0)).paddingTop(S::px(10)).paddingBottom(S::px(24))
-    //                 .borderColor(orange).borderTopWidth(S::px(2))
-    //                 .display(Display::Flex).flexDirection(FlexDirection::Col).alignItems(AlignItems::Center).flexGap(S::px(12))
-    //             (
-    //                 div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(4))(
-    //                     footerLink("Guidelines"), footerSeparator(),
-    //                     footerLink("FAQ"), footerSeparator(),
-    //                     footerLink("Lists"), footerSeparator(),
-    //                     footerLink("API"), footerSeparator(),
-    //                     footerLink("Security"), footerSeparator(),
-    //                     footerLink("Legal"), footerSeparator(),
-    //                     footerLink("Apply to YC"), footerSeparator(),
-    //                     footerLink("Contact")
-    //                 ),
-    //                 div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(6))(
-    //                     text("Search:").font(Verdana).fontSize(S::pt(10)).color(muted),
-    //                     div(S::px(160), S::px(18), white).borderColor(rgb(118, 118, 118)).borderWidth(S::px(1))()
-    //                 )
-    //             )
-    //         )
-    //     );
-    // }
+                // ── Footer ──
+                div().width(S::percent(1.0)).paddingTop(S::px(10)).paddingBottom(S::px(24))
+                    .borderColor(orange).borderTopWidth(S::px(2))
+                    .display(Display::Flex).flexDirection(FlexDirection::Col).alignItems(AlignItems::Center).flexGap(S::px(12))
+                (
+                    div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(4))(
+                        footerLink("Guidelines"), footerSeparator(),
+                        footerLink("FAQ"), footerSeparator(),
+                        footerLink("Lists"), footerSeparator(),
+                        footerLink("API"), footerSeparator(),
+                        footerLink("Security"), footerSeparator(),
+                        footerLink("Legal"), footerSeparator(),
+                        footerLink("Apply to YC"), footerSeparator(),
+                        footerLink("Contact")
+                    ),
+                    div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(6))(
+                        text("Search:").font(Verdana).fontSize(S::pt(10)).color(muted),
+                        div(S::px(160), S::px(18), white).borderColor(rgb(118, 118, 118)).borderWidth(S::px(1))()
+                    )
+                )
+            )
+        );
+    }
 
     /*
     // ═══════════════════════════════════════════════════════════════════
@@ -6823,6 +6823,7 @@ div()
     //   nav items/buttons  -> color on hover
     //   banner dismiss     -> opacity + height
     // ═══════════════════════════════════════════════════════════════════
+    /*
     {
         using S = gui::Size;
         using gui::Display;
@@ -7033,4 +7034,22 @@ div()
             )
         );
     }
+    */
+
+    // {
+    //     using S = gui::Size;
+
+    //     auto row = [&](float width) {
+    //         return div(S::px(width), S::autoSize(), simd_float4{1, 1, 1, 1}).marginBottom(S::px(8))(
+    //             text("aaaa ").font(Arial).fontSize(S::pt(16)).color(simd_float4{0, 0, 0, 1}),
+    //             text("foo").font(Arial).fontSize(S::pt(16)).color(simd_float4{1, 0, 0, 1}),
+    //             text("bar").font(Arial).fontSize(S::pt(16)).color(simd_float4{0, 0, 1, 1})
+    //         );
+    //     };
+
+    //     div(S::percent(1.0), S::percent(1.0), simd_float4{0.8, 0.8, 0.8, 1}).paddingTop(S::px(40))(
+    //         row(40), row(45), row(50), row(55), row(60), row(65),
+    //         row(70), row(75), row(80), row(85), row(90), row(95)
+    //     );
+    // }
 }
