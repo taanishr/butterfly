@@ -362,7 +362,8 @@ namespace tree {
         LineBox& currentLineBox,
         size_t& currentLineBoxIndex,
         size_t& pendingStart,
-        float& pendingWidth
+        float& pendingWidth,
+        bool& lastFragmentHasBreakOpportunity
     ) {
         if (atoms.empty()) {
             return;
@@ -396,17 +397,7 @@ namespace tree {
 
         fragments.push_back(fragment);
         pendingWidth += margins.left + margins.right + atoms.front().width;
-
-        commitPendingFragments(
-            widthRequest,
-            availableWidth,
-            fragments,
-            lineBoxes,
-            currentLineBox,
-            currentLineBoxIndex,
-            pendingStart,
-            pendingWidth
-        );
+        lastFragmentHasBreakOpportunity = true;
     }
 
     void appendTextLineFragments(
@@ -425,7 +416,8 @@ namespace tree {
         LineBox& currentLineBox,
         size_t& currentLineBoxIndex,
         size_t& pendingStart,
-        float& pendingWidth
+        float& pendingWidth,
+        bool& lastFragmentHasBreakOpportunity
     ) {
         const float marginStart = isLtr ? margins.left : margins.right;
         const float marginEnd = isLtr ? margins.right : margins.left;
@@ -471,6 +463,19 @@ namespace tree {
 
                 runningAtomCount += cluster.glyphCount;
 
+                if (lastFragmentHasBreakOpportunity) {
+                    commitPendingFragments(
+                        widthRequest,
+                        availableWidth,
+                        fragments,
+                        lineBoxes,
+                        currentLineBox,
+                        currentLineBoxIndex,
+                        pendingStart,
+                        pendingWidth
+                    );
+                }
+
                 pushRunFragments(
                     shapedRun,
                     atoms,
@@ -495,6 +500,7 @@ namespace tree {
                 lineBoxes.push_back(std::move(currentLineBox));
                 currentLineBox = {};
                 currentLineBoxIndex++;
+                lastFragmentHasBreakOpportunity = false;
 
                 runningWidth = 0.0;
                 runningEdge = 0.0;
@@ -517,6 +523,19 @@ namespace tree {
                     }
                 }
 
+                if (lastFragmentHasBreakOpportunity) {
+                    commitPendingFragments(
+                        widthRequest,
+                        availableWidth,
+                        fragments,
+                        lineBoxes,
+                        currentLineBox,
+                        currentLineBoxIndex,
+                        pendingStart,
+                        pendingWidth
+                    );
+                }
+
                 pushRunFragments(
                     shapedRun,
                     atoms,
@@ -526,17 +545,7 @@ namespace tree {
                     fragments
                 );
                 pendingWidth += runningWidth;
-
-                commitPendingFragments(
-                    widthRequest,
-                    availableWidth,
-                    fragments,
-                    lineBoxes,
-                    currentLineBox,
-                    currentLineBoxIndex,
-                    pendingStart,
-                    pendingWidth
-                );
+                lastFragmentHasBreakOpportunity = true;
 
                 runningWidth = 0.0f;
                 runningEdge = 0.0f;
@@ -573,17 +582,7 @@ namespace tree {
                 }
             }
 
-            pushRunFragments(
-                shapedRun,
-                atoms,
-                runningClusterStart,
-                idx,
-                runningWidth - runningEdge,
-                fragments
-            );
-            pendingWidth += runningWidth;
-
-            if (allowSoftWrap) {
+            if (lastFragmentHasBreakOpportunity) {
                 commitPendingFragments(
                     widthRequest,
                     availableWidth,
@@ -595,6 +594,17 @@ namespace tree {
                     pendingWidth
                 );
             }
+
+            pushRunFragments(
+                shapedRun,
+                atoms,
+                runningClusterStart,
+                idx,
+                runningWidth - runningEdge,
+                fragments
+            );
+            pendingWidth += runningWidth;
+            lastFragmentHasBreakOpportunity = allowSoftWrap;
 
             runningWidth = 0.0;
             runningEdge = 0.0;
@@ -611,6 +621,19 @@ namespace tree {
                 runningEdge += *paddingEnd;
             }
 
+            if (lastFragmentHasBreakOpportunity) {
+                commitPendingFragments(
+                    widthRequest,
+                    availableWidth,
+                    fragments,
+                    lineBoxes,
+                    currentLineBox,
+                    currentLineBoxIndex,
+                    pendingStart,
+                    pendingWidth
+                );
+            }
+
             pushRunFragments(
                 shapedRun,
                 atoms,
@@ -620,6 +643,7 @@ namespace tree {
                 fragments
             );
             pendingWidth += runningWidth;
+            lastFragmentHasBreakOpportunity = false;
         }
     }
     
@@ -635,6 +659,7 @@ namespace tree {
         size_t currentLineBoxIndex = 0;
         size_t pendingStart = 0;
         float pendingWidth = 0.0f;
+        bool lastFragmentHasBreakOpportunity = false;
         SizeState availableWidth = calculateSize(sizing.availableWidth, std::monostate{});
         const bool isLtr = constraints.inheritedProperties.direction == layout::Direction::ltr;
 
@@ -663,7 +688,8 @@ namespace tree {
                     currentLineBox,
                     currentLineBoxIndex,
                     pendingStart,
-                    pendingWidth
+                    pendingWidth,
+                    lastFragmentHasBreakOpportunity
                 );
             } else {
                 const auto sizeResult = evaluateSize(tree, node, frameInfo, constraints, request, sizeCache);
@@ -680,7 +706,8 @@ namespace tree {
                     currentLineBox,
                     currentLineBoxIndex,
                     pendingStart,
-                    pendingWidth
+                    pendingWidth,
+                    lastFragmentHasBreakOpportunity
                 );
             }
 
@@ -782,6 +809,7 @@ namespace tree {
         size_t currentLineBoxIndex = 0;
         size_t pendingStart = 0;
         float pendingWidth = 0.0f;
+        bool lastFragmentHasBreakOpportunity = false;
         SizeState availableWidth = calculateSize(sizing.availableWidth, std::monostate{});
         const bool isLtr = constraints.inheritedProperties.direction == layout::Direction::ltr;
 
@@ -859,7 +887,8 @@ namespace tree {
                         currentLineBox,
                         currentLineBoxIndex,
                         pendingStart,
-                        pendingWidth
+                        pendingWidth,
+                        lastFragmentHasBreakOpportunity
                     );
                 } else {
                     const auto sizeResult = evaluateSize(tree, child.get(), frameInfo, constraints, childRequest, sizeCache);
@@ -876,7 +905,8 @@ namespace tree {
                         currentLineBox,
                         currentLineBoxIndex,
                         pendingStart,
-                        pendingWidth
+                        pendingWidth,
+                        lastFragmentHasBreakOpportunity
                     );
                 }
 
@@ -912,6 +942,7 @@ namespace tree {
                     pendingStart,
                     pendingWidth
                 );
+                lastFragmentHasBreakOpportunity = false;
                 prevInline = false;
             }
 

@@ -15,13 +15,6 @@
 
 
 namespace layout {
-    void LineBox::pushFragment(LineFragment& fragment) {
-        fragment.offset = currentFragmentOffset;
-        currentFragmentOffset += fragment.width;
-        width += fragment.width;
-        fragmentCount += 1;
-    }
-
     InlineState LayoutEngine::layoutInlineNormalFlow(
         Constraints& constraints,
         simd_float2 currentCursor,

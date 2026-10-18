@@ -5139,217 +5139,217 @@ div()
     //     );
     // }
 
-    // // ── inline margins on multi word text ──
-    // // each row is ONE text element inside a shrink to fit box. margin-left and
-    // // margin-right should each apply once, at the element's start and end edge, not
-    // // once per word. four words means four fragment pushes, so a per fragment margin
-    // // reads as W+80 instead of W+20 and opens a gap between every word.
-    // //
-    // // base direction is not a builder property; it is inherited from the default at
-    // // layout.hpp InheritedProperties::direction. flip that to rtl and recompile for the
-    // // rtl base pass, which is why these rows are written to be read under either base.
-    // {
-    //     using S = gui::Size;
+    // ── inline margins on multi word text ──
+    // each row is ONE text element inside a shrink to fit box. margin-left and
+    // margin-right should each apply once, at the element's start and end edge, not
+    // once per word. four words means four fragment pushes, so a per fragment margin
+    // reads as W+80 instead of W+20 and opens a gap between every word.
+    //
+    // base direction is not a builder property; it is inherited from the default at
+    // layout.hpp InheritedProperties::direction. flip that to rtl and recompile for the
+    // rtl base pass, which is why these rows are written to be read under either base.
+    {
+        using S = gui::Size;
 
-    //     auto marginRow = [&](const char* label, const char* content, auto configure) {
-    //         return div()
-    //             .display(gui::Display::Flex)
-    //             .flexDirection(gui::FlexDirection::Col)
-    //             .alignItems(gui::AlignItems::FlexStart)
-    //             .flexGap(S::px(6))
-    //         (
-    //             text(label)
-    //                 .font(Arial)
-    //                 .fontSize(S::pt(12))
-    //                 .color(simd_float4{0.38,0.92,0.56,1.0}),
-    //             div(S::autoSize(), S::autoSize(), simd_float4{0.15,0.16,0.20,1.0})
-    //             (
-    //                 configure(
-    //                     text(content)
-    //                         .font(Arial)
-    //                         .fontSize(S::pt(18))
-    //                         .color(simd_float4{0.98,0.76,0.20,1.0})
-    //                 )
-    //             )
-    //         );
-    //     };
+        auto marginRow = [&](const char* label, const char* content, auto configure) {
+            return div()
+                .display(gui::Display::Flex)
+                .flexDirection(gui::FlexDirection::Col)
+                .alignItems(gui::AlignItems::FlexStart)
+                .flexGap(S::px(6))
+            (
+                text(label)
+                    .font(Arial)
+                    .fontSize(S::pt(12))
+                    .color(simd_float4{0.38,0.92,0.56,1.0}),
+                div(S::autoSize(), S::autoSize(), simd_float4{0.15,0.16,0.20,1.0})
+                (
+                    configure(
+                        text(content)
+                            .font(Arial)
+                            .fontSize(S::pt(18))
+                            .color(simd_float4{0.98,0.76,0.20,1.0})
+                    )
+                )
+            );
+        };
 
-    //     auto adjacentRow = [&](const char* label, auto configureFirst, auto configureSecond) {
-    //         return div()
-    //             .display(gui::Display::Flex)
-    //             .flexDirection(gui::FlexDirection::Col)
-    //             .alignItems(gui::AlignItems::FlexStart)
-    //             .flexGap(S::px(6))
-    //         (
-    //             text(label)
-    //                 .font(Arial)
-    //                 .fontSize(S::pt(12))
-    //                 .color(simd_float4{0.38,0.92,0.56,1.0}),
-    //             div(S::autoSize(), S::autoSize(), simd_float4{0.15,0.16,0.20,1.0})
-    //             (
-    //                 configureFirst(
-    //                     text("alpha")
-    //                         .font(Arial)
-    //                         .fontSize(S::pt(18))
-    //                         .color(simd_float4{0.98,0.76,0.20,1.0})
-    //                 ),
-    //                 configureSecond(
-    //                     text("beta")
-    //                         .font(Arial)
-    //                         .fontSize(S::pt(18))
-    //                         .color(simd_float4{0.45,0.80,0.98,1.0})
-    //                 )
-    //             )
-    //         );
-    //     };
+        auto adjacentRow = [&](const char* label, auto configureFirst, auto configureSecond) {
+            return div()
+                .display(gui::Display::Flex)
+                .flexDirection(gui::FlexDirection::Col)
+                .alignItems(gui::AlignItems::FlexStart)
+                .flexGap(S::px(6))
+            (
+                text(label)
+                    .font(Arial)
+                    .fontSize(S::pt(12))
+                    .color(simd_float4{0.38,0.92,0.56,1.0}),
+                div(S::autoSize(), S::autoSize(), simd_float4{0.15,0.16,0.20,1.0})
+                (
+                    configureFirst(
+                        text("alpha")
+                            .font(Arial)
+                            .fontSize(S::pt(18))
+                            .color(simd_float4{0.98,0.76,0.20,1.0})
+                    ),
+                    configureSecond(
+                        text("beta")
+                            .font(Arial)
+                            .fontSize(S::pt(18))
+                            .color(simd_float4{0.45,0.80,0.98,1.0})
+                    )
+                )
+            );
+        };
 
-    //     constexpr const char* latin = "alpha beta gamma delta";
-    //     // pure rtl run: under an ltr base every fragment takes an odd bidi level, so
-    //     // reorderLineFragments reverses the whole run.
-    //     constexpr const char* hebrew = "שלום עולם שלום עולם";
-    //     // mixed runs: only the hebrew spans reverse, so the element's logically first
-    //     // and last fragments are NOT the visually leftmost and rightmost ones.
-    //     constexpr const char* mixed = "alpha שלום beta עולם";
+        constexpr const char* latin = "alpha beta gamma delta";
+        // pure rtl run: under an ltr base every fragment takes an odd bidi level, so
+        // reorderLineFragments reverses the whole run.
+        constexpr const char* hebrew = "שלום עולם שלום עולם";
+        // mixed runs: only the hebrew spans reverse, so the element's logically first
+        // and last fragments are NOT the visually leftmost and rightmost ones.
+        constexpr const char* mixed = "alpha שלום beta עולם";
 
-    //     div(S::percent(1.0), S::percent(1.0), simd_float4{0.06,0.07,0.09,1.0})
-    //         .display(gui::Display::Flex)
-    //         .flexDirection(gui::FlexDirection::Col)
-    //         .alignItems(gui::AlignItems::FlexStart)
-    //         .padding(S::px(48))
-    //         .flexGap(S::px(20))
-    //         .overflow(gui::Overflow::Scroll)
-    //     (
-    //         text("INLINE MARGINS ON MULTI WORD TEXT")
-    //             .font(Arial)
-    //             .fontSize(S::pt(22))
-    //             .color(simd_float4{0.96,0.97,1.0,1.0}),
+        div(S::percent(1.0), S::percent(1.0), simd_float4{0.06,0.07,0.09,1.0})
+            .display(gui::Display::Flex)
+            .flexDirection(gui::FlexDirection::Col)
+            .alignItems(gui::AlignItems::FlexStart)
+            .padding(S::px(48))
+            .flexGap(S::px(20))
+            .overflow(gui::Overflow::Scroll)
+        (
+            text("INLINE MARGINS ON MULTI WORD TEXT")
+                .font(Arial)
+                .fontSize(S::pt(22))
+                .color(simd_float4{0.96,0.97,1.0,1.0}),
 
-    //         marginRow("LATIN, NO MARGIN (CONTROL)", latin, [](auto t) { return t; }),
-    //         marginRow("LATIN, MARGIN RIGHT 20", latin, [&](auto t) { return t.marginRight(S::px(20)); }),
-    //         marginRow("LATIN, MARGIN LEFT 20", latin, [&](auto t) { return t.marginLeft(S::px(20)); }),
-    //         marginRow("LATIN, MARGIN LEFT 20 + RIGHT 20", latin, [&](auto t) {
-    //             return t.marginLeft(S::px(20)).marginRight(S::px(20));
-    //         }),
+            marginRow("LATIN, NO MARGIN (CONTROL)", latin, [](auto t) { return t; }),
+            marginRow("LATIN, MARGIN RIGHT 20", latin, [&](auto t) { return t.marginRight(S::px(20)); }),
+            marginRow("LATIN, MARGIN LEFT 20", latin, [&](auto t) { return t.marginLeft(S::px(20)); }),
+            marginRow("LATIN, MARGIN LEFT 20 + RIGHT 20", latin, [&](auto t) {
+                return t.marginLeft(S::px(20)).marginRight(S::px(20));
+            }),
 
-    //         marginRow("RTL RUN, NO MARGIN (CONTROL)", hebrew, [](auto t) { return t; }),
-    //         marginRow("RTL RUN, MARGIN RIGHT 20", hebrew, [&](auto t) { return t.marginRight(S::px(20)); }),
-    //         marginRow("RTL RUN, MARGIN LEFT 20", hebrew, [&](auto t) { return t.marginLeft(S::px(20)); }),
+            marginRow("RTL RUN, NO MARGIN (CONTROL)", hebrew, [](auto t) { return t; }),
+            marginRow("RTL RUN, MARGIN RIGHT 20", hebrew, [&](auto t) { return t.marginRight(S::px(20)); }),
+            marginRow("RTL RUN, MARGIN LEFT 20", hebrew, [&](auto t) { return t.marginLeft(S::px(20)); }),
 
-    //         marginRow("MIXED, NO MARGIN (CONTROL)", mixed, [](auto t) { return t; }),
-    //         marginRow("MIXED, MARGIN RIGHT 20", mixed, [&](auto t) { return t.marginRight(S::px(20)); }),
-    //         marginRow("MIXED, MARGIN LEFT 20", mixed, [&](auto t) { return t.marginLeft(S::px(20)); }),
+            marginRow("MIXED, NO MARGIN (CONTROL)", mixed, [](auto t) { return t; }),
+            marginRow("MIXED, MARGIN RIGHT 20", mixed, [&](auto t) { return t.marginRight(S::px(20)); }),
+            marginRow("MIXED, MARGIN LEFT 20", mixed, [&](auto t) { return t.marginLeft(S::px(20)); }),
 
-    //         adjacentRow("ADJACENT, NO MARGIN (CONTROL)",
-    //             [](auto t) { return t; },
-    //             [](auto t) { return t; }),
-    //         adjacentRow("ADJACENT, FIRST MARGIN RIGHT 20",
-    //             [&](auto t) { return t.marginRight(S::px(20)); },
-    //             [](auto t) { return t; }),
-    //         adjacentRow("ADJACENT, SECOND MARGIN LEFT 20",
-    //             [](auto t) { return t; },
-    //             [&](auto t) { return t.marginLeft(S::px(20)); }),
-    //         adjacentRow("ADJACENT, BOTH 20",
-    //             [&](auto t) { return t.marginRight(S::px(20)); },
-    //             [&](auto t) { return t.marginLeft(S::px(20)); })
-    //     );
-    // }
+            adjacentRow("ADJACENT, NO MARGIN (CONTROL)",
+                [](auto t) { return t; },
+                [](auto t) { return t; }),
+            adjacentRow("ADJACENT, FIRST MARGIN RIGHT 20",
+                [&](auto t) { return t.marginRight(S::px(20)); },
+                [](auto t) { return t; }),
+            adjacentRow("ADJACENT, SECOND MARGIN LEFT 20",
+                [](auto t) { return t; },
+                [&](auto t) { return t.marginLeft(S::px(20)); }),
+            adjacentRow("ADJACENT, BOTH 20",
+                [&](auto t) { return t.marginRight(S::px(20)); },
+                [&](auto t) { return t.marginLeft(S::px(20)); })
+        );
+    }
 
-    // // ── inline padding on multi word text ──
-    // {
-    //     using S = gui::Size;
+    // ── inline padding on multi word text ──
+    {
+        using S = gui::Size;
 
-    //     auto paddingRow = [&](const char* label, const char* content, auto configure) {
-    //         return div()
-    //             .display(gui::Display::Flex)
-    //             .flexDirection(gui::FlexDirection::Col)
-    //             .alignItems(gui::AlignItems::FlexStart)
-    //             .flexGap(S::px(6))
-    //         (
-    //             text(label)
-    //                 .font(Arial)
-    //                 .fontSize(S::pt(12))
-    //                 .color(simd_float4{0.38,0.92,0.56,1.0}),
-    //             div(S::autoSize(), S::autoSize(), simd_float4{0.15,0.16,0.20,1.0})
-    //             (
-    //                 configure(
-    //                     text(content)
-    //                         .font(Arial)
-    //                         .fontSize(S::pt(18))
-    //                         .color(simd_float4{0.98,0.76,0.20,1.0})
-    //                 )
-    //             )
-    //         );
-    //     };
+        auto paddingRow = [&](const char* label, const char* content, auto configure) {
+            return div()
+                .display(gui::Display::Flex)
+                .flexDirection(gui::FlexDirection::Col)
+                .alignItems(gui::AlignItems::FlexStart)
+                .flexGap(S::px(6))
+            (
+                text(label)
+                    .font(Arial)
+                    .fontSize(S::pt(12))
+                    .color(simd_float4{0.38,0.92,0.56,1.0}),
+                div(S::autoSize(), S::autoSize(), simd_float4{0.15,0.16,0.20,1.0})
+                (
+                    configure(
+                        text(content)
+                            .font(Arial)
+                            .fontSize(S::pt(18))
+                            .color(simd_float4{0.98,0.76,0.20,1.0})
+                    )
+                )
+            );
+        };
 
-    //     constexpr const char* latin = "alpha beta gamma delta";
-    //     constexpr const char* hebrew = "שלום עולם שלום עולם";
-    //     constexpr const char* mixed = "alpha שלום beta עולם";
+        constexpr const char* latin = "alpha beta gamma delta";
+        constexpr const char* hebrew = "שלום עולם שלום עולם";
+        constexpr const char* mixed = "alpha שלום beta עולם";
 
-    //     div(S::percent(1.0), S::percent(1.0), simd_float4{0.06,0.07,0.09,1.0})
-    //         .display(gui::Display::Flex)
-    //         .flexDirection(gui::FlexDirection::Col)
-    //         .alignItems(gui::AlignItems::FlexStart)
-    //         .padding(S::px(48))
-    //         .flexGap(S::px(20))
-    //         .overflow(gui::Overflow::Scroll)
-    //     (
-    //         text("INLINE PADDING ON MULTI WORD TEXT")
-    //             .font(Arial)
-    //             .fontSize(S::pt(22))
-    //             .color(simd_float4{0.96,0.97,1.0,1.0}),
+        div(S::percent(1.0), S::percent(1.0), simd_float4{0.06,0.07,0.09,1.0})
+            .display(gui::Display::Flex)
+            .flexDirection(gui::FlexDirection::Col)
+            .alignItems(gui::AlignItems::FlexStart)
+            .padding(S::px(48))
+            .flexGap(S::px(20))
+            .overflow(gui::Overflow::Scroll)
+        (
+            text("INLINE PADDING ON MULTI WORD TEXT")
+                .font(Arial)
+                .fontSize(S::pt(22))
+                .color(simd_float4{0.96,0.97,1.0,1.0}),
 
-    //         paddingRow("LATIN, NO PADDING (CONTROL)", latin, [](auto t) { return t; }),
-    //         paddingRow("LATIN, PADDING RIGHT 20", latin, [&](auto t) { return t.paddingRight(S::px(20)); }),
-    //         paddingRow("LATIN, PADDING LEFT 20", latin, [&](auto t) { return t.paddingLeft(S::px(20)); }),
-    //         paddingRow("LATIN, PADDING LEFT 20 + RIGHT 20", latin, [&](auto t) {
-    //             return t.paddingLeft(S::px(20)).paddingRight(S::px(20));
-    //         }),
+            paddingRow("LATIN, NO PADDING (CONTROL)", latin, [](auto t) { return t; }),
+            paddingRow("LATIN, PADDING RIGHT 20", latin, [&](auto t) { return t.paddingRight(S::px(20)); }),
+            paddingRow("LATIN, PADDING LEFT 20", latin, [&](auto t) { return t.paddingLeft(S::px(20)); }),
+            paddingRow("LATIN, PADDING LEFT 20 + RIGHT 20", latin, [&](auto t) {
+                return t.paddingLeft(S::px(20)).paddingRight(S::px(20));
+            }),
 
-    //         paddingRow("RTL RUN, NO PADDING (CONTROL)", hebrew, [](auto t) { return t; }),
-    //         paddingRow("RTL RUN, PADDING RIGHT 20", hebrew, [&](auto t) { return t.paddingRight(S::px(20)); }),
-    //         paddingRow("RTL RUN, PADDING LEFT 20", hebrew, [&](auto t) { return t.paddingLeft(S::px(20)); }),
-    //         paddingRow("RTL RUN, PADDING LEFT 20 + RIGHT 20", hebrew, [&](auto t) {
-    //             return t.paddingLeft(S::px(20)).paddingRight(S::px(20));
-    //         }),
+            paddingRow("RTL RUN, NO PADDING (CONTROL)", hebrew, [](auto t) { return t; }),
+            paddingRow("RTL RUN, PADDING RIGHT 20", hebrew, [&](auto t) { return t.paddingRight(S::px(20)); }),
+            paddingRow("RTL RUN, PADDING LEFT 20", hebrew, [&](auto t) { return t.paddingLeft(S::px(20)); }),
+            paddingRow("RTL RUN, PADDING LEFT 20 + RIGHT 20", hebrew, [&](auto t) {
+                return t.paddingLeft(S::px(20)).paddingRight(S::px(20));
+            }),
 
-    //         paddingRow("MIXED, NO PADDING (CONTROL)", mixed, [](auto t) { return t; }),
-    //         paddingRow("MIXED, PADDING RIGHT 20", mixed, [&](auto t) { return t.paddingRight(S::px(20)); }),
-    //         paddingRow("MIXED, PADDING LEFT 20", mixed, [&](auto t) { return t.paddingLeft(S::px(20)); }),
-    //         paddingRow("MIXED, PADDING LEFT 20 + RIGHT 20", mixed, [&](auto t) {
-    //             return t.paddingLeft(S::px(20)).paddingRight(S::px(20));
-    //         }),
+            paddingRow("MIXED, NO PADDING (CONTROL)", mixed, [](auto t) { return t; }),
+            paddingRow("MIXED, PADDING RIGHT 20", mixed, [&](auto t) { return t.paddingRight(S::px(20)); }),
+            paddingRow("MIXED, PADDING LEFT 20", mixed, [&](auto t) { return t.paddingLeft(S::px(20)); }),
+            paddingRow("MIXED, PADDING LEFT 20 + RIGHT 20", mixed, [&](auto t) {
+                return t.paddingLeft(S::px(20)).paddingRight(S::px(20));
+            }),
 
-    //         paddingRow("LATIN, MARGIN LEFT 20 + PADDING LEFT 10", latin, [&](auto t) {
-    //             return t.marginLeft(S::px(20)).paddingLeft(S::px(10));
-    //         }),
-    //         paddingRow("LATIN, MARGIN RIGHT 20 + PADDING RIGHT 10", latin, [&](auto t) {
-    //             return t.marginRight(S::px(20)).paddingRight(S::px(10));
-    //         }),
-    //         paddingRow("LATIN, MARGIN 20 + PADDING 10, BOTH SIDES", latin, [&](auto t) {
-    //             return t.marginLeft(S::px(20)).marginRight(S::px(20)).paddingLeft(S::px(10)).paddingRight(S::px(10));
-    //         }),
+            paddingRow("LATIN, MARGIN LEFT 20 + PADDING LEFT 10", latin, [&](auto t) {
+                return t.marginLeft(S::px(20)).paddingLeft(S::px(10));
+            }),
+            paddingRow("LATIN, MARGIN RIGHT 20 + PADDING RIGHT 10", latin, [&](auto t) {
+                return t.marginRight(S::px(20)).paddingRight(S::px(10));
+            }),
+            paddingRow("LATIN, MARGIN 20 + PADDING 10, BOTH SIDES", latin, [&](auto t) {
+                return t.marginLeft(S::px(20)).marginRight(S::px(20)).paddingLeft(S::px(10)).paddingRight(S::px(10));
+            }),
 
-    //         paddingRow("RTL RUN, MARGIN LEFT 20 + PADDING LEFT 10", hebrew, [&](auto t) {
-    //             return t.marginLeft(S::px(20)).paddingLeft(S::px(10));
-    //         }),
-    //         paddingRow("RTL RUN, MARGIN RIGHT 20 + PADDING RIGHT 10", hebrew, [&](auto t) {
-    //             return t.marginRight(S::px(20)).paddingRight(S::px(10));
-    //         }),
-    //         paddingRow("RTL RUN, MARGIN 20 + PADDING 10, BOTH SIDES", hebrew, [&](auto t) {
-    //             return t.marginLeft(S::px(20)).marginRight(S::px(20)).paddingLeft(S::px(10)).paddingRight(S::px(10));
-    //         }),
+            paddingRow("RTL RUN, MARGIN LEFT 20 + PADDING LEFT 10", hebrew, [&](auto t) {
+                return t.marginLeft(S::px(20)).paddingLeft(S::px(10));
+            }),
+            paddingRow("RTL RUN, MARGIN RIGHT 20 + PADDING RIGHT 10", hebrew, [&](auto t) {
+                return t.marginRight(S::px(20)).paddingRight(S::px(10));
+            }),
+            paddingRow("RTL RUN, MARGIN 20 + PADDING 10, BOTH SIDES", hebrew, [&](auto t) {
+                return t.marginLeft(S::px(20)).marginRight(S::px(20)).paddingLeft(S::px(10)).paddingRight(S::px(10));
+            }),
 
-    //         paddingRow("MIXED, MARGIN LEFT 20 + PADDING LEFT 10", mixed, [&](auto t) {
-    //             return t.marginLeft(S::px(20)).paddingLeft(S::px(10));
-    //         }),
-    //         paddingRow("MIXED, MARGIN RIGHT 20 + PADDING RIGHT 10", mixed, [&](auto t) {
-    //             return t.marginRight(S::px(20)).paddingRight(S::px(10));
-    //         }),
-    //         paddingRow("MIXED, MARGIN 20 + PADDING 10, BOTH SIDES", mixed, [&](auto t) {
-    //             return t.marginLeft(S::px(20)).marginRight(S::px(20)).paddingLeft(S::px(10)).paddingRight(S::px(10));
-    //         })
-    //     );
-    // }
+            paddingRow("MIXED, MARGIN LEFT 20 + PADDING LEFT 10", mixed, [&](auto t) {
+                return t.marginLeft(S::px(20)).paddingLeft(S::px(10));
+            }),
+            paddingRow("MIXED, MARGIN RIGHT 20 + PADDING RIGHT 10", mixed, [&](auto t) {
+                return t.marginRight(S::px(20)).paddingRight(S::px(10));
+            }),
+            paddingRow("MIXED, MARGIN 20 + PADDING 10, BOTH SIDES", mixed, [&](auto t) {
+                return t.marginLeft(S::px(20)).marginRight(S::px(20)).paddingLeft(S::px(10)).paddingRight(S::px(10));
+            })
+        );
+    }
 
     // // Inline siblings wrapping at the element boundary: the first text fills line 0,
     // // the second text's first fragment starts on line 1.
@@ -6442,173 +6442,173 @@ div()
     //     );
     // }
 
-    // ═══════════════════════════════════════════════════════════════════
-    // Clone: news.ycombinator.com front page
-    // ═══════════════════════════════════════════════════════════════════
-    {
-        using S = gui::Size;
-        using gui::Display;
-        using gui::FlexDirection;
-        using gui::AlignItems;
-        using gui::JustifyContent;
+    // // ═══════════════════════════════════════════════════════════════════
+    // // Clone: news.ycombinator.com front page
+    // // ═══════════════════════════════════════════════════════════════════
+    // {
+    //     using S = gui::Size;
+    //     using gui::Display;
+    //     using gui::FlexDirection;
+    //     using gui::AlignItems;
+    //     using gui::JustifyContent;
 
-        constexpr auto rgb = [](int r, int g, int b, float a = 1.0f) {
-            return simd_float4{r / 255.0f, g / 255.0f, b / 255.0f, a};
-        };
+    //     constexpr auto rgb = [](int r, int g, int b, float a = 1.0f) {
+    //         return simd_float4{r / 255.0f, g / 255.0f, b / 255.0f, a};
+    //     };
 
-        const auto page   = rgb(255, 255, 255);
-        const auto paper  = rgb(246, 246, 239);
-        const auto orange = rgb(255, 102, 0);
-        const auto ink    = rgb(0, 0, 0);
-        const auto muted  = rgb(130, 130, 130);
-        const auto white  = rgb(255, 255, 255);
+    //     const auto page   = rgb(255, 255, 255);
+    //     const auto paper  = rgb(246, 246, 239);
+    //     const auto orange = rgb(255, 102, 0);
+    //     const auto ink    = rgb(0, 0, 0);
+    //     const auto muted  = rgb(130, 130, 130);
+    //     const auto white  = rgb(255, 255, 255);
 
-        const std::string Verdana     = "/System/Library/Fonts/Supplemental/Verdana.ttf";
-        const std::string VerdanaBold = "/System/Library/Fonts/Supplemental/Verdana Bold.ttf";
-        constexpr auto A = "/Users/treja/projects/gui/assets/clones/";
+    //     const std::string Verdana     = "/System/Library/Fonts/Supplemental/Verdana.ttf";
+    //     const std::string VerdanaBold = "/System/Library/Fonts/Supplemental/Verdana Bold.ttf";
+    //     constexpr auto A = "/Users/treja/projects/gui/assets/clones/";
 
-        struct Story {
-            std::string title;
-            std::string site;
-            int points;
-            std::string user;
-            std::string age;
-            int comments;
-        };
+    //     struct Story {
+    //         std::string title;
+    //         std::string site;
+    //         int points;
+    //         std::string user;
+    //         std::string age;
+    //         int comments;
+    //     };
 
-        const std::vector<Story> stories {
-            {"Show HN: A declarative, GPU-rendered UI library that follows the CSS spec", "github.com/taanishr", 412, "taanishr", "3 hours ago", 128},
-            {"Signed distance functions for rounded rectangles, explained", "iquilezles.org", 287, "sdfnerd", "5 hours ago", 64},
-            {"The CSS flexbox algorithm is smaller than you think", "drafts.csswg.org", 203, "rachelandrew", "6 hours ago", 91},
-            {"Why text shaping is still hard in 2026", "harfbuzz.github.io", 356, "behdad", "7 hours ago", 142},
-            {"Metal 4 performance notes from a year of shipping", "developer.apple.com", 118, "gpu_person", "8 hours ago", 37},
-            {"Ask HN: What are you building on weekends?", "", 94, "dang_fan", "9 hours ago", 311},
-            {"A tour of grid track sizing, with diagrams", "css-tricks.com", 176, "jensimmons", "10 hours ago", 48},
-            {"FreeType 2.14 released", "freetype.org", 88, "wlemberg", "11 hours ago", 22},
-            {"How browsers decide what 'auto' means", "web.dev", 241, "tabatkins", "12 hours ago", 77},
-            {"Writing a bidi algorithm from scratch", "unicode.org", 132, "rtlwriter", "13 hours ago", 29},
-            {"Show HN: I cloned Wikipedia with my own layout engine", "github.com/taanishr", 67, "taanishr", "14 hours ago", 18},
-            {"The surprising cost of anti-aliasing in fragment shaders", "blog.demofox.org", 154, "atrix256", "15 hours ago", 41},
-            {"Sticky positioning is a scroll-container story", "developer.mozilla.org", 99, "mdn_writer", "16 hours ago", 25},
-            {"Launch HN: Butterfly (YC S26) - native UI with web-grade layout", "butterfly.dev", 188, "founder", "17 hours ago", 103},
-            {"Percentages, cycles, and intrinsic sizes", "w3.org", 73, "fantasai", "18 hours ago", 16},
-        };
+    //     const std::vector<Story> stories {
+    //         {"Show HN: A declarative, GPU-rendered UI library that follows the CSS spec", "github.com/taanishr", 412, "taanishr", "3 hours ago", 128},
+    //         {"Signed distance functions for rounded rectangles, explained", "iquilezles.org", 287, "sdfnerd", "5 hours ago", 64},
+    //         {"The CSS flexbox algorithm is smaller than you think", "drafts.csswg.org", 203, "rachelandrew", "6 hours ago", 91},
+    //         {"Why text shaping is still hard in 2026", "harfbuzz.github.io", 356, "behdad", "7 hours ago", 142},
+    //         {"Metal 4 performance notes from a year of shipping", "developer.apple.com", 118, "gpu_person", "8 hours ago", 37},
+    //         {"Ask HN: What are you building on weekends?", "", 94, "dang_fan", "9 hours ago", 311},
+    //         {"A tour of grid track sizing, with diagrams", "css-tricks.com", 176, "jensimmons", "10 hours ago", 48},
+    //         {"FreeType 2.14 released", "freetype.org", 88, "wlemberg", "11 hours ago", 22},
+    //         {"How browsers decide what 'auto' means", "web.dev", 241, "tabatkins", "12 hours ago", 77},
+    //         {"Writing a bidi algorithm from scratch", "unicode.org", 132, "rtlwriter", "13 hours ago", 29},
+    //         {"Show HN: I cloned Wikipedia with my own layout engine", "github.com/taanishr", 67, "taanishr", "14 hours ago", 18},
+    //         {"The surprising cost of anti-aliasing in fragment shaders", "blog.demofox.org", 154, "atrix256", "15 hours ago", 41},
+    //         {"Sticky positioning is a scroll-container story", "developer.mozilla.org", 99, "mdn_writer", "16 hours ago", 25},
+    //         {"Launch HN: Butterfly (YC S26) - native UI with web-grade layout", "butterfly.dev", 188, "founder", "17 hours ago", 103},
+    //         {"Percentages, cycles, and intrinsic sizes", "w3.org", 73, "fantasai", "18 hours ago", 16},
+    //     };
 
-        auto navLink = [&](const char* label) {
-            return text(label).font(Verdana).fontSize(S::pt(10)).color(ink);
-        };
+    //     auto navLink = [&](const char* label) {
+    //         return text(label).font(Verdana).fontSize(S::pt(10)).color(ink);
+    //     };
 
-        auto navSeparator = [&]() {
-            return text("|").font(Verdana).fontSize(S::pt(10)).color(ink);
-        };
+    //     auto navSeparator = [&]() {
+    //         return text("|").font(Verdana).fontSize(S::pt(10)).color(ink);
+    //     };
 
-        auto footerLink = [&](const char* label) {
-            return text(label).font(Verdana).fontSize(S::pt(8)).color(ink);
-        };
+    //     auto footerLink = [&](const char* label) {
+    //         return text(label).font(Verdana).fontSize(S::pt(8)).color(ink);
+    //     };
 
-        auto footerSeparator = [&]() {
-            return text("|").font(Verdana).fontSize(S::pt(8)).color(ink);
-        };
+    //     auto footerSeparator = [&]() {
+    //         return text("|").font(Verdana).fontSize(S::pt(8)).color(ink);
+    //     };
 
-        auto storyRow = [&](int rank, const Story& story) {
-            std::string subtext = std::to_string(story.points) + " points by " + story.user + " " + story.age
-                + " | hide | " + std::to_string(story.comments) + " comments";
+    //     auto storyRow = [&](int rank, const Story& story) {
+    //         std::string subtext = std::to_string(story.points) + " points by " + story.user + " " + story.age
+    //             + " | hide | " + std::to_string(story.comments) + " comments";
 
-            auto titleLine = div().display(Display::Flex).alignItems(AlignItems::Center)(
-                div().width(S::px(26)).flexShrink(S::px(0)).display(Display::Flex).justifyContent(JustifyContent::FlexEnd)(
-                    text(std::to_string(rank) + ".").font(Verdana).fontSize(S::pt(10)).color(muted)
-                ),
-                div().width(S::px(18)).flexShrink(S::px(0)).display(Display::Flex).justifyContent(JustifyContent::Center)(
-                    svg(std::string(A) + "hn-upvote.svg", S::px(10), S::px(10))
-                ),
-                text(story.title).font(Verdana).fontSize(S::pt(10)).color(ink)
-            );
+    //         auto titleLine = div().display(Display::Flex).alignItems(AlignItems::Center)(
+    //             div().width(S::px(26)).flexShrink(S::px(0)).display(Display::Flex).justifyContent(JustifyContent::FlexEnd)(
+    //                 text(std::to_string(rank) + ".").font(Verdana).fontSize(S::pt(10)).color(muted)
+    //             ),
+    //             div().width(S::px(18)).flexShrink(S::px(0)).display(Display::Flex).justifyContent(JustifyContent::Center)(
+    //                 svg(std::string(A) + "hn-upvote.svg", S::px(10), S::px(10))
+    //             ),
+    //             text(story.title).font(Verdana).fontSize(S::pt(10)).color(ink)
+    //         );
 
-            if (!story.site.empty()) {
-                titleLine(
-                    text("(" + story.site + ")").font(Verdana).fontSize(S::pt(8)).color(muted).marginLeft(S::px(5))
-                );
-            }
+    //         if (!story.site.empty()) {
+    //             titleLine(
+    //                 text("(" + story.site + ")").font(Verdana).fontSize(S::pt(8)).color(muted).marginLeft(S::px(5))
+    //             );
+    //         }
 
-            return div().width(S::percent(1.0)).marginBottom(S::px(6))(
-                titleLine,
-                div().paddingLeft(S::px(44)).marginTop(S::px(2))(
-                    text(subtext).font(Verdana).fontSize(S::pt(7)).color(muted)
-                )
-            );
-        };
+    //         return div().width(S::percent(1.0)).marginBottom(S::px(6))(
+    //             titleLine,
+    //             div().paddingLeft(S::px(44)).marginTop(S::px(2))(
+    //                 text(subtext).font(Verdana).fontSize(S::pt(7)).color(muted)
+    //             )
+    //         );
+    //     };
 
-        auto storyList = div().width(S::percent(1.0)).paddingTop(S::px(8));
+    //     auto storyList = div().width(S::percent(1.0)).paddingTop(S::px(8));
 
-        for (size_t i = 0; i < stories.size(); ++i) {
-            storyList(storyRow(static_cast<int>(i) + 1, stories[i]));
-        }
+    //     for (size_t i = 0; i < stories.size(); ++i) {
+    //         storyList(storyRow(static_cast<int>(i) + 1, stories[i]));
+    //     }
 
-        div(S::percent(1.0), S::percent(1.0), page)
-            .overflow(gui::Overflow::Scroll)
-            .display(Display::Flex)
-            .justifyContent(JustifyContent::Center)
-            .paddingTop(S::px(8))
-        (
-            div(S::percent(0.85), S::autoSize(), paper)(
-                // ── Header ──
-                div(S::percent(1.0), S::autoSize(), orange)
-                    .display(Display::Flex)
-                    .alignItems(AlignItems::Center)
-                    .justifyContent(JustifyContent::SpaceBetween)
-                    .padding(S::px(2))
-                    .paddingRight(S::px(6))
-                (
-                    div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(4))(
-                        div(S::px(18), S::px(18), orange)
-                            .borderColor(white).borderWidth(S::px(1))
-                            .marginRight(S::px(2))
-                            .display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::Center)
-                        (
-                            text("Y").font(VerdanaBold).fontSize(S::pt(9)).color(white)
-                        ),
-                        text("Hacker News").font(VerdanaBold).fontSize(S::pt(10)).color(ink).marginRight(S::px(6)),
-                        navLink("new"), navSeparator(),
-                        navLink("past"), navSeparator(),
-                        navLink("comments"), navSeparator(),
-                        navLink("ask"), navSeparator(),
-                        navLink("show"), navSeparator(),
-                        navLink("jobs"), navSeparator(),
-                        navLink("submit")
-                    ),
-                    navLink("login")
-                ),
+    //     div(S::percent(1.0), S::percent(1.0), page)
+    //         .overflow(gui::Overflow::Scroll)
+    //         .display(Display::Flex)
+    //         .justifyContent(JustifyContent::Center)
+    //         .paddingTop(S::px(8))
+    //     (
+    //         div(S::percent(0.85), S::autoSize(), paper)(
+    //             // ── Header ──
+    //             div(S::percent(1.0), S::autoSize(), orange)
+    //                 .display(Display::Flex)
+    //                 .alignItems(AlignItems::Center)
+    //                 .justifyContent(JustifyContent::SpaceBetween)
+    //                 .padding(S::px(2))
+    //                 .paddingRight(S::px(6))
+    //             (
+    //                 div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(4))(
+    //                     div(S::px(18), S::px(18), orange)
+    //                         .borderColor(white).borderWidth(S::px(1))
+    //                         .marginRight(S::px(2))
+    //                         .display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::Center)
+    //                     (
+    //                         text("Y").font(VerdanaBold).fontSize(S::pt(9)).color(white)
+    //                     ),
+    //                     text("Hacker News").font(VerdanaBold).fontSize(S::pt(10)).color(ink).marginRight(S::px(6)),
+    //                     navLink("new"), navSeparator(),
+    //                     navLink("past"), navSeparator(),
+    //                     navLink("comments"), navSeparator(),
+    //                     navLink("ask"), navSeparator(),
+    //                     navLink("show"), navSeparator(),
+    //                     navLink("jobs"), navSeparator(),
+    //                     navLink("submit")
+    //                 ),
+    //                 navLink("login")
+    //             ),
 
-                // ── Stories ──
-                storyList,
+    //             // ── Stories ──
+    //             storyList,
 
-                div().paddingLeft(S::px(44)).paddingTop(S::px(4)).paddingBottom(S::px(12))(
-                    text("More").font(Verdana).fontSize(S::pt(10)).color(ink)
-                ),
+    //             div().paddingLeft(S::px(44)).paddingTop(S::px(4)).paddingBottom(S::px(12))(
+    //                 text("More").font(Verdana).fontSize(S::pt(10)).color(ink)
+    //             ),
 
-                // ── Footer ──
-                div().width(S::percent(1.0)).paddingTop(S::px(10)).paddingBottom(S::px(24))
-                    .borderColor(orange).borderTopWidth(S::px(2))
-                    .display(Display::Flex).flexDirection(FlexDirection::Col).alignItems(AlignItems::Center).flexGap(S::px(12))
-                (
-                    div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(4))(
-                        footerLink("Guidelines"), footerSeparator(),
-                        footerLink("FAQ"), footerSeparator(),
-                        footerLink("Lists"), footerSeparator(),
-                        footerLink("API"), footerSeparator(),
-                        footerLink("Security"), footerSeparator(),
-                        footerLink("Legal"), footerSeparator(),
-                        footerLink("Apply to YC"), footerSeparator(),
-                        footerLink("Contact")
-                    ),
-                    div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(6))(
-                        text("Search:").font(Verdana).fontSize(S::pt(10)).color(muted),
-                        div(S::px(160), S::px(18), white).borderColor(rgb(118, 118, 118)).borderWidth(S::px(1))()
-                    )
-                )
-            )
-        );
-    }
+    //             // ── Footer ──
+    //             div().width(S::percent(1.0)).paddingTop(S::px(10)).paddingBottom(S::px(24))
+    //                 .borderColor(orange).borderTopWidth(S::px(2))
+    //                 .display(Display::Flex).flexDirection(FlexDirection::Col).alignItems(AlignItems::Center).flexGap(S::px(12))
+    //             (
+    //                 div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(4))(
+    //                     footerLink("Guidelines"), footerSeparator(),
+    //                     footerLink("FAQ"), footerSeparator(),
+    //                     footerLink("Lists"), footerSeparator(),
+    //                     footerLink("API"), footerSeparator(),
+    //                     footerLink("Security"), footerSeparator(),
+    //                     footerLink("Legal"), footerSeparator(),
+    //                     footerLink("Apply to YC"), footerSeparator(),
+    //                     footerLink("Contact")
+    //                 ),
+    //                 div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(6))(
+    //                     text("Search:").font(Verdana).fontSize(S::pt(10)).color(muted),
+    //                     div(S::px(160), S::px(18), white).borderColor(rgb(118, 118, 118)).borderWidth(S::px(1))()
+    //                 )
+    //             )
+    //         )
+    //     );
+    // }
 
     /*
     // ═══════════════════════════════════════════════════════════════════

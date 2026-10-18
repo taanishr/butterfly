@@ -70,9 +70,6 @@ namespace layout {
         size_t fragmentStart{}; // index of the first fragment in the owning fragment vector
         size_t fragmentCount{}; // number of fragments
         float width{}; // width of line box (width of all fragments)
-        float currentFragmentOffset{};
-
-        void pushFragment(LineFragment& fragment);
     };
 
     struct InlineFragmentRange {
