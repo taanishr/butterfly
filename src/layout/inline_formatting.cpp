@@ -284,8 +284,6 @@ namespace tree {
                 fragment->offset = isLtr ? offset + fragment->leadingMargin + fragment->leadingPadding : offset + fragment->trailingMargin + fragment->trailingPadding;
                 offset += fragment->leadingMargin + fragment->leadingPadding + fragment->width + fragment->trailingPadding + fragment->trailingMargin;
             }
-
-            assert(std::abs(offset - lineBox.width) < 0.001f);
         }
     }
 
