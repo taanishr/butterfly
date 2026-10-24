@@ -290,14 +290,7 @@ namespace tree {
     std::optional<std::string> getText(TreeNode* node);
     std::optional<style::WhiteSpace> getWhiteSpace(TreeNode* node);
 
-    enum class InlineFlowKind : uint8_t {
-        Text,
-        Atomic,
-        Open,
-        Placeholder,
-        Close,
-        Block,
-    };
+    using layout::InlineFlowKind;
 
     struct InlineFlowItem {
         InlineFlowKind kind;

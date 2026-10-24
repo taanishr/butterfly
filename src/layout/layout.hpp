@@ -48,6 +48,15 @@ namespace layout {
         std::vector<AtomPlacement> placements;
     };
 
+    enum class InlineFlowKind : uint8_t {
+        Text,
+        Atomic,
+        Open,
+        Placeholder,
+        Close,
+        Block,
+    };
+
     struct ResolvedLevel {
         uint8_t level{};
     };
@@ -57,6 +66,7 @@ namespace layout {
     using BidiLevel = std::variant<ResolvedLevel, InheritedLevel>;
 
     struct LineFragment {
+        InlineFlowKind kind{};
         float width{};
         float leadingMargin{};
         float leadingPadding{};

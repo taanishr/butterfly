@@ -3,12 +3,14 @@
 #include "layout/sizing.hpp"
 #include "layout/layout.hpp"
 #include "render_tree.hpp"
+#include "overloaded.hpp"
 #include "utf8.hpp"
 #include "text/textShaper.hpp"
 #include <algorithm>
 #include <any>
 #include <cstdint>
 #include <cstdlib>
+#include <limits>
 #include <memory>
 #include <simd/vector_types.h>
 #include <string>
@@ -56,6 +58,14 @@ namespace tree {
                     appendInlineFlow(child.get(), flow);
                 }
                 flow.push_back({.kind = InlineFlowKind::Close, .node = child.get()});
+            } else if (node->getDisplay() == Display::Inline) {
+                // in the <open><block><close> case 
+                // open and close live on diff lines
+                // but there wasnt a thing for the open placeholder to attach to for edges/reordering
+                // so placeholder fixes this
+                flow.push_back({.kind = InlineFlowKind::Placeholder, .node = node});
+                flow.push_back({.kind = InlineFlowKind::Block, .node = child.get()});
+                flow.push_back({.kind = InlineFlowKind::Placeholder, .node = node});
             } else {
                 flow.push_back({.kind = InlineFlowKind::Block, .node = child.get()});
             }
@@ -250,6 +260,7 @@ namespace tree {
             }
 
             LineFragment fragment{
+                .kind = InlineFlowKind::Text,
                 .width = width,
                 .atomStart = atomStart,
                 .atomCount = atomEnd - atomStart,
@@ -265,8 +276,18 @@ namespace tree {
     void reorderLineFragments(layout::InlineFormattingContext& context, bool isLtr) {
         std::vector<LineFragment*> fragments;
         fragments.reserve(context.fragments.size());
+        std::vector<uint8_t> levels;
+        levels.reserve(context.fragments.size());
+        struct LineElementSlice {
+            size_t start = 0;
+            size_t end = 0;
+            size_t first = std::numeric_limits<size_t>::max();
+            size_t last = 0;
+        };
+        std::unordered_map<size_t, LineElementSlice> lineElementSlices;
 
-        std::unordered_map<size_t, size_t> elementFragmentIndices;
+        std::vector<LineFragment*> visual;
+        visual.reserve(context.fragments.size());
 
         /*
             what do we need to do here?
@@ -314,15 +335,31 @@ namespace tree {
         for (size_t lineIndex = 0; lineIndex < context.lineBoxes.size(); ++lineIndex) {
             auto& lineBox = context.lineBoxes[lineIndex];
             fragments.clear();
+            levels.clear();
             int maximumLevel = 0;
             int minimumOddLevel = -1;
 
             for (size_t i = 0; i < lineBox.fragmentCount; ++i) {
                 auto& fragment = context.fragments[lineBox.fragmentStart + i];
-                fragments.push_back(&fragment);
-                maximumLevel = std::max(maximumLevel, static_cast<int>(fragment.bidiLevel));
-                if ((fragment.bidiLevel & 1u) != 0 && (minimumOddLevel == -1 || fragment.bidiLevel < minimumOddLevel)) {
-                    minimumOddLevel = fragment.bidiLevel;
+                if (fragment.bidiLevel) {
+                    fragments.push_back(&fragment);
+                }
+            }
+
+            levels.resize(fragments.size());
+            uint8_t nextLevel = isLtr ? 0 : 1;
+            for (size_t i = fragments.size(); i-- > 0;) {
+                nextLevel = std::visit(Overloaded{
+                    [](const layout::ResolvedLevel& resolved) { return resolved.level; },
+                    [&](const layout::InheritedLevel&) { return nextLevel; }
+                }, *fragments[i]->bidiLevel);
+                levels[i] = nextLevel;
+            }
+
+            for (uint8_t level : levels) {
+                maximumLevel = std::max(maximumLevel, static_cast<int>(level));
+                if ((level & 1u) != 0 && (minimumOddLevel == -1 || level < minimumOddLevel)) {
+                    minimumOddLevel = level;
                 }
             }
 
@@ -331,13 +368,13 @@ namespace tree {
                     size_t start = 0;
                     while (start < fragments.size()) {
                         while (start < fragments.size() &&
-                               fragments[start]->bidiLevel < level) {
+                               levels[start] < level) {
                             ++start;
                         }
 
                         size_t end = start;
                         while (end < fragments.size() &&
-                               fragments[end]->bidiLevel >= level) {
+                               levels[end] >= level) {
                             ++end;
                         }
 
@@ -345,29 +382,70 @@ namespace tree {
                             fragments.begin() + start,
                             fragments.begin() + end
                         );
+                        std::reverse(
+                            levels.begin() + start,
+                            levels.begin() + end
+                        );
                         start = end;
                     }
                 }
             }
 
-            for (size_t i = 0; i < fragments.size(); ++i) {
-                auto* fragment = isLtr ? fragments[i] : fragments[fragments.size() - 1 - i];
-                fragment->elementFragmentIndex = elementFragmentIndices[fragment->elementIndex]++;
+            auto* lineStart = &context.fragments[lineBox.fragmentStart];
+            lineElementSlices.clear();
 
-                if (fragment->elementFragmentIndex != 0) {
-                    fragment->leadingMargin = 0.0f;
-                    fragment->leadingPadding = 0.0f;
+            for (size_t i = 0; i < lineBox.fragmentCount; ++i) {
+                auto& fragment = lineStart[i];
+                if (fragment.kind == InlineFlowKind::Open) {
+                    auto& slice = lineElementSlices.try_emplace(fragment.elementIndex, LineElementSlice{.end = lineBox.fragmentCount}).first->second;
+                    slice.start = i + 1;
+                } else if (fragment.kind == InlineFlowKind::Close) {
+                    auto& slice = lineElementSlices.try_emplace(fragment.elementIndex, LineElementSlice{.end = lineBox.fragmentCount}).first->second;
+                    slice.end = i;
+                }
+            }
+
+            for (size_t v = 0; v < fragments.size(); ++v) {
+                const size_t logical = fragments[v] - lineStart;
+                for (auto& [elementIndex, slice] : lineElementSlices) {
+                    if (logical >= slice.start && logical < slice.end) {
+                        slice.first = std::min(slice.first, v);
+                        slice.last = std::max(slice.last, v);
+                    }
+                }
+            }
+
+            visual.clear();
+
+            for (size_t v = 0; v < fragments.size(); ++v) {
+                for (size_t i = 0; i < lineBox.fragmentCount; ++i) {
+                    auto& edge = lineStart[isLtr ? i : lineBox.fragmentCount - 1 - i];
+                    if (edge.kind != InlineFlowKind::Open && edge.kind != InlineFlowKind::Close) {
+                        continue;
+                    }
+
+                    if ((edge.kind == InlineFlowKind::Open) == isLtr && lineElementSlices[edge.elementIndex].first == v) {
+                        visual.push_back(&edge);
+                    }
                 }
 
-                if (fragment->elementFragmentIndex + 1 != fragment->elementFragmentCount) {
-                    fragment->trailingMargin = 0.0f;
-                    fragment->trailingPadding = 0.0f;
+                visual.push_back(fragments[v]);
+
+                for (size_t i = 0; i < lineBox.fragmentCount; ++i) {
+                    auto& edge = lineStart[isLtr ? i : lineBox.fragmentCount - 1 - i];
+                    if (edge.kind != InlineFlowKind::Open && edge.kind != InlineFlowKind::Close) {
+                        continue;
+                    }
+
+                    if ((edge.kind == InlineFlowKind::Open) != isLtr && lineElementSlices[edge.elementIndex].last == v) {
+                        visual.push_back(&edge);
+                    }
                 }
             }
 
             float offset = 0.0f;
 
-            for (auto* fragment : fragments) {
+            for (auto* fragment : visual) {
                 fragment->offset = isLtr ? offset + fragment->leadingMargin + fragment->leadingPadding : offset + fragment->trailingMargin + fragment->trailingPadding;
                 offset += fragment->leadingMargin + fragment->leadingPadding + fragment->width + fragment->trailingPadding + fragment->trailingMargin;
             }
@@ -474,6 +552,7 @@ namespace tree {
         );
 
         LineFragment fragment {
+            .kind = InlineFlowKind::Atomic,
             .width = atoms.front().width,
             .atomStart = 0,
             .atomCount = atoms.size(),
@@ -885,7 +964,6 @@ namespace tree {
         RenderTree& tree, TreeNode* node, const FrameInfo& frameInfo,
         const Constraints& constraints, const SizeRequest& request, const InlineSizingInput& sizing,
         std::optional<std::unordered_map<size_t, SizeResult>&> sizeCache) {
-        bool prevInline = false;
         auto context = std::make_shared<layout::InlineFormattingContext>();
         auto& childrenLineBoxes = context->lineBoxes;
         auto& fragments = context->fragments;
@@ -910,12 +988,6 @@ namespace tree {
                 auto textResp = getText(child);
                 auto margins = child->preLayout->resolvedMargins;
                 auto& atoms = child->atomized->atoms;
-
-                if (i > 0 && !prevInline && currentLineBox.fragmentCount > 0) {
-                    childrenLineBoxes.push_back(std::move(currentLineBox));
-                    currentLineBox = {};
-                    currentLineBoxIndex++;
-                }
 
                 SizeRequest childRequest {
                     .position = child->shared.position,
@@ -1009,24 +1081,24 @@ namespace tree {
                         );
                     }
 
-                    fragments.push_back({.width = width});
+                    fragments.push_back({.kind = InlineFlowKind::Open, .width = width});
                     pendingWidth += width;
                     lastFragmentHasBreakOpportunity = false;
                 } else if (flow[i].kind == InlineFlowKind::Placeholder) {
-                    fragments.push_back({.bidiLevel = layout::InheritedLevel{}});
+                    fragments.push_back({.kind = InlineFlowKind::Placeholder, .bidiLevel = layout::InheritedLevel{}});
                 } else if (flow[i].kind == InlineFlowKind::Close) {
                     const auto edgePadding = resolvePadding(childRequest);
                     const auto* edgePaddingEnd = std::get_if<float>(isLtr ? &edgePadding.right : &edgePadding.left);
                     const float width = (isLtr ? margins.right : margins.left) + (edgePaddingEnd ? *edgePaddingEnd : 0.0f);
 
-                    fragments.push_back({.width = width});
+                    fragments.push_back({.kind = InlineFlowKind::Close, .width = width});
                     pendingWidth += width;
                 }
 
                 const size_t childFragmentCount = fragments.size() - childFragmentStart;
 
                 for (size_t f = childFragmentStart; f < fragments.size(); ++f) {
-                    fragments[f].elementIndex = i;
+                    fragments[f].elementIndex = child->id;
                     fragments[f].elementFragmentIndex = f - childFragmentStart;
                     fragments[f].elementFragmentCount = childFragmentCount;
 
@@ -1035,8 +1107,6 @@ namespace tree {
                         fragments[f].trailingMargin = isLtr ? margins.right : margins.left;
                     }
                 }
-
-                prevInline = true;
             } else {
                 commitPendingFragments(
                     sizing.widthRequest,
@@ -1049,7 +1119,12 @@ namespace tree {
                     pendingWidth
                 );
                 lastFragmentHasBreakOpportunity = false;
-                prevInline = false;
+
+                if (currentLineBox.fragmentCount > 0) {
+                    childrenLineBoxes.push_back(std::move(currentLineBox));
+                    currentLineBox = {};
+                    currentLineBoxIndex++;
+                }
             }
 
             childFragments.push_back({
