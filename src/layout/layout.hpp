@@ -48,6 +48,14 @@ namespace layout {
         std::vector<AtomPlacement> placements;
     };
 
+    struct ResolvedLevel {
+        uint8_t level{};
+    };
+
+    struct InheritedLevel {};
+
+    using BidiLevel = std::variant<ResolvedLevel, InheritedLevel>;
+
     struct LineFragment {
         float width{};
         float leadingMargin{};
@@ -61,7 +69,7 @@ namespace layout {
         size_t atomCount{};
         size_t textByteStart{};
         size_t textByteLength{};
-        uint8_t bidiLevel{};
+        std::optional<BidiLevel> bidiLevel;
         size_t lineBoxIndex{};
         float offset{}; // relative x where fragment is placed in line box
     };

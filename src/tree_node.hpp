@@ -289,6 +289,23 @@ namespace tree {
     void createStackingContexts(TreeNode* node, std::vector<TreeNode*>& order);
     std::optional<std::string> getText(TreeNode* node);
     std::optional<style::WhiteSpace> getWhiteSpace(TreeNode* node);
+
+    enum class InlineFlowKind : uint8_t {
+        Text,
+        Atomic,
+        Open,
+        Placeholder,
+        Close,
+        Block,
+    };
+
+    struct InlineFlowItem {
+        InlineFlowKind kind;
+        TreeNode* node;
+    };
+
+    void appendInlineFlow(TreeNode* node, std::vector<InlineFlowItem>& flow);
+    std::vector<InlineFlowItem> inlineFlow(TreeNode* container);
     Result<std::vector<std::optional<bidi::TextBidiInput>>>
     prepareChildBidiInputs(
         TreeNode* parent,

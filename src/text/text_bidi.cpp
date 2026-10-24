@@ -40,7 +40,7 @@ namespace bidi {
             paragraphStart = offset;
         }
 
-        if (paragraphStart < context.source.size() || context.paragraphs.empty()) {
+        if (paragraphStart < context.source.size()) {
             const size_t length = context.source.size() - paragraphStart;
             auto resolved = BidiParagraph::create(
                 std::string_view{context.source}.substr(paragraphStart, length), direction);

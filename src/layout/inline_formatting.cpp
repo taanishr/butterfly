@@ -42,47 +42,106 @@ namespace tree {
         return std::nullopt;
     }
 
+    void appendInlineFlow(TreeNode* node, std::vector<InlineFlowItem>& flow) {
+        for (auto& child : node->children) {
+            if (getText(child.get()).has_value()) {
+                flow.push_back({.kind = InlineFlowKind::Text, .node = child.get()});
+            } else if (child->element->isInline()) {
+                flow.push_back({.kind = InlineFlowKind::Atomic, .node = child.get()});
+            } else if (child->getDisplay() == Display::Inline) {
+                flow.push_back({.kind = InlineFlowKind::Open, .node = child.get()});
+                if (child->children.empty()) {
+                    flow.push_back({.kind = InlineFlowKind::Placeholder, .node = child.get()});
+                } else {
+                    appendInlineFlow(child.get(), flow);
+                }
+                flow.push_back({.kind = InlineFlowKind::Close, .node = child.get()});
+            } else {
+                flow.push_back({.kind = InlineFlowKind::Block, .node = child.get()});
+            }
+        }
+    }
+
+    std::vector<InlineFlowItem> inlineFlow(TreeNode* container) {
+        std::vector<InlineFlowItem> flow;
+        flow.reserve(container->children.size());
+        appendInlineFlow(container, flow);
+        return flow;
+    }
+
+    void appendBidiText(TreeNode* node, std::string& paragraph) {
+        if (auto text = getText(node)) {
+            std::string bidiText = *text;
+            const auto whiteSpace = getWhiteSpace(node)
+                .value_or(WhiteSpace::Normal);
+            if (whiteSpace == WhiteSpace::Normal || whiteSpace == WhiteSpace::NoWrap) {
+                for (char& byte : bidiText) {
+                    if (byte == '\r' || byte == '\n') byte = ' ';
+                }
+            }
+
+            paragraph += bidiText;
+        } else if (node->element->isInline()) {
+            paragraph += "\xEF\xBF\xBC";
+        } else if (node->getDisplay() == Display::Inline) {
+            for (auto& child : node->children) {
+                appendBidiText(child.get(), paragraph);
+            }
+        } else {
+            // block handling; splits the line
+            paragraph += "\n";
+        }
+    }
+
+    bidi::TextBidiInput sliceTextBidiInput(
+        const std::shared_ptr<const bidi::TextBidiContext>& context,
+        size_t sliceStart,
+        size_t sliceLength
+    ) {
+        const size_t sliceEnd = sliceStart + sliceLength;
+        std::vector<bidi::TextShapingRun> sliceRuns;
+        for (const auto& run : context->runs()) {
+            const size_t runEnd = run.byteStart + run.byteLength;
+            const size_t start = std::max(sliceStart, run.byteStart);
+            const size_t end = std::min(sliceEnd, runEnd);
+            if (start >= end) {
+                continue;
+            }
+            sliceRuns.push_back({
+                .byteStart = start - sliceStart,
+                .byteLength = end - start,
+                .level = run.level,
+                .scriptTag = run.scriptTag
+            });
+        }
+        return bidi::TextBidiInput{
+            .context = context,
+            .paragraphByteStart = sliceStart,
+            .byteLength = sliceLength,
+            .runs = sliceRuns
+        };
+    }
+
     Result<std::vector<std::optional<bidi::TextBidiInput>>> prepareChildBidiInputs(
         TreeNode* parent,
         layout::Direction baseDirection
     ) {
         std::vector<std::optional<bidi::TextBidiInput>> inputs(parent->children.size());
 
-        size_t sequenceStart = 0;
-        while (sequenceStart < parent->children.size()) {
-            while (sequenceStart < parent->children.size() &&
-                   !parent->children[sequenceStart]->element->isInline()) {
-                ++sequenceStart;
-            }
-            if (sequenceStart == parent->children.size()) break;
+        // avoid allocs if we're a leaf node
+        if (parent->children.empty()) {
+            return inputs;
+        }
 
-            size_t sequenceEnd = sequenceStart;
+        // the child will split the parent text accordingly; we hand the children the slice range
+        // this is for proper recursive handling now that we have inline children
+        bidi::TextBidiInput source;
+        if (parent->getDisplay() == Display::Inline) {
+            source = *parent->textBidiInput;
+        } else {
             std::string paragraph;
-            std::vector<size_t> childStarts;
-            std::vector<size_t> childLengths;
-            while (sequenceEnd < parent->children.size()) {
-                auto* child = parent->children[sequenceEnd].get();
-                if (!child->element->isInline()) break;
-
-                childStarts.push_back(paragraph.size());
-
-                if (auto childText = getText(child)) {
-                    std::string bidiText = *childText;
-                    const auto whiteSpace = getWhiteSpace(child)
-                        .value_or(WhiteSpace::Normal);
-                    if (whiteSpace == WhiteSpace::Normal || whiteSpace == WhiteSpace::NoWrap) {
-                        for (char& byte : bidiText) {
-                            if (byte == '\r' || byte == '\n') byte = ' ';
-                        }
-                    }
-
-                    paragraph += bidiText;
-                } else {
-                    paragraph += "\xEF\xBF\xBC";
-                }
-
-                childLengths.push_back(paragraph.size() - childStarts.back());
-                ++sequenceEnd;
+            for (auto& child : parent->children) {
+                appendBidiText(child.get(), paragraph);
             }
 
             auto resolvedContext = bidi::TextBidiContext::create(
@@ -92,33 +151,19 @@ namespace tree {
                     : bidi::BidiBaseDirection::Ltr
             );
             if (!resolvedContext) return std::unexpected{resolvedContext.error()};
-            auto context = std::make_shared<bidi::TextBidiContext>(std::move(*resolvedContext));
+            source = bidi::TextBidiInput{
+                .context = std::make_shared<bidi::TextBidiContext>(std::move(*resolvedContext)),
+                .paragraphByteStart = 0,
+                .byteLength = paragraph.size()
+            };
+        }
 
-            for (size_t i = sequenceStart; i < sequenceEnd; ++i) {
-                const size_t childStart = childStarts[i - sequenceStart];
-                const size_t childLength = childLengths[i - sequenceStart];
-                const size_t childEnd = childStart + childLength;
-                std::vector<bidi::TextShapingRun> childRuns;
-                for (const auto& run : context->runs()) {
-                    const size_t runEnd = run.byteStart + run.byteLength;
-                    const size_t start = std::max(childStart, run.byteStart);
-                    const size_t end = std::min(childEnd, runEnd);
-                    if (start >= end) continue;
-                    childRuns.push_back({
-                        .byteStart = start - childStart,
-                        .byteLength = end - start,
-                        .level = run.level,
-                        .scriptTag = run.scriptTag
-                    });
-                }
-                inputs[i] = bidi::TextBidiInput{
-                    .context = context,
-                    .paragraphByteStart = childStart,
-                    .byteLength = childLength,
-                    .runs = childRuns
-                };
-            }
-            sequenceStart = sequenceEnd;
+        size_t childStart = source.paragraphByteStart;
+        for (size_t i = 0; i < parent->children.size(); ++i) {
+            std::string childText;
+            appendBidiText(parent->children[i].get(), childText);
+            inputs[i] = sliceTextBidiInput(source.context, childStart, childText.size());
+            childStart += childText.size();
         }
 
         return inputs;
@@ -210,7 +255,7 @@ namespace tree {
                 .atomCount = atomEnd - atomStart,
                 .textByteStart = byteStart,
                 .textByteLength = byteEnd - byteStart,
-                .bidiLevel = run.bidiLevel,
+                .bidiLevel = layout::ResolvedLevel{run.bidiLevel},
             };
 
             fragments.push_back(fragment);
@@ -223,6 +268,49 @@ namespace tree {
 
         std::unordered_map<size_t, size_t> elementFragmentIndices;
 
+        /*
+            what do we need to do here?
+            we need to:
+                make atomics + text leaf nodes
+            add:
+                inline containers
+            
+            logical vs visual order:
+                we separate out things into lines based on logical order
+                once we have that, we have completed lines in logical order
+                (logical order is one that has not been reordered in bidi order)
+                we then reorder these nodes according to bidi order
+                this does not change the size of the lines
+                afterwards, we add padding to the visual first/last element
+
+            problems:
+                this *worked*, but didnt allow for nested inline structures
+
+            ok, what changes with nesting?
+                we need to introduce containers vs leafs
+                we dont want to consider mixing content and childrne
+                but then: how do we make containers behave? we dont want span-specific ideas
+
+                the other problem: what about spans across line boxes?
+                do we need to carry state across invocations? thats so ugly
+
+                additionally, after reordering, our order of spans may change; so a stack doesnt *necessarily* make sense
+
+                logical order
+                <a>content</a><b>content</b>
+                    init stack with a open, a close, b open, b close
+                visual reordering
+                <b>content</b><a>content</a>
+
+                and when pushing opens/closes, what we'll problematically do is push the a ones with the b content because our stack is out of order
+        
+                so theres this idea:
+                    we'll track containers as a separate thing, and opens and closes
+                    we'll use some stack esque structure
+                    we'll still keep fragment reordering
+                    instead of attaching padidng, we'll use edge fragments
+        */
+
         for (size_t lineIndex = 0; lineIndex < context.lineBoxes.size(); ++lineIndex) {
             auto& lineBox = context.lineBoxes[lineIndex];
             fragments.clear();
@@ -233,8 +321,7 @@ namespace tree {
                 auto& fragment = context.fragments[lineBox.fragmentStart + i];
                 fragments.push_back(&fragment);
                 maximumLevel = std::max(maximumLevel, static_cast<int>(fragment.bidiLevel));
-                if ((fragment.bidiLevel & 1u) != 0 &&
-                    (minimumOddLevel == -1 || fragment.bidiLevel < minimumOddLevel)) {
+                if ((fragment.bidiLevel & 1u) != 0 && (minimumOddLevel == -1 || fragment.bidiLevel < minimumOddLevel)) {
                     minimumOddLevel = fragment.bidiLevel;
                 }
             }
@@ -390,7 +477,7 @@ namespace tree {
             .width = atoms.front().width,
             .atomStart = 0,
             .atomCount = atoms.size(),
-            .bidiLevel = run.level,
+            .bidiLevel = layout::ResolvedLevel{run.level},
         };
 
         fragments.push_back(fragment);
@@ -812,13 +899,15 @@ namespace tree {
         const bool isLtr = constraints.inheritedProperties.direction == layout::Direction::ltr;
 
 
-        for (uint64_t i = 0; i < node->children.size(); ++i) {
-            auto& child = node->children[i];
+        const auto flow = inlineFlow(node);
+
+        for (size_t i = 0; i < flow.size(); ++i) {
+            auto* child = flow[i].node;
 
             size_t childFragmentStart = fragments.size();
 
-            if (child->element->isInline()) {
-                auto textResp = getText(child.get());
+            if (flow[i].kind != InlineFlowKind::Block) {
+                auto textResp = getText(child);
                 auto margins = child->preLayout->resolvedMargins;
                 auto& atoms = child->atomized->atoms;
 
@@ -864,19 +953,15 @@ namespace tree {
                     .resolvingIntrinsicWidth = request.intrinsicWidthRequest.value_or(IntrinsicRequest::None) != IntrinsicRequest::None,
                     .resolvingIntrinsicHeight = request.intrinsicHeightRequest.value_or(IntrinsicRequest::None) != IntrinsicRequest::None,
                 };
-                PaddingResult padding {};
-
-                if (textResp.has_value()) {
-                    padding = resolvePadding(childRequest);
-
+                if (flow[i].kind == InlineFlowKind::Text) {
                     appendTextLineFragments(
                         *textResp,
-                        *getShapedRun(child.get()),
+                        *getShapedRun(child),
                         atoms,
-                        getWhiteSpace(child.get()).value_or(WhiteSpace::Normal),
-                        getWordBreak(child.get()).value_or(WordBreak::Normal),
-                        margins,
-                        padding,
+                        getWhiteSpace(child).value_or(WhiteSpace::Normal),
+                        getWordBreak(child).value_or(WordBreak::Normal),
+                        ResolvedMargins{},
+                        PaddingResult{},
                         isLtr,
                         availableWidth,
                         sizing.widthRequest,
@@ -888,8 +973,8 @@ namespace tree {
                         pendingWidth,
                         lastFragmentHasBreakOpportunity
                     );
-                } else {
-                    const auto sizeResult = evaluateSize(tree, child.get(), frameInfo, constraints, childRequest, sizeCache);
+                } else if (flow[i].kind == InlineFlowKind::Atomic) {
+                    const auto sizeResult = evaluateSize(tree, child, frameInfo, constraints, childRequest, sizeCache);
                     const auto& run = child->textBidiInput->runs.front();
                     appendAtomicInlineFragment(
                         atoms,
@@ -906,25 +991,48 @@ namespace tree {
                         pendingWidth,
                         lastFragmentHasBreakOpportunity
                     );
+                } else if (flow[i].kind == InlineFlowKind::Open) {
+                    const auto edgePadding = resolvePadding(childRequest);
+                    const auto* edgePaddingStart = std::get_if<float>(isLtr ? &edgePadding.left : &edgePadding.right);
+                    const float width = (isLtr ? margins.left : margins.right) + (edgePaddingStart ? *edgePaddingStart : 0.0f);
+
+                    if (lastFragmentHasBreakOpportunity) {
+                        commitPendingFragments(
+                            sizing.widthRequest,
+                            availableWidth,
+                            fragments,
+                            childrenLineBoxes,
+                            currentLineBox,
+                            currentLineBoxIndex,
+                            pendingStart,
+                            pendingWidth
+                        );
+                    }
+
+                    fragments.push_back({.width = width});
+                    pendingWidth += width;
+                    lastFragmentHasBreakOpportunity = false;
+                } else if (flow[i].kind == InlineFlowKind::Placeholder) {
+                    fragments.push_back({.bidiLevel = layout::InheritedLevel{}});
+                } else if (flow[i].kind == InlineFlowKind::Close) {
+                    const auto edgePadding = resolvePadding(childRequest);
+                    const auto* edgePaddingEnd = std::get_if<float>(isLtr ? &edgePadding.right : &edgePadding.left);
+                    const float width = (isLtr ? margins.right : margins.left) + (edgePaddingEnd ? *edgePaddingEnd : 0.0f);
+
+                    fragments.push_back({.width = width});
+                    pendingWidth += width;
                 }
 
                 const size_t childFragmentCount = fragments.size() - childFragmentStart;
-                const auto* paddingStart = std::get_if<float>(isLtr ? &padding.left : &padding.right);
-                const auto* paddingEnd = std::get_if<float>(isLtr ? &padding.right : &padding.left);
 
                 for (size_t f = childFragmentStart; f < fragments.size(); ++f) {
                     fragments[f].elementIndex = i;
                     fragments[f].elementFragmentIndex = f - childFragmentStart;
                     fragments[f].elementFragmentCount = childFragmentCount;
-                    fragments[f].leadingMargin = isLtr ? margins.left : margins.right;
-                    fragments[f].trailingMargin = isLtr ? margins.right : margins.left;
 
-                    if (paddingStart) {
-                        fragments[f].leadingPadding = *paddingStart;
-                    }
-
-                    if (paddingEnd) {
-                        fragments[f].trailingPadding = *paddingEnd;
+                    if (flow[i].kind == InlineFlowKind::Atomic) {
+                        fragments[f].leadingMargin = isLtr ? margins.left : margins.right;
+                        fragments[f].trailingMargin = isLtr ? margins.right : margins.left;
                     }
                 }
 
