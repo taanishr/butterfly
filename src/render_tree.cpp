@@ -350,6 +350,8 @@ namespace tree {
 
     // I have a render cache, develop some sort of caching policy that makes these useful
     void RenderTree::update(const FrameInfo& frameInfo, uint64_t frameIndex) {
+        pendingDeletes.clear();
+
         bool frameInfoChanged = isFrameInfoChanged(frameInfo);
         if (frameInfoChanged) {
             pendingFrameBufferWrites = MaxOutstandingFrameCount;
@@ -550,6 +552,35 @@ namespace tree {
     constexpr DirtyBits structureDirtyBits() {
         return DirtyBits::Measure | DirtyBits::Atomize | DirtyBits::Layout |
             DirtyBits::PostLayout | DirtyBits::Place | DirtyBits::Finalize | DirtyBits::PaintOrder;
+    }
+
+    void markPendingDelete(TreeNode* node) {
+        node->pendingDelete = true;
+        for (auto& child : node->children) {
+            markPendingDelete(child.get());
+        }
+    }
+
+    void RenderTree::removeNode(TreeNode* node, std::source_location source) {
+        if (!node || !node->parent || node->pendingDelete) {
+            return;
+        }
+
+        auto* oldParent = node->parent;
+        auto& siblings = oldParent->children;
+        auto it = std::find_if(siblings.begin(), siblings.end(), [&](auto& child) {
+            return child.get() == node;
+        });
+        if (it == siblings.end()) {
+            return;
+        }
+
+        pendingDeletes.push_back(std::move(*it));
+        siblings.erase(it);
+
+        node->parent = nullptr;
+        markPendingDelete(node);
+        markDirty(oldParent, structureDirtyBits(), source);
     }
 
     void moveIntoBox(RenderTree& tree, TreeNode* box, std::unique_ptr<TreeNode>&& child) {

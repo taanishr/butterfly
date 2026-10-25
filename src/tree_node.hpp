@@ -131,10 +131,16 @@ namespace tree {
         }
 
         TreeNode* dispatch(Event& event) {
+            if (pendingDelete) {
+                return nullptr;
+            }
+
             auto it = eventHandlers.find(event.type);
             if (it != eventHandlers.end()) {
                 for (auto& handler : it->second) {
-                    if (event.propagationStopped) break;
+                    if (event.propagationStopped || pendingDelete) {
+                        break;
+                    }
                     handler(event);
                 }
             }
@@ -267,6 +273,7 @@ namespace tree {
         std::optional<int64_t> zIndex;
         uint64_t paintPreorderIndex;
         uint64_t paintPostorderIndex;
+        bool pendingDelete{false};
 
         std::optional<Atomized> atomized;
         std::optional<PreLayoutResult> preLayout;

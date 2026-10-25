@@ -65,25 +65,20 @@ namespace elements {
             node{node}
         {}
 
-        void markDirty(std::source_location source = std::source_location::current()) {
-            renderTree.markDirty(source);
-        }
-
-        void markDirty(
-            DirtyBits bits,
-            std::source_location source = std::source_location::current()
-        ) {
+        void markDirty(DirtyBits bits, std::source_location source = std::source_location::current()) {
             renderTree.markDirty(node, bits, source);
         }
 
+        void remove(std::source_location source = std::source_location::current()) {
+            renderTree.removeNode(node, source);
+        }
+
         static constexpr DirtyBits layoutDirtyBits() {
-            return DirtyBits::Measure | DirtyBits::Atomize | DirtyBits::Layout |
-                DirtyBits::PostLayout | DirtyBits::Place | DirtyBits::Finalize;
+            return DirtyBits::Measure | DirtyBits::Atomize | DirtyBits::Layout | DirtyBits::PostLayout | DirtyBits::Place | DirtyBits::Finalize;
         }
 
         static constexpr DirtyBits textDirtyBits() {
-            return DirtyBits::Atomize | DirtyBits::Layout |
-                DirtyBits::PostLayout | DirtyBits::Place | DirtyBits::Finalize | DirtyBits::PaintOrder;
+            return DirtyBits::Atomize | DirtyBits::Layout | DirtyBits::PostLayout | DirtyBits::Place | DirtyBits::Finalize | DirtyBits::PaintOrder;
         }
         Derived& self() {
             return static_cast<Derived&>(*this);

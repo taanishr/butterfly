@@ -36,7 +36,9 @@ namespace tree {
             DirtyBits bits,
             std::source_location source = std::source_location::current()
         );
-  
+
+        void removeNode(TreeNode* node, std::source_location source = std::source_location::current());
+
         TreeNode* hitTestRecursive(TreeNode* node, simd_float2 point);
         std::vector<TreeNode*> hitTestAll(simd_float2 point);
 
@@ -101,6 +103,7 @@ namespace tree {
         ChainID nextChainId = 0;
 
         std::unique_ptr<TreeNode> elementTree;
+        std::vector<std::unique_ptr<TreeNode>> pendingDeletes;
 
         std::unordered_map<ConstraintsKey, layout::LayoutResult> layoutCache;
         std::unordered_map<size_t, SizeResult> sizeCache;

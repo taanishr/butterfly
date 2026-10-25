@@ -3653,7 +3653,7 @@ div()
     //     )
     // );
 
-    layout_test::scenes::buildBrowser();
+    // layout_test::scenes::buildBrowser();
 
     // using S = gui::Size;
 
@@ -6821,7 +6821,6 @@ div()
     //   nav items/buttons  -> color on hover
     //   banner dismiss     -> opacity + height
     // ═══════════════════════════════════════════════════════════════════
-    /*
     {
         using S = gui::Size;
         using gui::Display;
@@ -7032,7 +7031,6 @@ div()
             )
         );
     }
-    */
 
     // {
     //     using S = gui::Size;

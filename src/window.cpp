@@ -195,8 +195,12 @@ void AppDelegate::applicationWillFinishLaunching(NS::Notification* notification)
     app->setActivationPolicy(NS::ActivationPolicyRegular);
 }
 
+// we have dangling pointers here (i.e. if a node gets removed; this can point to a nonexistent node)
+// we're going to need to strengthen this in the future
 void AppDelegate::setFocused(tree::TreeNode* node) {
-    if (focused == node) return;
+    if (focused == node) {
+        return;
+    }
 
     auto* oldFocused = focused;
     focused = node;
