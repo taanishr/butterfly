@@ -71,6 +71,8 @@ namespace layout {
         InlineFlowKind kind{};
         float width{};
         float height{};
+        float ascent{};
+        float descent{};
         float leadingMargin{};
         float trailingMargin{};
         size_t elementIndex{};
@@ -90,6 +92,8 @@ namespace layout {
         size_t fragmentCount{}; // number of fragments
         float width{}; // width of line box (width of all fragments)
         float height{};
+        float ascent{};
+        float descent{};
     };
 
     struct InlineFragmentRange {
@@ -426,8 +430,8 @@ namespace layout {
     };
 
     struct LayoutBox {
-        float x, y;
-        float width, height;
+        float x{}, y{};
+        float width{}, height{};
     };
 
     // first class layout modes: every node is laid out as block or inline

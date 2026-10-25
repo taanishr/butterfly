@@ -6,6 +6,12 @@
 
 using FontName = std::string;
 
+struct FontMetrics {
+    float ascent;
+    float descent;
+    float lineHeight;
+};
+
 struct GlyphFaceHash {
     std::size_t operator()(const FontName& fontName) const;
 };
@@ -30,7 +36,8 @@ struct GlyphCache {
     const Glyph& retrieve(const GlyphQuery& glyphQuery);
     const Glyph& retrieve(const FontName& font, uint32_t glyphId);
     float lineHeight(const FontName& font);
-    
+    FontMetrics metrics(const FontName& font, float fontSize);
+
     std::shared_mutex cacheMutex;
     FT_Library ft;
     std::unordered_map<FontName, FT_Face, GlyphFaceHash> fontFaces;

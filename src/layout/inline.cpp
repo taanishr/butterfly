@@ -141,10 +141,10 @@ namespace layout {
             if (it == lineFragments.begin() || fragment.lineBoxIndex != prevLineBoxIndex) {
                 BoxFragment boxFragment;
                 boxFragment.computedBox.x = startingX;
-                boxFragment.computedInnerBox.y = newCursor.y;
-                boxFragment.computedInnerBox.height = lineBox.height;
                 boxFragment.brokenLeft = true;
                 boxFragment.brokenRight = true;
+                boxFragment.computedInnerBox.y = newCursor.y + lineBox.ascent - lineFragments.front().ascent;
+                boxFragment.computedInnerBox.height = lineFragments.front().ascent + lineFragments.front().descent;
                 lr.boxFragments.push_back(boxFragment);
             }
 
@@ -188,9 +188,8 @@ namespace layout {
             size_t atomIndex = fragment.atomStart;
             for (size_t i = 0; i < fragment.atomCount && atomIndex < atomized.atoms.size(); ++i, ++atomIndex) {
                 auto& atom = atomized.atoms[atomIndex];
-                float usedLineHeight = atom.lineHeight > 0.0f ? atom.lineHeight : atom.height;
 
-                atomOffsets[atomIndex] = newCursor + simd_float2{0.0f, (usedLineHeight - atom.height) / 2.0f};
+                atomOffsets[atomIndex] = newCursor + simd_float2{0.0f, lineBox.ascent - atom.ascent};
                 newCursor.x += atom.width;
             }
 
@@ -411,17 +410,11 @@ namespace layout {
             size_t atomIndex = fragment.atomStart;
             for (size_t i = 0; i < fragment.atomCount && atomIndex < atomized.atoms.size(); ++i, ++atomIndex) {
                 auto& atom = atomized.atoms[atomIndex];
-                float usedLineHeight = atom.lineHeight > 0.0f
-                    ? atom.lineHeight
-                    : atom.height;
 
-                atomOffsets[atomIndex] = newCursor + simd_float2{
-                    0.0f,
-                    (usedLineHeight - atom.height) / 2.0f
-                };
+                atomOffsets[atomIndex] = newCursor + simd_float2{0.0f, lineBox.ascent - atom.ascent};
                 newCursor.x += atom.width;
-                lineHeight = std::max(lineHeight, usedLineHeight);
             }
+            lineHeight = lineBox.height;
 
             currentTotalWidth += fragment.width;
 

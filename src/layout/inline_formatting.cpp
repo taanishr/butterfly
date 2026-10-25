@@ -3,6 +3,7 @@
 #include "layout/sizing.hpp"
 #include "layout/layout.hpp"
 #include "render_tree.hpp"
+#include "context_manager.hpp"
 #include "overloaded.hpp"
 #include "utf8.hpp"
 #include "text/textShaper.hpp"
@@ -231,6 +232,8 @@ namespace tree {
             size_t atomEnd = 0;
             float width = 0.0f;
             float height = 0.0f;
+            float ascent = 0.0f;
+            float descent = 0.0f;
 
             for (size_t i = runStart; i < runEnd; ++i) {
                 const auto& cluster = shapedRun.clusters[i];
@@ -240,6 +243,8 @@ namespace tree {
                     const auto& atom = atoms[cluster.glyphStart + glyph];
                     width += atom.width;
                     height = std::max(height, atom.lineHeight);
+                    ascent = std::max(ascent, atom.ascent);
+                    descent = std::max(descent, atom.descent);
                 }
             }
 
@@ -256,6 +261,8 @@ namespace tree {
                 .kind = InlineFlowKind::Text,
                 .width = width,
                 .height = height,
+                .ascent = ascent,
+                .descent = descent,
                 .atomStart = atomStart,
                 .atomCount = atomEnd - atomStart,
                 .textByteStart = byteStart,
@@ -455,9 +462,13 @@ namespace tree {
         }
 
         for (size_t f = pendingStart; f < fragments.size(); ++f) {
+            const auto& fragment = fragments[f];
+            const float halfLeading = (fragment.height - fragment.ascent - fragment.descent) / 2.0f;
             fragments[f].lineBoxIndex = currentLineBoxIndex;
-            currentLineBox.height = std::max(currentLineBox.height, fragments[f].height);
+            currentLineBox.ascent = std::max(currentLineBox.ascent, fragment.ascent + halfLeading);
+            currentLineBox.descent = std::max(currentLineBox.descent, fragment.descent + halfLeading);
         }
+        currentLineBox.height = currentLineBox.ascent + currentLineBox.descent;
 
         currentLineBox.fragmentCount += fragments.size() - pendingStart;
         currentLineBox.width += pendingWidth;
@@ -491,7 +502,8 @@ namespace tree {
         if (std::holds_alternative<float>(sizeResult.borderBoxSize.height)) {
             atoms.front().height = std::get<float>(sizeResult.borderBoxSize.height);
         }
-        
+        atoms.front().ascent = atoms.front().height;
+
         commitPendingFragments(
             widthRequest,
             availableWidth,
@@ -507,6 +519,7 @@ namespace tree {
             .kind = InlineFlowKind::Atomic,
             .width = atoms.front().width,
             .height = atoms.front().height,
+            .ascent = atoms.front().ascent,
             .atomStart = 0,
             .atomCount = atoms.size(),
             .bidiLevel = layout::ResolvedLevel{run.level},
@@ -869,7 +882,18 @@ namespace tree {
                         );
                     }
 
-                    fragments.push_back({.kind = InlineFlowKind::Open, .width = width, .leadingMargin = margin});
+                    const auto fontMetrics = runtime::ContextManager::getContext().glyphCache.metrics(
+                        child->inheritedProperties.font,
+                        child->inheritedProperties.fontSize.resolveOr(Size::px(0.0f))
+                    );
+                    fragments.push_back({
+                        .kind = InlineFlowKind::Open,
+                        .width = width,
+                        .height = fontMetrics.lineHeight * child->inheritedProperties.lineHeight,
+                        .ascent = fontMetrics.ascent,
+                        .descent = fontMetrics.descent,
+                        .leadingMargin = margin
+                    });
                     pendingWidth += margin + width;
                     lastFragmentHasBreakOpportunity = false;
                 } else if (flow[i].kind == InlineFlowKind::Placeholder) {
@@ -890,7 +914,18 @@ namespace tree {
                         width += *resolvedBorderEnd;
                     }
 
-                    fragments.push_back({.kind = InlineFlowKind::Close, .width = width, .trailingMargin = margin});
+                    const auto fontMetrics = runtime::ContextManager::getContext().glyphCache.metrics(
+                        child->inheritedProperties.font,
+                        child->inheritedProperties.fontSize.resolveOr(Size::px(0.0f))
+                    );
+                    fragments.push_back({
+                        .kind = InlineFlowKind::Close,
+                        .width = width,
+                        .height = fontMetrics.lineHeight * child->inheritedProperties.lineHeight,
+                        .ascent = fontMetrics.ascent,
+                        .descent = fontMetrics.descent,
+                        .trailingMargin = margin
+                    });
                     pendingWidth += margin + width;
                 }
 

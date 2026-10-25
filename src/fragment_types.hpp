@@ -28,6 +28,8 @@ struct Atom {
         width{0},
         height{0},
         lineHeight{0},
+        ascent{0},
+        descent{0},
         placeOnNewLine{false},
         canPlaceOnNewLine{false}
     {}
@@ -39,6 +41,8 @@ struct Atom {
     float width;
     float height;
     float lineHeight;
+    float ascent;
+    float descent;
 
     bool canPlaceOnNewLine;
     bool placeOnNewLine;

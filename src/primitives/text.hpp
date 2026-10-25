@@ -163,7 +163,6 @@ namespace elements {
     template <typename S = TextStorage, typename U = TextUniforms>
     struct TextProcessor {
         TextProcessor(UIContext& ctx):
-            glyphCache{},
             lastGlyphsBufferOffset{0},
             glyphBuffer{ctx.allocator.allocate(4096)},
             ctx{ctx}
@@ -272,8 +271,11 @@ namespace elements {
             }
 
             float scale = fontSize / BASE_PIXEL_HEIGHT;
-            float defaultLineHeight = glyphCache.lineHeight(inheritedProperties.font) / FT_PIXEL_CF * scale;
+            auto fontMetrics = ctx.glyphCache.metrics(inheritedProperties.font, fontSize);
+            float defaultLineHeight = fontMetrics.lineHeight;
             float resolvedLineHeight = defaultLineHeight * inheritedProperties.lineHeight;
+            float ascent = fontMetrics.ascent;
+            float descent = fontMetrics.descent;
 
             std::string renderedText{text};
             auto codepoints = utf8::codePoints(text);
@@ -343,6 +345,8 @@ namespace elements {
                         atom.width = 0;
                         atom.height = defaultLineHeight;
                         atom.lineHeight = resolvedLineHeight;
+                        atom.ascent = ascent;
+                        atom.descent = descent;
                         bool followsCarriageReturn = shapedGlyph.byteOffset > 0 &&
                             text[shapedGlyph.byteOffset - 1] == '\r';
                         atom.placeOnNewLine = !(codepoint == U'\n' && followsCarriageReturn);
@@ -355,7 +359,7 @@ namespace elements {
 
                     GlyphQuery glyphQuery { shapedGlyph.glyphId, inheritedProperties.font };
 
-                    const auto& glyph = glyphCache.retrieve(glyphQuery);
+                    const auto& glyph = ctx.glyphCache.retrieve(glyphQuery);
                     size_t pointsLenBytes = glyph.points.size() * sizeof(simd_float2);
                     size_t offset = 0;
 
@@ -411,6 +415,8 @@ namespace elements {
                         : glyphWidth;
                     atom.height = defaultLineHeight;
                     atom.lineHeight = resolvedLineHeight;
+                    atom.ascent = ascent;
+                    atom.descent = descent;
 
                     atoms.push_back(atom);
                 }
@@ -757,7 +763,6 @@ namespace elements {
 
         // shared glyph cache wrapper?
         // retrivial methods, stores buffer with all glyphs/ligatures, standardizes everything, etc... Turn this into a struct later
-        GlyphCache glyphCache;
         TextShaper textShaper;
         size_t lastGlyphsBufferOffset;
         std::unordered_map<GlyphQuery, size_t, GlyphQueryHash> glyphBufferOffsets;
