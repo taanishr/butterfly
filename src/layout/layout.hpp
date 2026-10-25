@@ -298,7 +298,7 @@ namespace layout {
     };
 
     struct InheritedProperties {
-        Direction direction{Direction::rtl};
+        Direction direction{Direction::ltr};
         TextAlign textAlign{TextAlign::Start};
         simd_float4 color{1, 1, 1, 1};
         std::string font{Arial};

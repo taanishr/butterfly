@@ -82,6 +82,12 @@ namespace layout {
 
         lr.prevInlineHeight = constraints.prevInlineHeight;
 
+        lr.childConstraints = constraints;
+        lr.childConstraints.edgeIntent = {
+            .edgeDisplayMode = Display::Inline,
+            .collapsable = false,
+        };
+
         size_t fragmentIdx = 0;
         for (auto it = lineFragments.begin(); it != lineFragments.end(); ++it, ++fragmentIdx) {
             const LineFragment& fragment = *it;
@@ -156,6 +162,7 @@ namespace layout {
                             lr.boxFragments.back().brokenRight = false;
                         }
                     }
+                    lr.childConstraints.cursor = newCursor;
                     break;
                 }
                 case InlineFlowKind::Close: {
@@ -300,7 +307,6 @@ namespace layout {
         // lr.childConstraints.availableWidth = Size::px(totalWidth - paddingLeft - paddingRight);
         // lr.childConstraints.availableHeight = Size::px(totalHeight - paddingTop - paddingBottom);
         // lr.childConstraints.frameInfo = constraints.frameInfo;
-        lr.childConstraints = constraints;
 
         lr.atomOffsets = atomOffsets;
 
