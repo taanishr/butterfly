@@ -71,9 +71,7 @@ namespace layout {
         float width{};
         float height{};
         float leadingMargin{};
-        float leadingPadding{};
         float trailingMargin{};
-        float trailingPadding{};
         size_t elementIndex{};
         size_t elementFragmentIndex{};
         size_t elementFragmentCount{};
@@ -546,12 +544,7 @@ namespace layout {
         { state.drawableAtomOffsets } -> std::same_as<std::vector<simd_float2>&>;
         { state.inlineFormatting } -> std::same_as<InlineFormattingInput&>;
         { state.prevInlineHeight } -> std::same_as<float&>;
-        { state.computedBox } -> std::same_as<LayoutBox&>;
-        { state.localComputedBox } -> std::same_as<LayoutBox&>;
-        { state.computedPaddingBox } -> std::same_as<LayoutBox&>;
-        { state.localComputedPaddingBox } -> std::same_as<LayoutBox&>;
-        { state.computedInnerBox } -> std::same_as<LayoutBox&>;
-        { state.localComputedInnerBox } -> std::same_as<LayoutBox&>;
+        { state.boxFragments } -> std::same_as<std::vector<BoxFragment>&>;
         { state.childConstraints } -> std::same_as<Constraints&>;
         { state.siblingCursor } -> std::same_as<simd_float2&>;
         { state.outOfFlow } -> std::same_as<bool&>;

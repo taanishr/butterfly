@@ -450,8 +450,8 @@ namespace tree {
             float offset = 0.0f;
 
             for (auto* fragment : visual) {
-                fragment->offset = isLtr ? offset + fragment->leadingMargin + fragment->leadingPadding : offset + fragment->trailingMargin + fragment->trailingPadding;
-                offset += fragment->leadingMargin + fragment->leadingPadding + fragment->width + fragment->trailingPadding + fragment->trailingMargin;
+                fragment->offset = isLtr ? offset + fragment->leadingMargin : offset + fragment->trailingMargin;
+                offset += fragment->leadingMargin + fragment->width + fragment->trailingMargin;
             }
         }
     }
@@ -577,7 +577,6 @@ namespace tree {
         WhiteSpace whiteSpace,
         WordBreak wordBreak,
         ResolvedMargins margins,
-        const PaddingResult& padding,
         bool isLtr,
         const SizeState& availableWidth,
         std::optional<IntrinsicRequest> widthRequest,
@@ -591,8 +590,6 @@ namespace tree {
     ) {
         const float marginStart = isLtr ? margins.left : margins.right;
         const float marginEnd = isLtr ? margins.right : margins.left;
-        const auto* paddingStart = std::get_if<float>(isLtr ? &padding.left : &padding.right);
-        const auto* paddingEnd = std::get_if<float>(isLtr ? &padding.right : &padding.left);
 
         const bool preserveLineFeeds = whiteSpace == WhiteSpace::Pre ||  whiteSpace == WhiteSpace::PreWrap;
         const bool allowSoftWrap = whiteSpace == WhiteSpace::Normal || whiteSpace == WhiteSpace::PreWrap;
@@ -601,10 +598,6 @@ namespace tree {
         float runningWidth = marginStart;
         float runningEdge = marginStart;
 
-        if (paddingStart) {
-            runningWidth += *paddingStart;
-            runningEdge += *paddingStart;
-        }
         size_t runningAtomCount = 0;
         size_t runningClusterStart = 0;
         size_t idx = 0;
@@ -624,11 +617,6 @@ namespace tree {
                 if (idx + 1 >= shapedRun.clusters.size()) {
                     runningWidth += marginEnd;
                     runningEdge += marginEnd;
-
-                    if (paddingEnd) {
-                        runningWidth += *paddingEnd;
-                        runningEdge += *paddingEnd;
-                    }
                 }
 
                 runningAtomCount += cluster.glyphCount;
@@ -686,11 +674,6 @@ namespace tree {
                 if (idx + 1 >= shapedRun.clusters.size()) {
                     runningWidth += marginEnd;
                     runningEdge += marginEnd;
-
-                    if (paddingEnd) {
-                        runningWidth += *paddingEnd;
-                        runningEdge += *paddingEnd;
-                    }
                 }
 
                 if (lastFragmentHasBreakOpportunity) {
@@ -745,11 +728,6 @@ namespace tree {
             if (idx >= shapedRun.clusters.size()) {
                 runningWidth += marginEnd;
                 runningEdge += marginEnd;
-
-                if (paddingEnd) {
-                    runningWidth += *paddingEnd;
-                    runningEdge += *paddingEnd;
-                }
             }
 
             if (lastFragmentHasBreakOpportunity) {
@@ -785,11 +763,6 @@ namespace tree {
         if (runningAtomCount > 0) {
             runningWidth += marginEnd;
             runningEdge += marginEnd;
-
-            if (paddingEnd) {
-                runningWidth += *paddingEnd;
-                runningEdge += *paddingEnd;
-            }
 
             if (lastFragmentHasBreakOpportunity) {
                 commitPendingFragments(
@@ -837,11 +810,8 @@ namespace tree {
             auto textResp = getText(node);
             ResolvedMargins margins {};
             auto& atoms = node->atomized->atoms;
-            PaddingResult padding {};
 
             if (textResp.has_value()) {
-                padding = resolvePadding(request);
-
                 appendTextLineFragments(
                     *textResp,
                     *getShapedRun(node),
@@ -849,7 +819,6 @@ namespace tree {
                     getWhiteSpace(node).value_or(WhiteSpace::Normal),
                     getWordBreak(node).value_or(WordBreak::Normal),
                     margins,
-                    padding,
                     isLtr,
                     availableWidth,
                     sizing.widthRequest,
@@ -881,23 +850,12 @@ namespace tree {
                 );
             }
 
-            const auto* paddingStart = std::get_if<float>(isLtr ? &padding.left : &padding.right);
-            const auto* paddingEnd = std::get_if<float>(isLtr ? &padding.right : &padding.left);
-
             for (size_t f = 0; f < fragments.size(); ++f) {
                 fragments[f].elementIndex = 0;
                 fragments[f].elementFragmentIndex = f;
                 fragments[f].elementFragmentCount = fragments.size();
                 fragments[f].leadingMargin = isLtr ? margins.left : margins.right;
                 fragments[f].trailingMargin = isLtr ? margins.right : margins.left;
-
-                if (paddingStart) {
-                    fragments[f].leadingPadding = *paddingStart;
-                }
-
-                if (paddingEnd) {
-                    fragments[f].trailingPadding = *paddingEnd;
-                }
             }
         }
 
@@ -1039,7 +997,6 @@ namespace tree {
                         getWhiteSpace(child).value_or(WhiteSpace::Normal),
                         getWordBreak(child).value_or(WordBreak::Normal),
                         ResolvedMargins{},
-                        PaddingResult{},
                         isLtr,
                         availableWidth,
                         sizing.widthRequest,
@@ -1070,10 +1027,20 @@ namespace tree {
                         lastFragmentHasBreakOpportunity
                     );
                 } else if (flow[i].kind == InlineFlowKind::Open) {
-                    const auto edgePadding = resolvePadding(childRequest);
-                    const auto* edgePaddingStart = std::get_if<float>(isLtr ? &edgePadding.left : &edgePadding.right);
+                    const auto padding = resolvePadding(childRequest);
+                    const auto border = resolveBorder(childRequest);
+                    const auto* resolvedPaddingStart = std::get_if<float>(isLtr ? &padding.left : &padding.right);
+                    const auto* resolvedBorderStart = std::get_if<float>(isLtr ? &border.left : &border.right);
                     const float margin = isLtr ? margins.left : margins.right;
-                    const float padding = edgePaddingStart ? *edgePaddingStart : 0.0f;
+                    float width = 0.0f;
+
+                    if (resolvedPaddingStart) {
+                        width += *resolvedPaddingStart;
+                    }
+
+                    if (resolvedBorderStart) {
+                        width += *resolvedBorderStart;
+                    }
 
                     if (lastFragmentHasBreakOpportunity) {
                         commitPendingFragments(
@@ -1088,19 +1055,29 @@ namespace tree {
                         );
                     }
 
-                    fragments.push_back({.kind = InlineFlowKind::Open, .width = padding, .leadingMargin = margin});
-                    pendingWidth += margin + padding;
+                    fragments.push_back({.kind = InlineFlowKind::Open, .width = width, .leadingMargin = margin});
+                    pendingWidth += margin + width;
                     lastFragmentHasBreakOpportunity = false;
                 } else if (flow[i].kind == InlineFlowKind::Placeholder) {
                     fragments.push_back({.kind = InlineFlowKind::Placeholder, .bidiLevel = layout::InheritedLevel{}});
                 } else if (flow[i].kind == InlineFlowKind::Close) {
-                    const auto edgePadding = resolvePadding(childRequest);
-                    const auto* edgePaddingEnd = std::get_if<float>(isLtr ? &edgePadding.right : &edgePadding.left);
+                    const auto padding = resolvePadding(childRequest);
+                    const auto border = resolveBorder(childRequest);
+                    const auto* resolvedPaddingEnd = std::get_if<float>(isLtr ? &padding.right : &padding.left);
+                    const auto* resolvedBorderEnd = std::get_if<float>(isLtr ? &border.right : &border.left);
                     const float margin = isLtr ? margins.right : margins.left;
-                    const float padding = edgePaddingEnd ? *edgePaddingEnd : 0.0f;
+                    float width = 0.0f;
 
-                    fragments.push_back({.kind = InlineFlowKind::Close, .width = padding, .trailingMargin = margin});
-                    pendingWidth += margin + padding;
+                    if (resolvedPaddingEnd) {
+                        width += *resolvedPaddingEnd;
+                    }
+
+                    if (resolvedBorderEnd) {
+                        width += *resolvedBorderEnd;
+                    }
+
+                    fragments.push_back({.kind = InlineFlowKind::Close, .width = width, .trailingMargin = margin});
+                    pendingWidth += margin + width;
                 }
 
                 const size_t childFragmentCount = fragments.size() - childFragmentStart;
