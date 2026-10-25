@@ -283,49 +283,6 @@ namespace tree {
         std::vector<LineFragment*> visual;
         visual.reserve(context.fragments.size());
 
-        /*
-            what do we need to do here?
-            we need to:
-                make atomics + text leaf nodes
-            add:
-                inline containers
-            
-            logical vs visual order:
-                we separate out things into lines based on logical order
-                once we have that, we have completed lines in logical order
-                (logical order is one that has not been reordered in bidi order)
-                we then reorder these nodes according to bidi order
-                this does not change the size of the lines
-                afterwards, we add padding to the visual first/last element
-
-            problems:
-                this *worked*, but didnt allow for nested inline structures
-
-            ok, what changes with nesting?
-                we need to introduce containers vs leafs
-                we dont want to consider mixing content and childrne
-                but then: how do we make containers behave? we dont want span-specific ideas
-
-                the other problem: what about spans across line boxes?
-                do we need to carry state across invocations? thats so ugly
-
-                additionally, after reordering, our order of spans may change; so a stack doesnt *necessarily* make sense
-
-                logical order
-                <a>content</a><b>content</b>
-                    init stack with a open, a close, b open, b close
-                visual reordering
-                <b>content</b><a>content</a>
-
-                and when pushing opens/closes, what we'll problematically do is push the a ones with the b content because our stack is out of order
-        
-                so theres this idea:
-                    we'll track containers as a separate thing, and opens and closes
-                    we'll use some stack esque structure
-                    we'll still keep fragment reordering
-                    instead of attaching padidng, we'll use edge fragments
-        */
-
         for (size_t lineIndex = 0; lineIndex < context.lineBoxes.size(); ++lineIndex) {
             auto& lineBox = context.lineBoxes[lineIndex];
             fragments.clear();

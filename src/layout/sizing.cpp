@@ -102,6 +102,7 @@ auto calculateSize(const SizeState& size, const SizeState& available) -> SizeSta
         [&](const style::Size& size) -> SizeState {
             switch (size.unit) {
                 case style::Unit::Px:
+                    return size.value;
                 case style::Unit::Pt:
                     return size.value;
                 case style::Unit::Auto:

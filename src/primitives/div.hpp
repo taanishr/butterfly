@@ -269,8 +269,11 @@ namespace elements {
         template <LayoutStateType L>
         Atomized postLayout(Fragment<S>& fragment, Constraints&, SharedDescriptor& shared, DivDescriptor& desc, Atomized& atomized, L& layout) {
             std::vector<Atom> atoms {};
+            std::vector<simd_float2> atomOffsets {};
 
             for (const auto& boxFragment : layout.boxFragments) {
+                atomOffsets.push_back(simd_float2{boxFragment.computedBox.x, boxFragment.computedBox.y});
+
                 // get measurements
                 float width = boxFragment.computedBox.width;
                 float height = boxFragment.computedBox.height;
@@ -286,12 +289,14 @@ namespace elements {
                 atoms.push_back(atom);
             }
 
+            layout.atomOffsets = std::move(atomOffsets);
+
             return Atomized{
                 .id = fragment.id,
                 .atoms = std::move(atoms)
             };
         }
-        
+
         template <LayoutStateType L>
         Placed place(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, DivDescriptor& desc, Atomized& atomized, L& lr)
         {

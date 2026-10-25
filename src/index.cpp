@@ -6821,6 +6821,7 @@ div()
     //   nav items/buttons  -> color on hover
     //   banner dismiss     -> opacity + height
     // ═══════════════════════════════════════════════════════════════════
+    /*
     {
         using S = gui::Size;
         using gui::Display;
@@ -7031,6 +7032,7 @@ div()
             )
         );
     }
+    */
 
     // {
     //     using S = gui::Size;
@@ -7121,4 +7123,274 @@ div()
     //         appendRow(text("hello"))
     //     );
     // }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // Inline line boxes: one inline box (span) split across several line
+    // boxes of different widths.
+    //   first/last fragments start/end mid-line
+    //   padding, border, margin only on the unbroken sides
+    //   text-align shifting every line, nesting, mixed line heights
+    //   wrapping spans next to anonymous flex/grid items
+    // Browser reference: tests/layout/web/src/app/inline-line-boxes/page.tsx
+    // ═══════════════════════════════════════════════════════════════════
+    {
+        using S = gui::Size;
+
+        const auto ink = simd_float4{0.96,0.97,1.0,1.0};
+        const auto dark = simd_float4{0.078,0.090,0.110,1.0};
+        const auto panel = simd_float4{0.15,0.16,0.20,1.0};
+        const auto yellow = simd_float4{0.98,0.76,0.20,1.0};
+        const auto blue = simd_float4{0.45,0.80,0.98,1.0};
+        const auto pink = simd_float4{0.96,0.30,0.46,1.0};
+        const auto green = simd_float4{0.38,0.92,0.56,1.0};
+        const auto purple = simd_float4{0.64,0.42,0.96,1.0};
+        const auto cyan = simd_float4{0.08,0.72,0.86,1.0};
+
+        const auto label = [&](const char* s) {
+            return elements::span()
+                .font(Arial)
+                .fontSize(S::pt(12))
+                .color(green)(text(s));
+        };
+
+        const auto box = [&](float width) {
+            return div(S::px(width), S::autoSize(), panel)
+                .font(Arial)
+                .fontSize(S::pt(18))
+                .color(ink);
+        };
+
+        const auto testCase = [&](const char* name, auto content) {
+            return div()
+                .display(gui::Display::Flex)
+                .flexDirection(gui::FlexDirection::Col)
+                .alignItems(gui::AlignItems::FlexStart)
+                .flexGap(S::px(6))
+            (
+                label(name),
+                content
+            );
+        };
+
+        const auto column = [&]() {
+            return div(S::px(320), S::autoSize(), simd_float4{0.0,0.0,0.0,0.0})
+                .flexShrink(S::px(0))
+                .display(gui::Display::Flex)
+                .flexDirection(gui::FlexDirection::Col)
+                .alignItems(gui::AlignItems::FlexStart)
+                .flexGap(S::px(20));
+        };
+
+        const auto ladderRow = [&](float width) {
+            return box(width)
+            (
+                text("ab "),
+                elements::span()
+                    .backgroundColor(purple)
+                    .color(dark)
+                    .borderColor(yellow)
+                    .borderLeftWidth(S::px(4))
+                    .borderRightWidth(S::px(4))(text("inline box breaking at different points")),
+                text(" cd")
+            );
+        };
+
+        div(S::percent(1.0), S::percent(1.0), simd_float4{0.06,0.07,0.09,1.0})
+            .display(gui::Display::Flex)
+            .alignItems(gui::AlignItems::FlexStart)
+            .padding(S::px(24))
+            .flexGap(S::px(24))
+            .overflow(gui::Overflow::Scroll)
+        (
+            column()
+            (
+                testCase("BACKGROUND, STARTS AND ENDS MID-LINE", box(260)
+                (
+                    text("lead in "),
+                    elements::span()
+                        .backgroundColor(yellow)
+                        .color(dark)(text("this inline box wraps across several line boxes of different widths")),
+                    text(" and a tail")
+                )),
+
+                testCase("PADDING 12 + BORDER 3, FIRST/LAST EDGES ONLY", box(260)
+                (
+                    text("lead in "),
+                    elements::span()
+                        .backgroundColor(blue)
+                        .color(dark)
+                        .paddingLeft(S::px(12))
+                        .paddingRight(S::px(12))
+                        .paddingTop(S::px(2))
+                        .paddingBottom(S::px(2))
+                        .borderColor(pink)
+                        .borderWidth(S::px(3))(text("padding and border split at every line break")),
+                    text(" tail")
+                )),
+
+                testCase("MARGIN 24 BOTH SIDES, FIRST/LAST ONLY", box(260)
+                (
+                    text("lead"),
+                    elements::span()
+                        .backgroundColor(green)
+                        .color(dark)
+                        .marginLeft(S::px(24))
+                        .marginRight(S::px(24))(text("margins apply to the first and last fragment")),
+                    text("tail")
+                )),
+
+                testCase("TEXT-ALIGN CENTER", box(260).textAlign(gui::TextAlign::Center)
+                (
+                    text("centered "),
+                    elements::span()
+                        .backgroundColor(yellow)
+                        .color(dark)
+                        .paddingLeft(S::px(6))
+                        .paddingRight(S::px(6))(text("each fragment shifts with its own line box width")),
+                    text(" end")
+                )),
+
+                testCase("TEXT-ALIGN RIGHT", box(260).textAlign(gui::TextAlign::Right)
+                (
+                    text("right "),
+                    elements::span()
+                        .backgroundColor(pink)
+                        .color(dark)
+                        .borderColor(ink)
+                        .borderWidth(S::px(2))(text("right aligned fragments of one inline box")),
+                    text(" end")
+                )),
+
+                testCase("CLICK TO GROW, FRAGMENTS REFLOW", box(260)
+                (
+                    text("lead "),
+                    elements::span()
+                        .backgroundColor(cyan)
+                        .color(dark)
+                        .paddingLeft(S::px(8))
+                        .paddingRight(S::px(8))
+                    (
+                        text("click me to grow")
+                            .addEventListener(runtime::EventType::MouseDown, [](auto& node, Event&) {
+                                node.text(node.text() + " and grow");
+                            })
+                    ),
+                    text(" tail")
+                )),
+
+                testCase("BIDI: RTL WORDS INSIDE A WRAPPING SPAN", box(260)
+                (
+                    text("lead "),
+                    elements::span()
+                        .backgroundColor(cyan)
+                        .color(dark)
+                        .paddingLeft(S::px(8))
+                        .paddingRight(S::px(8))(text("alpha שלום עולם beta gamma שלום delta")),
+                    text(" tail")
+                ))
+            ),
+            column()
+            (
+                testCase("NESTED: BOTH OUTER AND INNER WRAP", box(280)
+                (
+                    text("start "),
+                    elements::span()
+                        .backgroundColor(blue)
+                        .color(dark)
+                        .paddingLeft(S::px(8))
+                        .paddingRight(S::px(8))
+                    (
+                        text("outer opens here and "),
+                        elements::span()
+                            .backgroundColor(pink)
+                            .borderColor(yellow)
+                            .borderWidth(S::px(2))(text("the inner span also breaks across lines")),
+                        text(" then outer closes")
+                    ),
+                    text(" end")
+                )),
+
+                testCase("MIXED FONT SIZES, UNEVEN LINE HEIGHTS", box(280)
+                (
+                    elements::span()
+                        .backgroundColor(green)
+                        .color(dark)
+                        .fontSize(S::pt(14))
+                    (
+                        text("small words then "),
+                        elements::span().fontSize(S::pt(28))(text("Large words")),
+                        text(" and small again, wrapping onward")
+                    )
+                )),
+
+                testCase("ADJACENT WRAPPING SPANS", box(280)
+                (
+                    elements::span()
+                        .backgroundColor(yellow)
+                        .color(dark)(text("first span wraps over a line ")),
+                    elements::span()
+                        .backgroundColor(blue)
+                        .color(dark)(text("second span picks up mid-line and wraps"))
+                )),
+
+                testCase("WIDTH LADDER 120 / 170 / 220", div()
+                    .display(gui::Display::Flex)
+                    .flexDirection(gui::FlexDirection::Col)
+                    .alignItems(gui::AlignItems::FlexStart)
+                    .flexGap(S::px(8))
+                (
+                    ladderRow(120),
+                    ladderRow(170),
+                    ladderRow(220)
+                )),
+
+                // anonymous item: the two text runs merge into one item and shrink to the leftover width
+                testCase("FLEX: ANONYMOUS ITEM + WRAPPING SPAN ITEM", div(S::px(300), S::autoSize(), panel)
+                    .display(gui::Display::Flex)
+                    .flexGap(S::px(10))
+                    .padding(S::px(8))
+                    .font(Arial)
+                    .fontSize(S::pt(14))
+                    .color(ink)
+                (
+                    text("anonymous item "),
+                    text("text wraps in its own box"),
+                    div(S::px(170), S::autoSize(), simd_float4{0.22,0.23,0.28,1.0})
+                        .flexShrink(S::px(0))
+                    (
+                        text("lead "),
+                        elements::span()
+                            .backgroundColor(yellow)
+                            .color(dark)
+                            .paddingLeft(S::px(6))
+                            .paddingRight(S::px(6))(text("wrapping span inside a flex item")),
+                        text(" tail")
+                    )
+                )),
+
+                testCase("GRID: ANONYMOUS CELL + WRAPPING SPAN CELL", div(S::px(300), S::autoSize(), panel)
+                    .display(gui::Display::Grid)
+                    .gridTemplateColumns({S::fr(1.0), S::fr(1.0)})
+                    .gridColumnGap(S::px(10))
+                    .padding(S::px(8))
+                    .font(Arial)
+                    .fontSize(S::pt(14))
+                    .color(ink)
+                (
+                    text("anonymous "),
+                    text("cell text wraps too"),
+                    div()
+                    (
+                        text("cell "),
+                        elements::span()
+                            .backgroundColor(pink)
+                            .color(dark)
+                            .borderColor(ink)
+                            .borderWidth(S::px(2))(text("span wraps in the grid cell")),
+                        text(" end")
+                    )
+                ))
+            )
+        );
+    }
 }
