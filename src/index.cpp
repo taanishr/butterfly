@@ -21,9 +21,9 @@ auto index() -> void {
         count += 1;
 
         if (count % 2 == 0) {
-            node.color(simd_float4{1.0,0.0,0.0,1.0});
+            node.backgroundColor(simd_float4{1.0,0.0,0.0,1.0});
         }else {
-            node.color(simd_float4{0.0,0.0,1.0,1.0});
+            node.backgroundColor(simd_float4{0.0,0.0,1.0,1.0});
         }
     };
 
@@ -5158,17 +5158,17 @@ div()
                 .alignItems(gui::AlignItems::FlexStart)
                 .flexGap(S::px(6))
             (
-                text(label)
+                elements::span()
                     .font(Arial)
                     .fontSize(S::pt(12))
-                    .color(simd_float4{0.38,0.92,0.56,1.0}),
+                    .color(simd_float4{0.38,0.92,0.56,1.0})(text(label)),
                 div(S::autoSize(), S::autoSize(), simd_float4{0.15,0.16,0.20,1.0})
                 (
                     configure(
-                        text(content)
+                        elements::span()
                             .font(Arial)
                             .fontSize(S::pt(18))
-                            .color(simd_float4{0.98,0.76,0.20,1.0})
+                            .color(simd_float4{0.98,0.76,0.20,1.0})(text(content))
                     )
                 )
             );
@@ -5181,23 +5181,23 @@ div()
                 .alignItems(gui::AlignItems::FlexStart)
                 .flexGap(S::px(6))
             (
-                text(label)
+                elements::span()
                     .font(Arial)
                     .fontSize(S::pt(12))
-                    .color(simd_float4{0.38,0.92,0.56,1.0}),
+                    .color(simd_float4{0.38,0.92,0.56,1.0})(text(label)),
                 div(S::autoSize(), S::autoSize(), simd_float4{0.15,0.16,0.20,1.0})
                 (
                     configureFirst(
-                        text("alpha")
+                        elements::span()
                             .font(Arial)
                             .fontSize(S::pt(18))
-                            .color(simd_float4{0.98,0.76,0.20,1.0})
+                            .color(simd_float4{0.98,0.76,0.20,1.0})(text("alpha"))
                     ),
                     configureSecond(
-                        text("beta")
+                        elements::span()
                             .font(Arial)
                             .fontSize(S::pt(18))
-                            .color(simd_float4{0.45,0.80,0.98,1.0})
+                            .color(simd_float4{0.45,0.80,0.98,1.0})(text("beta"))
                     )
                 )
             );
@@ -5219,10 +5219,10 @@ div()
             .flexGap(S::px(20))
             .overflow(gui::Overflow::Scroll)
         (
-            text("INLINE MARGINS ON MULTI WORD TEXT")
+            elements::span()
                 .font(Arial)
                 .fontSize(S::pt(22))
-                .color(simd_float4{0.96,0.97,1.0,1.0}),
+                .color(simd_float4{0.96,0.97,1.0,1.0})(text("INLINE MARGINS ON MULTI WORD TEXT")),
 
             marginRow("LATIN, NO MARGIN (CONTROL)", latin, [](auto t) { return t; }),
             marginRow("LATIN, MARGIN RIGHT 20", latin, [&](auto t) { return t.marginRight(S::px(20)); }),
@@ -5265,17 +5265,17 @@ div()
                 .alignItems(gui::AlignItems::FlexStart)
                 .flexGap(S::px(6))
             (
-                text(label)
+                elements::span()
                     .font(Arial)
                     .fontSize(S::pt(12))
-                    .color(simd_float4{0.38,0.92,0.56,1.0}),
+                    .color(simd_float4{0.38,0.92,0.56,1.0})(text(label)),
                 div(S::autoSize(), S::autoSize(), simd_float4{0.15,0.16,0.20,1.0})
                 (
                     configure(
-                        text(content)
+                        elements::span()
                             .font(Arial)
                             .fontSize(S::pt(18))
-                            .color(simd_float4{0.98,0.76,0.20,1.0})
+                            .color(simd_float4{0.98,0.76,0.20,1.0})(text(content))
                     )
                 )
             );
@@ -5293,10 +5293,10 @@ div()
             .flexGap(S::px(20))
             .overflow(gui::Overflow::Scroll)
         (
-            text("INLINE PADDING ON MULTI WORD TEXT")
+            elements::span()
                 .font(Arial)
                 .fontSize(S::pt(22))
-                .color(simd_float4{0.96,0.97,1.0,1.0}),
+                .color(simd_float4{0.96,0.97,1.0,1.0})(text("INLINE PADDING ON MULTI WORD TEXT")),
 
             paddingRow("LATIN, NO PADDING (CONTROL)", latin, [](auto t) { return t; }),
             paddingRow("LATIN, PADDING RIGHT 20", latin, [&](auto t) { return t.paddingRight(S::px(20)); }),

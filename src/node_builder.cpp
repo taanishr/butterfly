@@ -52,22 +52,17 @@ namespace elements {
         return builder;
     }
 
-    NodeBuilder<Text<TextStorage>, TextProcessor<TextStorage, TextUniforms>> text(const std::string& text,
-                 Size fontSize, simd_float4 color,
-                 const std::string& font)
+    NodeBuilder<Text<TextStorage>, TextProcessor<TextStorage, TextUniforms>> text(const std::string& text)
     {
         auto& ctx = ContextManager::getContext();
         auto& proc = getTextProcessor(ctx);
         Text elem{ctx};
         auto& desc = elem.getDescriptor();
         desc.text = text;
-        desc.fontSize = fontSize;
-        desc.font = font;
 
         auto currTree = TreeStack::getCurrentTree();
         auto builder = NodeBuilder(ctx, *currTree, std::move(elem), proc);
-        builder.display(Display::Inline);
-        builder.color(color);
+        builder.treeNode()->shared.display = Display::Inline;
         return builder;
     }
 
