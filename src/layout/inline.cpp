@@ -116,10 +116,6 @@ namespace layout {
 
             newCursor.x = startingX;
 
-            if (it == lineFragments.begin()) {
-                totalHeight = lineBoxes[fragment.lineBoxIndex].height;
-            }
-
             if (fragmentIdx == 0 && !placedByParent && constraints.edgeIntent.edgeDisplayMode != Display::Inline) {
                 if (constraints.edgeIntent.collapsable) {
                     newCursor.y += std::max(margins.top, constraints.edgeIntent.intent);
@@ -128,17 +124,22 @@ namespace layout {
                 }
             }
 
-            if (fragment.lineBoxIndex != prevLineBoxIndex &&
-                prevLineBoxIndex != -1
-            ) {
+            // did we move to a new line
+                // true if indices dont match and the line box index is -1
+                // including on first line
+            if (fragment.lineBoxIndex != prevLineBoxIndex && prevLineBoxIndex != -1) 
+            {
                 newCursor.y += lineBoxes[prevLineBoxIndex].height;
-                totalHeight += lineBoxes[fragment.lineBoxIndex].height;
                 newCursor.x = startingX;
                 totalWidth = std::max(currentTotalWidth, totalWidth);
                 currentTotalWidth = 0;
             }
 
+            // do we need a new box fragment
+                // true on every line and true when we're the starting fragments
             if (it == lineFragments.begin() || fragment.lineBoxIndex != prevLineBoxIndex) {
+                totalHeight += lineBox.height;
+
                 BoxFragment boxFragment;
                 boxFragment.computedBox.x = startingX;
                 boxFragment.brokenLeft = true;
