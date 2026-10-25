@@ -35,7 +35,20 @@ namespace elements {
         auto builder = NodeBuilder(ctx, *currTree, std::move(elem), proc);
         builder.width(width);
         builder.height(height);
-        builder.color(color);
+        builder.backgroundColor(color);
+        return builder;
+    }
+
+    NodeBuilder<Div<DivStorage>, DivProcessor<DivStorage, DivUniforms>> span()
+    {
+        auto& ctx = ContextManager::getContext();
+        auto& proc = getDivProcessor(ctx);
+        Div elem {ctx};
+
+        auto currTree = TreeStack::getCurrentTree();
+
+        auto builder = NodeBuilder(ctx, *currTree, std::move(elem), proc);
+        builder.display(Display::Inline);
         return builder;
     }
 

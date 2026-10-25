@@ -118,6 +118,7 @@ namespace elements {
     template <typename S = ImageStorage>
     struct Image {
         static constexpr std::string_view elementName = "Image";
+        static constexpr bool isLeaf = true;
 
         Image(UIContext& ctx):
             desc{},

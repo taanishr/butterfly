@@ -180,21 +180,11 @@ namespace tree {
     }
 
     std::optional<WhiteSpace> getWhiteSpace(TreeNode* node) {
-        std::any request{DescriptorPayload{GetField{.name = "whiteSpace"}}};
-        auto resp = node->element->request(RequestTarget::Descriptor, request);
-        if (resp.has_value()) {
-            return std::any_cast<WhiteSpace>(resp);
-        }
-        return std::nullopt;
+        return node->inheritedProperties.whiteSpace;
     }
 
     std::optional<WordBreak> getWordBreak(TreeNode* node) {
-        std::any request{DescriptorPayload{GetField{.name = "wordBreak"}}};
-        auto resp = node->element->request(RequestTarget::Descriptor, request);
-        if (resp.has_value()) {
-            return std::any_cast<WordBreak>(resp);
-        }
-        return std::nullopt;
+        return node->inheritedProperties.wordBreak;
     }
 
     ShapedRun* getShapedRun(TreeNode* node) {

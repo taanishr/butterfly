@@ -359,7 +359,7 @@ namespace elements {
 
             // push style uniforms
             DivUniforms uniforms{
-                .color = constraints.color,
+                .color = constraints.backgroundColor,
                 .cornerRadius = cornerRadius,
                 .border = { .widths = borderWidths, .color = shared.border.color, .style = shared.border.style },
                 .shadow = shadow,

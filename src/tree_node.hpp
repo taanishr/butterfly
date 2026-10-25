@@ -219,7 +219,8 @@ namespace tree {
         Size getWidth() const { return shared.width; }
         Size getHeight() const { return shared.height; }
         float getOpacity() const { return shared.opacity; }
-        simd_float4 getColor() const { return shared.color; }
+        simd_float4 getBackgroundColor() const { return shared.backgroundColor; }
+        simd_float4 getColor() const { return shared.color.value_or(effectiveColor); }
         simd_float3x3 getTransform() const { return shared.transform.value_or(matrix_identity_float3x3); }
         Size getMarginTop() const { return shared.marginTop.value_or(shared.margin); }
         Size getMarginBottom() const { return shared.marginBottom.value_or(shared.margin); }
@@ -268,6 +269,7 @@ namespace tree {
         SharedDescriptor shared;
         std::array<std::optional<animation::AnimationState>, animation::Animatable::Count> animations;
         std::optional<Display> computedDisplay;
+        layout::InheritedProperties inheritedProperties{};
         DirtyBits dirtySelf{~DirtyBits::None};
         DirtyBits dirtySubtree{~DirtyBits::None};
         std::optional<ConstraintsKey> constraintsKey;
@@ -275,6 +277,7 @@ namespace tree {
         simd_float3x3 transform {matrix_identity_float3x3};
         simd_float3x3 inverseTransform {matrix_identity_float3x3};
         float effectiveOpacity{1.0f};
+        simd_float4 effectiveColor{1, 1, 1, 1};
     private:
         static uint64_t nextId;
     };

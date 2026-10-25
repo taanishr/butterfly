@@ -10,6 +10,7 @@
 #include "printers.hpp"
 #include "metal_imports.hpp"
 #include "frame_info.hpp"
+#include "fonts.hpp"
 #include "layout/sizing.hpp"
 #include "style.hpp"
 #include "text/text_bidi.hpp"
@@ -277,6 +278,8 @@ namespace layout {
     using style::Size;
     using style::TextOverflow;
     using style::TextAlign;
+    using style::WhiteSpace;
+    using style::WordBreak;
 
     struct EdgeIntent {
         Display edgeDisplayMode{Display::Block};
@@ -295,8 +298,14 @@ namespace layout {
     };
 
     struct InheritedProperties {
-        Direction direction{Direction::ltr};
+        Direction direction{Direction::rtl};
         TextAlign textAlign{TextAlign::Start};
+        simd_float4 color{1, 1, 1, 1};
+        std::string font{Arial};
+        Size fontSize{Size::pt(24.0f)};
+        float lineHeight{1.0f};
+        WhiteSpace whiteSpace{WhiteSpace::Normal};
+        WordBreak wordBreak{WordBreak::Normal};
     };
 
     struct ContainingBlock {
@@ -360,7 +369,7 @@ namespace layout {
 
         simd_float3x3 transform {matrix_identity_float3x3};
         float opacity{1.0f};
-        simd_float4 color{0, 0, 0, 0};
+        simd_float4 backgroundColor{0, 0, 0, 0};
     };
 
     struct LayoutInput {

@@ -128,6 +128,7 @@ namespace elements {
     template <typename S = SVGStorage>
     struct SVG {
         static constexpr std::string_view elementName = "SVG";
+        static constexpr bool isLeaf = true;
 
         SVG(UIContext& ctx):
             desc{},

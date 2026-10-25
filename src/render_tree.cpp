@@ -158,6 +158,7 @@ namespace tree {
                 return DirtyBits::PostLayout | DirtyBits::Finalize;
             case animation::Animatable::Opacity:
                 return DirtyBits::PostLayout | DirtyBits::Finalize | DirtyBits::PaintOrder;
+            case animation::Animatable::BackgroundColor:
             case animation::Animatable::Color:
                 return DirtyBits::Finalize;
         }
@@ -203,6 +204,10 @@ namespace tree {
         hashSize(constraints.availableHeight, hash);
         hash_combine(hash, static_cast<int>(constraints.inheritedProperties.direction));
         hash_combine(hash, static_cast<int>(constraints.inheritedProperties.textAlign));
+        hash_combine(hash, constraints.inheritedProperties.color.x);
+        hash_combine(hash, constraints.inheritedProperties.color.y);
+        hash_combine(hash, constraints.inheritedProperties.color.z);
+        hash_combine(hash, constraints.inheritedProperties.color.w);
         hash_combine(hash, constraints.frameInfo.width);
         hash_combine(hash, constraints.frameInfo.height);
         hash_combine(hash, constraints.frameInfo.scale);
@@ -235,6 +240,13 @@ namespace tree {
         };
         hashOptionalSize(constraints.replacedAttributes.marginTop);
         hashOptionalSize(constraints.replacedAttributes.marginBottom);
+
+        hash_combine(hash, constraints.inheritedProperties.font);
+        hash_combine(hash, constraints.inheritedProperties.fontSize.value);
+        hash_combine(hash, static_cast<int>(constraints.inheritedProperties.fontSize.unit));
+        hash_combine(hash, constraints.inheritedProperties.lineHeight);
+        hash_combine(hash, static_cast<int>(constraints.inheritedProperties.whiteSpace));
+        hash_combine(hash, static_cast<int>(constraints.inheritedProperties.wordBreak));
         
         hash_combine(hash, constraints.textOverflow.has_value());
         if (constraints.textOverflow.has_value()) {
@@ -306,6 +318,35 @@ namespace tree {
         return renderOrderCache;
     }
 
+    void resolveInheritedProperties(TreeNode* node)
+    {
+        node->inheritedProperties = node->parent ? node->parent->inheritedProperties : layout::InheritedProperties{};
+
+        if (node->shared.font) {
+            node->inheritedProperties.font = *node->shared.font;
+        }
+
+        if (node->shared.fontSize) {
+            node->inheritedProperties.fontSize = *node->shared.fontSize;
+        }
+
+        if (node->shared.lineHeight) {
+            node->inheritedProperties.lineHeight = *node->shared.lineHeight;
+        }
+
+        if (node->shared.whiteSpace) {
+            node->inheritedProperties.whiteSpace = *node->shared.whiteSpace;
+        }
+
+        if (node->shared.wordBreak) {
+            node->inheritedProperties.wordBreak = *node->shared.wordBreak;
+        }
+
+        for (auto& child : node->children) {
+            resolveInheritedProperties(child.get());
+        }
+    }
+
     // I have a render cache, develop some sort of caching policy that makes these useful
     void RenderTree::update(const FrameInfo& frameInfo, uint64_t frameIndex) {
         bool frameInfoChanged = isFrameInfoChanged(frameInfo);
@@ -371,7 +412,10 @@ namespace tree {
 
         if (subtreeHasDirty(root, DirtyBits::Atomize) || !root->atomized.has_value()) {
             instrumentation::PhaseTimer timer{instrumentation::Phase::Atomize};
-            if (!atomizePhase(root, rootConstraints)) return;
+            resolveInheritedProperties(root);
+            if (!atomizePhase(root, rootConstraints)) {
+                return;
+            }
         }
     
         // Layout pass
@@ -436,6 +480,11 @@ namespace tree {
         Constraints& constraints
     ) {
         node->textBidiInput = constraints.textBidiInput;
+        constraints.inheritedProperties.font = node->inheritedProperties.font;
+        constraints.inheritedProperties.fontSize = node->inheritedProperties.fontSize;
+        constraints.inheritedProperties.lineHeight = node->inheritedProperties.lineHeight;
+        constraints.inheritedProperties.whiteSpace = node->inheritedProperties.whiteSpace;
+        constraints.inheritedProperties.wordBreak = node->inheritedProperties.wordBreak;
 
         auto key = makeConstraintsKey(constraints);
         auto reason = recomputeReason(node, DirtyBits::Atomize, key);
@@ -857,6 +906,12 @@ namespace tree {
     }
 
     void RenderTree::postLayoutPhase(TreeNode* node, const FrameInfo& frameInfo, Constraints& constraints) {
+        constraints.inheritedProperties.font = node->inheritedProperties.font;
+        constraints.inheritedProperties.fontSize = node->inheritedProperties.fontSize;
+        constraints.inheritedProperties.lineHeight = node->inheritedProperties.lineHeight;
+        constraints.inheritedProperties.whiteSpace = node->inheritedProperties.whiteSpace;
+        constraints.inheritedProperties.wordBreak = node->inheritedProperties.wordBreak;
+
         auto key = makeConstraintsKey(constraints);
         auto reason = recomputeReason(node, DirtyBits::PostLayout, key);
         if (reason == instrumentation::RecomputeReason::None) {
@@ -1303,6 +1358,17 @@ namespace tree {
     }
 
     void RenderTree::finalizePhase(TreeNode* node, Constraints& constraints) {
+        constraints.inheritedProperties.font = node->inheritedProperties.font;
+        constraints.inheritedProperties.fontSize = node->inheritedProperties.fontSize;
+        constraints.inheritedProperties.lineHeight = node->inheritedProperties.lineHeight;
+        constraints.inheritedProperties.whiteSpace = node->inheritedProperties.whiteSpace;
+        constraints.inheritedProperties.wordBreak = node->inheritedProperties.wordBreak;
+
+        node->effectiveColor = animationManager.color(
+            node->animations[animation::Animatable::Color],
+            node->shared.color.value_or(constraints.inheritedProperties.color)
+        );
+
         auto key = makeConstraintsKey(constraints);
         auto reason = recomputeReason(node, DirtyBits::Finalize, key);
         if (reason != instrumentation::RecomputeReason::None) {
@@ -1313,14 +1379,18 @@ namespace tree {
             auto finalizedConstraints = constraints;
             finalizedConstraints.transform = node->transform;
             finalizedConstraints.opacity = node->effectiveOpacity;
-            finalizedConstraints.color = animationManager.color(node->animations[animation::Animatable::Color], node->getColor());
+            finalizedConstraints.backgroundColor = animationManager.color(node->animations[animation::Animatable::BackgroundColor], node->getBackgroundColor());
+            finalizedConstraints.inheritedProperties.color = node->effectiveColor;
             auto finalized = node->element->finalize(finalizedConstraints, node->shared, atomized, layout, placed);
             node->finalized = finalized;
             node->constraintsKey = key;
         }
 
+        Constraints childConstraints = constraints;
+        childConstraints.inheritedProperties.color = node->effectiveColor;
+
         for (auto& child : node->children) {
-            finalizePhase(child.get(), constraints);
+            finalizePhase(child.get(), childConstraints);
         }
     }
 

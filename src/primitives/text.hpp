@@ -72,10 +72,6 @@ namespace elements {
                     [this](GetFull const&) -> std::any { return std::any(*this); },
                     [this](GetField const& f) -> std::any {
                         if (f.name == "text")     return std::any{this->text};
-                        if (f.name == "font")     return std::any{this->font};
-                        if (f.name == "fontSize") return std::any{this->fontSize};
-                        if (f.name == "whiteSpace") return std::any{this->whiteSpace};
-                        if (f.name == "wordBreak")  return std::any{this->wordBreak};
                         return std::any{};
                     }
                 }, *payloadPtr);
@@ -84,11 +80,6 @@ namespace elements {
         }
 
         std::string text;
-        std::string font;
-        Size fontSize;
-        std::optional<float> lineHeight;
-        WhiteSpace whiteSpace{WhiteSpace::Normal};
-        WordBreak wordBreak{WordBreak::Normal};
     };
 
     struct TextUniforms {
@@ -126,6 +117,7 @@ namespace elements {
     template <typename S = TextStorage>
     struct Text {
         static constexpr std::string_view elementName = "Text";
+        static constexpr bool isLeaf = true;
 
         Text(UIContext& ctx):
             desc{},
@@ -266,7 +258,7 @@ namespace elements {
 
         ShapedRun appendTextAtoms(
             std::string_view text,
-            const TextDescriptor& desc,
+            const layout::InheritedProperties& inheritedProperties,
             bool collapseWhitespace,
             bool preserveLineFeeds,
             std::vector<Atom>& atoms,
@@ -275,13 +267,13 @@ namespace elements {
             std::span<const bidi::TextShapingRun> bidiRuns
         ) {
             float fontSize = 0.0;
-            if (desc.fontSize.unit == Unit::Pt) {
-                fontSize = desc.fontSize.resolveOr(Size::px(0.0f));
+            if (inheritedProperties.fontSize.unit == Unit::Pt) {
+                fontSize = inheritedProperties.fontSize.resolveOr(Size::px(0.0f));
             }
 
             float scale = fontSize / BASE_PIXEL_HEIGHT;
-            float defaultLineHeight = glyphCache.lineHeight(desc.font) / FT_PIXEL_CF * scale;
-            float resolvedLineHeight = defaultLineHeight * desc.lineHeight.value_or(1.0f);
+            float defaultLineHeight = glyphCache.lineHeight(inheritedProperties.font) / FT_PIXEL_CF * scale;
+            float resolvedLineHeight = defaultLineHeight * inheritedProperties.lineHeight;
 
             std::string renderedText{text};
             auto codepoints = utf8::codePoints(text);
@@ -307,7 +299,7 @@ namespace elements {
                     renderedText,
                     run.byteStart,
                     run.byteLength,
-                    desc.font,
+                    inheritedProperties.font,
                     run.isRtl() ? TextDirection::Rtl : TextDirection::Ltr,
                     run.scriptTag
                 );
@@ -361,7 +353,7 @@ namespace elements {
                         atom.canPlaceOnNewLine = true;
                     }
 
-                    GlyphQuery glyphQuery { shapedGlyph.glyphId, desc.font };
+                    GlyphQuery glyphQuery { shapedGlyph.glyphId, inheritedProperties.font };
 
                     const auto& glyph = glyphCache.retrieve(glyphQuery);
                     size_t pointsLenBytes = glyph.points.size() * sizeof(simd_float2);
@@ -445,15 +437,15 @@ namespace elements {
             allAtomPoints.reserve(desc.text.size() * 4);
 
             bool collapseWhitespace =
-                desc.whiteSpace == WhiteSpace::Normal ||
-                desc.whiteSpace == WhiteSpace::NoWrap;
+                constraints.inheritedProperties.whiteSpace == WhiteSpace::Normal ||
+                constraints.inheritedProperties.whiteSpace == WhiteSpace::NoWrap;
             bool preserveLineFeeds =
-                desc.whiteSpace == WhiteSpace::Pre ||
-                desc.whiteSpace == WhiteSpace::PreWrap;
+                constraints.inheritedProperties.whiteSpace == WhiteSpace::Pre ||
+                constraints.inheritedProperties.whiteSpace == WhiteSpace::PreWrap;
 
             fragment.fragmentStorage.shapedRun = appendTextAtoms(
                 desc.text,
-                desc,
+                constraints.inheritedProperties,
                 collapseWhitespace,
                 preserveLineFeeds,
                 atoms,
@@ -544,7 +536,7 @@ namespace elements {
 
                 appendTextAtoms(
                     constraints.textOverflow->ending,
-                    desc,
+                    constraints.inheritedProperties,
                     true,
                     false,
                     endingAtoms,
@@ -675,12 +667,12 @@ namespace elements {
         Finalized<U> finalize(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, TextDescriptor& desc, Atomized& atomized, L& layout, const SizeResult&, Placed& placed) {
             float fontSize;
 
-            if (desc.fontSize.unit == Unit::Pt) {
-                fontSize = desc.fontSize.resolveOr(Size::px(0.0f));
+            if (constraints.inheritedProperties.fontSize.unit == Unit::Pt) {
+                fontSize = constraints.inheritedProperties.fontSize.resolveOr(Size::px(0.0f));
             }
 
             TextUniforms uniforms {
-                .color = constraints.color,
+                .color = constraints.inheritedProperties.color,
                 .fontSize = fontSize,
                 .numClips = static_cast<uint32_t>(layout.clipUniforms.size()),
                 .opacity = constraints.opacity,
