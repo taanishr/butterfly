@@ -185,10 +185,17 @@ namespace tree {
             simd_float2 localPoint {local.x, local.y};
 
             bool withinBounds = std::visit([&](const auto& state) {
-                const auto& box = state.computedBox;
+                bool withinFragment = false;
+                for (const auto& fragment : state.boxFragments) {
+                    const auto& box = fragment.computedBox;
+                    if (localPoint.x >= box.x && localPoint.x <= box.x + box.width &&
+                        localPoint.y >= box.y && localPoint.y <= box.y + box.height) {
+                        withinFragment = true;
+                        break;
+                    }
+                }
 
-                if (localPoint.x < box.x || localPoint.x > box.x + box.width ||
-                    localPoint.y < box.y || localPoint.y > box.y + box.height) {
+                if (!withinFragment) {
                     return false;
                 }
 

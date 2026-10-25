@@ -13,6 +13,7 @@
 #include "layout/sizing.hpp"
 #include "style.hpp"
 #include "text/text_bidi.hpp"
+#include <algorithm>
 #include <concepts>
 #include <cstdint>
 #include <optional>
@@ -68,6 +69,7 @@ namespace layout {
     struct LineFragment {
         InlineFlowKind kind{};
         float width{};
+        float height{};
         float leadingMargin{};
         float leadingPadding{};
         float trailingMargin{};
@@ -88,6 +90,7 @@ namespace layout {
         size_t fragmentStart{}; // index of the first fragment in the owning fragment vector
         size_t fragmentCount{}; // number of fragments
         float width{}; // width of line box (width of all fragments)
+        float height{};
     };
 
     struct InlineFragmentRange {
@@ -98,15 +101,15 @@ namespace layout {
     struct InlineFormattingContext {
         std::vector<LineFragment> fragments;
         std::vector<LineBox> lineBoxes;
-        std::vector<InlineFragmentRange> childFragments;
+        std::unordered_map<uint64_t, InlineFragmentRange> nodeFragments;
 
         std::vector<LineFragment> minFragments;
         std::vector<LineBox> minLineBoxes;
-        std::vector<InlineFragmentRange> minChildFragments;
+        std::unordered_map<uint64_t, InlineFragmentRange> minNodeFragments;
 
         std::vector<LineFragment> maxFragments;
         std::vector<LineBox> maxLineBoxes;
-        std::vector<InlineFragmentRange> maxChildFragments;
+        std::unordered_map<uint64_t, InlineFragmentRange> maxNodeFragments;
 
         std::optional<IntrinsicSizes> intrinsicSizes;
     };
@@ -421,6 +424,75 @@ namespace layout {
     };
 
     // first class layout modes: every node is laid out as block or inline
+    struct BoxFragment {
+        LayoutBox computedBox;
+        LayoutBox localComputedBox;
+        LayoutBox computedPaddingBox;
+        LayoutBox localComputedPaddingBox;
+        LayoutBox computedInnerBox;
+        LayoutBox localComputedInnerBox;
+
+        bool brokenTop{};
+        bool brokenRight{};
+        bool brokenBottom{};
+        bool brokenLeft{};
+    };
+
+    struct FragmentBounds {
+        LayoutBox computedBox;
+        LayoutBox localComputedBox;
+        LayoutBox computedPaddingBox;
+        LayoutBox localComputedPaddingBox;
+    };
+
+    inline FragmentBounds boundingBox(const std::vector<BoxFragment>& fragments) {
+        if (fragments.empty()) {
+            return {};
+        }
+
+        LayoutBox border = fragments.front().computedBox;
+        LayoutBox localBorder = fragments.front().localComputedBox;
+        LayoutBox padding = fragments.front().computedPaddingBox;
+        LayoutBox localPadding = fragments.front().localComputedPaddingBox;
+
+        for (const auto& fragment : fragments) {
+            const float localBorderRight = std::max(localBorder.x + localBorder.width, fragment.localComputedBox.x + fragment.localComputedBox.width);
+            const float localBorderBottom = std::max(localBorder.y + localBorder.height, fragment.localComputedBox.y + fragment.localComputedBox.height);
+            localBorder.x = std::min(localBorder.x, fragment.localComputedBox.x);
+            localBorder.y = std::min(localBorder.y, fragment.localComputedBox.y);
+            localBorder.width = localBorderRight - localBorder.x;
+            localBorder.height = localBorderBottom - localBorder.y;
+
+            const float localPaddingRight = std::max(localPadding.x + localPadding.width, fragment.localComputedPaddingBox.x + fragment.localComputedPaddingBox.width);
+            const float localPaddingBottom = std::max(localPadding.y + localPadding.height, fragment.localComputedPaddingBox.y + fragment.localComputedPaddingBox.height);
+            localPadding.x = std::min(localPadding.x, fragment.localComputedPaddingBox.x);
+            localPadding.y = std::min(localPadding.y, fragment.localComputedPaddingBox.y);
+            localPadding.width = localPaddingRight - localPadding.x;
+            localPadding.height = localPaddingBottom - localPadding.y;
+
+            const float borderRight = std::max(border.x + border.width, fragment.computedBox.x + fragment.computedBox.width);
+            const float borderBottom = std::max(border.y + border.height, fragment.computedBox.y + fragment.computedBox.height);
+            border.x = std::min(border.x, fragment.computedBox.x);
+            border.y = std::min(border.y, fragment.computedBox.y);
+            border.width = borderRight - border.x;
+            border.height = borderBottom - border.y;
+
+            const float paddingRight = std::max(padding.x + padding.width, fragment.computedPaddingBox.x + fragment.computedPaddingBox.width);
+            const float paddingBottom = std::max(padding.y + padding.height, fragment.computedPaddingBox.y + fragment.computedPaddingBox.height);
+            padding.x = std::min(padding.x, fragment.computedPaddingBox.x);
+            padding.y = std::min(padding.y, fragment.computedPaddingBox.y);
+            padding.width = paddingRight - padding.x;
+            padding.height = paddingBottom - padding.y;
+        }
+
+        return {
+            .computedBox = border,
+            .localComputedBox = localBorder,
+            .computedPaddingBox = padding,
+            .localComputedPaddingBox = localPadding
+        };
+    }
+
     struct BlockState {
         // atom geometry
         std::vector<simd_float2> atomOffsets;
@@ -431,12 +503,7 @@ namespace layout {
         InlineFormattingInput inlineFormatting;
         float prevInlineHeight{};
 
-        LayoutBox computedBox;
-        LayoutBox localComputedBox; // fine
-        LayoutBox computedPaddingBox;
-        LayoutBox localComputedPaddingBox;
-        LayoutBox computedInnerBox;
-        LayoutBox localComputedInnerBox;
+        std::vector<BoxFragment> boxFragments;
 
         Constraints childConstraints; // child constraints
 
@@ -457,12 +524,7 @@ namespace layout {
         InlineFormattingInput inlineFormatting;
         float prevInlineHeight{};
 
-        LayoutBox computedBox;
-        LayoutBox localComputedBox; // fine
-        LayoutBox computedPaddingBox;
-        LayoutBox localComputedPaddingBox;
-        LayoutBox computedInnerBox;
-        LayoutBox localComputedInnerBox;
+        std::vector<BoxFragment> boxFragments;
 
         Constraints childConstraints; // child constraints
 
@@ -532,5 +594,8 @@ namespace layout {
         Constraints childConstraints, const SizeRequest& sizeRequest, const SizeResult& sizeResult,
         bool mutate, std::unordered_map<size_t, SizeResult>& sizeCache);
 
-    std::optional<IntrinsicSizes> inlinePass(const InlineState& state, const SizeRequest& sizeRequest);
+    std::optional<IntrinsicSizes> inlinePass(
+        tree::RenderTree& tree, tree::TreeNode* node, const FrameInfo& frameInfo, InlineState& state,
+        Constraints childConstraints, const SizeRequest& sizeRequest,
+        bool mutate, std::unordered_map<size_t, SizeResult>& sizeCache);
 }

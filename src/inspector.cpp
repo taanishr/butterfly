@@ -422,14 +422,15 @@ namespace Inspector {
             htNodePosition = positionName(htNode->shared.position);
             htNodeOverflow = overflowName(htNode->shared.overflow);
             std::visit([&](const auto& htNodeLayout) {
-                htNodeX = htNodeLayout.computedBox.x;
-                htNodeY = htNodeLayout.computedBox.y;
-                htNodeW = htNodeLayout.computedBox.width;
-                htNodeH = htNodeLayout.computedBox.height;
-                htNodeLocalX = htNodeLayout.localComputedBox.x;
-                htNodeLocalY = htNodeLayout.localComputedBox.y;
-                htNodeLocalW = htNodeLayout.localComputedBox.width;
-                htNodeLocalH = htNodeLayout.localComputedBox.height;
+                const auto bounds = layout::boundingBox(htNodeLayout.boxFragments);
+                htNodeX = bounds.computedBox.x;
+                htNodeY = bounds.computedBox.y;
+                htNodeW = bounds.computedBox.width;
+                htNodeH = bounds.computedBox.height;
+                htNodeLocalX = bounds.localComputedBox.x;
+                htNodeLocalY = bounds.localComputedBox.y;
+                htNodeLocalW = bounds.localComputedBox.width;
+                htNodeLocalH = bounds.localComputedBox.height;
             }, htNode->layout->layout);
             htNodeScrollX = float(htNode->scrollOffset.x);
             htNodeScrollY = float(htNode->scrollOffset.y);
@@ -662,8 +663,8 @@ namespace Inspector {
         }
 
         const auto& result = *node->layout;
-        const auto& box = std::visit(
-            [](const auto& layout) -> const layout::LayoutBox& { return layout.computedBox; },
+        const auto box = std::visit(
+            [](const auto& layout) { return layout::boundingBox(layout.boxFragments).computedBox; },
             result.layout
         );
         auto margins = node->preLayout.has_value()

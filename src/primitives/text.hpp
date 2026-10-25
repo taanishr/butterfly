@@ -102,8 +102,9 @@ namespace elements {
 
     struct TextStorage {
         TextStorage(UIContext& ctx):
-            atomsBuffer{ctx.allocator, 6 * sizeof(TextPoint) * 4, MaxOutstandingFrameCount},
-            drawablePointsBuffer{ctx.allocator, 6 * sizeof(TextPoint) * 4, MaxOutstandingFrameCount},
+            atomsBuffer{ctx.allocator, 4 * sizeof(TextPoint) * 4, MaxOutstandingFrameCount},
+            drawablePointsBuffer{ctx.allocator, 4 * sizeof(TextPoint) * 4, MaxOutstandingFrameCount},
+            indicesBuffer{ctx.allocator, 6 * sizeof(uint32_t) * 4, MaxOutstandingFrameCount},
             placementsBuffer{ctx.allocator, sizeof(simd_float2) * 4, MaxOutstandingFrameCount},
             uniformsBuffer{ctx.allocator, sizeof(TextUniforms), MaxOutstandingFrameCount},
             metadataBuffer{ctx.allocator,sizeof(int) * 16, MaxOutstandingFrameCount },
@@ -112,6 +113,7 @@ namespace elements {
 
         FrameBufferedBuffer<TextPoint> atomsBuffer;
         FrameBufferedBuffer<TextPoint> drawablePointsBuffer;
+        FrameBufferedBuffer<uint32_t> indicesBuffer;
         FrameBufferedBuffer<simd_float2> placementsBuffer;
         FrameBufferedBuffer<TextUniforms> uniformsBuffer;
 
@@ -253,13 +255,11 @@ namespace elements {
             return pipeline;
         }
         
-        std::array<TextPoint, 6> makeAtomPoints(const Quad& quad, int metadataIndex, int id, simd_float2 shapingOffset = {}) {
-            return std::array<TextPoint,6>{
+        std::array<TextPoint, 4> makeAtomPoints(const Quad& quad, int metadataIndex, int id, simd_float2 shapingOffset = {}) {
+            return std::array<TextPoint,4>{
                 TextPoint{ .point = quad.topLeft, .shapingOffset = shapingOffset, .metadataIndex = metadataIndex, .id = id },
                 TextPoint{ .point = simd_float2{ quad.bottomRight.x, quad.topLeft.y }, .shapingOffset = shapingOffset, .metadataIndex = metadataIndex, .id = id },
                 TextPoint{ .point = simd_float2{ quad.topLeft.x,    quad.bottomRight.y }, .shapingOffset = shapingOffset, .metadataIndex = metadataIndex, .id = id },
-                TextPoint{ .point = simd_float2{ quad.topLeft.x,    quad.bottomRight.y }, .shapingOffset = shapingOffset, .metadataIndex = metadataIndex, .id = id },
-                TextPoint{ .point = simd_float2{ quad.bottomRight.x, quad.topLeft.y }, .shapingOffset = shapingOffset, .metadataIndex = metadataIndex, .id = id },
                 TextPoint{ .point = quad.bottomRight, .shapingOffset = shapingOffset, .metadataIndex = metadataIndex, .id = id }
             };
         }
@@ -346,8 +346,8 @@ namespace elements {
                         points.insert(points.end(), atomPts.begin(), atomPts.end());
 
                         atom.atomBufferHandle = glyphBuffer.handle();
-                        atom.length = sizeof(TextPoint) * 6;
-                        atom.offset = (points.size() - 6) * sizeof(TextPoint);
+                        atom.length = sizeof(TextPoint) * 4;
+                        atom.offset = (points.size() - 4) * sizeof(TextPoint);
                         atom.width = 0;
                         atom.height = defaultLineHeight;
                         atom.lineHeight = resolvedLineHeight;
@@ -411,8 +411,8 @@ namespace elements {
                     points.insert(points.end(), atomPts.begin(), atomPts.end());
 
                     atom.atomBufferHandle = glyphBuffer.handle();
-                    atom.length = sizeof(TextPoint) * 6;
-                    atom.offset = (points.size() - 6) * sizeof(TextPoint);
+                    atom.length = sizeof(TextPoint) * 4;
+                    atom.offset = (points.size() - 4) * sizeof(TextPoint);
                     float glyphWidth = shapedGlyph.xAdvance / FT_PIXEL_CF * scale;
                     atom.width = collapsedWhitespace[shapedGlyph.byteOffset]
                         ? 0.0f
@@ -442,7 +442,7 @@ namespace elements {
             std::vector<Atom> atoms;
             std::vector<TextPoint> allAtomPoints;
             std::vector<int> metadata;
-            allAtomPoints.reserve(desc.text.size() * 6);
+            allAtomPoints.reserve(desc.text.size() * 4);
 
             bool collapseWhitespace =
                 desc.whiteSpace == WhiteSpace::Normal ||
@@ -594,8 +594,8 @@ namespace elements {
                 );
                 drawablePoints.insert(
                     drawablePoints.end(),
-                    sourcePoints + (lineFragment.atomStart + visibleStart) * 6,
-                    sourcePoints + (lineFragment.atomStart + visibleStart + visibleCount) * 6
+                    sourcePoints + (lineFragment.atomStart + visibleStart) * 4,
+                    sourcePoints + (lineFragment.atomStart + visibleStart + visibleCount) * 4
                 );
 
                 if (endingAtoms.empty() || visibleCount == lineFragment.atomCount) continue;
@@ -631,7 +631,7 @@ namespace elements {
             }
 
             for (size_t pointIndex = 0; pointIndex < drawablePoints.size(); ++pointIndex) {
-                drawablePoints[pointIndex].id = pointIndex / 6;
+                drawablePoints[pointIndex].id = pointIndex / 4;
             }
             fragment.fragmentStorage.drawablePointsBuffer.write(
                 ctx.frameIndex,
@@ -687,6 +687,23 @@ namespace elements {
                 .transform = constraints.transform
             };
 
+            const auto& atoms = atomized.usesDrawableAtoms
+                ? atomized.drawableAtoms
+                : atomized.atoms;
+
+            std::vector<uint32_t> indices;
+            indices.reserve(atoms.size() * 6);
+
+            for (uint32_t i = 0; i < atoms.size(); ++i) {
+                indices.push_back(4 * i + 0);
+                indices.push_back(4 * i + 1);
+                indices.push_back(4 * i + 2);
+                indices.push_back(4 * i + 2);
+                indices.push_back(4 * i + 1);
+                indices.push_back(4 * i + 3);
+            }
+
+            fragment.fragmentStorage.indicesBuffer.write(ctx.frameIndex, indices.data(), indices.size() * sizeof(uint32_t));
             fragment.fragmentStorage.uniformsBuffer.write(ctx.frameIndex, &uniforms, sizeof(TextUniforms));
             fragment.fragmentStorage.clipsBuffer.write(
                 ctx.frameIndex,
@@ -729,7 +746,8 @@ namespace elements {
             const auto& atoms = finalized.atomized.usesDrawableAtoms
                 ? finalized.atomized.drawableAtoms
                 : finalized.atomized.atoms;
-            encoder->drawPrimitives(MTL::PrimitiveTypeTriangle, NS::UInteger(0), atoms.size()*6);
+            auto indicesBuf = fragment.fragmentStorage.indicesBuffer.getBuffer(ctx.frameIndex);
+            encoder->drawIndexedPrimitives(MTL::PrimitiveTypeTriangle, NS::UInteger(atoms.size()*6), MTL::IndexTypeUInt32, indicesBuf, NS::UInteger(0));
 
         }
 

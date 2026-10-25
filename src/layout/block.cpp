@@ -43,7 +43,8 @@ namespace layout {
             [&](float resolved){ return resolved; },
             [&](auto&) { return 0.0f; }
         }, sizeResult.borderBoxSize.height);
-        lr.computedBox = {
+        BoxFragment fragment;
+        fragment.computedBox = {
             .x = position.x,
             .y = position.y,
             .width = computedWidth,
@@ -75,35 +76,37 @@ namespace layout {
         const auto* resolvedPaddingLeft = std::get_if<float>(&sizeResult.padding.left);
         const auto* resolvedPaddingTop = std::get_if<float>(&sizeResult.padding.top);
 
-        lr.computedPaddingBox = {
-            .x = lr.computedBox.x,
-            .y = lr.computedBox.y,
+        fragment.computedPaddingBox = {
+            .x = fragment.computedBox.x,
+            .y = fragment.computedBox.y,
             .width = computedPaddingBoxWidth,
             .height = computedPaddingBoxHeight
         };
 
         if (resolvedBorderLeft) {
-            lr.computedPaddingBox.x += *resolvedBorderLeft;
+            fragment.computedPaddingBox.x += *resolvedBorderLeft;
         }
 
         if (resolvedBorderTop) {
-            lr.computedPaddingBox.y += *resolvedBorderTop;
+            fragment.computedPaddingBox.y += *resolvedBorderTop;
         }
 
-        lr.computedInnerBox = {
-            .x = lr.computedPaddingBox.x,
-            .y = lr.computedPaddingBox.y,
+        fragment.computedInnerBox = {
+            .x = fragment.computedPaddingBox.x,
+            .y = fragment.computedPaddingBox.y,
             .width = computedInnerWidth,
             .height = computedInnerHeight
         };
 
         if (resolvedPaddingLeft) {
-            lr.computedInnerBox.x += *resolvedPaddingLeft;
+            fragment.computedInnerBox.x += *resolvedPaddingLeft;
         }
 
         if (resolvedPaddingTop) {
-            lr.computedInnerBox.y += *resolvedPaddingTop;
+            fragment.computedInnerBox.y += *resolvedPaddingTop;
         }
+
+        lr.boxFragments = {fragment};
 
         lr.atomOffsets = {
             position
@@ -166,7 +169,8 @@ namespace layout {
             [&](auto&) { return 0.0f; }
         }, sizeResult.borderBoxSize.height);
 
-        lr.computedBox = {
+        BoxFragment fragment;
+        fragment.computedBox = {
             startingPos.x,
             startingPos.y,
             computedWidth,
@@ -198,35 +202,37 @@ namespace layout {
         const auto* resolvedPaddingLeft = std::get_if<float>(&sizeResult.padding.left);
         const auto* resolvedPaddingTop = std::get_if<float>(&sizeResult.padding.top);
 
-        lr.computedPaddingBox = {
-            .x = lr.computedBox.x,
-            .y = lr.computedBox.y,
+        fragment.computedPaddingBox = {
+            .x = fragment.computedBox.x,
+            .y = fragment.computedBox.y,
             .width = computedPaddingBoxWidth,
             .height = computedPaddingBoxHeight
         };
 
         if (resolvedBorderLeft) {
-            lr.computedPaddingBox.x += *resolvedBorderLeft;
+            fragment.computedPaddingBox.x += *resolvedBorderLeft;
         }
 
         if (resolvedBorderTop) {
-            lr.computedPaddingBox.y += *resolvedBorderTop;
+            fragment.computedPaddingBox.y += *resolvedBorderTop;
         }
 
-        lr.computedInnerBox = {
-            .x = lr.computedPaddingBox.x,
-            .y = lr.computedPaddingBox.y,
+        fragment.computedInnerBox = {
+            .x = fragment.computedPaddingBox.x,
+            .y = fragment.computedPaddingBox.y,
             .width = computedInnerWidth,
             .height = computedInnerHeight
         };
 
         if (resolvedPaddingLeft) {
-            lr.computedInnerBox.x += *resolvedPaddingLeft;
+            fragment.computedInnerBox.x += *resolvedPaddingLeft;
         }
 
         if (resolvedPaddingTop) {
-            lr.computedInnerBox.y += *resolvedPaddingTop;
+            fragment.computedInnerBox.y += *resolvedPaddingTop;
         }
+
+        lr.boxFragments = {fragment};
 
         lr.atomOffsets = {
             startingPos
@@ -237,7 +243,7 @@ namespace layout {
         
         lr.childConstraints = childConstraints;
 
-        newCursor.y += lr.computedBox.height;
+        newCursor.y += fragment.computedBox.height;
         newCursor.x = constraints.origin.x;
 
         lr.siblingCursor = newCursor;
@@ -284,13 +290,13 @@ namespace layout {
 
             childConstraints.inlineFormatting = {
                 .context = inlineFormatting,
-                .fragments = inlineFormatting->childFragments[i],
-                .minFragments = inlineFormatting->minChildFragments.empty()
+                .fragments = inlineFormatting->nodeFragments.at(child->id),
+                .minFragments = inlineFormatting->minNodeFragments.empty()
                     ? InlineFragmentRange{}
-                    : inlineFormatting->minChildFragments[i],
-                .maxFragments = inlineFormatting->maxChildFragments.empty()
+                    : inlineFormatting->minNodeFragments.at(child->id),
+                .maxFragments = inlineFormatting->maxNodeFragments.empty()
                     ? InlineFragmentRange{}
-                    : inlineFormatting->maxChildFragments[i],
+                    : inlineFormatting->maxNodeFragments.at(child->id),
             };
 
             auto childOutput = tree.layoutRecursive(child, frameInfo, childConstraints, mutate, std::nullopt, sizeRequest.intrinsicWidthRequest, sizeRequest.intrinsicHeightRequest);

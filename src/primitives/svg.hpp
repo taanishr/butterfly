@@ -97,7 +97,7 @@ namespace elements {
 
     struct SVGStorage {
         SVGStorage(UIContext& ctx):
-            atomsBuffer{ctx.allocator, 6*sizeof(SVGPoint), MaxOutstandingFrameCount},
+            atomsBuffer{ctx.allocator, 4*sizeof(SVGPoint), MaxOutstandingFrameCount},
             placementsBuffer{ctx.allocator, sizeof(simd_float2), MaxOutstandingFrameCount},
             uniformsBuffer{ctx.allocator, 6*sizeof(SVGUniforms), MaxOutstandingFrameCount},
             clipsBuffer{ctx.allocator, sizeof(ClipUniform) * 4, MaxOutstandingFrameCount}
@@ -345,14 +345,12 @@ namespace elements {
             float width = 0.0f;
             float height = 0.0f;
 
-            size_t bufferLen = 6 * sizeof(SVGPoint);
+            size_t bufferLen = 4 * sizeof(SVGPoint);
 
-            std::array<SVGPoint, 6> points {{
+            std::array<SVGPoint, 4> points {{
                 {{0, 0},                {0, 0}, 0},
                 {{width, 0},            {1, 0}, 0},
                 {{0, height},           {0, 1}, 0},
-                {{0, height},           {0, 1}, 0},
-                {{width, 0},            {1, 0}, 0},
                 {{width, height},       {1, 1}, 0}
             }};
 
@@ -379,21 +377,19 @@ namespace elements {
         Atomized postLayout(Fragment<S>& fragment, Constraints&, SharedDescriptor& shared, SVGDescriptor& desc, Atomized& atomized, L& layout) {
             std::vector<Atom> atoms {};
             
-            float width = layout.computedBox.width;
-            float height = layout.computedBox.height;
+            float width = layout.boxFragments.front().computedBox.width;
+            float height = layout.boxFragments.front().computedBox.height;
 
             if (width > 0.0f && height > 0.0f) {
                 loadTexture(fragment, width, height);
             }
 
-            size_t bufferLen = 6*sizeof(SVGPoint);
-            
-            std::array<SVGPoint, 6> atomPoints {{
+            size_t bufferLen = 4*sizeof(SVGPoint);
+
+            std::array<SVGPoint, 4> atomPoints {{
                 {{0, 0},           {0, 0}, 0},
                 {{width, 0},       {1, 0}, 0},
                 {{0, height},      {0, 1}, 0},
-                {{0, height},      {0, 1}, 0},
-                {{width, 0},       {1, 0}, 0},
                 {{width, height},  {1, 1}, 0}
             }};
             
@@ -444,12 +440,12 @@ namespace elements {
 
             CornerRadii cornerRadius = style::resolveCornerRadii(
                 shared,
-                layout.computedBox.width,
-                layout.computedBox.height
+                layout.boxFragments.front().computedBox.width,
+                layout.boxFragments.front().computedBox.height
             );
 
-            float width = layout.computedBox.width;
-            float height = layout.computedBox.height;
+            float width = layout.boxFragments.front().computedBox.width;
+            float height = layout.boxFragments.front().computedBox.height;
             const auto& boxShadow = shared.boxShadow;
             float shadowBlur = std::max(boxShadow.blur.resolveOr(Size::px(width), 0.0f), 0.0f);
 
@@ -500,16 +496,14 @@ namespace elements {
             float minV = height > 0.0f ? minY / height : 0.0f;
             float maxV = height > 0.0f ? maxY / height : 1.0f;
 
-            std::array<SVGPoint, 6> atomPoints {{
+            std::array<SVGPoint, 4> atomPoints {{
                 {{minX, minY}, {minU, minV}, 0},
                 {{maxX, minY}, {maxU, minV}, 0},
                 {{minX, maxY}, {minU, maxV}, 0},
-                {{minX, maxY}, {minU, maxV}, 0},
-                {{maxX, minY}, {maxU, minV}, 0},
                 {{maxX, maxY}, {maxU, maxV}, 0}
             }};
 
-            fragment.fragmentStorage.atomsBuffer.write(ctx.frameIndex, atomPoints.data(), 6*sizeof(SVGPoint));
+            fragment.fragmentStorage.atomsBuffer.write(ctx.frameIndex, atomPoints.data(), 4*sizeof(SVGPoint));
 
             SVGUniforms uniforms {
                 .style = styleUniforms,
@@ -556,7 +550,7 @@ namespace elements {
             }
 
             encoder->setFragmentSamplerState(sampler, 0);
-            encoder->drawPrimitives(MTL::PrimitiveTypeTriangle, NS::UInteger(0), 6);
+            encoder->drawPrimitives(MTL::PrimitiveTypeTriangleStrip, NS::UInteger(0), NS::UInteger(4), NS::UInteger(1));
         }
 
         std::function<bool(HitTestContext<U>& context, simd_float2 testPoint)> setupHitTestFunction() {

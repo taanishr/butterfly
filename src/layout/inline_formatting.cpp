@@ -240,13 +240,16 @@ namespace tree {
             size_t atomStart = atoms.size();
             size_t atomEnd = 0;
             float width = 0.0f;
+            float height = 0.0f;
 
             for (size_t i = runStart; i < runEnd; ++i) {
                 const auto& cluster = shapedRun.clusters[i];
                 atomStart = std::min(atomStart, cluster.glyphStart);
                 atomEnd = std::max(atomEnd, cluster.glyphStart + cluster.glyphCount);
                 for (size_t glyph = 0; glyph < cluster.glyphCount; ++glyph) {
-                    width += atoms[cluster.glyphStart + glyph].width;
+                    const auto& atom = atoms[cluster.glyphStart + glyph];
+                    width += atom.width;
+                    height = std::max(height, atom.lineHeight);
                 }
             }
 
@@ -262,6 +265,7 @@ namespace tree {
             LineFragment fragment{
                 .kind = InlineFlowKind::Text,
                 .width = width,
+                .height = height,
                 .atomStart = atomStart,
                 .atomCount = atomEnd - atomStart,
                 .textByteStart = byteStart,
@@ -505,6 +509,7 @@ namespace tree {
 
         for (size_t f = pendingStart; f < fragments.size(); ++f) {
             fragments[f].lineBoxIndex = currentLineBoxIndex;
+            currentLineBox.height = std::max(currentLineBox.height, fragments[f].height);
         }
 
         currentLineBox.fragmentCount += fragments.size() - pendingStart;
@@ -554,6 +559,7 @@ namespace tree {
         LineFragment fragment {
             .kind = InlineFlowKind::Atomic,
             .width = atoms.front().width,
+            .height = atoms.front().height,
             .atomStart = 0,
             .atomCount = atoms.size(),
             .bidiLevel = layout::ResolvedLevel{run.level},
@@ -967,7 +973,7 @@ namespace tree {
         auto context = std::make_shared<layout::InlineFormattingContext>();
         auto& childrenLineBoxes = context->lineBoxes;
         auto& fragments = context->fragments;
-        auto& childFragments = context->childFragments;
+        auto& nodeFragments = context->nodeFragments;
         LineBox currentLineBox {};
         size_t currentLineBoxIndex = 0;
         size_t pendingStart = 0;
@@ -1066,7 +1072,8 @@ namespace tree {
                 } else if (flow[i].kind == InlineFlowKind::Open) {
                     const auto edgePadding = resolvePadding(childRequest);
                     const auto* edgePaddingStart = std::get_if<float>(isLtr ? &edgePadding.left : &edgePadding.right);
-                    const float width = (isLtr ? margins.left : margins.right) + (edgePaddingStart ? *edgePaddingStart : 0.0f);
+                    const float margin = isLtr ? margins.left : margins.right;
+                    const float padding = edgePaddingStart ? *edgePaddingStart : 0.0f;
 
                     if (lastFragmentHasBreakOpportunity) {
                         commitPendingFragments(
@@ -1081,18 +1088,19 @@ namespace tree {
                         );
                     }
 
-                    fragments.push_back({.kind = InlineFlowKind::Open, .width = width});
-                    pendingWidth += width;
+                    fragments.push_back({.kind = InlineFlowKind::Open, .width = padding, .leadingMargin = margin});
+                    pendingWidth += margin + padding;
                     lastFragmentHasBreakOpportunity = false;
                 } else if (flow[i].kind == InlineFlowKind::Placeholder) {
                     fragments.push_back({.kind = InlineFlowKind::Placeholder, .bidiLevel = layout::InheritedLevel{}});
                 } else if (flow[i].kind == InlineFlowKind::Close) {
                     const auto edgePadding = resolvePadding(childRequest);
                     const auto* edgePaddingEnd = std::get_if<float>(isLtr ? &edgePadding.right : &edgePadding.left);
-                    const float width = (isLtr ? margins.right : margins.left) + (edgePaddingEnd ? *edgePaddingEnd : 0.0f);
+                    const float margin = isLtr ? margins.right : margins.left;
+                    const float padding = edgePaddingEnd ? *edgePaddingEnd : 0.0f;
 
-                    fragments.push_back({.kind = InlineFlowKind::Close, .width = width});
-                    pendingWidth += width;
+                    fragments.push_back({.kind = InlineFlowKind::Close, .width = padding, .trailingMargin = margin});
+                    pendingWidth += margin + padding;
                 }
 
                 const size_t childFragmentCount = fragments.size() - childFragmentStart;
@@ -1127,10 +1135,8 @@ namespace tree {
                 }
             }
 
-            childFragments.push_back({
-                .start = childFragmentStart,
-                .count = fragments.size() - childFragmentStart
-            });
+            auto& nodeRange = nodeFragments.try_emplace(child->id, layout::InlineFragmentRange{.start = childFragmentStart}).first->second;
+            nodeRange.count = fragments.size() - nodeRange.start;
         }
 
         commitPendingFragments(
@@ -1160,7 +1166,7 @@ namespace tree {
                 auto minContext = buildInlineBoxes(tree, node, frameInfo, constraints, request, minimumSizing, sizeCache);
                 context->minFragments = std::move(minContext->fragments);
                 context->minLineBoxes = std::move(minContext->lineBoxes);
-                context->minChildFragments = std::move(minContext->childFragments);
+                context->minNodeFragments = std::move(minContext->nodeFragments);
             }
 
             if (sizing.widthRequest != IntrinsicRequest::Maximum) {
@@ -1172,7 +1178,7 @@ namespace tree {
                 auto maxContext = buildInlineBoxes(tree, node, frameInfo, constraints, request, maximumSizing, sizeCache);
                 context->maxFragments = std::move(maxContext->fragments);
                 context->maxLineBoxes = std::move(maxContext->lineBoxes);
-                context->maxChildFragments = std::move(maxContext->childFragments);
+                context->maxNodeFragments = std::move(maxContext->nodeFragments);
             }
 
             const auto& minLineBoxes = context->minLineBoxes.empty() ? context->lineBoxes : context->minLineBoxes;
