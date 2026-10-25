@@ -712,6 +712,11 @@ namespace elements {
         }
 
         void encode(MTL::RenderCommandEncoder* encoder, Fragment<S>& fragment, Finalized<U>& finalized) {
+            const auto& drawnAtoms = finalized.atomized.usesDrawableAtoms ? finalized.atomized.drawableAtoms : finalized.atomized.atoms;
+            if (drawnAtoms.empty()) {
+                return;
+            }
+
             auto pipeline = getPipeline();
             encoder->setRenderPipelineState(pipeline);
 
@@ -735,11 +740,8 @@ namespace elements {
             encoder->setFragmentBuffer(uniformsBuf, 0, 2);
             encoder->setFragmentBuffer(clipsBuf, 0, 3);
 
-            const auto& atoms = finalized.atomized.usesDrawableAtoms
-                ? finalized.atomized.drawableAtoms
-                : finalized.atomized.atoms;
             auto indicesBuf = fragment.fragmentStorage.indicesBuffer.getBuffer(ctx.frameIndex);
-            encoder->drawIndexedPrimitives(MTL::PrimitiveTypeTriangle, NS::UInteger(atoms.size()*6), MTL::IndexTypeUInt32, indicesBuf, NS::UInteger(0));
+            encoder->drawIndexedPrimitives(MTL::PrimitiveTypeTriangle, NS::UInteger(drawnAtoms.size()*6), MTL::IndexTypeUInt32, indicesBuf, NS::UInteger(0));
 
         }
 

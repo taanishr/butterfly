@@ -21,7 +21,9 @@ namespace elements {
 
         auto currTree = TreeStack::getCurrentTree();
 
-        return NodeBuilder(ctx, *currTree, std::move(elem), proc);
+        auto builder = NodeBuilder(ctx, *currTree, std::move(elem), proc);
+        builder.treeNode()->metadata.displayName = "div";
+        return builder;
     }
 
     NodeBuilder<Div<DivStorage>, DivProcessor<DivStorage, DivUniforms>> div(Size width, Size height, simd_float4 color)
@@ -33,6 +35,7 @@ namespace elements {
         auto currTree = TreeStack::getCurrentTree();
 
         auto builder = NodeBuilder(ctx, *currTree, std::move(elem), proc);
+        builder.treeNode()->metadata.displayName = "div";
         builder.width(width);
         builder.height(height);
         builder.backgroundColor(color);
@@ -48,6 +51,7 @@ namespace elements {
         auto currTree = TreeStack::getCurrentTree();
 
         auto builder = NodeBuilder(ctx, *currTree, std::move(elem), proc);
+        builder.treeNode()->metadata.displayName = "span";
         builder.display(Display::Inline);
         return builder;
     }
@@ -62,6 +66,7 @@ namespace elements {
 
         auto currTree = TreeStack::getCurrentTree();
         auto builder = NodeBuilder(ctx, *currTree, std::move(elem), proc);
+        builder.treeNode()->metadata.displayName = "text";
         builder.treeNode()->shared.display = Display::Inline;
         return builder;
     }
@@ -77,6 +82,7 @@ namespace elements {
         auto currTree = TreeStack::getCurrentTree();
 
         auto builder = NodeBuilder(ctx, *currTree, std::move(elem), proc);
+        builder.treeNode()->metadata.displayName = "image";
         builder.display(Display::Inline);
         builder.width(width);
         builder.height(height);
@@ -94,6 +100,7 @@ namespace elements {
         auto currTree = TreeStack::getCurrentTree();
 
         auto builder = NodeBuilder(ctx, *currTree, std::move(elem), proc);
+        builder.treeNode()->metadata.displayName = "svg";
         builder.display(Display::Inline);
         builder.width(width);
         builder.height(height);

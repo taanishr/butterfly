@@ -1,4 +1,5 @@
 #include "render_tree.hpp"
+#include "context_manager.hpp"
 #include "hash_combine.hpp"
 #include "layout/layout.hpp"
 #include "layout/sizing.hpp"
@@ -410,9 +411,13 @@ namespace tree {
             },
         };
 
+        if (subtreeHasDirty(root, DirtyBits::Atomize | DirtyBits::Layout) || !root->atomized.has_value()) {
+            instrumentation::PhaseTimer timer{instrumentation::Phase::Fixup};
+            fixupPhase(root);
+        }
+
         if (subtreeHasDirty(root, DirtyBits::Atomize) || !root->atomized.has_value()) {
             instrumentation::PhaseTimer timer{instrumentation::Phase::Atomize};
-            resolveInheritedProperties(root);
             if (!atomizePhase(root, rootConstraints)) {
                 return;
             }
@@ -479,6 +484,10 @@ namespace tree {
         TreeNode* node,
         Constraints& constraints
     ) {
+        if (node->getDisplay() == Display::None) {
+            return {};
+        }
+
         node->textBidiInput = constraints.textBidiInput;
         constraints.inheritedProperties.font = node->inheritedProperties.font;
         constraints.inheritedProperties.fontSize = node->inheritedProperties.fontSize;
@@ -525,6 +534,127 @@ namespace tree {
         for (auto& child : node->children) {
             resolveComputedDisplays(child.get());
         }
+    }
+
+    std::unique_ptr<TreeNode> makeAnonymousBox() {
+        auto& ctx = runtime::ContextManager::getContext();
+        auto& proc = runtime::getDivProcessor(ctx);
+
+        auto box = std::make_unique<TreeNode>(ctx, elements::Div{ctx}, proc);
+        box->metadata.anonymous = true;
+        box->metadata.displayName = "anonymous";
+        box->shared.display = Display::Block;
+        return box;
+    }
+
+    constexpr DirtyBits structureDirtyBits() {
+        return DirtyBits::Measure | DirtyBits::Atomize | DirtyBits::Layout |
+            DirtyBits::PostLayout | DirtyBits::Place | DirtyBits::Finalize | DirtyBits::PaintOrder;
+    }
+
+    void moveIntoBox(RenderTree& tree, TreeNode* box, std::unique_ptr<TreeNode>&& child) {
+        child->parent = box;
+        auto* moved = child.get();
+        box->children.push_back(std::move(child));
+        tree.markDirty(moved, structureDirtyBits());
+    }
+
+    void wrapTextRuns(RenderTree& tree, TreeNode* parent) {
+        TreeNode* current = nullptr;
+
+        for (auto& child : parent->children) {
+            if (child->metadata.anonymous) {
+                if (current) {
+                    for (auto& grandchild : child->children) {
+                        moveIntoBox(tree, current, std::move(grandchild));
+                    }
+                    child.reset();
+                } else {
+                    current = child.get();
+                }
+            } else if (getText(child.get())) {
+                if (!current) {
+                    auto box = makeAnonymousBox();
+                    box->parent = parent;
+                    current = box.get();
+                    std::swap(child, box);
+                    moveIntoBox(tree, current, std::move(box));
+                } else {
+                    moveIntoBox(tree, current, std::move(child));
+                }
+            } else {
+                current = nullptr;
+            }
+        }
+
+        std::erase_if(parent->children, [](auto& child) {
+            return !child || (child->metadata.anonymous && child->children.empty());
+        });
+
+        for (auto& child : parent->children) {
+            if (!child->metadata.anonymous) {
+                continue;
+            }
+
+            bool whitespaceOnly = std::ranges::all_of(child->children, [](auto& text) {
+                return std::ranges::all_of(*getText(text.get()), [](char c) {
+                    return elements::isTextWhitespace(c);
+                });
+            });
+
+            if (whitespaceOnly) {
+                child->computedDisplay = Display::None;
+            }
+        }
+    }
+
+    void dissolveAnonymousBoxes(RenderTree& tree, TreeNode* parent) {
+        bool hasAnonymous = std::any_of(parent->children.begin(), parent->children.end(), [](auto& child) {
+            return child->metadata.anonymous;
+        });
+
+        if (!hasAnonymous) {
+            return;
+        }
+
+        std::vector<std::unique_ptr<TreeNode>> children;
+        children.reserve(parent->children.size());
+
+        for (auto& child : parent->children) {
+            if (!child->metadata.anonymous) {
+                children.push_back(std::move(child));
+                continue;
+            }
+
+            for (auto& grandchild : child->children) {
+                grandchild->parent = parent;
+                children.push_back(std::move(grandchild));
+            }
+        }
+
+        parent->children = std::move(children);
+        for (auto& child : parent->children) {
+            tree.markDirty(child.get(), structureDirtyBits());
+        }
+    }
+
+    void normalizeAnonymousBoxes(RenderTree& tree, TreeNode* node) {
+        auto display = node->getDisplay();
+        if (display == Display::Flex || display == Display::Grid) {
+            wrapTextRuns(tree, node);
+        } else {
+            dissolveAnonymousBoxes(tree, node);
+        }
+
+        for (auto& child : node->children) {
+            normalizeAnonymousBoxes(tree, child.get());
+        }
+    }
+
+    void RenderTree::fixupPhase(TreeNode* node) {
+        resolveComputedDisplays(node);
+        normalizeAnonymousBoxes(*this, node);
+        resolveInheritedProperties(node);
     }
 
     void buildCollapsedChains(
@@ -648,7 +778,6 @@ namespace tree {
         collapsedChainMap.clear();
         nextChainId = 0;
 
-        resolveComputedDisplays(node);
         buildCollapsedChains(node, collapsedChainMap, nextChainId, nullptr, nullptr);
 
         precomputeMargins(*this, node, constraints, collapsedChainMap);
@@ -877,6 +1006,9 @@ namespace tree {
                 intrinsicResult = layout::inlinePass(*this, node, frameInfo, std::get<layout::InlineState>(layout), childConstraints, sizeRequest, mutate, sizeCache);
                 break;
             }
+            case style::Display::None: {
+                break;
+            }
         }
 
         std::visit([](auto& state) {
@@ -906,6 +1038,10 @@ namespace tree {
     }
 
     void RenderTree::postLayoutPhase(TreeNode* node, const FrameInfo& frameInfo, Constraints& constraints) {
+        if (node->getDisplay() == Display::None) {
+            return;
+        }
+
         constraints.inheritedProperties.font = node->inheritedProperties.font;
         constraints.inheritedProperties.fontSize = node->inheritedProperties.fontSize;
         constraints.inheritedProperties.lineHeight = node->inheritedProperties.lineHeight;
@@ -1339,6 +1475,10 @@ namespace tree {
     }
     
     void RenderTree::placePhase(TreeNode* node, const FrameInfo& frameInfo, Constraints& constraints) {
+        if (node->getDisplay() == Display::None) {
+            return;
+        }
+
         auto key = makeConstraintsKey(constraints);
         auto reason = recomputeReason(node, DirtyBits::Place, key);
         if (reason != instrumentation::RecomputeReason::None) {
@@ -1358,6 +1498,10 @@ namespace tree {
     }
 
     void RenderTree::finalizePhase(TreeNode* node, Constraints& constraints) {
+        if (node->getDisplay() == Display::None) {
+            return;
+        }
+
         constraints.inheritedProperties.font = node->inheritedProperties.font;
         constraints.inheritedProperties.fontSize = node->inheritedProperties.fontSize;
         constraints.inheritedProperties.lineHeight = node->inheritedProperties.lineHeight;
@@ -1411,6 +1555,10 @@ namespace tree {
                     continue;
                 }
 
+                if (candidate->metadata.anonymous) {
+                    continue;
+                }
+
                 nodesExamined++;
                 if (candidate->contains(point)) {
                     hit = candidate;
@@ -1438,6 +1586,10 @@ namespace tree {
         auto& renderOrder = sortedRenderOrder();
 
         for (auto it = renderOrder.rbegin(); it != renderOrder.rend(); ++it) {
+            if ((*it)->metadata.anonymous) {
+                continue;
+            }
+
             if ((*it)->contains(point)) {
                 hits.push_back(*it);
             }

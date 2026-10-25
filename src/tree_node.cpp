@@ -31,6 +31,10 @@ namespace tree {
 
     void collectInFlowMembers(TreeNode* node, PaintLayer layer, std::vector<StackingMember>& members, std::vector<TreeNode*>& deferred) {
         for (auto& child : node->children) {
+            if (child->getDisplay() == Display::None) {
+                continue;
+            }
+
             if (child->shared.position != Position::Static || child->establishesStackingContext()) {
                 deferred.push_back(child.get());
                 continue;
@@ -46,6 +50,10 @@ namespace tree {
     }
 
     void collectStackingMembers(TreeNode* node, PaintLayer layer, std::vector<StackingMember>& members) {
+        if (node->getDisplay() == Display::None) {
+            return;
+        }
+
         bool establishesContext = node->establishesStackingContext();
         if (node->shared.position != Position::Static || establishesContext) {
             layer = PaintLayer::Positioned;

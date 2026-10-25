@@ -83,7 +83,7 @@ namespace elements {
 
         static constexpr DirtyBits textDirtyBits() {
             return DirtyBits::Atomize | DirtyBits::Layout |
-                DirtyBits::PostLayout | DirtyBits::Place | DirtyBits::Finalize;
+                DirtyBits::PostLayout | DirtyBits::Place | DirtyBits::Finalize | DirtyBits::PaintOrder;
         }
         Derived& self() {
             return static_cast<Derived&>(*this);

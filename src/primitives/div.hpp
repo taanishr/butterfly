@@ -461,6 +461,10 @@ namespace elements {
             // the obvious ideal is: separate shaders
             // so we'd switch on what finalized's DivStyleUniforms type looks like
             // then run diff pipelines for each
+            if (finalized.atomized.atoms.empty()) {
+                return;
+            }
+
             auto pipeline = getPipeline();
             encoder->setRenderPipelineState(pipeline);
             

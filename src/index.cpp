@@ -3653,7 +3653,7 @@ div()
     //     )
     // );
 
-    // layout_test::scenes::buildBrowser();
+    layout_test::scenes::buildBrowser();
 
     // using S = gui::Size;
 
@@ -6821,6 +6821,7 @@ div()
     //   nav items/buttons  -> color on hover
     //   banner dismiss     -> opacity + height
     // ═══════════════════════════════════════════════════════════════════
+    /*
     {
         using S = gui::Size;
         using gui::Display;
@@ -7031,6 +7032,7 @@ div()
             )
         );
     }
+    */
 
     // {
     //     using S = gui::Size;
@@ -7046,6 +7048,79 @@ div()
     //     div(S::percent(1.0), S::percent(1.0), simd_float4{0.8, 0.8, 0.8, 1}).paddingTop(S::px(40))(
     //         row(40), row(45), row(50), row(55), row(60), row(65),
     //         row(70), row(75), row(80), row(85), row(90), row(95)
+    //     );
+    // }
+
+    // {
+    //     using S = gui::Size;
+
+    //     const simd_float4 labelColor{0.70, 0.73, 0.80, 1.0};
+    //     const simd_float4 rowColor{0.15, 0.16, 0.20, 1.0};
+    //     const simd_float4 itemColor{0.08, 0.72, 0.86, 1.0};
+    //     const simd_float4 textColor{0.96, 0.97, 1.0, 1.0};
+
+    //     auto label = [&](const std::string& value) {
+    //         return elements::span().font(Arial).fontSize(S::pt(12)).color(labelColor)(text(value));
+    //     };
+
+    //     auto row = [&]() {
+    //         return div(S::autoSize(), S::autoSize(), rowColor)
+    //             .display(gui::Display::Flex)
+    //             .alignItems(gui::AlignItems::Center)
+    //             .flexGap(S::px(16))
+    //             .padding(S::px(10))
+    //             .font(Arial)
+    //             .fontSize(S::pt(14))
+    //             .color(textColor);
+    //     };
+
+    //     auto appendRow = row();
+    //     appendRow.addEventListener(runtime::EventType::MouseDown, [appendRow](auto&, Event&) mutable {
+    //         appendRow(text(" again"));
+    //     });
+
+    //     div(S::percent(1.0), S::percent(1.0), simd_float4{0.06, 0.07, 0.09, 1.0})
+    //         .display(gui::Display::Flex)
+    //         .flexDirection(gui::FlexDirection::Col)
+    //         .alignItems(gui::AlignItems::FlexStart)
+    //         .padding(S::px(48))
+    //         .flexGap(S::px(12))
+    //     (
+    //         label("CONSECUTIVE TEXT — ONE ITEM, NO GAP BETWEEN \"Hello\" AND \"world\""),
+    //         row()(text("Hello "), text("world")),
+
+    //         label("TEXT, DIV, TEXT — TWO TEXT ITEMS AROUND THE DIV"),
+    //         row()(text("left"), div(S::px(24), S::px(24), itemColor)(), text("right")),
+
+    //         label("TEXT, ABSPOS, TEXT — TWO ITEMS (ABSPOS BREAKS THE RUN)"),
+    //         row().position(gui::Position::Relative)(
+    //             text("before"),
+    //             div(S::px(12), S::px(12), simd_float4{0.96, 0.30, 0.46, 1.0}).position(gui::Position::Absolute).right(S::px(4)).top(S::px(4))(),
+    //             text("after")
+    //         ),
+
+    //         label("DIV, WHITESPACE, DIV — ONE 16PX GAP (WHITESPACE RUN NOT RENDERED)"),
+    //         row()(div(S::px(24), S::px(24), itemColor)(), text("   "), div(S::px(24), S::px(24), itemColor)()),
+
+    //         label("GRID: \"a\" \"b\" DIV \"c\" — THREE CELLS: \"ab\", DIV, \"c\""),
+    //         div(S::px(360), S::autoSize(), rowColor)
+    //             .display(gui::Display::Grid)
+    //             .gridTemplateColumns({S::fr(1.0), S::fr(1.0), S::fr(1.0)})
+    //             .gridColumnGap(S::px(10))
+    //             .padding(S::px(10))
+    //             .font(Arial)
+    //             .fontSize(S::pt(14))
+    //             .color(textColor)
+    //         (text("a"), text("b"), div(S::px(24), S::px(24), itemColor)(), text("c")),
+
+    //         label("FLEX: TEXT, SPAN, TEXT — THREE ITEMS"),
+    //         row()(text("one "), elements::span()(text("two")), text(" three")),
+
+    //         label("BLOCK: SAME CHILDREN — ONE LINE, NO ANONYMOUS BOXES"),
+    //         row().display(gui::Display::Block)(text("one "), elements::span()(text("two")), text(" three")),
+
+    //         label("CLICK TO APPEND \" again\" — ABSORBED INTO THE SAME ITEM, NO 16PX GAP"),
+    //         appendRow(text("hello"))
     //     );
     // }
 }

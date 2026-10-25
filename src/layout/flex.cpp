@@ -105,6 +105,10 @@ namespace layout {
                 continue;
             }
 
+            if (childAsPtr->getDisplay() == Display::None) {
+                continue;
+            }
+
             auto selfAlign = childAsPtr->getAlignSelf();
             AlignItems effectiveAlign = flex.effectiveAlign(selfAlign);
 
@@ -177,12 +181,6 @@ namespace layout {
                     childRequest.automaticWidth = AutomaticSizing::UseAvailable;
                 }
             }
-
-            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(tree, childAsPtr, frameInfo, preparedChildConstraints, childRequest, {
-                .availableWidth = preparedChildConstraints.availableWidth,
-                .widthRequest = childRequest.intrinsicWidthRequest,
-                .trackIntrinsicWidth = flex.axis.isRow ? true : false,
-            }, sizeCache);
 
             SizeResult childSizing = evaluateSize(tree, childAsPtr, frameInfo, preparedChildConstraints, childRequest, sizeCache);
 
@@ -287,12 +285,6 @@ namespace layout {
                 };
 
                 flex.axis.mainSize(childRequest.override) = item.usedMainSize;
-
-                preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(tree, childNode, frameInfo, preparedChildConstraints, childRequest, {
-                    .availableWidth = childAvailableSize.width,
-                    .widthRequest = childRequest.intrinsicWidthRequest,
-                    .trackIntrinsicWidth = flex.axis.isRow ? false : true,
-                }, sizeCache);
 
                 if (flex.axis.isRow) {
                     childRequest.automaticHeight = AutomaticSizing::UseContent;
@@ -428,12 +420,6 @@ namespace layout {
                 childRequest.automaticWidth = placement.alignment == AlignItems::Stretch ? AutomaticSizing::UseAvailable : AutomaticSizing::UseContent;
             }
 
-            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(tree, childNode, frameInfo, preparedChildConstraints, childRequest, {
-                .availableWidth = childAvailableSize.width,
-                .widthRequest = childRequest.intrinsicWidthRequest,
-                .trackIntrinsicWidth = false,
-            }, sizeCache);
-
             tree.layoutRecursive(childNode, frameInfo, std::move(preparedChildConstraints), mutate, std::move(childRequest));
         }
 
@@ -482,12 +468,6 @@ namespace layout {
                 .automaticMinimumWidth = AutomaticMinimum::Zero,
                 .automaticMinimumHeight = AutomaticMinimum::Zero,
             };
-
-            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(tree, childNode, frameInfo, preparedChildConstraints, childRequest, {
-                .availableWidth = childRequest.available.width,
-                .widthRequest = childRequest.intrinsicWidthRequest,
-                .trackIntrinsicWidth = false,
-            }, sizeCache);
 
             tree.layoutRecursive(childNode, frameInfo, std::move(preparedChildConstraints), mutate, std::move(childRequest));
         }

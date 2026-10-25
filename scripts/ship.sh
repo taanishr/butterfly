@@ -12,16 +12,20 @@ cd "$ROOT_DIR"
 
 ENABLE_DEBUG_UI=0
 ENABLE_PROFILE=0
+ENABLE_ASAN=0
+ENABLE_GPU_VALIDATION=0
 FRAME_WIDTH=740.0
 FRAME_HEIGHT=760.0
 
 usage() {
     cat <<EOF
-Usage: scripts/ship.sh [--debug-ui] [--profile] [--frame-width N] [--frame-height N] [build|run|buildrun|compare|debug|extensions|xcode|test]
+Usage: scripts/ship.sh [--debug-ui] [--profile] [--asan] [--gpu-validation] [--frame-width N] [--frame-height N] [build|run|buildrun|compare|debug|extensions|xcode|test]
 
 Options:
   --debug-ui  Enable the compile-time debug inspector UI
   --profile   Build with optimization, debug symbols, and frame pointers
+  --asan      Build with AddressSanitizer
+  --gpu-validation  Run with Metal API and shader validation enabled
   --frame-width N   Initial GUI content width (default: 512.0)
   --frame-height N  Initial GUI content height (default: 512.0)
 
@@ -46,6 +50,14 @@ while [[ $# -gt 0 ]]; do
             ;;
         --profile)
             ENABLE_PROFILE=1
+            shift
+            ;;
+        --asan)
+            ENABLE_ASAN=1
+            shift
+            ;;
+        --gpu-validation)
+            ENABLE_GPU_VALIDATION=1
             shift
             ;;
         --frame-width)
@@ -80,6 +92,11 @@ frame_number='^[0-9]+([.][0-9]+)?$'
     exit 1
 }
 
+if [[ $ENABLE_GPU_VALIDATION -eq 1 ]]; then
+    export MTL_DEBUG_LAYER=1
+    export MTL_SHADER_VALIDATION=1
+fi
+
 if [[ $ENABLE_PROFILE -eq 1 && $ENABLE_DEBUG_UI -eq 1 ]]; then
     PRESET=profile-inspector
 elif [[ $ENABLE_PROFILE -eq 1 || $COMMAND == compare ]]; then
@@ -93,7 +110,8 @@ fi
 configure() {
     cmake --preset "$PRESET" -S "$ROOT_DIR" \
         -DGUI_FRAME_WIDTH="$FRAME_WIDTH" \
-        -DGUI_FRAME_HEIGHT="$FRAME_HEIGHT"
+        -DGUI_FRAME_HEIGHT="$FRAME_HEIGHT" \
+        -DGUI_ASAN="$ENABLE_ASAN"
 }
 
 build() {

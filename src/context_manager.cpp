@@ -20,7 +20,7 @@ namespace runtime {
 
  
     DivProcessor<DivStorage, DivUniforms>& getDivProcessor(UIContext& ctx) {
-        std::once_flag initFlag;
+        static std::once_flag initFlag;
         static std::optional<DivProcessor<DivStorage, DivUniforms>> div_proc;
 
         std::call_once(initFlag, [&](){
@@ -31,7 +31,7 @@ namespace runtime {
     }
 
     ImageProcessor<ImageStorage, ImageUniforms>& getImageProcessor(UIContext& ctx) {
-        std::once_flag initFlag;
+        static std::once_flag initFlag;
         static std::optional<ImageProcessor<ImageStorage, ImageUniforms>> img_proc;
 
         std::call_once(initFlag, [&](){
@@ -42,7 +42,7 @@ namespace runtime {
     }
 
     TextProcessor<TextStorage, TextUniforms>& getTextProcessor(UIContext& ctx) {
-        std::once_flag initFlag;
+        static std::once_flag initFlag;
         static std::optional<TextProcessor<TextStorage, TextUniforms>> txt_proc;
 
         std::call_once(initFlag, [&](){
@@ -53,7 +53,7 @@ namespace runtime {
     }
 
     SVGProcessor<SVGStorage, SVGUniforms>& getSVGProcessor(UIContext& ctx) {
-        std::once_flag initFlag;
+        static std::once_flag initFlag;
         static std::optional<SVGProcessor<SVGStorage, SVGUniforms>> svg_proc;
 
         std::call_once(initFlag, [&](){

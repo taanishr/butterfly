@@ -22,7 +22,8 @@ namespace style {
         Block,
         Inline,
         Flex,
-        Grid
+        Grid,
+        None
     };
 
     enum class FlexDirection {

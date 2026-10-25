@@ -39,7 +39,8 @@ namespace tree {
   
         TreeNode* hitTestRecursive(TreeNode* node, simd_float2 point);
         std::vector<TreeNode*> hitTestAll(simd_float2 point);
-        
+
+        void fixupPhase(TreeNode* node);
 
         Result<void> atomizePhase(
             TreeNode* node,

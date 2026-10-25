@@ -138,6 +138,11 @@ if(GUI_PROFILE)
     target_compile_options(gui PRIVATE -fno-omit-frame-pointer)
 endif()
 
+if(GUI_ASAN)
+    target_compile_options(gui PRIVATE -fsanitize=address -fno-omit-frame-pointer)
+    target_link_options(gui PRIVATE -fsanitize=address)
+endif()
+
 target_include_directories(gui PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}"
     "${METAL_CPP_ROOT}"

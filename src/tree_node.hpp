@@ -99,6 +99,15 @@ namespace tree {
     
     using EventHandler = std::function<void(Event&)>;
 
+    // this provides additional metadata on the nature of a box
+    // i.e. is it anonymouus
+    // and separates what its display name is (svg, span, div) from its backing element (div will be alot of backing elements)
+    struct NodeMetadata {
+        bool anonymous{false};
+        std::string_view displayName;
+        std::string_view backing;
+    };
+
     struct TreeNode {
         template<ElementType E, typename P>
             requires ProcessorType<P, typename E::StorageType, typename E::DescriptorType, typename E::UniformsType>
@@ -108,7 +117,10 @@ namespace tree {
             id(nextId++),
             paintPreorderIndex{0},
             paintPostorderIndex{0}
-        {}
+        {
+            metadata.backing = element->elementTypeName();
+            metadata.displayName = metadata.backing;
+        }
 
         ~TreeNode() {
             instrumentation::removeNode(id);
@@ -248,6 +260,7 @@ namespace tree {
 
         
         std::unique_ptr<ElementBase> element;
+        NodeMetadata metadata;
         TreeNode* parent = nullptr;
         std::vector<std::unique_ptr<TreeNode>> children;
         uint64_t id;
@@ -319,12 +332,6 @@ namespace tree {
     
     // full blown inline context
     std::shared_ptr<layout::InlineFormattingContext> buildInlineBoxes(
-        RenderTree& tree, TreeNode* node, const FrameInfo& frameInfo,
-        const Constraints& constraints, const SizeRequest& request, const InlineSizingInput& sizing,
-        std::optional<std::unordered_map<size_t, SizeResult>&> sizeCache);
-
-    // inline context calculated for a single child, independently of other siblings
-    layout::InlineFormattingInput buildIsolatedInlineBoxes(
         RenderTree& tree, TreeNode* node, const FrameInfo& frameInfo,
         const Constraints& constraints, const SizeRequest& request, const InlineSizingInput& sizing,
         std::optional<std::unordered_map<size_t, SizeResult>&> sizeCache);

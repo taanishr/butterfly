@@ -30,6 +30,7 @@ namespace Inspector {
                 case style::Display::Inline: return "Inline";
                 case style::Display::Flex: return "Flex";
                 case style::Display::Grid: return "Grid";
+                case style::Display::None: return "None";
             }
         }
 
@@ -54,6 +55,7 @@ namespace Inspector {
             using instrumentation::Phase;
             switch (phase) {
                 case Phase::Update: return "update";
+                case Phase::Fixup: return "fixup";
                 case Phase::Atomize: return "atomize";
                 case Phase::PreLayout: return "pre-layout";
                 case Phase::Layout: return "layout";
@@ -417,7 +419,7 @@ namespace Inspector {
             auto htNode = hitNodes[selectedHitIndex];
             selectedNode = htNode;
             htNodeID = htNode->id;
-            htNodeElementType = std::string(htNode->element->elementTypeName());
+            htNodeElementType = std::format("{} ({})", htNode->metadata.displayName, htNode->metadata.backing);
             htNodeDisplay = displayName(htNode->shared.display);
             htNodePosition = positionName(htNode->shared.position);
             htNodeOverflow = overflowName(htNode->shared.overflow);
@@ -446,7 +448,7 @@ namespace Inspector {
             for (std::size_t i = 0; i < path.size(); ++i) {
                 auto* node = path[i];
                 auto line = std::format("{}#{}",
-                    node->element->elementTypeName(),
+                    node->metadata.displayName,
                     node->id
                 );
                 formattedPath.append(line.begin(), line.end());
@@ -466,7 +468,7 @@ namespace Inspector {
                 hitStackDetails += std::format(
                     "{} {}#{}  z:{}",
                     i == selectedHitIndex ? ">" : " ",
-                    node->element->elementTypeName(),
+                    node->metadata.displayName,
                     node->id,
                     zIndexName(node->zIndex)
                 );
@@ -485,7 +487,7 @@ namespace Inspector {
                 treeViewDetails += std::format(
                     "{}{}#{}",
                     htNodeID == node->id ? "> " : "  ",
-                    node->element->elementTypeName(),
+                    node->metadata.displayName,
                     node->id
                 );
                 treeViewDetails += '\n';
@@ -696,7 +698,7 @@ namespace Inspector {
 
         selectionLabelText.text(std::format(
             "{}#{}  {:.0f}×{:.0f}",
-            node->element->elementTypeName(),
+            node->metadata.displayName,
             node->id,
             box.width,
             box.height
