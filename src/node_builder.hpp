@@ -49,20 +49,8 @@ namespace elements {
     template<typename T>
     concept HasText = requires { std::declval<T&>().text; };
 
-    template<typename T>
-    concept HasFont = requires { std::declval<T&>().font; };
-
-    template<typename T>
-    concept HasFontSize = requires { std::declval<T&>().fontSize; };
-
-    template<typename T>
-    concept HasLineHeight = requires { std::declval<T&>().lineHeight; };
-
-    template<typename T>
-    concept HasWhiteSpace = requires { std::declval<T&>().whiteSpace; };
-
-    template<typename T>
-    concept HasWordBreak = requires { std::declval<T&>().wordBreak; };
+    template<typename E>
+    concept LeafElement = requires { requires E::isLeaf; };
 
     template <typename Derived, ElementType E, typename P>
         requires ProcessorType<P, typename E::StorageType, typename E::DescriptorType, typename E::UniformsType>
@@ -77,25 +65,20 @@ namespace elements {
             node{node}
         {}
 
-        void markDirty(std::source_location source = std::source_location::current()) {
-            renderTree.markDirty(source);
-        }
-
-        void markDirty(
-            DirtyBits bits,
-            std::source_location source = std::source_location::current()
-        ) {
+        void markDirty(DirtyBits bits, std::source_location source = std::source_location::current()) {
             renderTree.markDirty(node, bits, source);
         }
 
+        void remove(std::source_location source = std::source_location::current()) {
+            renderTree.removeNode(node, source);
+        }
+
         static constexpr DirtyBits layoutDirtyBits() {
-            return DirtyBits::Measure | DirtyBits::Atomize | DirtyBits::Layout |
-                DirtyBits::PostLayout | DirtyBits::Place | DirtyBits::Finalize;
+            return DirtyBits::Measure | DirtyBits::Atomize | DirtyBits::Layout | DirtyBits::PostLayout | DirtyBits::Place | DirtyBits::Finalize;
         }
 
         static constexpr DirtyBits textDirtyBits() {
-            return DirtyBits::Atomize | DirtyBits::Layout |
-                DirtyBits::PostLayout | DirtyBits::Place | DirtyBits::Finalize;
+            return DirtyBits::Atomize | DirtyBits::Layout | DirtyBits::PostLayout | DirtyBits::Place | DirtyBits::Finalize | DirtyBits::PaintOrder;
         }
         Derived& self() {
             return static_cast<Derived&>(*this);
@@ -105,37 +88,37 @@ namespace elements {
             return static_cast<const Derived&>(*this);
         }
 
-        Position position() const {
+        Position position() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.position;
         }
 
-        Derived& position(Position position) {
+        Derived& position(Position position) requires (!HasText<typename E::DescriptorType>) {
             node->shared.position = position;
             markDirty(layoutDirtyBits() | DirtyBits::PaintOrder);
             return self();
         }
 
-        Display display() const {
+        Display display() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.display;
         }
 
-        Derived& display(Display display) {
+        Derived& display(Display display) requires (!HasText<typename E::DescriptorType>) {
             node->shared.display = display;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        Size width() const {
+        Size width() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.width;
         }
 
-        Derived& width(Size width) {
+        Derived& width(Size width) requires (!HasText<typename E::DescriptorType>) {
             node->shared.width = width;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        Derived& animateWidth(Size target, double duration, animation::Easing easing = animation::Easing::Linear, std::optional<Size> from = std::nullopt) {
+        Derived& animateWidth(Size target, double duration, animation::Easing easing = animation::Easing::Linear, std::optional<Size> from = std::nullopt) requires (!HasText<typename E::DescriptorType>) {
             auto& manager = renderTree.animationManager;
             auto& slot = node->animations[animation::Animatable::Width];
             Size initial = from.value_or(manager.width(slot, node->getWidth()));
@@ -149,37 +132,37 @@ namespace elements {
             return width(target);
         }
 
-        Size minWidth() const {
+        Size minWidth() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.minWidth;
         }
 
-        Derived& minWidth(Size width) {
+        Derived& minWidth(Size width) requires (!HasText<typename E::DescriptorType>) {
             node->shared.minWidth = width;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        std::optional<Size> maxWidth() const {
+        std::optional<Size> maxWidth() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.maxWidth;
         }
 
-        Derived& maxWidth(Size width) {
+        Derived& maxWidth(Size width) requires (!HasText<typename E::DescriptorType>) {
             node->shared.maxWidth = width;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        Size height() const {
+        Size height() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.height;
         }
 
-        Derived& height(Size height) {
+        Derived& height(Size height) requires (!HasText<typename E::DescriptorType>) {
             node->shared.height = height;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        Derived& animateHeight(Size target, double duration, animation::Easing easing = animation::Easing::Linear, std::optional<Size> from = std::nullopt) {
+        Derived& animateHeight(Size target, double duration, animation::Easing easing = animation::Easing::Linear, std::optional<Size> from = std::nullopt) requires (!HasText<typename E::DescriptorType>) {
             auto& manager = renderTree.animationManager;
             auto& slot = node->animations[animation::Animatable::Height];
             Size initial = from.value_or(manager.height(slot, node->getHeight()));
@@ -193,7 +176,7 @@ namespace elements {
             return height(target);
         }
 
-        Derived& aspectRatio(float width, float height = 1.0f) {
+        Derived& aspectRatio(float width, float height = 1.0f) requires (!HasText<typename E::DescriptorType>) {
             node->shared.aspectRatio =
                 width > 0.0f && height > 0.0f
                     ? std::optional<float>{width / height}
@@ -202,161 +185,161 @@ namespace elements {
             return self();
         }
 
-        Size minHeight() const {
+        Size minHeight() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.minHeight;
         }
 
-        Derived& minHeight(Size height) {
+        Derived& minHeight(Size height) requires (!HasText<typename E::DescriptorType>) {
             node->shared.minHeight = height;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        std::optional<Size> maxHeight() const {
+        std::optional<Size> maxHeight() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.maxHeight;
         }
 
-        Derived& maxHeight(Size height) {
+        Derived& maxHeight(Size height) requires (!HasText<typename E::DescriptorType>) {
             node->shared.maxHeight = height;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        std::optional<Size> top() const {
+        std::optional<Size> top() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.top;
         }
 
-        Derived& top(Size top) {
+        Derived& top(Size top) requires (!HasText<typename E::DescriptorType>) {
             node->shared.top = top;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        std::optional<Size> right() const {
+        std::optional<Size> right() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.right;
         }
 
-        Derived& right(Size right) {
+        Derived& right(Size right) requires (!HasText<typename E::DescriptorType>) {
             node->shared.right = right;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        std::optional<Size> bottom() const {
+        std::optional<Size> bottom() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.bottom;
         }
 
-        Derived& bottom(Size bottom) {
+        Derived& bottom(Size bottom) requires (!HasText<typename E::DescriptorType>) {
             node->shared.bottom = bottom;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        std::optional<Size> left() const {
+        std::optional<Size> left() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.left;
         }
 
-        Derived& left(Size left) {
+        Derived& left(Size left) requires (!HasText<typename E::DescriptorType>) {
             node->shared.left = left;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        FlexDirection flexDirection() const {
+        FlexDirection flexDirection() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.flexDirection;
         }
 
-        Derived& flexDirection(FlexDirection direction) {
+        Derived& flexDirection(FlexDirection direction) requires (!HasText<typename E::DescriptorType>) {
             node->shared.flexDirection = direction;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        JustifyContent justifyContent() const {
+        JustifyContent justifyContent() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.justifyContent;
         }
 
-        Derived& justifyContent(JustifyContent justifyContent) {
+        Derived& justifyContent(JustifyContent justifyContent) requires (!HasText<typename E::DescriptorType>) {
             node->shared.justifyContent = justifyContent;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        AlignItems alignItems() const {
+        AlignItems alignItems() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.alignItems;
         }
 
-        Derived& alignItems(AlignItems alignItems) {
+        Derived& alignItems(AlignItems alignItems) requires (!HasText<typename E::DescriptorType>) {
             node->shared.alignItems = alignItems;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        FlexWrap flexWrap() const {
+        FlexWrap flexWrap() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.flexWrap;
         }
 
-        Derived& flexWrap(FlexWrap wrap) {
+        Derived& flexWrap(FlexWrap wrap) requires (!HasText<typename E::DescriptorType>) {
             node->shared.flexWrap = wrap;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        AlignContent alignContent() const {
+        AlignContent alignContent() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.alignContent;
         }
 
-        Derived& alignContent(AlignContent ac) {
+        Derived& alignContent(AlignContent ac) requires (!HasText<typename E::DescriptorType>) {
             node->shared.alignContent = ac;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        AlignSelf alignSelf() const {
+        AlignSelf alignSelf() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.alignSelf;
         }
 
-        Derived& alignSelf(AlignSelf as) {
+        Derived& alignSelf(AlignSelf as) requires (!HasText<typename E::DescriptorType>) {
             node->shared.alignSelf = as;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        JustifyItems justifyItems() const {
+        JustifyItems justifyItems() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.justifyItems;
         }
 
-        Derived& justifyItems(JustifyItems justifyItems) {
+        Derived& justifyItems(JustifyItems justifyItems) requires (!HasText<typename E::DescriptorType>) {
             node->shared.justifyItems = justifyItems;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        JustifySelf justifySelf() const {
+        JustifySelf justifySelf() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.justifySelf;
         }
 
-        Derived& justifySelf(JustifySelf justifySelf) {
+        Derived& justifySelf(JustifySelf justifySelf) requires (!HasText<typename E::DescriptorType>) {
             node->shared.justifySelf = justifySelf;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        Overflow overflow() const {
+        Overflow overflow() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.overflow;
         }
 
-        Derived& overflow(Overflow overflow) {
+        Derived& overflow(Overflow overflow) requires (!HasText<typename E::DescriptorType>) {
             node->shared.overflow = overflow;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        std::optional<simd_float2> translate() const {
+        std::optional<simd_float2> translate() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.translate;
         }
 
-        Derived& translate(simd_float2 translate) {
+        Derived& translate(simd_float2 translate) requires (!HasText<typename E::DescriptorType>) {
             auto& shared = node->shared;
             shared.translate = translate;
             shared.transform = composeTransform(
@@ -368,7 +351,7 @@ namespace elements {
             return self();
         }
 
-        Derived& animateTranslate(simd_float2 target, double duration, animation::Easing easing = animation::Easing::Linear, std::optional<simd_float2> from = std::nullopt) {
+        Derived& animateTranslate(simd_float2 target, double duration, animation::Easing easing = animation::Easing::Linear, std::optional<simd_float2> from = std::nullopt) requires (!HasText<typename E::DescriptorType>) {
             auto& manager = renderTree.animationManager;
             auto& slot = node->animations[animation::Animatable::Translate];
             simd_float2 initial = from.value_or(manager.transform(slot, node->getTransform()).columns[2].xy);
@@ -378,11 +361,11 @@ namespace elements {
             return translate(target);
         }
 
-        std::optional<float> rotate() const {
+        std::optional<float> rotate() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.rotate;
         }
 
-        Derived& rotate(float rotate) {
+        Derived& rotate(float rotate) requires (!HasText<typename E::DescriptorType>) {
             auto& shared = node->shared;
             shared.rotate = rotate;
             shared.transform = composeTransform(
@@ -394,11 +377,11 @@ namespace elements {
             return self();
         }
 
-        std::optional<simd_float2> scale() const {
+        std::optional<simd_float2> scale() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.scale;
         }
 
-        Derived& scale(simd_float2 scale) {
+        Derived& scale(simd_float2 scale) requires (!HasText<typename E::DescriptorType>) {
             auto& shared = node->shared;
             shared.scale = scale;
             shared.transform = composeTransform(
@@ -410,28 +393,28 @@ namespace elements {
             return self();
         }
 
-        std::pair<Size, Size> transformOrigin() const {
+        std::pair<Size, Size> transformOrigin() const requires (!HasText<typename E::DescriptorType>) {
             return {node->shared.transformOriginX, node->shared.transformOriginY};
         }
 
-        Derived& transformOrigin(Size x, Size y) {
+        Derived& transformOrigin(Size x, Size y) requires (!HasText<typename E::DescriptorType>) {
             node->shared.transformOriginX = x;
             node->shared.transformOriginY = y;
             markDirty(DirtyBits::PostLayout | DirtyBits::Finalize);
             return self();
         }
 
-        float opacity() const {
+        float opacity() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.opacity;
         }
 
-        Derived& opacity(float opacity) {
+        Derived& opacity(float opacity) requires (!HasText<typename E::DescriptorType>) {
             node->shared.opacity = std::clamp(opacity, 0.0f, 1.0f);
             markDirty(DirtyBits::PostLayout | DirtyBits::Finalize | DirtyBits::PaintOrder);
             return self();
         }
 
-        Derived& animateOpacity(float target, double duration, animation::Easing easing = animation::Easing::Linear, std::optional<float> from = std::nullopt) {
+        Derived& animateOpacity(float target, double duration, animation::Easing easing = animation::Easing::Linear, std::optional<float> from = std::nullopt) requires (!HasText<typename E::DescriptorType>) {
             auto& manager = renderTree.animationManager;
             auto& slot = node->animations[animation::Animatable::Opacity];
             float initial = from.value_or(manager.opacity(slot, node->getOpacity()));
@@ -441,189 +424,189 @@ namespace elements {
             return opacity(target);
         }
 
-        std::optional<simd_float3x3> transform() const {
+        std::optional<simd_float3x3> transform() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.transform;
         }
 
-        Derived& transform(std::optional<simd_float3x3> transform) {
+        Derived& transform(std::optional<simd_float3x3> transform) requires (!HasText<typename E::DescriptorType>) {
             node->shared.transform = transform;
             markDirty(layoutDirtyBits() | DirtyBits::PaintOrder);
             return self();
         }
 
-        PointerEvents pointerEvents() const {
+        PointerEvents pointerEvents() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.pointerEvents;
         }
 
-        Derived& pointerEvents(PointerEvents pointerEvents) {
+        Derived& pointerEvents(PointerEvents pointerEvents) requires (!HasText<typename E::DescriptorType>) {
             node->shared.pointerEvents = pointerEvents;
             return self();
         }
 
-        const TextOverflow& textOverflow() const {
+        const TextOverflow& textOverflow() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.textOverflow;
         }
 
-        Derived& textOverflow(TextOverflow textOverflow) {
+        Derived& textOverflow(TextOverflow textOverflow) requires (!HasText<typename E::DescriptorType>) {
             node->shared.textOverflow = std::move(textOverflow);
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        std::optional<TextAlign> textAlign() const {
+        std::optional<TextAlign> textAlign() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.textAlign;
         }
 
-        Derived& textAlign(TextAlign textAlign) {
+        Derived& textAlign(TextAlign textAlign) requires (!HasText<typename E::DescriptorType>) {
             node->shared.textAlign = textAlign;
             markDirty(DirtyBits::Layout | DirtyBits::PostLayout |
                       DirtyBits::Place | DirtyBits::Finalize);
             return self();
         }
 
-        Size flexGrow() const {
+        Size flexGrow() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.flexGrow;
         }
 
-        Derived& flexGrow(Size grow) {
+        Derived& flexGrow(Size grow) requires (!HasText<typename E::DescriptorType>) {
             node->shared.flexGrow = grow;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        Size flexGap() const {
+        Size flexGap() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.flexGap;
         }
 
-        Derived& flexGap(Size gap) {
+        Derived& flexGap(Size gap) requires (!HasText<typename E::DescriptorType>) {
             node->shared.flexGap = gap;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        Size flexShrink() const {
+        Size flexShrink() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.flexShrink;
         }
 
-        Derived& flexShrink(Size shrink) {
+        Derived& flexShrink(Size shrink) requires (!HasText<typename E::DescriptorType>) {
             node->shared.flexShrink = shrink;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        const std::vector<Size>& gridTemplateColumns() const {
+        const std::vector<Size>& gridTemplateColumns() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.gridTemplateColumns;
         }
 
-        Derived& gridTemplateColumns(std::vector<Size> tracks) {
+        Derived& gridTemplateColumns(std::vector<Size> tracks) requires (!HasText<typename E::DescriptorType>) {
             node->shared.gridTemplateColumns = std::move(tracks);
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        const std::vector<Size>& gridTemplateRows() const {
+        const std::vector<Size>& gridTemplateRows() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.gridTemplateRows;
         }
 
-        Derived& gridTemplateRows(std::vector<Size> tracks) {
+        Derived& gridTemplateRows(std::vector<Size> tracks) requires (!HasText<typename E::DescriptorType>) {
             node->shared.gridTemplateRows = std::move(tracks);
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        Size gridColumnGap() const {
+        Size gridColumnGap() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.gridColumnGap;
         }
 
-        Derived& gridColumnGap(Size gap) {
+        Derived& gridColumnGap(Size gap) requires (!HasText<typename E::DescriptorType>) {
             node->shared.gridColumnGap = gap;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        Size gridRowGap() const {
+        Size gridRowGap() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.gridRowGap;
         }
 
-        Derived& gridRowGap(Size gap) {
+        Derived& gridRowGap(Size gap) requires (!HasText<typename E::DescriptorType>) {
             node->shared.gridRowGap = gap;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        GridPlacement gridPlacement() const {
+        GridPlacement gridPlacement() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.gridPlacement;
         }
 
-        Derived& gridColumn(int start, int end = 0) {
+        Derived& gridColumn(int start, int end = 0) requires (!HasText<typename E::DescriptorType>) {
             node->shared.gridPlacement.colStart = start;
             node->shared.gridPlacement.colEnd = end;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        Derived& gridRow(int start, int end = 0) {
+        Derived& gridRow(int start, int end = 0) requires (!HasText<typename E::DescriptorType>) {
             node->shared.gridPlacement.rowStart = start;
             node->shared.gridPlacement.rowEnd = end;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        Size cornerRadius() const {
+        Size cornerRadius() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.cornerRadius;
         }
 
-        Derived& cornerRadius(Size radius) {
+        Derived& cornerRadius(Size radius) requires (!HasText<typename E::DescriptorType>) {
             node->shared.cornerRadius = radius;
             markDirty(DirtyBits::PostLayout);
             return self();
         }
 
-        std::optional<Size> cornerRadiusTopLeft() const {
+        std::optional<Size> cornerRadiusTopLeft() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.cornerRadiusTopLeft;
         }
 
-        Derived& cornerRadiusTopLeft(Size radius) {
+        Derived& cornerRadiusTopLeft(Size radius) requires (!HasText<typename E::DescriptorType>) {
             node->shared.cornerRadiusTopLeft = radius;
             markDirty(DirtyBits::PostLayout);
             return self();
         }
 
-        std::optional<Size> cornerRadiusTopRight() const {
+        std::optional<Size> cornerRadiusTopRight() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.cornerRadiusTopRight;
         }
 
-        Derived& cornerRadiusTopRight(Size radius) {
+        Derived& cornerRadiusTopRight(Size radius) requires (!HasText<typename E::DescriptorType>) {
             node->shared.cornerRadiusTopRight = radius;
             markDirty(DirtyBits::PostLayout);
             return self();
         }
 
-        std::optional<Size> cornerRadiusBottomRight() const {
+        std::optional<Size> cornerRadiusBottomRight() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.cornerRadiusBottomRight;
         }
 
-        Derived& cornerRadiusBottomRight(Size radius) {
+        Derived& cornerRadiusBottomRight(Size radius) requires (!HasText<typename E::DescriptorType>) {
             node->shared.cornerRadiusBottomRight = radius;
             markDirty(DirtyBits::PostLayout);
             return self();
         }
 
-        std::optional<Size> cornerRadiusBottomLeft() const {
+        std::optional<Size> cornerRadiusBottomLeft() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.cornerRadiusBottomLeft;
         }
 
-        Derived& cornerRadiusBottomLeft(Size radius) {
+        Derived& cornerRadiusBottomLeft(Size radius) requires (!HasText<typename E::DescriptorType>) {
             node->shared.cornerRadiusBottomLeft = radius;
             markDirty(DirtyBits::PostLayout);
             return self();
         }
 
-        Size borderWidth() const {
+        Size borderWidth() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.border.width;
         }
 
-        Derived& borderWidth(Size width) {
+        Derived& borderWidth(Size width) requires (!HasText<typename E::DescriptorType>) {
             node->shared.border.width = width;
             node->shared.border.topWidth = width;
             node->shared.border.rightWidth = width;
@@ -633,131 +616,131 @@ namespace elements {
             return self();
         }
 
-        std::optional<Size> borderTopWidth() const {
+        std::optional<Size> borderTopWidth() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.border.topWidth;
         }
 
-        Derived& borderTopWidth(Size width) {
+        Derived& borderTopWidth(Size width) requires (!HasText<typename E::DescriptorType>) {
             node->shared.border.topWidth = width;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        std::optional<Size> borderRightWidth() const {
+        std::optional<Size> borderRightWidth() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.border.rightWidth;
         }
 
-        Derived& borderRightWidth(Size width) {
+        Derived& borderRightWidth(Size width) requires (!HasText<typename E::DescriptorType>) {
             node->shared.border.rightWidth = width;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        std::optional<Size> borderBottomWidth() const {
+        std::optional<Size> borderBottomWidth() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.border.bottomWidth;
         }
 
-        Derived& borderBottomWidth(Size width) {
+        Derived& borderBottomWidth(Size width) requires (!HasText<typename E::DescriptorType>) {
             node->shared.border.bottomWidth = width;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        std::optional<Size> borderLeftWidth() const {
+        std::optional<Size> borderLeftWidth() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.border.leftWidth;
         }
 
-        Derived& borderLeftWidth(Size width) {
+        Derived& borderLeftWidth(Size width) requires (!HasText<typename E::DescriptorType>) {
             node->shared.border.leftWidth = width;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        simd_float4 borderColor() const {
+        simd_float4 borderColor() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.border.color;
         }
 
-        Derived& borderColor(simd_float4 color) {
+        Derived& borderColor(simd_float4 color) requires (!HasText<typename E::DescriptorType>) {
             node->shared.border.color = color;
             markDirty(DirtyBits::Finalize);
             return self();
         }
 
-        BorderStyle borderStyle() const {
+        BorderStyle borderStyle() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.border.style;
         }
 
-        Derived& borderStyle(BorderStyle borderStyle) {
+        Derived& borderStyle(BorderStyle borderStyle) requires (!HasText<typename E::DescriptorType>) {
             node->shared.border.style = borderStyle;
             markDirty(DirtyBits::Finalize);
             return self();
         }
 
-        Size shadowOffsetX() const {
+        Size shadowOffsetX() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.boxShadow.offsetX;
         }
 
-        Derived& shadowOffsetX(Size offset) {
+        Derived& shadowOffsetX(Size offset) requires (!HasText<typename E::DescriptorType>) {
             node->shared.boxShadow.offsetX = offset;
             markDirty(DirtyBits::Finalize);
             return self();
         }
 
-        Size shadowOffsetY() const {
+        Size shadowOffsetY() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.boxShadow.offsetY;
         }
 
-        Derived& shadowOffsetY(Size offset) {
+        Derived& shadowOffsetY(Size offset) requires (!HasText<typename E::DescriptorType>) {
             node->shared.boxShadow.offsetY = offset;
             markDirty(DirtyBits::Finalize);
             return self();
         }
 
-        Size shadowBlur() const {
+        Size shadowBlur() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.boxShadow.blur;
         }
 
-        Derived& shadowBlur(Size blur) {
+        Derived& shadowBlur(Size blur) requires (!HasText<typename E::DescriptorType>) {
             node->shared.boxShadow.blur = blur;
             markDirty(DirtyBits::Finalize);
             return self();
         }
 
-        Size shadowSpread() const {
+        Size shadowSpread() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.boxShadow.spread;
         }
 
-        Derived& shadowSpread(Size spread) {
+        Derived& shadowSpread(Size spread) requires (!HasText<typename E::DescriptorType>) {
             node->shared.boxShadow.spread = spread;
             markDirty(DirtyBits::Finalize);
             return self();
         }
 
-        simd_float4 shadowColor() const {
+        simd_float4 shadowColor() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.boxShadow.color;
         }
 
-        Derived& shadowColor(simd_float4 color) {
+        Derived& shadowColor(simd_float4 color) requires (!HasText<typename E::DescriptorType>) {
             node->shared.boxShadow.color = color;
             markDirty(DirtyBits::Finalize);
             return self();
         }
 
-        bool shadowInset() const {
+        bool shadowInset() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.boxShadow.inset;
         }
 
-        Derived& shadowInset(bool inset) {
+        Derived& shadowInset(bool inset) requires (!HasText<typename E::DescriptorType>) {
             node->shared.boxShadow.inset = inset;
             markDirty(DirtyBits::Finalize);
             return self();
         }
 
-        Size padding() const {
+        Size padding() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.padding;
         }
 
-        Derived& padding(Size padding) {
+        Derived& padding(Size padding) requires (!HasText<typename E::DescriptorType>) {
             node->shared.padding = padding;
             node->shared.paddingTop = padding;
             node->shared.paddingRight = padding;
@@ -767,137 +750,157 @@ namespace elements {
             return self();
         }
 
-        std::optional<Size> paddingTop() const {
+        std::optional<Size> paddingTop() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.paddingTop;
         }
 
-        Derived& paddingTop(Size padding) {
+        Derived& paddingTop(Size padding) requires (!HasText<typename E::DescriptorType>) {
             node->shared.paddingTop = padding;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        std::optional<Size> paddingRight() const {
+        std::optional<Size> paddingRight() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.paddingRight;
         }
 
-        Derived& paddingRight(Size padding) {
+        Derived& paddingRight(Size padding) requires (!HasText<typename E::DescriptorType>) {
             node->shared.paddingRight = padding;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        std::optional<Size> paddingBottom() const {
+        std::optional<Size> paddingBottom() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.paddingBottom;
         }
 
-        Derived& paddingBottom(Size padding) {
+        Derived& paddingBottom(Size padding) requires (!HasText<typename E::DescriptorType>) {
             node->shared.paddingBottom = padding;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        std::optional<Size> paddingLeft() const {
+        std::optional<Size> paddingLeft() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.paddingLeft;
         }
 
-        Derived& paddingLeft(Size padding) {
+        Derived& paddingLeft(Size padding) requires (!HasText<typename E::DescriptorType>) {
             node->shared.paddingLeft = padding;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        Derived& margin(float margin) {
+        Derived& margin(float margin) requires (!HasText<typename E::DescriptorType>) {
             return this->margin(Size::px(margin));
         }
 
-        Size margin() const {
+        Size margin() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.margin;
         }
 
-        Derived& margin(Size margin) {
+        Derived& margin(Size margin) requires (!HasText<typename E::DescriptorType>) {
             node->shared.margin = margin;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        Derived& marginTop(float margin) {
+        Derived& marginTop(float margin) requires (!HasText<typename E::DescriptorType>) {
             return this->marginTop(Size::px(margin));
         }
 
-        std::optional<Size> marginTop() const {
+        std::optional<Size> marginTop() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.marginTop;
         }
 
-        Derived& marginTop(Size margin) {
+        Derived& marginTop(Size margin) requires (!HasText<typename E::DescriptorType>) {
             node->shared.marginTop = margin;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        Derived& marginRight(float margin) {
+        Derived& marginRight(float margin) requires (!HasText<typename E::DescriptorType>) {
             return this->marginRight(Size::px(margin));
         }
 
-        std::optional<Size> marginRight() const {
+        std::optional<Size> marginRight() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.marginRight;
         }
 
-        Derived& marginRight(Size margin) {
+        Derived& marginRight(Size margin) requires (!HasText<typename E::DescriptorType>) {
             node->shared.marginRight = margin;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        Derived& marginBottom(float margin) {
+        Derived& marginBottom(float margin) requires (!HasText<typename E::DescriptorType>) {
             return this->marginBottom(Size::px(margin));
         }
 
-        std::optional<Size> marginBottom() const {
+        std::optional<Size> marginBottom() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.marginBottom;
         }
 
-        Derived& marginBottom(Size margin) {
+        Derived& marginBottom(Size margin) requires (!HasText<typename E::DescriptorType>) {
             node->shared.marginBottom = margin;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        Derived& marginLeft(float margin) {
+        Derived& marginLeft(float margin) requires (!HasText<typename E::DescriptorType>) {
             return this->marginLeft(Size::px(margin));
         }
 
-        std::optional<Size> marginLeft() const {
+        std::optional<Size> marginLeft() const requires (!HasText<typename E::DescriptorType>) {
             return node->shared.marginLeft;
         }
 
-        Derived& marginLeft(Size margin) {
+        Derived& marginLeft(Size margin) requires (!HasText<typename E::DescriptorType>) {
             node->shared.marginLeft = margin;
             markDirty(layoutDirtyBits());
             return self();
         }
 
-        std::optional<int64_t> zIndex() const {
+        std::optional<int64_t> zIndex() const requires (!HasText<typename E::DescriptorType>) {
             return node->zIndex;
         }
 
-        Derived& zIndex(std::optional<int64_t> zIndex) {
+        Derived& zIndex(std::optional<int64_t> zIndex) requires (!HasText<typename E::DescriptorType>) {
             node->zIndex = zIndex;
             markDirty(DirtyBits::PaintOrder);
             return self();
         }
 
-        simd_float4 color() const {
-            return node->shared.color;
+        simd_float4 backgroundColor() const requires (!HasText<typename E::DescriptorType>) {
+            return node->shared.backgroundColor;
         }
 
-        Derived& color(simd_float4 color) {
+        Derived& backgroundColor(simd_float4 backgroundColor) requires (!HasText<typename E::DescriptorType>) {
+            node->shared.backgroundColor = backgroundColor;
+            markDirty(DirtyBits::Finalize);
+            return self();
+        }
+
+        Derived& animateBackgroundColor(simd_float4 target, double duration, animation::Easing easing = animation::Easing::Linear, std::optional<simd_float4> from = std::nullopt) requires (!HasText<typename E::DescriptorType>) {
+            auto& manager = renderTree.animationManager;
+            auto& slot = node->animations[animation::Animatable::BackgroundColor];
+            simd_float4 initial = from.value_or(manager.color(slot, node->getBackgroundColor()));
+
+            slot = animation::AnimationState{manager.now, manager.now + duration, easing, initial};
+
+            return backgroundColor(target);
+        }
+
+        simd_float4 color() const requires (!HasText<typename E::DescriptorType>) {
+            return node->getColor();
+        }
+
+        Derived& color(simd_float4 color) requires (!HasText<typename E::DescriptorType>) {
             node->shared.color = color;
             markDirty(DirtyBits::Finalize);
             return self();
         }
 
-        Derived& animateColor(simd_float4 target, double duration, animation::Easing easing = animation::Easing::Linear, std::optional<simd_float4> from = std::nullopt) {
+        Derived& animateColor(simd_float4 target, double duration, animation::Easing easing = animation::Easing::Linear, std::optional<simd_float4> from = std::nullopt) requires (!HasText<typename E::DescriptorType>) {
             auto& manager = renderTree.animationManager;
             auto& slot = node->animations[animation::Animatable::Color];
             simd_float4 initial = from.value_or(manager.color(slot, node->getColor()));
@@ -917,40 +920,40 @@ namespace elements {
             return self();
         }
 
-        const std::string& font() const requires HasFont<typename E::DescriptorType> {
-            return descriptor().font;
+        std::optional<std::string> font() const requires (!HasText<typename E::DescriptorType>) {
+            return node->shared.font;
         }
 
-        Derived& font(const std::string& fontPath) requires HasFont<typename E::DescriptorType> {
-            descriptor().font = fontPath;
+        Derived& font(const std::string& fontPath) requires (!HasText<typename E::DescriptorType>) {
+            node->shared.font = fontPath;
             markDirty(textDirtyBits());
             return self();
         }
 
-        Size fontSize() const requires HasFontSize<typename E::DescriptorType> {
-            return descriptor().fontSize;
+        std::optional<Size> fontSize() const requires (!HasText<typename E::DescriptorType>) {
+            return node->shared.fontSize;
         }
 
-        Derived& fontSize(Size size) requires HasFontSize<typename E::DescriptorType> {
-            descriptor().fontSize = size;
+        Derived& fontSize(Size size) requires (!HasText<typename E::DescriptorType>) {
+            node->shared.fontSize = size;
             markDirty(textDirtyBits());
             return self();
         }
 
-        Derived& lineHeight(float multiplier) requires HasLineHeight<typename E::DescriptorType> {
-            descriptor().lineHeight = multiplier;
+        Derived& lineHeight(float multiplier) requires (!HasText<typename E::DescriptorType>) {
+            node->shared.lineHeight = multiplier;
             markDirty(textDirtyBits());
             return self();
         }
 
-        Derived& whiteSpace(WhiteSpace value) requires HasWhiteSpace<typename E::DescriptorType> {
-            descriptor().whiteSpace = value;
+        Derived& whiteSpace(WhiteSpace value) requires (!HasText<typename E::DescriptorType>) {
+            node->shared.whiteSpace = value;
             markDirty(textDirtyBits());
             return self();
         }
 
-        Derived& wordBreak(WordBreak value) requires HasWordBreak<typename E::DescriptorType> {
-            descriptor().wordBreak = value;
+        Derived& wordBreak(WordBreak value) requires (!HasText<typename E::DescriptorType>) {
+            node->shared.wordBreak = value;
             markDirty(textDirtyBits());
             return self();
         }
@@ -1021,7 +1024,7 @@ namespace elements {
         }
 
         template <typename... Children>
-        NodeBuilder& operator()(Children&&... args) {
+        NodeBuilder& operator()(Children&&... args) requires (!LeafElement<E>) {
             (([&] {
                 auto* oldParent = reparent(this->node, args.treeNode());
                 if (oldParent) {
@@ -1055,9 +1058,8 @@ namespace elements {
 
     NodeBuilder<Div<DivStorage>, DivProcessor<DivStorage, DivUniforms>> div();
     NodeBuilder<Div<DivStorage>, DivProcessor<DivStorage, DivUniforms>> div(Size width, Size height, simd_float4 color);
-    NodeBuilder<Text<TextStorage>, TextProcessor<TextStorage, TextUniforms>> text(const std::string& text,
-                 Size fontSize = Size::pt(24.0f), simd_float4 color = {1, 1, 1, 1},
-                 const std::string& font = Arial);
+    NodeBuilder<Div<DivStorage>, DivProcessor<DivStorage, DivUniforms>> span();
+    NodeBuilder<Text<TextStorage>, TextProcessor<TextStorage, TextUniforms>> text(const std::string& text);
     NodeBuilder<Image<ImageStorage>, ImageProcessor<ImageStorage, ImageUniforms>> image(const std::string& path,
                     Size width = Size::px(0), Size height = Size::px(0));
     NodeBuilder<SVG<SVGStorage>, SVGProcessor<SVGStorage, SVGUniforms>> svg(const std::string& path,

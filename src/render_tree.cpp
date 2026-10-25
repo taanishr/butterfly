@@ -1,4 +1,5 @@
 #include "render_tree.hpp"
+#include "context_manager.hpp"
 #include "hash_combine.hpp"
 #include "layout/layout.hpp"
 #include "layout/sizing.hpp"
@@ -158,6 +159,7 @@ namespace tree {
                 return DirtyBits::PostLayout | DirtyBits::Finalize;
             case animation::Animatable::Opacity:
                 return DirtyBits::PostLayout | DirtyBits::Finalize | DirtyBits::PaintOrder;
+            case animation::Animatable::BackgroundColor:
             case animation::Animatable::Color:
                 return DirtyBits::Finalize;
         }
@@ -203,6 +205,10 @@ namespace tree {
         hashSize(constraints.availableHeight, hash);
         hash_combine(hash, static_cast<int>(constraints.inheritedProperties.direction));
         hash_combine(hash, static_cast<int>(constraints.inheritedProperties.textAlign));
+        hash_combine(hash, constraints.inheritedProperties.color.x);
+        hash_combine(hash, constraints.inheritedProperties.color.y);
+        hash_combine(hash, constraints.inheritedProperties.color.z);
+        hash_combine(hash, constraints.inheritedProperties.color.w);
         hash_combine(hash, constraints.frameInfo.width);
         hash_combine(hash, constraints.frameInfo.height);
         hash_combine(hash, constraints.frameInfo.scale);
@@ -235,6 +241,13 @@ namespace tree {
         };
         hashOptionalSize(constraints.replacedAttributes.marginTop);
         hashOptionalSize(constraints.replacedAttributes.marginBottom);
+
+        hash_combine(hash, constraints.inheritedProperties.font);
+        hash_combine(hash, constraints.inheritedProperties.fontSize.value);
+        hash_combine(hash, static_cast<int>(constraints.inheritedProperties.fontSize.unit));
+        hash_combine(hash, constraints.inheritedProperties.lineHeight);
+        hash_combine(hash, static_cast<int>(constraints.inheritedProperties.whiteSpace));
+        hash_combine(hash, static_cast<int>(constraints.inheritedProperties.wordBreak));
         
         hash_combine(hash, constraints.textOverflow.has_value());
         if (constraints.textOverflow.has_value()) {
@@ -306,8 +319,39 @@ namespace tree {
         return renderOrderCache;
     }
 
+    void resolveInheritedProperties(TreeNode* node)
+    {
+        node->inheritedProperties = node->parent ? node->parent->inheritedProperties : layout::InheritedProperties{};
+
+        if (node->shared.font) {
+            node->inheritedProperties.font = *node->shared.font;
+        }
+
+        if (node->shared.fontSize) {
+            node->inheritedProperties.fontSize = *node->shared.fontSize;
+        }
+
+        if (node->shared.lineHeight) {
+            node->inheritedProperties.lineHeight = *node->shared.lineHeight;
+        }
+
+        if (node->shared.whiteSpace) {
+            node->inheritedProperties.whiteSpace = *node->shared.whiteSpace;
+        }
+
+        if (node->shared.wordBreak) {
+            node->inheritedProperties.wordBreak = *node->shared.wordBreak;
+        }
+
+        for (auto& child : node->children) {
+            resolveInheritedProperties(child.get());
+        }
+    }
+
     // I have a render cache, develop some sort of caching policy that makes these useful
     void RenderTree::update(const FrameInfo& frameInfo, uint64_t frameIndex) {
+        pendingDeletes.clear();
+
         bool frameInfoChanged = isFrameInfoChanged(frameInfo);
         if (frameInfoChanged) {
             pendingFrameBufferWrites = MaxOutstandingFrameCount;
@@ -369,9 +413,16 @@ namespace tree {
             },
         };
 
+        if (subtreeHasDirty(root, DirtyBits::Atomize | DirtyBits::Layout) || !root->atomized.has_value()) {
+            instrumentation::PhaseTimer timer{instrumentation::Phase::Fixup};
+            fixupPhase(root);
+        }
+
         if (subtreeHasDirty(root, DirtyBits::Atomize) || !root->atomized.has_value()) {
             instrumentation::PhaseTimer timer{instrumentation::Phase::Atomize};
-            if (!atomizePhase(root, rootConstraints)) return;
+            if (!atomizePhase(root, rootConstraints)) {
+                return;
+            }
         }
     
         // Layout pass
@@ -435,7 +486,16 @@ namespace tree {
         TreeNode* node,
         Constraints& constraints
     ) {
+        if (node->getDisplay() == Display::None) {
+            return {};
+        }
+
         node->textBidiInput = constraints.textBidiInput;
+        constraints.inheritedProperties.font = node->inheritedProperties.font;
+        constraints.inheritedProperties.fontSize = node->inheritedProperties.fontSize;
+        constraints.inheritedProperties.lineHeight = node->inheritedProperties.lineHeight;
+        constraints.inheritedProperties.whiteSpace = node->inheritedProperties.whiteSpace;
+        constraints.inheritedProperties.wordBreak = node->inheritedProperties.wordBreak;
 
         auto key = makeConstraintsKey(constraints);
         auto reason = recomputeReason(node, DirtyBits::Atomize, key);
@@ -469,13 +529,163 @@ namespace tree {
         bool blockifyingParent = node->parent
             && (node->parent->getDisplay() == Display::Flex || node->parent->getDisplay() == Display::Grid);
 
-        if (blockifyingParent && node->element->isReplaced() && node->shared.display == Display::Inline) {
+        if (blockifyingParent && !getText(node) && node->shared.display == Display::Inline) {
             node->computedDisplay = Display::Block;
         }
 
         for (auto& child : node->children) {
             resolveComputedDisplays(child.get());
         }
+    }
+
+    std::unique_ptr<TreeNode> makeAnonymousBox() {
+        auto& ctx = runtime::ContextManager::getContext();
+        auto& proc = runtime::getDivProcessor(ctx);
+
+        auto box = std::make_unique<TreeNode>(ctx, elements::Div{ctx}, proc);
+        box->metadata.anonymous = true;
+        box->metadata.displayName = "anonymous";
+        box->shared.display = Display::Block;
+        return box;
+    }
+
+    constexpr DirtyBits structureDirtyBits() {
+        return DirtyBits::Measure | DirtyBits::Atomize | DirtyBits::Layout |
+            DirtyBits::PostLayout | DirtyBits::Place | DirtyBits::Finalize | DirtyBits::PaintOrder;
+    }
+
+    void markPendingDelete(TreeNode* node) {
+        node->pendingDelete = true;
+        for (auto& child : node->children) {
+            markPendingDelete(child.get());
+        }
+    }
+
+    void RenderTree::removeNode(TreeNode* node, std::source_location source) {
+        if (!node || !node->parent || node->pendingDelete) {
+            return;
+        }
+
+        auto* oldParent = node->parent;
+        auto& siblings = oldParent->children;
+        auto it = std::find_if(siblings.begin(), siblings.end(), [&](auto& child) {
+            return child.get() == node;
+        });
+        if (it == siblings.end()) {
+            return;
+        }
+
+        pendingDeletes.push_back(std::move(*it));
+        siblings.erase(it);
+
+        node->parent = nullptr;
+        markPendingDelete(node);
+        markDirty(oldParent, structureDirtyBits(), source);
+    }
+
+    void moveIntoBox(RenderTree& tree, TreeNode* box, std::unique_ptr<TreeNode>&& child) {
+        child->parent = box;
+        auto* moved = child.get();
+        box->children.push_back(std::move(child));
+        tree.markDirty(moved, structureDirtyBits());
+    }
+
+    void wrapTextRuns(RenderTree& tree, TreeNode* parent) {
+        TreeNode* current = nullptr;
+
+        for (auto& child : parent->children) {
+            if (child->metadata.anonymous) {
+                if (current) {
+                    for (auto& grandchild : child->children) {
+                        moveIntoBox(tree, current, std::move(grandchild));
+                    }
+                    child.reset();
+                } else {
+                    current = child.get();
+                }
+            } else if (getText(child.get())) {
+                if (!current) {
+                    auto box = makeAnonymousBox();
+                    box->parent = parent;
+                    current = box.get();
+                    std::swap(child, box);
+                    moveIntoBox(tree, current, std::move(box));
+                } else {
+                    moveIntoBox(tree, current, std::move(child));
+                }
+            } else {
+                current = nullptr;
+            }
+        }
+
+        std::erase_if(parent->children, [](auto& child) {
+            return !child || (child->metadata.anonymous && child->children.empty());
+        });
+
+        for (auto& child : parent->children) {
+            if (!child->metadata.anonymous) {
+                continue;
+            }
+
+            bool whitespaceOnly = std::ranges::all_of(child->children, [](auto& text) {
+                return std::ranges::all_of(*getText(text.get()), [](char c) {
+                    return elements::isTextWhitespace(c);
+                });
+            });
+
+            if (whitespaceOnly) {
+                child->computedDisplay = Display::None;
+            }
+        }
+    }
+
+    void dissolveAnonymousBoxes(RenderTree& tree, TreeNode* parent) {
+        bool hasAnonymous = std::any_of(parent->children.begin(), parent->children.end(), [](auto& child) {
+            return child->metadata.anonymous;
+        });
+
+        if (!hasAnonymous) {
+            return;
+        }
+
+        std::vector<std::unique_ptr<TreeNode>> children;
+        children.reserve(parent->children.size());
+
+        for (auto& child : parent->children) {
+            if (!child->metadata.anonymous) {
+                children.push_back(std::move(child));
+                continue;
+            }
+
+            for (auto& grandchild : child->children) {
+                grandchild->parent = parent;
+                children.push_back(std::move(grandchild));
+            }
+        }
+
+        parent->children = std::move(children);
+        for (auto& child : parent->children) {
+            tree.markDirty(child.get(), structureDirtyBits());
+        }
+    }
+
+    void normalizeAnonymousBoxes(RenderTree& tree, TreeNode* node) {
+        auto display = node->getDisplay();
+        if (display == Display::Flex || display == Display::Grid) {
+            wrapTextRuns(tree, node);
+        } else {
+            dissolveAnonymousBoxes(tree, node);
+        }
+
+        for (auto& child : node->children) {
+            normalizeAnonymousBoxes(tree, child.get());
+        }
+    }
+
+    void RenderTree::fixupPhase(TreeNode* node) {
+        resolveComputedDisplays(node);
+        normalizeAnonymousBoxes(*this, node);
+        resolveInheritedProperties(node);
     }
 
     void buildCollapsedChains(
@@ -599,7 +809,6 @@ namespace tree {
         collapsedChainMap.clear();
         nextChainId = 0;
 
-        resolveComputedDisplays(node);
         buildCollapsedChains(node, collapsedChainMap, nextChainId, nullptr, nullptr);
 
         precomputeMargins(*this, node, constraints, collapsedChainMap);
@@ -825,15 +1034,20 @@ namespace tree {
                 break;
             }
             case style::Display::Inline: {
-                intrinsicResult = layout::inlinePass(std::get<layout::InlineState>(layout), sizeRequest);
+                intrinsicResult = layout::inlinePass(*this, node, frameInfo, std::get<layout::InlineState>(layout), childConstraints, sizeRequest, mutate, sizeCache);
+                break;
+            }
+            case style::Display::None: {
                 break;
             }
         }
 
         std::visit([](auto& state) {
-            state.localComputedBox = state.computedBox;
-            state.localComputedPaddingBox = state.computedPaddingBox;
-            state.localComputedInnerBox = state.computedInnerBox;
+            for (auto& fragment : state.boxFragments) {
+                fragment.localComputedBox = fragment.computedBox;
+                fragment.localComputedPaddingBox = fragment.computedPaddingBox;
+                fragment.localComputedInnerBox = fragment.computedInnerBox;
+            }
             state.localAtomOffsets = state.atomOffsets;
         }, layout);
 
@@ -855,6 +1069,16 @@ namespace tree {
     }
 
     void RenderTree::postLayoutPhase(TreeNode* node, const FrameInfo& frameInfo, Constraints& constraints) {
+        if (node->getDisplay() == Display::None) {
+            return;
+        }
+
+        constraints.inheritedProperties.font = node->inheritedProperties.font;
+        constraints.inheritedProperties.fontSize = node->inheritedProperties.fontSize;
+        constraints.inheritedProperties.lineHeight = node->inheritedProperties.lineHeight;
+        constraints.inheritedProperties.whiteSpace = node->inheritedProperties.whiteSpace;
+        constraints.inheritedProperties.wordBreak = node->inheritedProperties.wordBreak;
+
         auto key = makeConstraintsKey(constraints);
         auto reason = recomputeReason(node, DirtyBits::PostLayout, key);
         if (reason == instrumentation::RecomputeReason::None) {
@@ -877,9 +1101,11 @@ namespace tree {
 
         std::visit([&](auto& layout) {
             // reset computed box to local variants
-            layout.computedBox = layout.localComputedBox;
-            layout.computedPaddingBox = layout.localComputedPaddingBox;
-            layout.computedInnerBox = layout.localComputedInnerBox;
+            for (auto& fragment : layout.boxFragments) {
+                fragment.computedBox = fragment.localComputedBox;
+                fragment.computedPaddingBox = fragment.localComputedPaddingBox;
+                fragment.computedInnerBox = fragment.localComputedInnerBox;
+            }
             layout.atomOffsets = layout.localAtomOffsets;
 
             // resolve right / bottom positioning
@@ -895,9 +1121,14 @@ namespace tree {
                     SizeState containingBlockWidth = calculateSize(containingBlock.width, std::monostate{});
                     SizeState right = calculateSize(*rightInset, containingBlock.width);
                     if (std::holds_alternative<float>(containingBlockWidth) && std::holds_alternative<float>(right)) {
-                        float newX = std::get<float>(containingBlockWidth) - margins.right - layout.computedBox.width - std::get<float>(right);
-                        float deltaX = newX - layout.computedBox.x;
-                        layout.computedBox.x = newX;
+                        const auto bounds = layout::boundingBox(layout.boxFragments).computedBox;
+                        float newX = std::get<float>(containingBlockWidth) - margins.right - bounds.width - std::get<float>(right);
+                        float deltaX = newX - bounds.x;
+                        for (auto& fragment : layout.boxFragments) {
+                            fragment.computedBox.x += deltaX;
+                            fragment.computedPaddingBox.x += deltaX;
+                            fragment.computedInnerBox.x += deltaX;
+                        }
                         for (auto& offset : layout.atomOffsets) {
                             offset.x += deltaX;
                         }
@@ -908,9 +1139,14 @@ namespace tree {
                     SizeState containingBlockHeight = calculateSize(containingBlock.height, std::monostate{});
                     SizeState bottom = calculateSize(*bottomInset, containingBlock.height);
                     if (std::holds_alternative<float>(containingBlockHeight) && std::holds_alternative<float>(bottom)) {
-                        float newY = std::get<float>(containingBlockHeight) - margins.bottom - layout.computedBox.height - std::get<float>(bottom);
-                        float deltaY = newY - layout.computedBox.y;
-                        layout.computedBox.y = newY;
+                        const auto bounds = layout::boundingBox(layout.boxFragments).computedBox;
+                        float newY = std::get<float>(containingBlockHeight) - margins.bottom - bounds.height - std::get<float>(bottom);
+                        float deltaY = newY - bounds.y;
+                        for (auto& fragment : layout.boxFragments) {
+                            fragment.computedBox.y += deltaY;
+                            fragment.computedPaddingBox.y += deltaY;
+                            fragment.computedInnerBox.y += deltaY;
+                        }
                         for (auto& offset : layout.atomOffsets) {
                             offset.y += deltaY;
                         }
@@ -921,8 +1157,14 @@ namespace tree {
             // establish post layout constraints
             simd_float2 baseOrigin = containingBlock.origin;
 
-            layout.computedBox.x += baseOrigin.x;
-            layout.computedBox.y += baseOrigin.y;
+            for (auto& fragment : layout.boxFragments) {
+                fragment.computedBox.x += baseOrigin.x;
+                fragment.computedBox.y += baseOrigin.y;
+                fragment.computedPaddingBox.x += baseOrigin.x;
+                fragment.computedPaddingBox.y += baseOrigin.y;
+                fragment.computedInnerBox.x += baseOrigin.x;
+                fragment.computedInnerBox.y += baseOrigin.y;
+            }
             for (auto& offset : layout.atomOffsets) {
                 offset.x += baseOrigin.x;
                 offset.y += baseOrigin.y;
@@ -943,8 +1185,9 @@ namespace tree {
 
             // sticky adjustment
             if (position == Position::Sticky) {
-                float stickyX = layout.computedBox.x;
-                float stickyY = layout.computedBox.y;
+                const auto bounds = layout::boundingBox(layout.boxFragments).computedBox;
+                float stickyX = bounds.x;
+                float stickyY = bounds.y;
 
                 // sticky insets resolve against scrolport
                 auto top = node->shared.top ? calculateSize(*node->shared.top, constraints.scrollport.height) : std::monostate{};
@@ -965,7 +1208,7 @@ namespace tree {
                 if (std::holds_alternative<float>(bottom) && std::holds_alternative<float>(scrollportHeight)) {
                     auto resolvedBottom = std::get<float>(bottom);
                     auto resolvedScrollportHeight = std::get<float>(scrollportHeight);
-                    stickyY = std::min(stickyY, constraints.scrollport.origin.y + resolvedScrollportHeight - resolvedBottom - layout.computedBox.height);
+                    stickyY = std::min(stickyY, constraints.scrollport.origin.y + resolvedScrollportHeight - resolvedBottom - bounds.height);
                 }
 
                 if (std::holds_alternative<float>(left)) {
@@ -976,7 +1219,7 @@ namespace tree {
                 if (std::holds_alternative<float>(right) && std::holds_alternative<float>(scrollportWidth)) {
                     auto resolvedRight = std::get<float>(right);
                     auto resolvedScrollportWidth = std::get<float>(scrollportWidth);
-                    stickyX = std::min(stickyX, constraints.scrollport.origin.x + resolvedScrollportWidth - resolvedRight - layout.computedBox.width);
+                    stickyX = std::min(stickyX, constraints.scrollport.origin.x + resolvedScrollportWidth - resolvedRight - bounds.width);
                 }
 
                 // clamp inside containing block
@@ -986,41 +1229,41 @@ namespace tree {
 
                 if (std::holds_alternative<float>(containingBlockWidth)) {
                     auto resolvedContainingBlockWidth = std::get<float>(containingBlockWidth);
-                    auto minimumX = std::min(layout.computedBox.x, containingBlock.origin.x + margins.left);
-                    auto maximumX = std::max(layout.computedBox.x, containingBlock.origin.x + resolvedContainingBlockWidth - margins.right - layout.computedBox.width);
+                    auto minimumX = std::min(bounds.x, containingBlock.origin.x + margins.left);
+                    auto maximumX = std::max(bounds.x, containingBlock.origin.x + resolvedContainingBlockWidth - margins.right - bounds.width);
                     stickyX = std::clamp(stickyX, minimumX, maximumX);
                 }
 
                 if (std::holds_alternative<float>(containingBlockHeight)) {
                     auto resolvedContainingBlockHeight = std::get<float>(containingBlockHeight);
-                    auto minimumY = std::min(layout.computedBox.y, containingBlock.origin.y + margins.top);
-                    auto maximumY = std::max(layout.computedBox.y, containingBlock.origin.y + resolvedContainingBlockHeight - margins.bottom - layout.computedBox.height);
+                    auto minimumY = std::min(bounds.y, containingBlock.origin.y + margins.top);
+                    auto maximumY = std::max(bounds.y, containingBlock.origin.y + resolvedContainingBlockHeight - margins.bottom - bounds.height);
                     stickyY = std::clamp(stickyY, minimumY, maximumY);
                 }
 
                 // adjust computed box + atom offsets
-                float deltaX = stickyX - layout.computedBox.x;
-                float deltaY = stickyY - layout.computedBox.y;
-                layout.computedBox.x = stickyX;
-                layout.computedBox.y = stickyY;
+                float deltaX = stickyX - bounds.x;
+                float deltaY = stickyY - bounds.y;
+                for (auto& fragment : layout.boxFragments) {
+                    fragment.computedBox.x += deltaX;
+                    fragment.computedBox.y += deltaY;
+                    fragment.computedPaddingBox.x += deltaX;
+                    fragment.computedPaddingBox.y += deltaY;
+                    fragment.computedInnerBox.x += deltaX;
+                    fragment.computedInnerBox.y += deltaY;
+                }
                 for (auto& offset : layout.atomOffsets) {
                     offset.x += deltaX;
                     offset.y += deltaY;
                 }
             }
 
-            float deltaX = layout.computedBox.x - layout.localComputedBox.x;
-            float deltaY = layout.computedBox.y - layout.localComputedBox.y;
-            layout.computedPaddingBox.x += deltaX;
-            layout.computedPaddingBox.y += deltaY;
-            layout.computedInnerBox.x += deltaX;
-            layout.computedInnerBox.y += deltaY;
-
             // figure out CSS transform properties
             // firstly; we determine the transform origin
+            const auto transformBounds = layout::boundingBox(layout.boxFragments).computedBox;
             simd_float2 transformOrigin {
-                layout.computedBox.x + node->shared.transformOriginX.resolveOr(Size::px(layout.computedBox.width)),
-                layout.computedBox.y + node->shared.transformOriginY.resolveOr(Size::px(layout.computedBox.height))
+                transformBounds.x + node->shared.transformOriginX.resolveOr(Size::px(transformBounds.width)),
+                transformBounds.y + node->shared.transformOriginY.resolveOr(Size::px(transformBounds.height))
             };
 
             simd_float3x3 toTransformOrigin = matrix_identity_float3x3;
@@ -1039,17 +1282,22 @@ namespace tree {
             node->effectiveOpacity = constraints.opacity * animationManager.opacity(node->animations[animation::Animatable::Opacity], node->getOpacity());
 
             node->atomized = node->element->postLayout(constraints, node->shared,*node->atomized, result.layout);
+        }, result.layout);
+
+        std::visit(Overloaded{
+            [&](layout::BlockState& layout) {
+            const auto& box = layout.boxFragments.front();
 
             // prepare child constraints; add clipping uniforms
             simd_float2 currPaddingOrigin = {
-                layout.computedPaddingBox.x,
-                layout.computedPaddingBox.y
+                box.computedPaddingBox.x,
+                box.computedPaddingBox.y
             };
 
 
             simd_float2 currContentOrigin = {
-                layout.computedInnerBox.x,
-                layout.computedInnerBox.y
+                box.computedInnerBox.x,
+                box.computedInnerBox.y
             };
 
             ContainingBlock childScrollport = constraints.scrollport;
@@ -1057,8 +1305,8 @@ namespace tree {
             if (node->shared.overflow == Overflow::Scroll) {
                 // compute scroll port size
                 node->scrollViewportSize = {
-                    layout.computedPaddingBox.width,
-                    layout.computedPaddingBox.height
+                    box.computedPaddingBox.width,
+                    box.computedPaddingBox.height
                 };
 
                 childScrollport = {
@@ -1095,20 +1343,20 @@ namespace tree {
                 childConstraints.textOverflow = node->shared.textOverflow;
 
                 simd_float2 halfExtent {
-                    layout.computedPaddingBox.width * 0.5f,
-                    layout.computedPaddingBox.height * 0.5f
+                    box.computedPaddingBox.width * 0.5f,
+                    box.computedPaddingBox.height * 0.5f
                 };
 
                 childConstraints.clipUniforms.push_back({
                     .rectCenter = {
-                        layout.computedPaddingBox.x + halfExtent.x,
-                        layout.computedPaddingBox.y + halfExtent.y
+                        box.computedPaddingBox.x + halfExtent.x,
+                        box.computedPaddingBox.y + halfExtent.y
                     },
                     .halfExtent = halfExtent,
                     .cornerRadius = style::resolveCornerRadii(
                         node->shared,
-                        layout.computedBox.width,
-                        layout.computedBox.height
+                        box.computedBox.width,
+                        box.computedBox.height
                     ),
                     .inverseTransform = node->inverseTransform
                 });
@@ -1149,7 +1397,7 @@ namespace tree {
                             return;
                         }
 
-                        const auto& childBox = childLayout.computedBox;
+                        const auto childBox = layout::boundingBox(childLayout.boxFragments).computedBox;
 
                         // here; we have to include overflow of transforms
                         simd_float2 transformOrigin {
@@ -1186,7 +1434,7 @@ namespace tree {
                                 contentSize.x,
                                 currContentOrigin.x
                                     + node->scrollViewportSize.x
-                                    - (layout.computedPaddingBox.width - layout.computedInnerBox.width)
+                                    - (box.computedPaddingBox.width - box.computedInnerBox.width)
                                     - left
                             );
                         } else {
@@ -1220,13 +1468,36 @@ namespace tree {
                 node->scrollContentSize = {
                     std::max(
                         node->scrollViewportSize.x,
-                        contentSize.x + (layout.computedPaddingBox.width - layout.computedInnerBox.width)
+                        contentSize.x + (box.computedPaddingBox.width - box.computedInnerBox.width)
                     ),
                     std::max(
                         node->scrollViewportSize.y,
-                        contentSize.y + (layout.computedPaddingBox.height - layout.computedInnerBox.height)
+                        contentSize.y + (box.computedPaddingBox.height - box.computedInnerBox.height)
                     )
                 };
+            }
+            },
+            [&](layout::InlineState& layout) {
+                auto childConstraints = constraints;
+                childConstraints.clipUniforms = layout.clipUniforms;
+                childConstraints.availableWidth = layout.childConstraints.availableWidth;
+                childConstraints.availableHeight = layout.childConstraints.availableHeight;
+                childConstraints.transform = node->transform;
+                childConstraints.opacity = node->effectiveOpacity;
+
+                if (position != Position::Static || node->shared.transform) {
+                    const auto bounds = layout::boundingBox(layout.boxFragments).computedPaddingBox;
+                    childConstraints.absoluteContainingBlock = {
+                        .origin = {bounds.x, bounds.y},
+                        .width = bounds.width,
+                        .height = bounds.height,
+                        .clipCount = childConstraints.clipUniforms.size()
+                    };
+                }
+
+                for (auto& child : node->children) {
+                    postLayoutPhase(child.get(), frameInfo, childConstraints);
+                }
             }
         }, result.layout);
 
@@ -1235,6 +1506,10 @@ namespace tree {
     }
     
     void RenderTree::placePhase(TreeNode* node, const FrameInfo& frameInfo, Constraints& constraints) {
+        if (node->getDisplay() == Display::None) {
+            return;
+        }
+
         auto key = makeConstraintsKey(constraints);
         auto reason = recomputeReason(node, DirtyBits::Place, key);
         if (reason != instrumentation::RecomputeReason::None) {
@@ -1254,6 +1529,21 @@ namespace tree {
     }
 
     void RenderTree::finalizePhase(TreeNode* node, Constraints& constraints) {
+        if (node->getDisplay() == Display::None) {
+            return;
+        }
+
+        constraints.inheritedProperties.font = node->inheritedProperties.font;
+        constraints.inheritedProperties.fontSize = node->inheritedProperties.fontSize;
+        constraints.inheritedProperties.lineHeight = node->inheritedProperties.lineHeight;
+        constraints.inheritedProperties.whiteSpace = node->inheritedProperties.whiteSpace;
+        constraints.inheritedProperties.wordBreak = node->inheritedProperties.wordBreak;
+
+        node->effectiveColor = animationManager.color(
+            node->animations[animation::Animatable::Color],
+            node->shared.color.value_or(constraints.inheritedProperties.color)
+        );
+
         auto key = makeConstraintsKey(constraints);
         auto reason = recomputeReason(node, DirtyBits::Finalize, key);
         if (reason != instrumentation::RecomputeReason::None) {
@@ -1264,14 +1554,18 @@ namespace tree {
             auto finalizedConstraints = constraints;
             finalizedConstraints.transform = node->transform;
             finalizedConstraints.opacity = node->effectiveOpacity;
-            finalizedConstraints.color = animationManager.color(node->animations[animation::Animatable::Color], node->getColor());
+            finalizedConstraints.backgroundColor = animationManager.color(node->animations[animation::Animatable::BackgroundColor], node->getBackgroundColor());
+            finalizedConstraints.inheritedProperties.color = node->effectiveColor;
             auto finalized = node->element->finalize(finalizedConstraints, node->shared, atomized, layout, placed);
             node->finalized = finalized;
             node->constraintsKey = key;
         }
 
+        Constraints childConstraints = constraints;
+        childConstraints.inheritedProperties.color = node->effectiveColor;
+
         for (auto& child : node->children) {
-            finalizePhase(child.get(), constraints);
+            finalizePhase(child.get(), childConstraints);
         }
     }
 
@@ -1289,6 +1583,10 @@ namespace tree {
                 auto* candidate = *it;
                 auto isInSubtree = node->paintPreorderIndex <= candidate->paintPreorderIndex && candidate->paintPostorderIndex <= node->paintPostorderIndex;
                 if (!isInSubtree) {
+                    continue;
+                }
+
+                if (candidate->metadata.anonymous) {
                     continue;
                 }
 
@@ -1319,6 +1617,10 @@ namespace tree {
         auto& renderOrder = sortedRenderOrder();
 
         for (auto it = renderOrder.rbegin(); it != renderOrder.rend(); ++it) {
+            if ((*it)->metadata.anonymous) {
+                continue;
+            }
+
             if ((*it)->contains(point)) {
                 hits.push_back(*it);
             }

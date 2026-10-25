@@ -2,6 +2,7 @@
 
 #include "buffer_allocator.hpp"
 #include "frame_info.hpp"
+#include "glyphCache.hpp"
 #include "layout/layout.hpp"
 #include "metal_imports.hpp"
 #include <atomic>
@@ -17,6 +18,7 @@ namespace runtime {
         MTK::View* view;
         DrawableBufferAllocator allocator;
         layout::LayoutEngine layoutEngine;
+        GlyphCache glyphCache;
         FrameInfo frameInfo;
         DrawableBuffer frameInfoBuffer;
         std::atomic<uint64_t> frameIndex{0};

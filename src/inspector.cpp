@@ -30,6 +30,7 @@ namespace Inspector {
                 case style::Display::Inline: return "Inline";
                 case style::Display::Flex: return "Flex";
                 case style::Display::Grid: return "Grid";
+                case style::Display::None: return "None";
             }
         }
 
@@ -54,6 +55,7 @@ namespace Inspector {
             using instrumentation::Phase;
             switch (phase) {
                 case Phase::Update: return "update";
+                case Phase::Fixup: return "fixup";
                 case Phase::Atomize: return "atomize";
                 case Phase::PreLayout: return "pre-layout";
                 case Phase::Layout: return "layout";
@@ -103,31 +105,31 @@ namespace Inspector {
     }
 
     Inspector::Inspector():
-        mouseXText{text(mouseXLabel()).fontSize(style::Size::pt(12.0)).font(Menlo).color(simd_float4{1.0,1.0,1.0,1.0})},
-        mouseYText{text(mouseYLabel()).fontSize(style::Size::pt(12.0)).font(Menlo).color(simd_float4{1.0,1.0,1.0,1.0})},
-        nodeIDText{text(nodeIdLabel()).fontSize(style::Size::pt(12.0)).font(Menlo).color(simd_float4{1.0,1.0,1.0,1.0})},
-        nodeTypeText{text(nodeTypeLabel()).fontSize(style::Size::pt(12.0)).font(Menlo).color(simd_float4{1.0,1.0,1.0,1.0})},
-        hitStackText{text(hitStackLabel()).fontSize(style::Size::pt(12.0)).font(Menlo).color(simd_float4{1.0,1.0,1.0,1.0})},
-        nodeStyleText{text(nodeStyleLabel()).fontSize(style::Size::pt(12.0)).font(Menlo).color(simd_float4{1.0,1.0,1.0,1.0})},
-        nodePositionText{text(nodePositionLabel()).fontSize(style::Size::pt(12.0)).font(Menlo).color(simd_float4{1.0,1.0,1.0,1.0})},
-        nodeWText{text(nodeWidthLabel()).fontSize(style::Size::pt(12.0)).font(Menlo).color(simd_float4{1.0,1.0,1.0,1.0})},
-        nodeHText{text(nodeHeightLabel()).fontSize(style::Size::pt(12.0)).font(Menlo).color(simd_float4{1.0,1.0,1.0,1.0})},
-        nodeLocalBoxText{text(nodeLocalBoxLabel()).fontSize(style::Size::pt(12.0)).font(Menlo).color(simd_float4{1.0,1.0,1.0,1.0})},
-        nodeScrollText{text(nodeScrollLabel()).fontSize(style::Size::pt(12.0)).font(Menlo).color(simd_float4{1.0,1.0,1.0,1.0})},
-        nodeZIndexText{text(nodeZIndexLabel()).fontSize(style::Size::pt(12.0)).font(Menlo).color(simd_float4{1.0,1.0,1.0,1.0})},
-        nodePathText{text(nodePathLabel()).fontSize(style::Size::pt(12.0)).font(Menlo).color(simd_float4{1.0,1.0,1.0,1.0})},
-        frameStatsText{text("frame: waiting").fontSize(style::Size::pt(12.0)).font(Menlo).color(simd_float4{0.65,0.85,1.0,1.0})},
-        phaseStatsText{text("phases: waiting").fontSize(style::Size::pt(11.0)).font(Menlo).color(simd_float4{0.94,0.96,1.0,1.0}).whiteSpace(style::WhiteSpace::PreWrap)},
-        cacheStatsText{text("caches: waiting").fontSize(style::Size::pt(11.0)).font(Menlo).color(simd_float4{0.94,0.96,1.0,1.0}).whiteSpace(style::WhiteSpace::PreWrap)},
-        renderStatsText{text("render: waiting").fontSize(style::Size::pt(11.0)).font(Menlo).color(simd_float4{0.94,0.96,1.0,1.0}).whiteSpace(style::WhiteSpace::PreWrap)},
-        hitTestStatsText{text("hit tests: waiting").fontSize(style::Size::pt(11.0)).font(Menlo).color(simd_float4{0.94,0.96,1.0,1.0})},
-        dirtyPhaseText{text("No selected node").fontSize(style::Size::pt(11.0)).font(Menlo).color(simd_float4{0.94,0.96,1.0,1.0}).whiteSpace(style::WhiteSpace::PreWrap)},
-        mutationHistoryText{text("No recent mutations").fontSize(style::Size::pt(10.0)).font(Menlo).color(simd_float4{0.8,0.84,0.92,1.0}).whiteSpace(style::WhiteSpace::PreWrap)},
-        treeViewText{text(treeViewDetails).fontSize(style::Size::pt(11.0)).font(Menlo).color(simd_float4{0.9,0.93,1.0,1.0}).whiteSpace(style::WhiteSpace::PreWrap)},
-        selectionLabelText{text("None").fontSize(style::Size::pt(10.0)).font(Menlo).color(simd_float4{1.0,1.0,1.0,1.0}).pointerEvents(style::PointerEvents::None)},
+        mouseXText{text(mouseXLabel())},
+        mouseYText{text(mouseYLabel())},
+        nodeIDText{text(nodeIdLabel())},
+        nodeTypeText{text(nodeTypeLabel())},
+        hitStackText{text(hitStackLabel())},
+        nodeStyleText{text(nodeStyleLabel())},
+        nodePositionText{text(nodePositionLabel())},
+        nodeWText{text(nodeWidthLabel())},
+        nodeHText{text(nodeHeightLabel())},
+        nodeLocalBoxText{text(nodeLocalBoxLabel())},
+        nodeScrollText{text(nodeScrollLabel())},
+        nodeZIndexText{text(nodeZIndexLabel())},
+        nodePathText{text(nodePathLabel())},
+        frameStatsText{text("frame: waiting")},
+        phaseStatsText{text("phases: waiting")},
+        cacheStatsText{text("caches: waiting")},
+        renderStatsText{text("render: waiting")},
+        hitTestStatsText{text("hit tests: waiting")},
+        dirtyPhaseText{text("No selected node")},
+        mutationHistoryText{text("No recent mutations")},
+        treeViewText{text(treeViewDetails)},
+        selectionLabelText{text("None")},
         marginOverlayState{
             div()
-                .color(simd_float4{0,0,0,0})
+                .backgroundColor(simd_float4{0,0,0,0})
                 .borderWidth(style::Size::px(1.0))
                 .borderColor(simd_float4{1.0,0.55,0.15,0.95})
                 .height(style::Size::px(0))
@@ -139,7 +141,7 @@ namespace Inspector {
         },
         paddingOverlayState{
             div()
-                .color(simd_float4{0,0,0,0})
+                .backgroundColor(simd_float4{0,0,0,0})
                 .borderWidth(style::Size::px(1.0))
                 .borderColor(simd_float4{0.3,0.9,0.55,0.95})
                 .height(style::Size::px(0))
@@ -151,7 +153,7 @@ namespace Inspector {
         },
         contentOverlayState{
             div()
-                .color(simd_float4{0,0,0,0})
+                .backgroundColor(simd_float4{0,0,0,0})
                 .borderWidth(style::Size::px(1.0))
                 .borderColor(simd_float4{0.2,0.6,1.0,1.0})
                 .height(style::Size::px(0))
@@ -163,7 +165,7 @@ namespace Inspector {
         },
         selectionLabelState{
             div()
-                .color(simd_float4{0.04,0.08,0.14,0.96})
+                .backgroundColor(simd_float4{0.04,0.08,0.14,0.96})
                 .padding(style::Size::px(4.0))
                 .cornerRadius(style::Size::px(4.0))
                 .position(style::Position::Fixed)
@@ -171,7 +173,7 @@ namespace Inspector {
                 .left(style::Size::px(-10000))
                 .top(style::Size::px(-10000))
             (
-                selectionLabelText
+                elements::span().fontSize(style::Size::pt(10.0)).font(Menlo).color(simd_float4{1.0,1.0,1.0,1.0}).pointerEvents(style::PointerEvents::None)(selectionLabelText)
             )
         },
         panelHeaderState{
@@ -180,13 +182,13 @@ namespace Inspector {
                 .alignItems(style::AlignItems::Center)
                 .justifyContent(style::JustifyContent::SpaceBetween)
             (
-                text("Inspector").fontSize(style::Size::pt(22.0)).font(ArialBold),
-                frameStatsText
+                elements::span().fontSize(style::Size::pt(22.0)).font(ArialBold)(text("Inspector")),
+                elements::span().fontSize(style::Size::pt(12.0)).font(Menlo).color(simd_float4{0.65,0.85,1.0,1.0})(frameStatsText)
             )
         },
         panelState{
             div()
-                .color(simd_float4{0.035,0.045,0.07,0.8})
+                .backgroundColor(simd_float4{0.035,0.045,0.07,0.8})
                 .height(style::Size::px(720))
                 .width(style::Size::px(420))
                 .position(style::Position::Fixed)
@@ -205,85 +207,85 @@ namespace Inspector {
                 (
                     panelHeaderState,
                     div()
-                        .color(simd_float4{0.075,0.09,0.13,0.9})
+                        .backgroundColor(simd_float4{0.075,0.09,0.13,0.9})
                         .padding(style::Size::px(10.0))
                         .cornerRadius(style::Size::px(8.0))
                         .display(style::Display::Flex)
                         .flexDirection(FlexDirection::Col)
                         .flexGap(style::Size::px(4.0))
                     (
-                        text("Renderer").fontSize(style::Size::pt(12.0)).font(ArialBold).color(simd_float4{0.55,0.78,1.0,1.0}),
-                        phaseStatsText,
-                        cacheStatsText,
-                        renderStatsText,
-                        hitTestStatsText
+                        elements::span().fontSize(style::Size::pt(12.0)).font(ArialBold).color(simd_float4{0.55,0.78,1.0,1.0})(text("Renderer")),
+                        elements::span().fontSize(style::Size::pt(11.0)).font(Menlo).color(simd_float4{0.94,0.96,1.0,1.0}).whiteSpace(style::WhiteSpace::PreWrap)(phaseStatsText),
+                        elements::span().fontSize(style::Size::pt(11.0)).font(Menlo).color(simd_float4{0.94,0.96,1.0,1.0}).whiteSpace(style::WhiteSpace::PreWrap)(cacheStatsText),
+                        elements::span().fontSize(style::Size::pt(11.0)).font(Menlo).color(simd_float4{0.94,0.96,1.0,1.0}).whiteSpace(style::WhiteSpace::PreWrap)(renderStatsText),
+                        elements::span().fontSize(style::Size::pt(11.0)).font(Menlo).color(simd_float4{0.94,0.96,1.0,1.0})(hitTestStatsText)
                     ),
                     div()
-                        .color(simd_float4{0.075,0.09,0.13,0.9})
+                        .backgroundColor(simd_float4{0.075,0.09,0.13,0.9})
                         .padding(style::Size::px(10.0))
                         .cornerRadius(style::Size::px(8.0))
                         .display(style::Display::Flex)
                         .flexDirection(FlexDirection::Col)
                         .flexGap(style::Size::px(3.0))
                     (
-                        text("Selected node").fontSize(style::Size::pt(12.0)).font(ArialBold).color(simd_float4{0.55,0.78,1.0,1.0}),
-                        nodeIDText,
-                        nodeTypeText,
-                        nodeStyleText,
-                        nodePositionText,
+                        elements::span().fontSize(style::Size::pt(12.0)).font(ArialBold).color(simd_float4{0.55,0.78,1.0,1.0})(text("Selected node")),
+                        elements::span().fontSize(style::Size::pt(12.0)).font(Menlo).color(simd_float4{1.0,1.0,1.0,1.0})(nodeIDText),
+                        elements::span().fontSize(style::Size::pt(12.0)).font(Menlo).color(simd_float4{1.0,1.0,1.0,1.0})(nodeTypeText),
+                        elements::span().fontSize(style::Size::pt(12.0)).font(Menlo).color(simd_float4{1.0,1.0,1.0,1.0})(nodeStyleText),
+                        elements::span().fontSize(style::Size::pt(12.0)).font(Menlo).color(simd_float4{1.0,1.0,1.0,1.0})(nodePositionText),
                         div().display(style::Display::Flex).flexGap(style::Size::px(12.0))
                         (
-                            nodeWText,
-                            nodeHText
+                            elements::span().fontSize(style::Size::pt(12.0)).font(Menlo).color(simd_float4{1.0,1.0,1.0,1.0})(nodeWText),
+                            elements::span().fontSize(style::Size::pt(12.0)).font(Menlo).color(simd_float4{1.0,1.0,1.0,1.0})(nodeHText)
                         ),
-                        nodeLocalBoxText,
-                        nodeScrollText,
-                        nodeZIndexText,
-                        nodePathText
+                        elements::span().fontSize(style::Size::pt(12.0)).font(Menlo).color(simd_float4{1.0,1.0,1.0,1.0})(nodeLocalBoxText),
+                        elements::span().fontSize(style::Size::pt(12.0)).font(Menlo).color(simd_float4{1.0,1.0,1.0,1.0})(nodeScrollText),
+                        elements::span().fontSize(style::Size::pt(12.0)).font(Menlo).color(simd_float4{1.0,1.0,1.0,1.0})(nodeZIndexText),
+                        elements::span().fontSize(style::Size::pt(12.0)).font(Menlo).color(simd_float4{1.0,1.0,1.0,1.0})(nodePathText)
                     ),
                     div()
-                        .color(simd_float4{0.075,0.09,0.13,0.9})
+                        .backgroundColor(simd_float4{0.075,0.09,0.13,0.9})
                         .padding(style::Size::px(10.0))
                         .cornerRadius(style::Size::px(8.0))
                         .display(style::Display::Flex)
                         .flexDirection(FlexDirection::Col)
                         .flexGap(style::Size::px(4.0))
                     (
-                        text("Dirty / recompute").fontSize(style::Size::pt(12.0)).font(ArialBold).color(simd_float4{0.55,0.78,1.0,1.0}),
-                        dirtyPhaseText,
-                        mutationHistoryText
+                        elements::span().fontSize(style::Size::pt(12.0)).font(ArialBold).color(simd_float4{0.55,0.78,1.0,1.0})(text("Dirty / recompute")),
+                        elements::span().fontSize(style::Size::pt(11.0)).font(Menlo).color(simd_float4{0.94,0.96,1.0,1.0}).whiteSpace(style::WhiteSpace::PreWrap)(dirtyPhaseText),
+                        elements::span().fontSize(style::Size::pt(10.0)).font(Menlo).color(simd_float4{0.8,0.84,0.92,1.0}).whiteSpace(style::WhiteSpace::PreWrap)(mutationHistoryText)
                     ),
                     div()
-                        .color(simd_float4{0.075,0.09,0.13,0.9})
+                        .backgroundColor(simd_float4{0.075,0.09,0.13,0.9})
                         .padding(style::Size::px(10.0))
                         .cornerRadius(style::Size::px(8.0))
                         .display(style::Display::Flex)
                         .flexDirection(FlexDirection::Col)
                         .flexGap(style::Size::px(4.0))
                     (
-                        text("Hit stack  ·  Shift+Up/Down").fontSize(style::Size::pt(12.0)).font(ArialBold).color(simd_float4{0.55,0.78,1.0,1.0}),
-                        hitStackText
+                        elements::span().fontSize(style::Size::pt(12.0)).font(ArialBold).color(simd_float4{0.55,0.78,1.0,1.0})(text("Hit stack  ·  Shift+Up/Down")),
+                        elements::span().fontSize(style::Size::pt(12.0)).font(Menlo).color(simd_float4{1.0,1.0,1.0,1.0})(hitStackText)
                     ),
                     div()
-                        .color(simd_float4{0.075,0.09,0.13,0.9})
+                        .backgroundColor(simd_float4{0.075,0.09,0.13,0.9})
                         .padding(style::Size::px(10.0))
                         .cornerRadius(style::Size::px(8.0))
                         .display(style::Display::Flex)
                         .flexDirection(FlexDirection::Col)
                         .flexGap(style::Size::px(4.0))
                     (
-                        text("Tree").fontSize(style::Size::pt(12.0)).font(ArialBold).color(simd_float4{0.55,0.78,1.0,1.0}),
-                        treeViewText
+                        elements::span().fontSize(style::Size::pt(12.0)).font(ArialBold).color(simd_float4{0.55,0.78,1.0,1.0})(text("Tree")),
+                        elements::span().fontSize(style::Size::pt(11.0)).font(Menlo).color(simd_float4{0.9,0.93,1.0,1.0}).whiteSpace(style::WhiteSpace::PreWrap)(treeViewText)
                     ),
                     div()
                         .display(style::Display::Flex)
                         .flexDirection(FlexDirection::Col)
                     (
-                        text("Pointer").fontSize(style::Size::pt(11.0)).font(ArialBold).color(simd_float4{0.55,0.78,1.0,1.0}),
+                        elements::span().fontSize(style::Size::pt(11.0)).font(ArialBold).color(simd_float4{0.55,0.78,1.0,1.0})(text("Pointer")),
                         div().display(style::Display::Flex).flexGap(style::Size::px(12.0))
                         (
-                            mouseXText,
-                            mouseYText
+                            elements::span().fontSize(style::Size::pt(12.0)).font(Menlo).color(simd_float4{1.0,1.0,1.0,1.0})(mouseXText),
+                            elements::span().fontSize(style::Size::pt(12.0)).font(Menlo).color(simd_float4{1.0,1.0,1.0,1.0})(mouseYText)
                         )
                     )
                 )
@@ -291,7 +293,7 @@ namespace Inspector {
         },
         visualizerState{
             div()
-                .color(simd_float4{0,0,0,0})
+                .backgroundColor(simd_float4{0,0,0,0})
                 .height(style::Size::px(0))
                 .width(style::Size::px(0))
                 .position(style::Position::Fixed)
@@ -417,19 +419,20 @@ namespace Inspector {
             auto htNode = hitNodes[selectedHitIndex];
             selectedNode = htNode;
             htNodeID = htNode->id;
-            htNodeElementType = std::string(htNode->element->elementTypeName());
+            htNodeElementType = std::format("{} ({})", htNode->metadata.displayName, htNode->metadata.backing);
             htNodeDisplay = displayName(htNode->shared.display);
             htNodePosition = positionName(htNode->shared.position);
             htNodeOverflow = overflowName(htNode->shared.overflow);
             std::visit([&](const auto& htNodeLayout) {
-                htNodeX = htNodeLayout.computedBox.x;
-                htNodeY = htNodeLayout.computedBox.y;
-                htNodeW = htNodeLayout.computedBox.width;
-                htNodeH = htNodeLayout.computedBox.height;
-                htNodeLocalX = htNodeLayout.localComputedBox.x;
-                htNodeLocalY = htNodeLayout.localComputedBox.y;
-                htNodeLocalW = htNodeLayout.localComputedBox.width;
-                htNodeLocalH = htNodeLayout.localComputedBox.height;
+                const auto bounds = layout::boundingBox(htNodeLayout.boxFragments);
+                htNodeX = bounds.computedBox.x;
+                htNodeY = bounds.computedBox.y;
+                htNodeW = bounds.computedBox.width;
+                htNodeH = bounds.computedBox.height;
+                htNodeLocalX = bounds.localComputedBox.x;
+                htNodeLocalY = bounds.localComputedBox.y;
+                htNodeLocalW = bounds.localComputedBox.width;
+                htNodeLocalH = bounds.localComputedBox.height;
             }, htNode->layout->layout);
             htNodeScrollX = float(htNode->scrollOffset.x);
             htNodeScrollY = float(htNode->scrollOffset.y);
@@ -445,7 +448,7 @@ namespace Inspector {
             for (std::size_t i = 0; i < path.size(); ++i) {
                 auto* node = path[i];
                 auto line = std::format("{}#{}",
-                    node->element->elementTypeName(),
+                    node->metadata.displayName,
                     node->id
                 );
                 formattedPath.append(line.begin(), line.end());
@@ -465,7 +468,7 @@ namespace Inspector {
                 hitStackDetails += std::format(
                     "{} {}#{}  z:{}",
                     i == selectedHitIndex ? ">" : " ",
-                    node->element->elementTypeName(),
+                    node->metadata.displayName,
                     node->id,
                     zIndexName(node->zIndex)
                 );
@@ -484,7 +487,7 @@ namespace Inspector {
                 treeViewDetails += std::format(
                     "{}{}#{}",
                     htNodeID == node->id ? "> " : "  ",
-                    node->element->elementTypeName(),
+                    node->metadata.displayName,
                     node->id
                 );
                 treeViewDetails += '\n';
@@ -662,8 +665,8 @@ namespace Inspector {
         }
 
         const auto& result = *node->layout;
-        const auto& box = std::visit(
-            [](const auto& layout) -> const layout::LayoutBox& { return layout.computedBox; },
+        const auto box = std::visit(
+            [](const auto& layout) { return layout::boundingBox(layout.boxFragments).computedBox; },
             result.layout
         );
         auto margins = node->preLayout.has_value()
@@ -695,7 +698,7 @@ namespace Inspector {
 
         selectionLabelText.text(std::format(
             "{}#{}  {:.0f}×{:.0f}",
-            node->element->elementTypeName(),
+            node->metadata.displayName,
             node->id,
             box.width,
             box.height

@@ -9,6 +9,8 @@
 #include "fragment_types.hpp"
 #include "overloaded.hpp"
 #include "layout/sizing.hpp"
+#include "render_tree.hpp"
+#include "tree_node.hpp"
 #include <algorithm>
 #include <optional>
 #include <simd/vector_types.h>
@@ -40,15 +42,9 @@ namespace layout {
         simd_float2 newCursor = resolvePosition(pctx);
 
         // lr.childConstraints.origin = {0.0f, 0.0f};
-        float lineHeight = 0;
         float totalHeight = 0;
         float totalWidth = 0;
         float currentTotalWidth = 0;
-        float minX = newCursor.x;
-        float maxX = newCursor.x;
-        float minContentX = newCursor.x;
-        float maxContentX = newCursor.x;
-        float minY = newCursor.y;
 
         bool isLtr = constraints.inheritedProperties.direction == Direction::ltr;
         bool placedByParent = constraints.parentDisplay == Display::Flex || constraints.parentDisplay == Display::Grid;
@@ -82,8 +78,15 @@ namespace layout {
         if (constraints.edgeIntent.edgeDisplayMode == Display::Inline && !lineFragments.empty() && constraints.inlineFormatting.fragments.start > 0) {
             const auto& previousFragment = constraints.inlineFormatting.context->fragments[constraints.inlineFormatting.fragments.start - 1];
             prevLineBoxIndex = previousFragment.lineBoxIndex;
-            lineHeight = constraints.prevInlineHeight;
         }
+
+        lr.prevInlineHeight = constraints.prevInlineHeight;
+
+        lr.childConstraints = constraints;
+        lr.childConstraints.edgeIntent = {
+            .edgeDisplayMode = Display::Inline,
+            .collapsable = false,
+        };
 
         size_t fragmentIdx = 0;
         for (auto it = lineFragments.begin(); it != lineFragments.end(); ++it, ++fragmentIdx) {
@@ -113,24 +116,6 @@ namespace layout {
 
             newCursor.x = startingX;
 
-            if (it == lineFragments.begin()) {
-                minX = startingX;
-                maxX = startingX;
-                minContentX = startingX;
-                maxContentX = startingX;
-            }
-
-            minContentX = std::min(minContentX, startingX);
-            maxContentX = std::max(maxContentX, startingX + fragment.width);
-
-            if (isLtr) {
-                minX = std::min(minX, startingX - fragment.leadingPadding);
-                maxX = std::max(maxX, startingX + fragment.width + fragment.trailingPadding);
-            } else {
-                minX = std::min(minX, startingX - fragment.trailingPadding);
-                maxX = std::max(maxX, startingX + fragment.width + fragment.leadingPadding);
-            }
-
             if (fragmentIdx == 0 && !placedByParent && constraints.edgeIntent.edgeDisplayMode != Display::Inline) {
                 if (constraints.edgeIntent.collapsable) {
                     newCursor.y += std::max(margins.top, constraints.edgeIntent.intent);
@@ -139,63 +124,141 @@ namespace layout {
                 }
             }
 
-            if (fragment.lineBoxIndex != prevLineBoxIndex &&
-                prevLineBoxIndex != -1
-            ) {
-                newCursor.y += lineHeight;
-                totalHeight += lineHeight;
-                lineHeight = 0;
+            // did we move to a new line
+                // true if indices dont match and the line box index is -1
+                // including on first line
+            if (fragment.lineBoxIndex != prevLineBoxIndex && prevLineBoxIndex != -1) 
+            {
+                newCursor.y += lineBoxes[prevLineBoxIndex].height;
                 newCursor.x = startingX;
                 totalWidth = std::max(currentTotalWidth, totalWidth);
                 currentTotalWidth = 0;
             }
 
+            // do we need a new box fragment
+                // true on every line and true when we're the starting fragments
+            if (it == lineFragments.begin() || fragment.lineBoxIndex != prevLineBoxIndex) {
+                totalHeight += lineBox.height;
+
+                BoxFragment boxFragment;
+                boxFragment.computedBox.x = startingX;
+                boxFragment.brokenLeft = true;
+                boxFragment.brokenRight = true;
+                boxFragment.computedInnerBox.y = newCursor.y + lineBox.ascent - lineFragments.front().ascent;
+                boxFragment.computedInnerBox.height = lineFragments.front().ascent + lineFragments.front().descent;
+                lr.boxFragments.push_back(boxFragment);
+            }
+
+            switch (fragment.kind) {
+                case InlineFlowKind::Atomic: {
+                    lr.boxFragments.back().brokenLeft = false;
+                    lr.boxFragments.back().brokenRight = false;
+                    break;
+                }
+                case InlineFlowKind::Open: {
+                    if (it == lineFragments.begin()) {
+                        if (isLtr) {
+                            lr.boxFragments.back().brokenLeft = false;
+                        } else {
+                            lr.boxFragments.back().brokenRight = false;
+                        }
+                    }
+                    lr.childConstraints.cursor = newCursor;
+                    break;
+                }
+                case InlineFlowKind::Close: {
+                    if (std::next(it) == lineFragments.end()) {
+                        if (isLtr) {
+                            lr.boxFragments.back().brokenRight = false;
+                        } else {
+                            lr.boxFragments.back().brokenLeft = false;
+                        }
+                    }
+                    break;
+                }
+                default: {
+                    break;
+                }
+            }
+
+            auto& lineBoxFragment = lr.boxFragments.back().computedBox;
+            const float lineBoxFragmentEnd = std::max(lineBoxFragment.x + lineBoxFragment.width, startingX + fragment.width);
+            lineBoxFragment.x = std::min(lineBoxFragment.x, startingX);
+            lineBoxFragment.width = lineBoxFragmentEnd - lineBoxFragment.x;
 
             size_t atomIndex = fragment.atomStart;
             for (size_t i = 0; i < fragment.atomCount && atomIndex < atomized.atoms.size(); ++i, ++atomIndex) {
                 auto& atom = atomized.atoms[atomIndex];
-                float usedLineHeight = atom.lineHeight > 0.0f ? atom.lineHeight : atom.height;
 
-                atomOffsets[atomIndex] = newCursor + simd_float2{0.0f, (usedLineHeight - atom.height) / 2.0f};
+                atomOffsets[atomIndex] = newCursor + simd_float2{0.0f, lineBox.ascent - atom.ascent};
                 newCursor.x += atom.width;
-                lineHeight = std::max(lineHeight, usedLineHeight);
             }
 
-            currentTotalWidth += fragment.leadingPadding + fragment.width + fragment.trailingPadding;
+            currentTotalWidth += fragment.width;
 
+            lr.prevInlineHeight = lineBox.height;
             prevLineBoxIndex = fragment.lineBoxIndex;
         }
 
-        totalHeight += lineHeight;
         totalWidth = std::max(currentTotalWidth, totalWidth);
 
         const auto* resolvedPaddingTop = std::get_if<float>(&sizeResult.padding.top);
+        const auto* resolvedPaddingRight = std::get_if<float>(&sizeResult.padding.right);
         const auto* resolvedPaddingBottom = std::get_if<float>(&sizeResult.padding.bottom);
+        const auto* resolvedPaddingLeft = std::get_if<float>(&sizeResult.padding.left);
+        const auto* resolvedBorderTop = std::get_if<float>(&sizeResult.border.top);
+        const auto* resolvedBorderRight = std::get_if<float>(&sizeResult.border.right);
+        const auto* resolvedBorderBottom = std::get_if<float>(&sizeResult.border.bottom);
+        const auto* resolvedBorderLeft = std::get_if<float>(&sizeResult.border.left);
 
-        lr.computedBox = {
-            minX,
-            minY,
-            maxX - minX,
-            totalHeight
-        };
+        for (auto& boxFragment : lr.boxFragments) {
+            boxFragment.computedPaddingBox.x = boxFragment.computedBox.x;
+            boxFragment.computedPaddingBox.width = boxFragment.computedBox.width;
+            boxFragment.computedPaddingBox.y = boxFragment.computedInnerBox.y;
+            boxFragment.computedPaddingBox.height = boxFragment.computedInnerBox.height;
 
-        if (resolvedPaddingTop) {
-            lr.computedBox.y -= *resolvedPaddingTop;
-            lr.computedBox.height += *resolvedPaddingTop;
+            if (!boxFragment.brokenLeft && resolvedBorderLeft) {
+                boxFragment.computedPaddingBox.x += *resolvedBorderLeft;
+                boxFragment.computedPaddingBox.width -= *resolvedBorderLeft;
+            }
+
+            if (!boxFragment.brokenRight && resolvedBorderRight) {
+                boxFragment.computedPaddingBox.width -= *resolvedBorderRight;
+            }
+
+            if (resolvedPaddingTop) {
+                boxFragment.computedPaddingBox.y -= *resolvedPaddingTop;
+                boxFragment.computedPaddingBox.height += *resolvedPaddingTop;
+            }
+
+            if (resolvedPaddingBottom) {
+                boxFragment.computedPaddingBox.height += *resolvedPaddingBottom;
+            }
+
+            boxFragment.computedInnerBox.x = boxFragment.computedPaddingBox.x;
+            boxFragment.computedInnerBox.width = boxFragment.computedPaddingBox.width;
+
+            if (!boxFragment.brokenLeft && resolvedPaddingLeft) {
+                boxFragment.computedInnerBox.x += *resolvedPaddingLeft;
+                boxFragment.computedInnerBox.width -= *resolvedPaddingLeft;
+            }
+
+            if (!boxFragment.brokenRight && resolvedPaddingRight) {
+                boxFragment.computedInnerBox.width -= *resolvedPaddingRight;
+            }
+
+            boxFragment.computedBox.y = boxFragment.computedPaddingBox.y;
+            boxFragment.computedBox.height = boxFragment.computedPaddingBox.height;
+
+            if (resolvedBorderTop) {
+                boxFragment.computedBox.y -= *resolvedBorderTop;
+                boxFragment.computedBox.height += *resolvedBorderTop;
+            }
+
+            if (resolvedBorderBottom) {
+                boxFragment.computedBox.height += *resolvedBorderBottom;
+            }
         }
-
-        if (resolvedPaddingBottom) {
-            lr.computedBox.height += *resolvedPaddingBottom;
-        }
-
-        lr.computedPaddingBox = lr.computedBox;
-
-        lr.computedInnerBox = {
-            minContentX,
-            minY,
-            maxContentX - minContentX,
-            totalHeight
-        };
 
         float minWidth = totalWidth;
         auto minLineFragments = constraints.inlineFormatting.minLineFragments();
@@ -209,7 +272,7 @@ namespace layout {
                     currentWidth = 0.0f;
                 }
 
-                currentWidth += fragment.leadingPadding + fragment.width + fragment.trailingPadding;
+                currentWidth += fragment.width;
 
                 prevIndex = fragment.lineBoxIndex;
             }
@@ -228,7 +291,7 @@ namespace layout {
                     currentWidth = 0.0f;
                 }
 
-                currentWidth += fragment.leadingPadding + fragment.width + fragment.trailingPadding;
+                currentWidth += fragment.width;
 
                 prevIndex = fragment.lineBoxIndex;
             }
@@ -246,7 +309,6 @@ namespace layout {
         // lr.childConstraints.frameInfo = constraints.frameInfo;
 
         lr.atomOffsets = atomOffsets;
-        lr.prevInlineHeight = lineHeight;
 
         lr.siblingCursor = newCursor;
 
@@ -331,13 +393,8 @@ namespace layout {
             minContentX = std::min(minContentX, startingX);
             maxContentX = std::max(maxContentX, startingX + fragment.width);
 
-            if (isLtr) {
-                minX = std::min(minX, startingX - fragment.leadingPadding);
-                maxX = std::max(maxX, startingX + fragment.width + fragment.trailingPadding);
-            } else {
-                minX = std::min(minX, startingX - fragment.trailingPadding);
-                maxX = std::max(maxX, startingX + fragment.width + fragment.leadingPadding);
-            }
+            minX = std::min(minX, startingX);
+            maxX = std::max(maxX, startingX + fragment.width);
 
             if (fragment.lineBoxIndex != prevLineBoxIndex &&
                 prevLineBoxIndex != -1
@@ -354,19 +411,13 @@ namespace layout {
             size_t atomIndex = fragment.atomStart;
             for (size_t i = 0; i < fragment.atomCount && atomIndex < atomized.atoms.size(); ++i, ++atomIndex) {
                 auto& atom = atomized.atoms[atomIndex];
-                float usedLineHeight = atom.lineHeight > 0.0f
-                    ? atom.lineHeight
-                    : atom.height;
 
-                atomOffsets[atomIndex] = newCursor + simd_float2{
-                    0.0f,
-                    (usedLineHeight - atom.height) / 2.0f
-                };
+                atomOffsets[atomIndex] = newCursor + simd_float2{0.0f, lineBox.ascent - atom.ascent};
                 newCursor.x += atom.width;
-                lineHeight = std::max(lineHeight, usedLineHeight);
             }
+            lineHeight = lineBox.height;
 
-            currentTotalWidth += fragment.leadingPadding + fragment.width + fragment.trailingPadding;
+            currentTotalWidth += fragment.width;
 
             prevLineBoxIndex = fragment.lineBoxIndex;
         }
@@ -377,7 +428,8 @@ namespace layout {
         const auto* resolvedPaddingTop = std::get_if<float>(&sizeResult.padding.top);
         const auto* resolvedPaddingBottom = std::get_if<float>(&sizeResult.padding.bottom);
 
-        lr.computedBox = {
+        BoxFragment fragment;
+        fragment.computedBox = {
             minX,
             minY,
             maxX - minX,
@@ -385,22 +437,24 @@ namespace layout {
         };
 
         if (resolvedPaddingTop) {
-            lr.computedBox.y -= *resolvedPaddingTop;
-            lr.computedBox.height += *resolvedPaddingTop;
+            fragment.computedBox.y -= *resolvedPaddingTop;
+            fragment.computedBox.height += *resolvedPaddingTop;
         }
 
         if (resolvedPaddingBottom) {
-            lr.computedBox.height += *resolvedPaddingBottom;
+            fragment.computedBox.height += *resolvedPaddingBottom;
         }
 
-        lr.computedPaddingBox = lr.computedBox;
+        fragment.computedPaddingBox = fragment.computedBox;
 
-        lr.computedInnerBox = {
+        fragment.computedInnerBox = {
             minContentX,
             minY,
             maxContentX - minContentX,
             totalHeight
         };
+
+        lr.boxFragments = {fragment};
 
         lr.widthIntrinsicSizes = IntrinsicSizes {.minimum = totalWidth, .maximum = totalWidth};
         lr.heightIntrinsicSizes = IntrinsicSizes {.minimum = totalHeight, .maximum = totalHeight};
@@ -421,8 +475,43 @@ namespace layout {
         return lr;
     }
 
-    std::optional<IntrinsicSizes> inlinePass(const InlineState& state, const SizeRequest& sizeRequest) {
+    std::optional<IntrinsicSizes> inlinePass(
+        tree::RenderTree& tree, tree::TreeNode* node, const FrameInfo& frameInfo, InlineState& state,
+        Constraints childConstraints, const SizeRequest& sizeRequest,
+        bool mutate, std::unordered_map<size_t, SizeResult>& sizeCache
+    ) {
         std::optional<IntrinsicSizes> intrinsicResult;
+
+        auto inlineFormatting = childConstraints.inlineFormatting.context;
+
+        for (uint64_t i = 0; i < node->children.size(); ++i) {
+            auto child = node->children[i].get();
+
+            childConstraints.inlineFormatting = {
+                .context = inlineFormatting,
+                .fragments = inlineFormatting->nodeFragments.at(child->id),
+                .minFragments = inlineFormatting->minNodeFragments.empty()
+                    ? InlineFragmentRange{}
+                    : inlineFormatting->minNodeFragments.at(child->id),
+                .maxFragments = inlineFormatting->maxNodeFragments.empty()
+                    ? InlineFragmentRange{}
+                    : inlineFormatting->maxNodeFragments.at(child->id),
+            };
+
+            auto childOutput = tree.layoutRecursive(child, frameInfo, childConstraints, mutate, std::nullopt, sizeRequest.intrinsicWidthRequest, sizeRequest.intrinsicHeightRequest);
+
+            std::visit([&](const auto& childLayout) {
+            if (!childLayout.outOfFlow) {
+                childConstraints.cursor = childLayout.siblingCursor;
+                childConstraints.edgeIntent = childLayout.edgeIntent;
+                childConstraints.prevInlineHeight = childLayout.prevInlineHeight;
+
+                state.siblingCursor = childLayout.siblingCursor;
+                state.edgeIntent = childLayout.edgeIntent;
+                state.prevInlineHeight = childLayout.prevInlineHeight;
+            }
+            }, childOutput.layout);
+        }
 
         if (sizeRequest.resolvingIntrinsicWidth || sizeRequest.resolvingIntrinsicHeight) {
             intrinsicResult = IntrinsicSizes{};

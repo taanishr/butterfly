@@ -22,7 +22,8 @@ namespace style {
         Block,
         Inline,
         Flex,
-        Grid
+        Grid,
+        None
     };
 
     enum class FlexDirection {
@@ -248,7 +249,7 @@ namespace style {
         // Grid item properties
         GridPlacement gridPlacement{};
 
-        simd_float4 color{0, 0, 0, 0};
+        simd_float4 backgroundColor{0, 0, 0, 0};
 
         Size cornerRadius{};
         std::optional<Size> cornerRadiusTopLeft, cornerRadiusTopRight;
@@ -260,6 +261,12 @@ namespace style {
         PointerEvents pointerEvents {PointerEvents::Auto};
         TextOverflow textOverflow{};
         std::optional<TextAlign> textAlign{};
+        std::optional<simd_float4> color{};
+        std::optional<std::string> font{};
+        std::optional<Size> fontSize{};
+        std::optional<float> lineHeight{};
+        std::optional<WhiteSpace> whiteSpace{};
+        std::optional<WordBreak> wordBreak{};
 
         // the reason its optional here is bc 
         // the spec distinguishes between the identity (i.e. set via scale(1))

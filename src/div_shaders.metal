@@ -19,9 +19,10 @@ struct DivVertexOut {
     float4 position [[position]];
     float4 worldPosition;
     float2 screenPosition;
+    uint instance_id [[flat]];
 };
 
-struct DivStyleUniforms {
+struct DivUniforms {
     float4 color;
     CornerRadii cornerRadius;
     BorderUniform border;
@@ -29,72 +30,81 @@ struct DivStyleUniforms {
     float opacity;
 };
 
-struct DivGeometryUniforms {
+struct DivGeometry {
     simd_float2 rectCenter;
     simd_float2 halfExtent;
+    simd_float2 quadMin;
+    simd_float2 quadMax;
+    CornerRadii cornerRadius;
+    float4 borderWidths;
     uint numClips;
     float3x3 transform;
 };
 
-struct DivUniforms {
-    DivStyleUniforms style;
-    DivGeometryUniforms geometry;
-};
-
 vertex DivVertexOut vertex_div(
    DivVertexIn in [[stage_in]],
+   uint instance_id [[instance_id]],
    constant float2* offsets [[buffer(1)]],
    constant FrameInfo* frameInfo [[buffer(2)]],
-   constant DivUniforms* uniforms [[buffer(3)]]
+   constant DivGeometry* geometry [[buffer(3)]]
 )
 {
     DivVertexOut out;
 
-    in.position += offsets[in.atom_id];
+    DivGeometry g = geometry[instance_id];
 
-    float2 screenPosition = (uniforms->geometry.transform * float3(in.position, 1.0)).xy;
+    float2 position = mix(g.quadMin, g.quadMax, in.position) + offsets[instance_id];
+
+    float2 screenPosition = (g.transform * float3(position, 1.0)).xy;
 
     float2 adjustedPosition = to_ndc(screenPosition, frameInfo->width, frameInfo->height);
     out.position = float4(adjustedPosition, 0.0, 1.0);
-    out.worldPosition = float4(in.position, 0.0, 1.0);
+    out.worldPosition = float4(position, 0.0, 1.0);
     out.screenPosition = screenPosition;
+    out.instance_id = instance_id;
     return out;
 }
 
 fragment float4 fragment_div(
     DivVertexOut in [[stage_in]],
     constant DivUniforms* uniforms [[buffer(0)]],
-    constant ClipUniform* clips [[buffer(1)]]
+    constant ClipUniform* clips [[buffer(1)]],
+    constant DivGeometry* geometry [[buffer(2)]]
 )
 {
-    if (outside_clips(in.screenPosition, clips, uniforms->geometry.numClips)) {
+    DivGeometry g = geometry[in.instance_id];
+
+    if (outside_clips(in.screenPosition, clips, g.numClips)) {
         discard_fragment();
     }
 
-    float2 localPosition = in.worldPosition.xy - uniforms->geometry.rectCenter;
-    float d = rounded_rect_sdf(localPosition, uniforms->geometry.halfExtent, uniforms->style.cornerRadius);
+    BorderUniform border = uniforms->border;
+    border.widths = g.borderWidths;
+
+    float2 localPosition = in.worldPosition.xy - g.rectCenter;
+    float d = rounded_rect_sdf(localPosition, g.halfExtent, g.cornerRadius);
 
     float px = fwidth(d);
 
     float outerMask = clamp(0.5 - d/px, 0.0, 1.0);
 
-    float innerD = inset_rounded_rect_sdf(localPosition, uniforms->geometry.halfExtent, uniforms->style.cornerRadius, uniforms->style.border.widths);
+    float innerD = inset_rounded_rect_sdf(localPosition, g.halfExtent, g.cornerRadius, border.widths);
     float innerMask = clamp(0.5 - innerD/px, 0.0, 1.0);
 
     float ringMask = clamp(outerMask - innerMask, 0.0, 1.0);
-    float borderD = border_pattern(localPosition, uniforms->geometry.halfExtent, uniforms->style.cornerRadius, uniforms->style.border);
+    float borderD = border_pattern(localPosition, g.halfExtent, g.cornerRadius, border);
     float borderMask = ringMask * clamp(0.5 - borderD/px, 0.0, 1.0);
     float fillMask = outerMask;
 
-    float4 fillColor = uniforms->style.color;
-    float4 borderColor = uniforms->style.border.color;
-    ShadowUniform shadow = uniforms->style.shadow;
+    float4 fillColor = uniforms->color;
+    float4 borderColor = border.color;
+    ShadowUniform shadow = uniforms->shadow;
 
-    float outerCoverage = shadow_coverage(localPosition - shadow.offset, uniforms->geometry.halfExtent,
-                                          uniforms->style.cornerRadius, shadow.sigma, shadow.spread, float4(0.0));
-    float innerCoverage = shadow_coverage(localPosition - shadow.offset, uniforms->geometry.halfExtent,
-                                          uniforms->style.cornerRadius, shadow.sigma, -shadow.spread,
-                                          uniforms->style.border.widths);
+    float outerCoverage = shadow_coverage(localPosition - shadow.offset, g.halfExtent,
+                                          g.cornerRadius, shadow.sigma, shadow.spread, float4(0.0));
+    float innerCoverage = shadow_coverage(localPosition - shadow.offset, g.halfExtent,
+                                          g.cornerRadius, shadow.sigma, -shadow.spread,
+                                          border.widths);
     
     float outerShadowMask = outerCoverage * (1.0 - outerMask) * float(shadow.inset == 0);
     float insetShadowMask = (1.0 - innerCoverage) * innerMask * float(shadow.inset != 0);
@@ -120,5 +130,5 @@ fragment float4 fragment_div(
         rgb /= alpha;
     }
 
-    return float4(rgb, alpha * uniforms->style.opacity);
+    return float4(rgb, alpha * uniforms->opacity);
 }

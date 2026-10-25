@@ -21,9 +21,9 @@ auto index() -> void {
         count += 1;
 
         if (count % 2 == 0) {
-            node.color(simd_float4{1.0,0.0,0.0,1.0});
+            node.backgroundColor(simd_float4{1.0,0.0,0.0,1.0});
         }else {
-            node.color(simd_float4{0.0,0.0,1.0,1.0});
+            node.backgroundColor(simd_float4{0.0,0.0,1.0,1.0});
         }
     };
 
@@ -43,17 +43,17 @@ auto index() -> void {
     //             .borderWidth(gui::Size::px(1.0))
     //             .addEventListener(runtime::EventType::MouseDown, onClick)
     //         (
-    //             text("Startfsd")
+    //             elements::span()
     //                 .fontSize(gui::Size::pt(48.0))
     //                 .font(Arial)
     //                 .marginLeft(10)
     //                 .marginRight(10)
-    //                 .color(simd_float4{0,0,0,1})
+    //                 .color(simd_float4{0,0,0,1})(text("Startfsd"))
     //                 ,
-    //             text("fsdfsdfsda   dads sdsfsdsds")
+    //             elements::span()
     //                 .fontSize(gui::Size::pt(48.0))
     //                 .font(Arial)
-    //                 .color(simd_float4{0,0,0,1})
+    //                 .color(simd_float4{0,0,0,1})(text("fsdfsdfsda   dads sdsfsdsds"))
     //         ),
     //         div(
     //             gui::Size::px(60), gui::Size::px(30), simd_float4{0.5,0.0,0.0,1.0}
@@ -78,51 +78,51 @@ auto index() -> void {
     // (
     //     // Header — spans all 3 columns
     //     div().gridColumn(1, 4).gridRow(1, 2)
-    //         .color(simd_float4{0.2,0.4,0.8,1.0})
+    //         .backgroundColor(simd_float4{0.2,0.4,0.8,1.0})
     //         .cornerRadius(S::px(8))
     //         .display(gui::Display::Flex)
     //         .alignItems(gui::AlignItems::Center)
     //         .justifyContent(gui::JustifyContent::Center)
     //     (
-    //         text("Header").fontSize(S::pt(20)).color(simd_float4{1,1,1,1})
+    //         elements::span().fontSize(S::pt(20)).color(simd_float4{1,1,1,1})(text("Header"))
     //     ),
 
     //     // Left sidebar
     //     div().gridColumn(1, 2).gridRow(2, 3)
-    //         .color(simd_float4{0.9,0.9,0.95,1.0})
+    //         .backgroundColor(simd_float4{0.9,0.9,0.95,1.0})
     //         .cornerRadius(S::px(8))
     //         .padding(S::px(12))
     //     (
-    //         text("Sidebar").fontSize(S::pt(14)).color(simd_float4{0.3,0.3,0.3,1})
+    //         elements::span().fontSize(S::pt(14)).color(simd_float4{0.3,0.3,0.3,1})(text("Sidebar"))
     //     ),
 
     //     // Main content
     //     div().gridColumn(2, 3).gridRow(2, 3)
-    //         .color(simd_float4{1.0,1.0,1.0,1.0})
+    //         .backgroundColor(simd_float4{1.0,1.0,1.0,1.0})
     //         .cornerRadius(S::px(8))
     //         .padding(S::px(12))
     //     (
-    //         text("Main Content").fontSize(S::pt(14)).color(simd_float4{0.1,0.1,0.1,1})
+    //         elements::span().fontSize(S::pt(14)).color(simd_float4{0.1,0.1,0.1,1})(text("Main Content"))
     //     ),
 
     //     // Right sidebar
     //     div().gridColumn(3, 4).gridRow(2, 3)
-    //         .color(simd_float4{0.9,0.9,0.95,1.0})
+    //         .backgroundColor(simd_float4{0.9,0.9,0.95,1.0})
     //         .cornerRadius(S::px(8))
     //         .padding(S::px(12))
     //     (
-    //         text("Panel").fontSize(S::pt(14)).color(simd_float4{0.3,0.3,0.3,1})
+    //         elements::span().fontSize(S::pt(14)).color(simd_float4{0.3,0.3,0.3,1})(text("Panel"))
     //     ),
 
     //     // Footer — spans all 3 columns
     //     div().gridColumn(1, 4).gridRow(3, 4)
-    //         .color(simd_float4{0.3,0.3,0.35,1.0})
+    //         .backgroundColor(simd_float4{0.3,0.3,0.35,1.0})
     //         .cornerRadius(S::px(8))
     //         .display(gui::Display::Flex)
     //         .alignItems(gui::AlignItems::Center)
     //         .justifyContent(gui::JustifyContent::Center)
     //     (
-    //         text("Footer").fontSize(S::pt(14)).color(simd_float4{1,1,1,1})
+    //         elements::span().fontSize(S::pt(14)).color(simd_float4{1,1,1,1})(text("Footer"))
     //     )
     // );
 
@@ -149,7 +149,7 @@ auto index() -> void {
 //     (
 //         // Left
 //         div()
-//             .color(simd_float4{0.0,0.0,0.0,0.0})
+//             .backgroundColor(simd_float4{0.0,0.0,0.0,0.0})
 //             .display(gui::Display::Flex)
 //             .alignItems(gui::AlignItems::Center)
 //             .flexGap(gui::Size::px(8))
@@ -160,10 +160,10 @@ auto index() -> void {
 //                 .alignItems(gui::AlignItems::Center)
 //                 .justifyContent(gui::JustifyContent::Center)
 //             (
-//                 text("=").fontSize(gui::Size::pt(18)).color(simd_float4{0.5,0.5,0.5,1.0})
+//                 elements::span().fontSize(gui::Size::pt(18)).color(simd_float4{0.5,0.5,0.5,1.0})(text("="))
 //             ),
 //             div()
-//                 .color(simd_float4{0.96,0.96,0.96,1.0})
+//                 .backgroundColor(simd_float4{0.96,0.96,0.96,1.0})
 //                 .paddingLeft(gui::Size::px(12))
 //                 .paddingRight(gui::Size::px(12))
 //                 .height(gui::Size::px(32))
@@ -171,18 +171,18 @@ auto index() -> void {
 //                 .display(gui::Display::Flex)
 //                 .alignItems(gui::AlignItems::Center)
 //             (
-//                 text("You: San Francisco").fontSize(gui::Size::pt(13)).color(simd_float4{0.5,0.5,0.5,1.0})
+//                 elements::span().fontSize(gui::Size::pt(13)).color(simd_float4{0.5,0.5,0.5,1.0})(text("You: San Francisco"))
 //             )
 //         ),
 //         // Right
 //         div()
-//             .color(simd_float4{0.0,0.0,0.0,0.0})
+//             .backgroundColor(simd_float4{0.0,0.0,0.0,0.0})
 //             .display(gui::Display::Flex)
 //             .alignItems(gui::AlignItems::Center)
 //             .flexGap(gui::Size::px(8))
 //         (
 //             div()
-//                 .color(simd_float4{0.96,0.96,0.96,1.0})
+//                 .backgroundColor(simd_float4{0.96,0.96,0.96,1.0})
 //                 .height(gui::Size::px(36))
 //                 .paddingLeft(gui::Size::px(16))
 //                 .paddingRight(gui::Size::px(16))
@@ -190,10 +190,10 @@ auto index() -> void {
 //                 .display(gui::Display::Flex)
 //                 .alignItems(gui::AlignItems::Center)
 //             (
-//                 text("Import").fontSize(gui::Size::pt(13)).color(simd_float4{0.5,0.5,0.5,1.0})
+//                 elements::span().fontSize(gui::Size::pt(13)).color(simd_float4{0.5,0.5,0.5,1.0})(text("Import"))
 //             ),
 //             div()
-//                 .color(simd_float4{0.1,0.1,0.1,1.0})
+//                 .backgroundColor(simd_float4{0.1,0.1,0.1,1.0})
 //                 .height(gui::Size::px(36))
 //                 .paddingLeft(gui::Size::px(16))
 //                 .paddingRight(gui::Size::px(16))
@@ -201,13 +201,13 @@ auto index() -> void {
 //                 .display(gui::Display::Flex)
 //                 .alignItems(gui::AlignItems::Center)
 //             (
-//                 text("Add trip").fontSize(gui::Size::pt(13)).color(simd_float4{1.0,1.0,1.0,1.0})
+//                 elements::span().fontSize(gui::Size::pt(13)).color(simd_float4{1.0,1.0,1.0,1.0})(text("Add trip"))
 //             )
 //         )
 //     ),
 //     // Body
 //     div()
-//         .color(simd_float4{0.0,0.0,0.0,0.0})
+//         .backgroundColor(simd_float4{0.0,0.0,0.0,0.0})
 //         .display(gui::Display::Flex)
 //         .flexGrow(gui::Size::px(1))
 //         .overflow(gui::Overflow::Scroll)
@@ -215,7 +215,7 @@ auto index() -> void {
 //         // Sidebar
 //         div()
 //             // .width(gui::Size::px(160.0))
-//             .color(simd_float4{1.0,1.0,1.0,1.0})
+//             .backgroundColor(simd_float4{1.0,1.0,1.0,1.0})
 //             .borderColor(simd_float4{0.88,0.88,0.88,1.0})
 //             .borderWidth(gui::Size::px(1.0))
 //             .display(gui::Display::Flex)
@@ -224,10 +224,10 @@ auto index() -> void {
 //             .padding(gui::Size::px(12))
 //             .flexShrink(gui::Size::px(0.0))
 //         (
-//             text("TRIPS").fontSize(gui::Size::pt(10)).color(simd_float4{0.6,0.6,0.6,1.0}),
+//             elements::span().fontSize(gui::Size::pt(10)).color(simd_float4{0.6,0.6,0.6,1.0})(text("TRIPS")),
 //             div()
 //                 .width(gui::Size::percent(1.0))
-//                 .color(simd_float4{0.96,0.96,0.96,1.0})
+//                 .backgroundColor(simd_float4{0.96,0.96,0.96,1.0})
 //                 .cornerRadius(gui::Size::px(8))
 //                 .paddingLeft(gui::Size::px(12))
 //                 .paddingRight(gui::Size::px(12))
@@ -237,12 +237,12 @@ auto index() -> void {
 //                 .flexDirection(gui::FlexDirection::Col)
 //                 .flexGap(gui::Size::px(2))
 //             (
-//                 text("Tokyo & Kyoto").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0}),
-//                 text("Mar 10 - Mar 24").fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})
+//                 elements::span().fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})(text("Tokyo & Kyoto")),
+//                 elements::span().fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})(text("Mar 10 - Mar 24"))
 //             ),
 //             div()
 //                 .width(gui::Size::percent(1.0))
-//                 .color(simd_float4{1.0,1.0,1.0,1.0})
+//                 .backgroundColor(simd_float4{1.0,1.0,1.0,1.0})
 //                 .cornerRadius(gui::Size::px(8))
 //                 .paddingLeft(gui::Size::px(12))
 //                 .paddingRight(gui::Size::px(12))
@@ -252,12 +252,12 @@ auto index() -> void {
 //                 .flexDirection(gui::FlexDirection::Col)
 //                 .flexGap(gui::Size::px(2))
 //             (
-//                 text("NYC Weekend").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0}),
-//                 text("Apr 4 - Apr 7").fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})
+//                 elements::span().fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})(text("NYC Weekend")),
+//                 elements::span().fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})(text("Apr 4 - Apr 7"))
 //             ),
 //             div()
 //                 .width(gui::Size::percent(1.0))
-//                 .color(simd_float4{1.0,1.0,1.0,1.0})
+//                 .backgroundColor(simd_float4{1.0,1.0,1.0,1.0})
 //                 .cornerRadius(gui::Size::px(8))
 //                 .paddingLeft(gui::Size::px(12))
 //                 .paddingRight(gui::Size::px(12))
@@ -267,13 +267,13 @@ auto index() -> void {
 //                 .flexDirection(gui::FlexDirection::Col)
 //                 .flexGap(gui::Size::px(2))
 //             (
-//                 text("London + Paris").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0}),
-//                 text("Jun 1 - Jun 12").fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})
+//                 elements::span().fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})(text("London + Paris")),
+//                 elements::span().fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})(text("Jun 1 - Jun 12"))
 //             )
 //         ),
 //         // Main content
 //         div()
-//             .color(simd_float4{0.97,0.97,0.97,1.0})
+//             .backgroundColor(simd_float4{0.97,0.97,0.97,1.0})
 //             .flexGrow(gui::Size::px(1))
 //             .display(gui::Display::Flex)
 //             .flexDirection(gui::FlexDirection::Col)
@@ -283,22 +283,22 @@ auto index() -> void {
 //         (
 //             // Title row
 //             div()
-//                 .color(simd_float4{0.0,0.0,0.0,0.0})
+//                 .backgroundColor(simd_float4{0.0,0.0,0.0,0.0})
 //                 .display(gui::Display::Flex)
 //                 .alignItems(gui::AlignItems::Center)
 //                 .justifyContent(gui::JustifyContent::SpaceBetween)
 //             (
 //                 div()
-//                     .color(simd_float4{0.0,0.0,0.0,0.0})
+//                     .backgroundColor(simd_float4{0.0,0.0,0.0,0.0})
 //                     .display(gui::Display::Flex)
 //                     .flexDirection(gui::FlexDirection::Col)
 //                     .flexGap(gui::Size::px(2))
 //                 (
-//                     text("Tokyo & Kyoto").fontSize(gui::Size::pt(20)).color(simd_float4{0.1,0.1,0.1,1.0}),
-//                     text("Mar 10 - Mar 24 · 14 days").fontSize(gui::Size::pt(13)).color(simd_float4{0.5,0.5,0.5,1.0})
+//                     elements::span().fontSize(gui::Size::pt(20)).color(simd_float4{0.1,0.1,0.1,1.0})(text("Tokyo & Kyoto")),
+//                     elements::span().fontSize(gui::Size::pt(13)).color(simd_float4{0.5,0.5,0.5,1.0})(text("Mar 10 - Mar 24 · 14 days"))
 //                 ),
 //                 div()
-//                     .color(simd_float4{0.96,0.96,0.96,1.0})
+//                     .backgroundColor(simd_float4{0.96,0.96,0.96,1.0})
 //                     .paddingLeft(gui::Size::px(16))
 //                     .paddingRight(gui::Size::px(16))
 //                     .height(gui::Size::px(32))
@@ -306,7 +306,7 @@ auto index() -> void {
 //                     .display(gui::Display::Flex)
 //                     .alignItems(gui::AlignItems::Center)
 //                 (
-//                     text("Edit").fontSize(gui::Size::pt(12)).color(simd_float4{0.5,0.5,0.5,1.0})
+//                     elements::span().fontSize(gui::Size::pt(12)).color(simd_float4{0.5,0.5,0.5,1.0})(text("Edit"))
 //                 )
 //             ),
 //             // Flight
@@ -319,13 +319,13 @@ auto index() -> void {
 //                 .justifyContent(gui::JustifyContent::SpaceBetween)
 //             (
 //                 div()
-//                     .color(simd_float4{0.0,0.0,0.0,0.0})
+//                     .backgroundColor(simd_float4{0.0,0.0,0.0,0.0})
 //                     .display(gui::Display::Flex)
 //                     .flexDirection(gui::FlexDirection::Col)
 //                     .flexGap(gui::Size::px(4))
 //                 (
 //                     div()
-//                         .color(simd_float4{0.0,0.0,0.0,0.0})
+//                         .backgroundColor(simd_float4{0.0,0.0,0.0,0.0})
 //                         .display(gui::Display::Flex)
 //                         .flexGap(gui::Size::px(4))
 //                         .alignItems(gui::AlignItems::Center)
@@ -333,12 +333,12 @@ auto index() -> void {
 //                         svg("/Users/treja/projects/gui/assets/plane.svg")
 //                             .width(gui::Size::px(22))
 //                             .height(gui::Size::px(22)),
-//                         text("SFO -> NRT").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})
+//                         elements::span().fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})(text("SFO -> NRT"))
 //                     )
-//                     ,text("Mar 10 · United 837 · 11h 30m").fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})
+//                     ,elements::span().fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})(text("Mar 10 · United 837 · 11h 30m"))
 //                 ),
 //                 div()
-//                     .color(simd_float4{0.93,0.88,1.0,1.0})
+//                     .backgroundColor(simd_float4{0.93,0.88,1.0,1.0})
 //                     .paddingLeft(gui::Size::px(12))
 //                     .paddingRight(gui::Size::px(12))
 //                     .height(gui::Size::px(24))
@@ -346,7 +346,7 @@ auto index() -> void {
 //                     .display(gui::Display::Flex)
 //                     .alignItems(gui::AlignItems::Center)
 //                 (
-//                     text("[Flight]").fontSize(gui::Size::pt(11)).color(simd_float4{0.4,0.3,1.0,1.0})
+//                     elements::span().fontSize(gui::Size::pt(11)).color(simd_float4{0.4,0.3,1.0,1.0})(text("[Flight]"))
 //                 )
 //             ),
 //             // Hotel
@@ -359,16 +359,16 @@ auto index() -> void {
 //                 .justifyContent(gui::JustifyContent::SpaceBetween)
 //             (
 //                 div()
-//                     .color(simd_float4{0.0,0.0,0.0,0.0})
+//                     .backgroundColor(simd_float4{0.0,0.0,0.0,0.0})
 //                     .display(gui::Display::Flex)
 //                     .flexDirection(gui::FlexDirection::Col)
 //                     .flexGap(gui::Size::px(4))
 //                 (
-//                     text("Park Hyatt Tokyo").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0}),
-//                     text("Mar 11 - Mar 17 · 6 nights").fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})
+//                     elements::span().fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})(text("Park Hyatt Tokyo")),
+//                     elements::span().fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})(text("Mar 11 - Mar 17 · 6 nights"))
 //                 ),
 //                 div()
-//                     .color(simd_float4{0.85,0.93,1.0,1.0})
+//                     .backgroundColor(simd_float4{0.85,0.93,1.0,1.0})
 //                     .paddingLeft(gui::Size::px(12))
 //                     .paddingRight(gui::Size::px(12))
 //                     .height(gui::Size::px(24))
@@ -376,7 +376,7 @@ auto index() -> void {
 //                     .display(gui::Display::Flex)
 //                     .alignItems(gui::AlignItems::Center)
 //                 (
-//                     text("[Hotel]").fontSize(gui::Size::pt(11)).color(simd_float4{0.2,0.6,0.9,1.0})
+//                     elements::span().fontSize(gui::Size::pt(11)).color(simd_float4{0.2,0.6,0.9,1.0})(text("[Hotel]"))
 //                 )
 //             ),
 //             // Train
@@ -389,16 +389,16 @@ auto index() -> void {
 //                 .justifyContent(gui::JustifyContent::SpaceBetween)
 //             (
 //                 div()
-//                     .color(simd_float4{0.0,0.0,0.0,0.0})
+//                     .backgroundColor(simd_float4{0.0,0.0,0.0,0.0})
 //                     .display(gui::Display::Flex)
 //                     .flexDirection(gui::FlexDirection::Col)
 //                     .flexGap(gui::Size::px(4))
 //                 (
-//                     text("Tokyo -> Kyoto").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0}),
-//                     text("Mar 17 · Shinkansen · 2h 15m").fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})
+//                     elements::span().fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})(text("Tokyo -> Kyoto")),
+//                     elements::span().fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})(text("Mar 17 · Shinkansen · 2h 15m"))
 //                 ),
 //                 div()
-//                     .color(simd_float4{0.85,1.0,0.9,1.0})
+//                     .backgroundColor(simd_float4{0.85,1.0,0.9,1.0})
 //                     .paddingLeft(gui::Size::px(12))
 //                     .paddingRight(gui::Size::px(12))
 //                     .height(gui::Size::px(24))
@@ -406,14 +406,14 @@ auto index() -> void {
 //                     .display(gui::Display::Flex)
 //                     .alignItems(gui::AlignItems::Center)
 //                 (
-//                     text("[Train]").fontSize(gui::Size::pt(11)).color(simd_float4{0.1,0.7,0.4,1.0})
+//                     elements::span().fontSize(gui::Size::pt(11)).color(simd_float4{0.1,0.7,0.4,1.0})(text("[Train]"))
 //                 )
 //             )
 //         )
 //         // Detail panel
 //         ,div()
 //             // .width(gui::Size::px(200.0))
-//             .color(simd_float4{1.0,1.0,1.0,1.0})
+//             .backgroundColor(simd_float4{1.0,1.0,1.0,1.0})
 //             .borderColor(simd_float4{0.88,0.88,0.88,1.0})
 //             .borderWidth(gui::Size::px(1.0))
 //             .display(gui::Display::Flex)
@@ -424,80 +424,80 @@ auto index() -> void {
 //             .overflow(gui::Overflow::Scroll)
 //         (
 //             div()
-//                 .color(simd_float4{0.0,0.0,0.0,0.0})
+//                 .backgroundColor(simd_float4{0.0,0.0,0.0,0.0})
 //                 .display(gui::Display::Flex)
 //                 .alignItems(gui::AlignItems::Center)
 //                 .justifyContent(gui::JustifyContent::SpaceBetween)
 //             (
-//                 text("Flight Details").fontSize(gui::Size::pt(14)).color(simd_float4{0.1,0.1,0.1,1.0}),
-//                 text("x").fontSize(gui::Size::pt(13)).color(simd_float4{0.6,0.6,0.6,1.0})
+//                 elements::span().fontSize(gui::Size::pt(14)).color(simd_float4{0.1,0.1,0.1,1.0})(text("Flight Details")),
+//                 elements::span().fontSize(gui::Size::pt(13)).color(simd_float4{0.6,0.6,0.6,1.0})(text("x"))
 //             ),
 //             div()
-//                 .color(simd_float4{0.0,0.0,0.0,0.0})
+//                 .backgroundColor(simd_float4{0.0,0.0,0.0,0.0})
 //                 .display(gui::Display::Flex)
 //                 .flexDirection(gui::FlexDirection::Col)
 //                 .flexGap(gui::Size::px(12))
 //             (
 //                 div()
-//                     .color(simd_float4{0.0,0.0,0.0,0.0})
+//                     .backgroundColor(simd_float4{0.0,0.0,0.0,0.0})
 //                     .display(gui::Display::Flex)
 //                     .justifyContent(gui::JustifyContent::SpaceBetween)
 //                 (
-//                     text("Flight").fontSize(gui::Size::pt(13)).color(simd_float4{0.6,0.6,0.6,1.0}),
-//                     text("UA 837").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})
+//                     elements::span().fontSize(gui::Size::pt(13)).color(simd_float4{0.6,0.6,0.6,1.0})(text("Flight")),
+//                     elements::span().fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})(text("UA 837"))
 //                 ),
 //                 div()
-//                     .color(simd_float4{0.0,0.0,0.0,0.0})
+//                     .backgroundColor(simd_float4{0.0,0.0,0.0,0.0})
 //                     .display(gui::Display::Flex)
 //                     .justifyContent(gui::JustifyContent::SpaceBetween)
 //                 (
-//                     text("Departs").fontSize(gui::Size::pt(13)).color(simd_float4{0.6,0.6,0.6,1.0}),
-//                     text("10:45 AM").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})
+//                     elements::span().fontSize(gui::Size::pt(13)).color(simd_float4{0.6,0.6,0.6,1.0})(text("Departs")),
+//                     elements::span().fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})(text("10:45 AM"))
 //                 ),
 //                 div()
-//                     .color(simd_float4{0.0,0.0,0.0,0.0})
+//                     .backgroundColor(simd_float4{0.0,0.0,0.0,0.0})
 //                     .display(gui::Display::Flex)
 //                     .justifyContent(gui::JustifyContent::SpaceBetween)
 //                 (
-//                     text("Arrives").fontSize(gui::Size::pt(13)).color(simd_float4{0.6,0.6,0.6,1.0}),
-//                     text("3:15 PM +1").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})
+//                     elements::span().fontSize(gui::Size::pt(13)).color(simd_float4{0.6,0.6,0.6,1.0})(text("Arrives")),
+//                     elements::span().fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})(text("3:15 PM +1"))
 //                 ),
 //                 div()
-//                     .color(simd_float4{0.0,0.0,0.0,0.0})
+//                     .backgroundColor(simd_float4{0.0,0.0,0.0,0.0})
 //                     .display(gui::Display::Flex)
 //                     .justifyContent(gui::JustifyContent::SpaceBetween)
 //                 (
-//                     text("Duration").fontSize(gui::Size::pt(13)).color(simd_float4{0.6,0.6,0.6,1.0}),
-//                     text("11h 30m").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})
+//                     elements::span().fontSize(gui::Size::pt(13)).color(simd_float4{0.6,0.6,0.6,1.0})(text("Duration")),
+//                     elements::span().fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})(text("11h 30m"))
 //                 ),
 //                 div()
-//                     .color(simd_float4{0.0,0.0,0.0,0.0})
+//                     .backgroundColor(simd_float4{0.0,0.0,0.0,0.0})
 //                     .display(gui::Display::Flex)
 //                     .justifyContent(gui::JustifyContent::SpaceBetween)
 //                 (
-//                     text("Seat").fontSize(gui::Size::pt(13)).color(simd_float4{0.6,0.6,0.6,1.0}),
-//                     text("42A").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})
+//                     elements::span().fontSize(gui::Size::pt(13)).color(simd_float4{0.6,0.6,0.6,1.0})(text("Seat")),
+//                     elements::span().fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})(text("42A"))
 //                 ),
 //                 div()
-//                     .color(simd_float4{0.0,0.0,0.0,0.0})
+//                     .backgroundColor(simd_float4{0.0,0.0,0.0,0.0})
 //                     .display(gui::Display::Flex)
 //                     .justifyContent(gui::JustifyContent::SpaceBetween)
 //                 (
-//                     text("Class").fontSize(gui::Size::pt(13)).color(simd_float4{0.6,0.6,0.6,1.0}),
-//                     text("Economy").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})
+//                     elements::span().fontSize(gui::Size::pt(13)).color(simd_float4{0.6,0.6,0.6,1.0})(text("Class")),
+//                     elements::span().fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})(text("Economy"))
 //                 )
 //             ),
 //             div()
 //                 .width(gui::Size::percent(1.0))
-//                 .color(simd_float4{0.97,0.97,0.97,1.0})
+//                 .backgroundColor(simd_float4{0.97,0.97,0.97,1.0})
 //                 .cornerRadius(gui::Size::px(8))
 //                 .padding(gui::Size::px(12))
 //                 .display(gui::Display::Flex)
 //                 .flexDirection(gui::FlexDirection::Col)
 //                 .flexGap(gui::Size::px(4))
 //             (
-//                 text("Local time at destination").fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0}),
-//                 text("3:15 PM JST (UTC+9)").fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})
+//                 elements::span().fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})(text("Local time at destination")),
+//                 elements::span().fontSize(gui::Size::pt(13)).color(simd_float4{0.1,0.1,0.1,1.0})(text("3:15 PM JST (UTC+9)"))
 //             )
 //         )
 //     )
@@ -509,7 +509,7 @@ auto index() -> void {
 //         .justifyContent(gui::JustifyContent::Center)
 //     (
 //         div()
-//             .color(simd_float4{1.0,1.0,1.0,1.0})
+//             .backgroundColor(simd_float4{1.0,1.0,1.0,1.0})
 //             .cornerRadius(gui::Size::px(16))
 //             .padding(gui::Size::px(12))
 //             .display(gui::Display::Flex)
@@ -519,17 +519,17 @@ auto index() -> void {
 //         (
 //             image("/Users/treja/Downloads/sf90.jpg", gui::Size::px(80), gui::Size::px(80))
 //                 .cornerRadius(gui::Size::percent(0.5))
-//             ,text("Sarah Johnson")
+//             ,elements::span()
 //                 .fontSize(gui::Size::pt(18))
-//                 .color(simd_float4{0.1,0.1,0.1,1.0})
-//             ,text("Product Designer @ Figma")
+//                 .color(simd_float4{0.1,0.1,0.1,1.0})(text("Sarah Johnson"))
+//             ,elements::span()
 //                 .fontSize(gui::Size::pt(13))
-//                 .color(simd_float4{0.5,0.5,0.5,1.0})
+//                 .color(simd_float4{0.5,0.5,0.5,1.0})(text("Product Designer @ Figma"))
 //             ,//
 //             div()
 //                 .width(gui::Size::percent(1.0)) // this is broken now... percent sizing leads to this being full width of grandparent when html doesnt do that
 //                 .height(gui::Size::px(50))
-//                 .color(simd_float4{0.0,0.0,0.0,0.0})
+//                 .backgroundColor(simd_float4{0.0,0.0,0.0,0.0})
 //                 .display(gui::Display::Flex)
 //                 .justifyContent(gui::JustifyContent::SpaceAround)
 //             (
@@ -538,24 +538,24 @@ auto index() -> void {
 //                     .flexDirection(gui::FlexDirection::Col)
 //                     .alignItems(gui::AlignItems::Center)
 //                 (
-//                     text("284").fontSize(gui::Size::pt(16)).color(simd_float4{0.1,0.1,0.1,1.0})
-//                     ,text("Posts").fontSize(gui::Size::pt(12)).color(simd_float4{0.5,0.5,0.5,1.0})
+//                     elements::span().fontSize(gui::Size::pt(16)).color(simd_float4{0.1,0.1,0.1,1.0})(text("284"))
+//                     ,elements::span().fontSize(gui::Size::pt(12)).color(simd_float4{0.5,0.5,0.5,1.0})(text("Posts"))
 //                 )
 //                 ,div(gui::Size::px(70), gui::Size::px(50), simd_float4{0.0,0.0,0.0,0.0})
 //                     .display(gui::Display::Flex)
 //                     .flexDirection(gui::FlexDirection::Col)
 //                     .alignItems(gui::AlignItems::Center)
 //                 (
-//                     text("12.4k").fontSize(gui::Size::pt(16)).color(simd_float4{0.1,0.1,0.1,1.0}),
-//                     text("Followers").fontSize(gui::Size::pt(12)).color(simd_float4{0.5,0.5,0.5,1.0})
+//                     elements::span().fontSize(gui::Size::pt(16)).color(simd_float4{0.1,0.1,0.1,1.0})(text("12.4k")),
+//                     elements::span().fontSize(gui::Size::pt(12)).color(simd_float4{0.5,0.5,0.5,1.0})(text("Followers"))
 //                 ),
 //                 div(gui::Size::px(70), gui::Size::px(50), simd_float4{0.0,0.0,0.0,0.0})
 //                     .display(gui::Display::Flex)
 //                     .flexDirection(gui::FlexDirection::Col)
 //                     .alignItems(gui::AlignItems::Center)
 //                 (
-//                     text("891").fontSize(gui::Size::pt(16)).color(simd_float4{0.1,0.1,0.1,1.0}),
-//                     text("Following").fontSize(gui::Size::pt(12)).color(simd_float4{0.5,0.5,0.5,1.0})
+//                     elements::span().fontSize(gui::Size::pt(16)).color(simd_float4{0.1,0.1,0.1,1.0})(text("891")),
+//                     elements::span().fontSize(gui::Size::pt(12)).color(simd_float4{0.5,0.5,0.5,1.0})(text("Following"))
 //                 )
 //             )
 //             ,
@@ -566,7 +566,7 @@ auto index() -> void {
 //                 .justifyContent(gui::JustifyContent::Center)
 //                 .addEventListener(runtime::EventType::MouseDown, onClick)
 //             (
-//                 text("Follow").fontSize(gui::Size::pt(14)).color(simd_float4{1.0,1.0,1.0,1.0})
+//                 elements::span().fontSize(gui::Size::pt(14)).color(simd_float4{1.0,1.0,1.0,1.0})(text("Follow"))
 //             )
 //         )
 //     );
@@ -585,7 +585,7 @@ auto index() -> void {
 // (
 //     // ── Topbar: columns 1-5, row 1 ──
 //     div().gridColumn(1, 5).gridRow(1, 2)
-//         .color(simd_float4{1.0,1.0,1.0,1.0})
+//         .backgroundColor(simd_float4{1.0,1.0,1.0,1.0})
 //         .cornerRadius(gui::Size::px(10))
 //         .display(gui::Display::Flex)
 //         .alignItems(gui::AlignItems::Center)
@@ -593,15 +593,15 @@ auto index() -> void {
 //         .paddingLeft(gui::Size::px(20))
 //         .paddingRight(gui::Size::px(20))
 //     (
-//         text("Analytics").fontSize(gui::Size::pt(16)).color(simd_float4{0.1,0.1,0.1,1.0}),
+//         elements::span().fontSize(gui::Size::pt(16)).color(simd_float4{0.1,0.1,0.1,1.0})(text("Analytics")),
 //         div()
-//             .color(simd_float4{0.0,0.0,0.0,0.0})
+//             .backgroundColor(simd_float4{0.0,0.0,0.0,0.0})
 //             .display(gui::Display::Flex)
 //             .alignItems(gui::AlignItems::Center)
 //             .flexGap(gui::Size::px(8))
 //         (
 //             div()
-//                 .color(simd_float4{0.96,0.96,0.96,1.0})
+//                 .backgroundColor(simd_float4{0.96,0.96,0.96,1.0})
 //                 .height(gui::Size::px(32))
 //                 .paddingLeft(gui::Size::px(14))
 //                 .paddingRight(gui::Size::px(14))
@@ -609,10 +609,10 @@ auto index() -> void {
 //                 .display(gui::Display::Flex)
 //                 .alignItems(gui::AlignItems::Center)
 //             (
-//                 text("Last 30 days").fontSize(gui::Size::pt(12)).color(simd_float4{0.5,0.5,0.5,1.0})
+//                 elements::span().fontSize(gui::Size::pt(12)).color(simd_float4{0.5,0.5,0.5,1.0})(text("Last 30 days"))
 //             ),
 //             div()
-//                 .color(simd_float4{0.1,0.1,0.1,1.0})
+//                 .backgroundColor(simd_float4{0.1,0.1,0.1,1.0})
 //                 .height(gui::Size::px(32))
 //                 .paddingLeft(gui::Size::px(14))
 //                 .paddingRight(gui::Size::px(14))
@@ -620,30 +620,30 @@ auto index() -> void {
 //                 .display(gui::Display::Flex)
 //                 .alignItems(gui::AlignItems::Center)
 //             (
-//                 text("Export").fontSize(gui::Size::pt(12)).color(simd_float4{1.0,1.0,1.0,1.0})
+//                 elements::span().fontSize(gui::Size::pt(12)).color(simd_float4{1.0,1.0,1.0,1.0})(text("Export"))
 //             )
 //         )
 //     ),
 
 //     // ── Stat card: Revenue ──
 //     div().gridColumn(2, 3).gridRow(2, 3)
-//         .color(simd_float4{1.0,1.0,1.0,1.0})
+//         .backgroundColor(simd_float4{1.0,1.0,1.0,1.0})
 //         .cornerRadius(gui::Size::px(10))
 //         .padding(gui::Size::px(16))
 //         .display(gui::Display::Flex)
 //         .flexDirection(gui::FlexDirection::Col)
 //         .justifyContent(gui::JustifyContent::SpaceBetween)
 //     (
-//         text("Revenue").fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0}),
+//         elements::span().fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})(text("Revenue")),
 //         div()
-//             .color(simd_float4{0.0,0.0,0.0,0.0})
+//             .backgroundColor(simd_float4{0.0,0.0,0.0,0.0})
 //             .display(gui::Display::Flex)
 //             .alignItems(gui::AlignItems::Center)
 //             .flexGap(gui::Size::px(8))
 //         (
-//             text("$48,230").fontSize(gui::Size::pt(22)).color(simd_float4{0.1,0.1,0.1,1.0}),
+//             elements::span().fontSize(gui::Size::pt(22)).color(simd_float4{0.1,0.1,0.1,1.0})(text("$48,230")),
 //             div()
-//                 .color(simd_float4{0.85,1.0,0.9,1.0})
+//                 .backgroundColor(simd_float4{0.85,1.0,0.9,1.0})
 //                 .paddingLeft(gui::Size::px(8))
 //                 .paddingRight(gui::Size::px(8))
 //                 .height(gui::Size::px(20))
@@ -651,31 +651,31 @@ auto index() -> void {
 //                 .display(gui::Display::Flex)
 //                 .alignItems(gui::AlignItems::Center)
 //             (
-//                 text("+12.4%").fontSize(gui::Size::pt(10)).color(simd_float4{0.1,0.7,0.4,1.0})
+//                 elements::span().fontSize(gui::Size::pt(10)).color(simd_float4{0.1,0.7,0.4,1.0})(text("+12.4%"))
 //             )
 //         ),
-//         text("vs $42,900 last month").fontSize(gui::Size::pt(11)).color(simd_float4{0.7,0.7,0.7,1.0})
+//         elements::span().fontSize(gui::Size::pt(11)).color(simd_float4{0.7,0.7,0.7,1.0})(text("vs $42,900 last month"))
 //     ),
 
 //     // ── Stat card: Users ──
 //     div().gridColumn(3, 4).gridRow(2, 3)
-//         .color(simd_float4{1.0,1.0,1.0,1.0})
+//         .backgroundColor(simd_float4{1.0,1.0,1.0,1.0})
 //         .cornerRadius(gui::Size::px(10))
 //         .padding(gui::Size::px(16))
 //         .display(gui::Display::Flex)
 //         .flexDirection(gui::FlexDirection::Col)
 //         .justifyContent(gui::JustifyContent::SpaceBetween)
 //     (
-//         text("Active Users").fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0}),
+//         elements::span().fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})(text("Active Users")),
 //         div()
-//             .color(simd_float4{0.0,0.0,0.0,0.0})
+//             .backgroundColor(simd_float4{0.0,0.0,0.0,0.0})
 //             .display(gui::Display::Flex)
 //             .alignItems(gui::AlignItems::Center)
 //             .flexGap(gui::Size::px(8))
 //         (
-//             text("8,412").fontSize(gui::Size::pt(22)).color(simd_float4{0.1,0.1,0.1,1.0}),
+//             elements::span().fontSize(gui::Size::pt(22)).color(simd_float4{0.1,0.1,0.1,1.0})(text("8,412")),
 //             div()
-//                 .color(simd_float4{0.93,0.88,1.0,1.0})
+//                 .backgroundColor(simd_float4{0.93,0.88,1.0,1.0})
 //                 .paddingLeft(gui::Size::px(8))
 //                 .paddingRight(gui::Size::px(8))
 //                 .height(gui::Size::px(20))
@@ -683,31 +683,31 @@ auto index() -> void {
 //                 .display(gui::Display::Flex)
 //                 .alignItems(gui::AlignItems::Center)
 //             (
-//                 text("+3.1%").fontSize(gui::Size::pt(10)).color(simd_float4{0.4,0.3,1.0,1.0})
+//                 elements::span().fontSize(gui::Size::pt(10)).color(simd_float4{0.4,0.3,1.0,1.0})(text("+3.1%"))
 //             )
 //         ),
-//         text("vs 8,160 last month").fontSize(gui::Size::pt(11)).color(simd_float4{0.7,0.7,0.7,1.0})
+//         elements::span().fontSize(gui::Size::pt(11)).color(simd_float4{0.7,0.7,0.7,1.0})(text("vs 8,160 last month"))
 //     ),
 
 //     // ── Stat card: Churn ──
 //     div().gridColumn(4, 5).gridRow(2, 3)
-//         .color(simd_float4{1.0,1.0,1.0,1.0})
+//         .backgroundColor(simd_float4{1.0,1.0,1.0,1.0})
 //         .cornerRadius(gui::Size::px(10))
 //         .padding(gui::Size::px(16))
 //         .display(gui::Display::Flex)
 //         .flexDirection(gui::FlexDirection::Col)
 //         .justifyContent(gui::JustifyContent::SpaceBetween)
 //     (
-//         text("Churn Rate").fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0}),
+//         elements::span().fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})(text("Churn Rate")),
 //         div()
-//             .color(simd_float4{0.0,0.0,0.0,0.0})
+//             .backgroundColor(simd_float4{0.0,0.0,0.0,0.0})
 //             .display(gui::Display::Flex)
 //             .alignItems(gui::AlignItems::Center)
 //             .flexGap(gui::Size::px(8))
 //         (
-//             text("2.3%").fontSize(gui::Size::pt(22)).color(simd_float4{0.1,0.1,0.1,1.0}),
+//             elements::span().fontSize(gui::Size::pt(22)).color(simd_float4{0.1,0.1,0.1,1.0})(text("2.3%")),
 //             div()
-//                 .color(simd_float4{1.0,0.9,0.88,1.0})
+//                 .backgroundColor(simd_float4{1.0,0.9,0.88,1.0})
 //                 .paddingLeft(gui::Size::px(8))
 //                 .paddingRight(gui::Size::px(8))
 //                 .height(gui::Size::px(20))
@@ -715,25 +715,25 @@ auto index() -> void {
 //                 .display(gui::Display::Flex)
 //                 .alignItems(gui::AlignItems::Center)
 //             (
-//                 text("-0.4%").fontSize(gui::Size::pt(10)).color(simd_float4{0.9,0.3,0.2,1.0})
+//                 elements::span().fontSize(gui::Size::pt(10)).color(simd_float4{0.9,0.3,0.2,1.0})(text("-0.4%"))
 //             )
 //         ),
-//         text("vs 2.7% last month").fontSize(gui::Size::pt(11)).color(simd_float4{0.7,0.7,0.7,1.0})
+//         elements::span().fontSize(gui::Size::pt(11)).color(simd_float4{0.7,0.7,0.7,1.0})(text("vs 2.7% last month"))
 //     ),
 
 //     // ── Nav sidebar: column 1, rows 2-4 ──
 //     div().gridColumn(1, 2).gridRow(2, 4)
-//         .color(simd_float4{1.0,1.0,1.0,1.0})
+//         .backgroundColor(simd_float4{1.0,1.0,1.0,1.0})
 //         .cornerRadius(gui::Size::px(10))
 //         .padding(gui::Size::px(12))
 //         .display(gui::Display::Flex)
 //         .flexDirection(gui::FlexDirection::Col)
 //         .flexGap(gui::Size::px(4))
 //     (
-//         text("NAVIGATION").fontSize(gui::Size::pt(10)).color(simd_float4{0.6,0.6,0.6,1.0}),
+//         elements::span().fontSize(gui::Size::pt(10)).color(simd_float4{0.6,0.6,0.6,1.0})(text("NAVIGATION")),
 //         div()
 //             .width(gui::Size::percent(1.0))
-//             .color(simd_float4{0.1,0.1,0.1,1.0})
+//             .backgroundColor(simd_float4{0.1,0.1,0.1,1.0})
 //             .cornerRadius(gui::Size::px(8))
 //             .paddingLeft(gui::Size::px(12))
 //             .paddingRight(gui::Size::px(12))
@@ -743,12 +743,12 @@ auto index() -> void {
 //             .alignItems(gui::AlignItems::Center)
 //             .flexGap(gui::Size::px(8))
 //         (
-//             text("▪").fontSize(gui::Size::pt(10)).color(simd_float4{1.0,1.0,1.0,1.0}),
-//             text("Overview").fontSize(gui::Size::pt(13)).color(simd_float4{1.0,1.0,1.0,1.0})
+//             elements::span().fontSize(gui::Size::pt(10)).color(simd_float4{1.0,1.0,1.0,1.0})(text("▪")),
+//             elements::span().fontSize(gui::Size::pt(13)).color(simd_float4{1.0,1.0,1.0,1.0})(text("Overview"))
 //         ),
 //         div()
 //             .width(gui::Size::percent(1.0))
-//             .color(simd_float4{1.0,1.0,1.0,1.0})
+//             .backgroundColor(simd_float4{1.0,1.0,1.0,1.0})
 //             .cornerRadius(gui::Size::px(8))
 //             .paddingLeft(gui::Size::px(12))
 //             .paddingRight(gui::Size::px(12))
@@ -758,12 +758,12 @@ auto index() -> void {
 //             .alignItems(gui::AlignItems::Center)
 //             .flexGap(gui::Size::px(8))
 //         (
-//             text("▪").fontSize(gui::Size::pt(10)).color(simd_float4{0.6,0.6,0.6,1.0}),
-//             text("Revenue").fontSize(gui::Size::pt(13)).color(simd_float4{0.3,0.3,0.3,1.0})
+//             elements::span().fontSize(gui::Size::pt(10)).color(simd_float4{0.6,0.6,0.6,1.0})(text("▪")),
+//             elements::span().fontSize(gui::Size::pt(13)).color(simd_float4{0.3,0.3,0.3,1.0})(text("Revenue"))
 //         ),
 //         div()
 //             .width(gui::Size::percent(1.0))
-//             .color(simd_float4{1.0,1.0,1.0,1.0})
+//             .backgroundColor(simd_float4{1.0,1.0,1.0,1.0})
 //             .cornerRadius(gui::Size::px(8))
 //             .paddingLeft(gui::Size::px(12))
 //             .paddingRight(gui::Size::px(12))
@@ -773,12 +773,12 @@ auto index() -> void {
 //             .alignItems(gui::AlignItems::Center)
 //             .flexGap(gui::Size::px(8))
 //         (
-//             text("▪").fontSize(gui::Size::pt(10)).color(simd_float4{0.6,0.6,0.6,1.0}),
-//             text("Users").fontSize(gui::Size::pt(13)).color(simd_float4{0.3,0.3,0.3,1.0})
+//             elements::span().fontSize(gui::Size::pt(10)).color(simd_float4{0.6,0.6,0.6,1.0})(text("▪")),
+//             elements::span().fontSize(gui::Size::pt(13)).color(simd_float4{0.3,0.3,0.3,1.0})(text("Users"))
 //         ),
 //         div()
 //             .width(gui::Size::percent(1.0))
-//             .color(simd_float4{1.0,1.0,1.0,1.0})
+//             .backgroundColor(simd_float4{1.0,1.0,1.0,1.0})
 //             .cornerRadius(gui::Size::px(8))
 //             .paddingLeft(gui::Size::px(12))
 //             .paddingRight(gui::Size::px(12))
@@ -788,12 +788,12 @@ auto index() -> void {
 //             .alignItems(gui::AlignItems::Center)
 //             .flexGap(gui::Size::px(8))
 //         (
-//             text("▪").fontSize(gui::Size::pt(10)).color(simd_float4{0.6,0.6,0.6,1.0}),
-//             text("Reports").fontSize(gui::Size::pt(13)).color(simd_float4{0.3,0.3,0.3,1.0})
+//             elements::span().fontSize(gui::Size::pt(10)).color(simd_float4{0.6,0.6,0.6,1.0})(text("▪")),
+//             elements::span().fontSize(gui::Size::pt(13)).color(simd_float4{0.3,0.3,0.3,1.0})(text("Reports"))
 //         ),
 //         div()
 //             .width(gui::Size::percent(1.0))
-//             .color(simd_float4{1.0,1.0,1.0,1.0})
+//             .backgroundColor(simd_float4{1.0,1.0,1.0,1.0})
 //             .cornerRadius(gui::Size::px(8))
 //             .paddingLeft(gui::Size::px(12))
 //             .paddingRight(gui::Size::px(12))
@@ -803,14 +803,14 @@ auto index() -> void {
 //             .alignItems(gui::AlignItems::Center)
 //             .flexGap(gui::Size::px(8))
 //         (
-//             text("▪").fontSize(gui::Size::pt(10)).color(simd_float4{0.6,0.6,0.6,1.0}),
-//             text("Settings").fontSize(gui::Size::pt(13)).color(simd_float4{0.3,0.3,0.3,1.0})
+//             elements::span().fontSize(gui::Size::pt(10)).color(simd_float4{0.6,0.6,0.6,1.0})(text("▪")),
+//             elements::span().fontSize(gui::Size::pt(13)).color(simd_float4{0.3,0.3,0.3,1.0})(text("Settings"))
 //         )
 //     ),
 
 //     // ── Chart area: columns 2-4, row 3 ──
 //     div().gridColumn(2, 5).gridRow(3, 4)
-//         .color(simd_float4{1.0,1.0,1.0,1.0})
+//         .backgroundColor(simd_float4{1.0,1.0,1.0,1.0})
 //         .cornerRadius(gui::Size::px(10))
 //         .padding(gui::Size::px(16))
 //         .display(gui::Display::Flex)
@@ -818,19 +818,19 @@ auto index() -> void {
 //         .flexGap(gui::Size::px(12))
 //     (
 //         div()
-//             .color(simd_float4{0.0,0.0,0.0,0.0})
+//             .backgroundColor(simd_float4{0.0,0.0,0.0,0.0})
 //             .display(gui::Display::Flex)
 //             .alignItems(gui::AlignItems::Center)
 //             .justifyContent(gui::JustifyContent::SpaceBetween)
 //         (
-//             text("Revenue over time").fontSize(gui::Size::pt(14)).color(simd_float4{0.1,0.1,0.1,1.0}),
+//             elements::span().fontSize(gui::Size::pt(14)).color(simd_float4{0.1,0.1,0.1,1.0})(text("Revenue over time")),
 //             div()
-//                 .color(simd_float4{0.0,0.0,0.0,0.0})
+//                 .backgroundColor(simd_float4{0.0,0.0,0.0,0.0})
 //                 .display(gui::Display::Flex)
 //                 .flexGap(gui::Size::px(6))
 //         (
 //                 div()
-//                     .color(simd_float4{0.96,0.96,0.96,1.0})
+//                     .backgroundColor(simd_float4{0.96,0.96,0.96,1.0})
 //                     .height(gui::Size::px(26))
 //                     .paddingLeft(gui::Size::px(12))
 //                     .paddingRight(gui::Size::px(12))
@@ -838,10 +838,10 @@ auto index() -> void {
 //                     .display(gui::Display::Flex)
 //                     .alignItems(gui::AlignItems::Center)
 //                 (
-//                     text("Monthly").fontSize(gui::Size::pt(11)).color(simd_float4{0.5,0.5,0.5,1.0})
+//                     elements::span().fontSize(gui::Size::pt(11)).color(simd_float4{0.5,0.5,0.5,1.0})(text("Monthly"))
 //                 ),
 //                 div()
-//                     .color(simd_float4{0.1,0.1,0.1,1.0})
+//                     .backgroundColor(simd_float4{0.1,0.1,0.1,1.0})
 //                     .height(gui::Size::px(26))
 //                     .paddingLeft(gui::Size::px(12))
 //                     .paddingRight(gui::Size::px(12))
@@ -849,30 +849,30 @@ auto index() -> void {
 //                     .display(gui::Display::Flex)
 //                     .alignItems(gui::AlignItems::Center)
 //                 (
-//                     text("Weekly").fontSize(gui::Size::pt(11)).color(simd_float4{1.0,1.0,1.0,1.0})
+//                     elements::span().fontSize(gui::Size::pt(11)).color(simd_float4{1.0,1.0,1.0,1.0})(text("Weekly"))
 //                 )
 //             )
 //         ),
 //         div()
-//             .color(simd_float4{0.0,0.0,0.0,0.0})
+//             .backgroundColor(simd_float4{0.0,0.0,0.0,0.0})
 //             .flexGrow(gui::Size::px(1))
 //             .display(gui::Display::Flex)
 //             .alignItems(gui::AlignItems::FlexEnd)
 //             .flexGap(gui::Size::px(6))
 //         (
-//             div().flexGrow(gui::Size::px(1)).height(gui::Size::percent(0.61)).color(simd_float4{0.88,0.88,0.98,1.0}).cornerRadius(gui::Size::px(4))(),
-//             div().flexGrow(gui::Size::px(1)).height(gui::Size::percent(0.78)).color(simd_float4{0.88,0.88,0.98,1.0}).cornerRadius(gui::Size::px(4))(),
-//             div().flexGrow(gui::Size::px(1)).height(gui::Size::percent(0.50)).color(simd_float4{0.88,0.88,0.98,1.0}).cornerRadius(gui::Size::px(4))(),
-//             div().flexGrow(gui::Size::px(1)).height(gui::Size::percent(0.89)).color(simd_float4{0.88,0.88,0.98,1.0}).cornerRadius(gui::Size::px(4))(),
-//             div().flexGrow(gui::Size::px(1)).height(gui::Size::percent(0.72)).color(simd_float4{0.88,0.88,0.98,1.0}).cornerRadius(gui::Size::px(4))(),
-//             div().flexGrow(gui::Size::px(1)).height(gui::Size::percent(1.00)).color(simd_float4{0.4,0.3,1.0,1.0}).cornerRadius(gui::Size::px(4))(),
-//             div().flexGrow(gui::Size::px(1)).height(gui::Size::percent(0.83)).color(simd_float4{0.88,0.88,0.98,1.0}).cornerRadius(gui::Size::px(4))()
+//             div().flexGrow(gui::Size::px(1)).height(gui::Size::percent(0.61)).backgroundColor(simd_float4{0.88,0.88,0.98,1.0}).cornerRadius(gui::Size::px(4))(),
+//             div().flexGrow(gui::Size::px(1)).height(gui::Size::percent(0.78)).backgroundColor(simd_float4{0.88,0.88,0.98,1.0}).cornerRadius(gui::Size::px(4))(),
+//             div().flexGrow(gui::Size::px(1)).height(gui::Size::percent(0.50)).backgroundColor(simd_float4{0.88,0.88,0.98,1.0}).cornerRadius(gui::Size::px(4))(),
+//             div().flexGrow(gui::Size::px(1)).height(gui::Size::percent(0.89)).backgroundColor(simd_float4{0.88,0.88,0.98,1.0}).cornerRadius(gui::Size::px(4))(),
+//             div().flexGrow(gui::Size::px(1)).height(gui::Size::percent(0.72)).backgroundColor(simd_float4{0.88,0.88,0.98,1.0}).cornerRadius(gui::Size::px(4))(),
+//             div().flexGrow(gui::Size::px(1)).height(gui::Size::percent(1.00)).backgroundColor(simd_float4{0.4,0.3,1.0,1.0}).cornerRadius(gui::Size::px(4))(),
+//             div().flexGrow(gui::Size::px(1)).height(gui::Size::percent(0.83)).backgroundColor(simd_float4{0.88,0.88,0.98,1.0}).cornerRadius(gui::Size::px(4))()
 //         )
 //     ),
 
 //     // ── Footer: all columns, row 4 ──
 //     div().gridColumn(1, 5).gridRow(4, 5)
-//         .color(simd_float4{1.0,1.0,1.0,1.0})
+//         .backgroundColor(simd_float4{1.0,1.0,1.0,1.0})
 //         .cornerRadius(gui::Size::px(10))
 //         .display(gui::Display::Flex)
 //         .alignItems(gui::AlignItems::Center)
@@ -880,16 +880,16 @@ auto index() -> void {
 //         .paddingLeft(gui::Size::px(20))
 //         .paddingRight(gui::Size::px(20))
 //     (
-//         text("Last synced: Apr 17, 2026 at 9:41 AM").fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0}),
+//         elements::span().fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})(text("Last synced: Apr 17, 2026 at 9:41 AM")),
 //         div()
-//             .color(simd_float4{0.0,0.0,0.0,0.0})
+//             .backgroundColor(simd_float4{0.0,0.0,0.0,0.0})
 //             .display(gui::Display::Flex)
 //             .alignItems(gui::AlignItems::Center)
 //             .flexGap(gui::Size::px(16))
 //         (
-//             text("Privacy").fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0}),
-//             text("Terms").fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0}),
-//             text("Help").fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})
+//             elements::span().fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})(text("Privacy")),
+//             elements::span().fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})(text("Terms")),
+//             elements::span().fontSize(gui::Size::pt(11)).color(simd_float4{0.6,0.6,0.6,1.0})(text("Help"))
 //         )
 //     )
 // );
@@ -907,7 +907,7 @@ auto index() -> void {
 //         .paddingTop(S::px(28))
 //     (
 //         div().gridColumn(1, 4).gridRow(1, 2)
-//             .color(simd_float4{1.0,1.0,1.0,1.0})
+//             .backgroundColor(simd_float4{1.0,1.0,1.0,1.0})
 //             .cornerRadius(S::px(10))
 //             .borderColor(simd_float4{0.86,0.88,0.91,1.0})
 //             .borderWidth(S::px(1))
@@ -928,10 +928,10 @@ auto index() -> void {
 //                     .alignItems(gui::AlignItems::Center)
 //                     .justifyContent(gui::JustifyContent::Center)
 //                 (
-//                     text("in").fontSize(S::pt(18)).font(ArialBold).color(simd_float4{1.0,1.0,1.0,1.0})
+//                     elements::span().fontSize(S::pt(18)).font(ArialBold).color(simd_float4{1.0,1.0,1.0,1.0})(text("in"))
 //                 ),
 //                 div()
-//                     .color(simd_float4{0.94,0.97,1.0,1.0})
+//                     .backgroundColor(simd_float4{0.94,0.97,1.0,1.0})
 //                     .height(S::px(38))
 //                     .paddingLeft(S::px(14))
 //                     .paddingRight(S::px(64))
@@ -939,7 +939,7 @@ auto index() -> void {
 //                     .display(gui::Display::Flex)
 //                     .alignItems(gui::AlignItems::Center)
 //                 (
-//                     text("Search").fontSize(S::pt(13)).color(simd_float4{0.41,0.49,0.56,1.0})
+//                     elements::span().fontSize(S::pt(13)).color(simd_float4{0.41,0.49,0.56,1.0})(text("Search"))
 //                 )
 //             ),
 //             div()
@@ -949,23 +949,23 @@ auto index() -> void {
 //             (
 //                 div().paddingLeft(S::px(12)).paddingRight(S::px(12)).height(S::px(34)).cornerRadius(S::px(17)).display(gui::Display::Flex).alignItems(gui::AlignItems::Center)
 //                 (
-//                     text("Home").fontSize(S::pt(13)).color(simd_float4{0.12,0.16,0.2,1.0})
+//                     elements::span().fontSize(S::pt(13)).color(simd_float4{0.12,0.16,0.2,1.0})(text("Home"))
 //                 ),
 //                 div().paddingLeft(S::px(12)).paddingRight(S::px(12)).height(S::px(34)).cornerRadius(S::px(17)).display(gui::Display::Flex).alignItems(gui::AlignItems::Center)
 //                 (
-//                     text("My Network").fontSize(S::pt(13)).color(simd_float4{0.42,0.48,0.54,1.0})
+//                     elements::span().fontSize(S::pt(13)).color(simd_float4{0.42,0.48,0.54,1.0})(text("My Network"))
 //                 ),
 //                 div().paddingLeft(S::px(12)).paddingRight(S::px(12)).height(S::px(34)).cornerRadius(S::px(17)).display(gui::Display::Flex).alignItems(gui::AlignItems::Center)
 //                 (
-//                     text("Jobs").fontSize(S::pt(13)).color(simd_float4{0.42,0.48,0.54,1.0})
+//                     elements::span().fontSize(S::pt(13)).color(simd_float4{0.42,0.48,0.54,1.0})(text("Jobs"))
 //                 ),
 //                 div().paddingLeft(S::px(12)).paddingRight(S::px(12)).height(S::px(34)).cornerRadius(S::px(17)).display(gui::Display::Flex).alignItems(gui::AlignItems::Center)
 //                 (
-//                     text("Messages").fontSize(S::pt(13)).color(simd_float4{0.42,0.48,0.54,1.0})
+//                     elements::span().fontSize(S::pt(13)).color(simd_float4{0.42,0.48,0.54,1.0})(text("Messages"))
 //                 ),
-//                 div().paddingLeft(S::px(14)).paddingRight(S::px(14)).height(S::px(36)).color(simd_float4{0.1,0.45,0.77,1.0}).cornerRadius(S::px(18)).display(gui::Display::Flex).alignItems(gui::AlignItems::Center)
+//                 div().paddingLeft(S::px(14)).paddingRight(S::px(14)).height(S::px(36)).backgroundColor(simd_float4{0.1,0.45,0.77,1.0}).cornerRadius(S::px(18)).display(gui::Display::Flex).alignItems(gui::AlignItems::Center)
 //                 (
-//                     text("Try Premium").fontSize(S::pt(12)).font(ArialBold).color(simd_float4{1.0,1.0,1.0,1.0})
+//                     elements::span().fontSize(S::pt(12)).font(ArialBold).color(simd_float4{1.0,1.0,1.0,1.0})(text("Try Premium"))
 //                 )
 //             )
 //         ),
@@ -976,7 +976,7 @@ auto index() -> void {
 //             .flexGap(S::px(14))
 //         (
 //             div()
-//                 .color(simd_float4{1.0,1.0,1.0,1.0})
+//                 .backgroundColor(simd_float4{1.0,1.0,1.0,1.0})
 //                 .cornerRadius(S::px(10))
 //                 .borderColor(simd_float4{0.86,0.88,0.91,1.0})
 //                 .borderWidth(S::px(1))
@@ -985,7 +985,7 @@ auto index() -> void {
 //             (
 //                 div()
 //                     .height(S::px(74))
-//                     .color(simd_float4{0.72,0.84,0.95,1.0})
+//                     .backgroundColor(simd_float4{0.72,0.84,0.95,1.0})
 //                     .cornerRadius(S::px(10))(),
 //                 div()
 //                     .paddingLeft(S::px(18))
@@ -1003,29 +1003,29 @@ auto index() -> void {
 //                         .alignItems(gui::AlignItems::Center)
 //                         .justifyContent(gui::JustifyContent::Center)
 //                     (
-//                         text("TR").fontSize(S::pt(24)).font(ArialBold).color(simd_float4{1.0,1.0,1.0,1.0})
+//                         elements::span().fontSize(S::pt(24)).font(ArialBold).color(simd_float4{1.0,1.0,1.0,1.0})(text("TR"))
 //                     ),
-//                     text("Taanish Reja").fontSize(S::pt(18)).font(ArialBold).color(simd_float4{0.09,0.12,0.16,1.0}),
-//                     text("Building a GPU-native UI kit").fontSize(S::pt(12)).color(simd_float4{0.39,0.45,0.51,1.0}),
-//                     div().height(S::px(1)).color(simd_float4{0.91,0.93,0.95,1.0})(),
+//                     elements::span().fontSize(S::pt(18)).font(ArialBold).color(simd_float4{0.09,0.12,0.16,1.0})(text("Taanish Reja")),
+//                     elements::span().fontSize(S::pt(12)).color(simd_float4{0.39,0.45,0.51,1.0})(text("Building a GPU-native UI kit")),
+//                     div().height(S::px(1)).backgroundColor(simd_float4{0.91,0.93,0.95,1.0})(),
 //                     div()
 //                         .display(gui::Display::Flex)
 //                         .justifyContent(gui::JustifyContent::SpaceBetween)
 //                     (
-//                         text("Profile viewers").fontSize(S::pt(12)).color(simd_float4{0.39,0.45,0.51,1.0}),
-//                         text("128").fontSize(S::pt(12)).font(ArialBold).color(simd_float4{0.1,0.45,0.77,1.0})
+//                         elements::span().fontSize(S::pt(12)).color(simd_float4{0.39,0.45,0.51,1.0})(text("Profile viewers")),
+//                         elements::span().fontSize(S::pt(12)).font(ArialBold).color(simd_float4{0.1,0.45,0.77,1.0})(text("128"))
 //                     ),
 //                     div()
 //                         .display(gui::Display::Flex)
 //                         .justifyContent(gui::JustifyContent::SpaceBetween)
 //                     (
-//                         text("Post impressions").fontSize(S::pt(12)).color(simd_float4{0.39,0.45,0.51,1.0}),
-//                         text("2,481").fontSize(S::pt(12)).font(ArialBold).color(simd_float4{0.1,0.45,0.77,1.0})
+//                         elements::span().fontSize(S::pt(12)).color(simd_float4{0.39,0.45,0.51,1.0})(text("Post impressions")),
+//                         elements::span().fontSize(S::pt(12)).font(ArialBold).color(simd_float4{0.1,0.45,0.77,1.0})(text("2,481"))
 //                     )
 //                 )
 //             ),
 //             div()
-//                 .color(simd_float4{1.0,1.0,1.0,1.0})
+//                 .backgroundColor(simd_float4{1.0,1.0,1.0,1.0})
 //                 .cornerRadius(S::px(10))
 //                 .borderColor(simd_float4{0.86,0.88,0.91,1.0})
 //                 .borderWidth(S::px(1))
@@ -1034,11 +1034,11 @@ auto index() -> void {
 //                 .flexDirection(gui::FlexDirection::Col)
 //                 .flexGap(S::px(10))
 //             (
-//                 text("Recent").fontSize(S::pt(13)).font(ArialBold).color(simd_float4{0.12,0.16,0.2,1.0}),
-//                 text("#metal").fontSize(S::pt(12)).color(simd_float4{0.39,0.45,0.51,1.0}),
-//                 text("#layoutengines").fontSize(S::pt(12)).color(simd_float4{0.39,0.45,0.51,1.0}),
-//                 text("#cpp").fontSize(S::pt(12)).color(simd_float4{0.39,0.45,0.51,1.0}),
-//                 text("#rendering").fontSize(S::pt(12)).color(simd_float4{0.39,0.45,0.51,1.0})
+//                 elements::span().fontSize(S::pt(13)).font(ArialBold).color(simd_float4{0.12,0.16,0.2,1.0})(text("Recent")),
+//                 elements::span().fontSize(S::pt(12)).color(simd_float4{0.39,0.45,0.51,1.0})(text("#metal")),
+//                 elements::span().fontSize(S::pt(12)).color(simd_float4{0.39,0.45,0.51,1.0})(text("#layoutengines")),
+//                 elements::span().fontSize(S::pt(12)).color(simd_float4{0.39,0.45,0.51,1.0})(text("#cpp")),
+//                 elements::span().fontSize(S::pt(12)).color(simd_float4{0.39,0.45,0.51,1.0})(text("#rendering"))
 //             )
 //         ),
 
@@ -1048,7 +1048,7 @@ auto index() -> void {
 //             .flexGap(S::px(14))
 //         (
 //             div()
-//                 .color(simd_float4{1.0,1.0,1.0,1.0})
+//                 .backgroundColor(simd_float4{1.0,1.0,1.0,1.0})
 //                 .cornerRadius(S::px(10))
 //                 .borderColor(simd_float4{0.86,0.88,0.91,1.0})
 //                 .borderWidth(S::px(1))
@@ -1068,10 +1068,10 @@ auto index() -> void {
 //                         .alignItems(gui::AlignItems::Center)
 //                         .justifyContent(gui::JustifyContent::Center)
 //                     (
-//                         text("TR").fontSize(S::pt(15)).font(ArialBold).color(simd_float4{1.0,1.0,1.0,1.0})
+//                         elements::span().fontSize(S::pt(15)).font(ArialBold).color(simd_float4{1.0,1.0,1.0,1.0})(text("TR"))
 //                     ),
 //                     div()
-//                         .color(simd_float4{0.96,0.97,0.98,1.0})
+//                         .backgroundColor(simd_float4{0.96,0.97,0.98,1.0})
 //                         .borderColor(simd_float4{0.84,0.87,0.9,1.0})
 //                         .borderWidth(S::px(1))
 //                         .cornerRadius(S::px(22))
@@ -1082,7 +1082,7 @@ auto index() -> void {
 //                         .alignItems(gui::AlignItems::Center)
 //                         .flexGrow(S::px(1))
 //                     (
-//                         text("Start a post about the grid stress test").fontSize(S::pt(13)).color(simd_float4{0.42,0.48,0.54,1.0})
+//                         elements::span().fontSize(S::pt(13)).color(simd_float4{0.42,0.48,0.54,1.0})(text("Start a post about the grid stress test"))
 //                     )
 //                 ),
 //                 div()
@@ -1091,20 +1091,20 @@ auto index() -> void {
 //                 (
 //                     div().paddingLeft(S::px(10)).paddingRight(S::px(10)).height(S::px(32)).display(gui::Display::Flex).alignItems(gui::AlignItems::Center)
 //                     (
-//                         text("Photo").fontSize(S::pt(12)).color(simd_float4{0.1,0.45,0.77,1.0})
+//                         elements::span().fontSize(S::pt(12)).color(simd_float4{0.1,0.45,0.77,1.0})(text("Photo"))
 //                     ),
 //                     div().paddingLeft(S::px(10)).paddingRight(S::px(10)).height(S::px(32)).display(gui::Display::Flex).alignItems(gui::AlignItems::Center)
 //                     (
-//                         text("Video").fontSize(S::pt(12)).color(simd_float4{0.09,0.58,0.37,1.0})
+//                         elements::span().fontSize(S::pt(12)).color(simd_float4{0.09,0.58,0.37,1.0})(text("Video"))
 //                     ),
 //                     div().paddingLeft(S::px(10)).paddingRight(S::px(10)).height(S::px(32)).display(gui::Display::Flex).alignItems(gui::AlignItems::Center)
 //                     (
-//                         text("Write article").fontSize(S::pt(12)).color(simd_float4{0.79,0.47,0.08,1.0})
+//                         elements::span().fontSize(S::pt(12)).color(simd_float4{0.79,0.47,0.08,1.0})(text("Write article"))
 //                     )
 //                 )
 //             ),
 //             div()
-//                 .color(simd_float4{1.0,1.0,1.0,1.0})
+//                 .backgroundColor(simd_float4{1.0,1.0,1.0,1.0})
 //                 .cornerRadius(S::px(10))
 //                 .borderColor(simd_float4{0.86,0.88,0.91,1.0})
 //                 .borderWidth(S::px(1))
@@ -1129,26 +1129,26 @@ auto index() -> void {
 //                             .alignItems(gui::AlignItems::Center)
 //                             .justifyContent(gui::JustifyContent::Center)
 //                         (
-//                             text("MS").fontSize(S::pt(15)).font(ArialBold).color(simd_float4{1.0,1.0,1.0,1.0})
+//                             elements::span().fontSize(S::pt(15)).font(ArialBold).color(simd_float4{1.0,1.0,1.0,1.0})(text("MS"))
 //                         ),
 //                         div()
 //                             .display(gui::Display::Flex)
 //                             .flexDirection(gui::FlexDirection::Col)
 //                             .flexGap(S::px(3))
 //                         (
-//                             text("Maya Stone").fontSize(S::pt(14)).font(ArialBold).color(simd_float4{0.12,0.16,0.2,1.0}),
-//                             text("Design systems at Northstar").fontSize(S::pt(12)).color(simd_float4{0.39,0.45,0.51,1.0}),
-//                             text("2h").fontSize(S::pt(11)).color(simd_float4{0.58,0.62,0.67,1.0})
+//                             elements::span().fontSize(S::pt(14)).font(ArialBold).color(simd_float4{0.12,0.16,0.2,1.0})(text("Maya Stone")),
+//                             elements::span().fontSize(S::pt(12)).color(simd_float4{0.39,0.45,0.51,1.0})(text("Design systems at Northstar")),
+//                             elements::span().fontSize(S::pt(11)).color(simd_float4{0.58,0.62,0.67,1.0})(text("2h"))
 //                         )
 //                     ),
-//                     text("...").fontSize(S::pt(16)).color(simd_float4{0.53,0.57,0.62,1.0})
+//                     elements::span().fontSize(S::pt(16)).color(simd_float4{0.53,0.57,0.62,1.0})(text("..."))
 //                 ),
-//                 text("Spent the morning rebuilding our composer with a new grid shell and nested flex rows. The ergonomics are getting close.")
+//                 elements::span()
 //                     .fontSize(S::pt(14))
-//                     .color(simd_float4{0.14,0.17,0.21,1.0}),
+//                     .color(simd_float4{0.14,0.17,0.21,1.0})(text("Spent the morning rebuilding our composer with a new grid shell and nested flex rows. The ergonomics are getting close.")),
 //                 div()
 //                     .height(S::px(210))
-//                     .color(simd_float4{0.9,0.94,0.98,1.0})
+//                     .backgroundColor(simd_float4{0.9,0.94,0.98,1.0})
 //                     .cornerRadius(S::px(12))
 //                     .padding(S::px(18))
 //                     .display(gui::Display::Grid)
@@ -1157,22 +1157,22 @@ auto index() -> void {
 //                     .gridColumnGap(S::px(10))
 //                     .gridRowGap(S::px(10))
 //                 (
-//                     div().gridColumn(1, 5).gridRow(1, 2).color(simd_float4{0.1,0.45,0.77,1.0}).cornerRadius(S::px(10))
+//                     div().gridColumn(1, 5).gridRow(1, 2).backgroundColor(simd_float4{0.1,0.45,0.77,1.0}).cornerRadius(S::px(10))
 //                         .display(gui::Display::Flex)
 //                         .alignItems(gui::AlignItems::Center)
 //                         .paddingLeft(S::px(16))
 //                     (
-//                         text("Feed card inside a feed card").fontSize(S::pt(14)).font(ArialBold).color(simd_float4{1.0,1.0,1.0,1.0})
+//                         elements::span().fontSize(S::pt(14)).font(ArialBold).color(simd_float4{1.0,1.0,1.0,1.0})(text("Feed card inside a feed card"))
 //                     ),
-//                     div().gridColumn(1, 2).gridRow(2, 3).color(simd_float4{1.0,1.0,1.0,1.0}).cornerRadius(S::px(10))(),
-//                     div().gridColumn(2, 4).gridRow(2, 3).color(simd_float4{1.0,1.0,1.0,1.0}).cornerRadius(S::px(10))(),
-//                     div().gridColumn(4, 5).gridRow(2, 3).color(simd_float4{0.84,0.91,0.98,1.0}).cornerRadius(S::px(10))(),
-//                     div().gridColumn(1, 5).gridRow(3, 4).color(simd_float4{0.16,0.2,0.24,1.0}).cornerRadius(S::px(10))
+//                     div().gridColumn(1, 2).gridRow(2, 3).backgroundColor(simd_float4{1.0,1.0,1.0,1.0}).cornerRadius(S::px(10))(),
+//                     div().gridColumn(2, 4).gridRow(2, 3).backgroundColor(simd_float4{1.0,1.0,1.0,1.0}).cornerRadius(S::px(10))(),
+//                     div().gridColumn(4, 5).gridRow(2, 3).backgroundColor(simd_float4{0.84,0.91,0.98,1.0}).cornerRadius(S::px(10))(),
+//                     div().gridColumn(1, 5).gridRow(3, 4).backgroundColor(simd_float4{0.16,0.2,0.24,1.0}).cornerRadius(S::px(10))
 //                         .display(gui::Display::Flex)
 //                         .alignItems(gui::AlignItems::Center)
 //                         .paddingLeft(S::px(16))
 //                     (
-//                         text("Nested grid preview").fontSize(S::pt(12)).color(simd_float4{0.92,0.94,0.97,1.0})
+//                         elements::span().fontSize(S::pt(12)).color(simd_float4{0.92,0.94,0.97,1.0})(text("Nested grid preview"))
 //                     )
 //                 ),
 //                 div()
@@ -1180,7 +1180,7 @@ auto index() -> void {
 //                     .justifyContent(gui::JustifyContent::SpaceBetween)
 //                     .alignItems(gui::AlignItems::Center)
 //                 (
-//                     text("842 reactions   54 comments").fontSize(S::pt(12)).color(simd_float4{0.47,0.52,0.57,1.0}),
+//                     elements::span().fontSize(S::pt(12)).color(simd_float4{0.47,0.52,0.57,1.0})(text("842 reactions   54 comments")),
 //                     div()
 //                         .display(gui::Display::Flex)
 //                         .alignItems(gui::AlignItems::Center)
@@ -1193,7 +1193,7 @@ auto index() -> void {
 //                             .justifyContent(gui::JustifyContent::Center)
 //                             .addEventListener(EventType::MouseDown, onClick)
 //                         (
-//                             text("Follow").fontSize(S::pt(13)).font(ArialBold).color(simd_float4{1.0,1.0,1.0,1.0})
+//                             elements::span().fontSize(S::pt(13)).font(ArialBold).color(simd_float4{1.0,1.0,1.0,1.0})(text("Follow"))
 //                         ),
 //                         div(S::px(104), S::px(36), simd_float4{0.95,0.96,0.98,1.0})
 //                             .cornerRadius(S::px(18))
@@ -1203,7 +1203,7 @@ auto index() -> void {
 //                             .alignItems(gui::AlignItems::Center)
 //                             .justifyContent(gui::JustifyContent::Center)
 //                         (
-//                             text("Comment").fontSize(S::pt(13)).color(simd_float4{0.27,0.33,0.38,1.0})
+//                             elements::span().fontSize(S::pt(13)).color(simd_float4{0.27,0.33,0.38,1.0})(text("Comment"))
 //                         )
 //                     )
 //                 )
@@ -1216,7 +1216,7 @@ auto index() -> void {
 //             .flexGap(S::px(14))
 //         (
 //             div()
-//                 .color(simd_float4{1.0,1.0,1.0,1.0})
+//                 .backgroundColor(simd_float4{1.0,1.0,1.0,1.0})
 //                 .cornerRadius(S::px(10))
 //                 .borderColor(simd_float4{0.86,0.88,0.91,1.0})
 //                 .borderWidth(S::px(1))
@@ -1225,25 +1225,25 @@ auto index() -> void {
 //                 .flexDirection(gui::FlexDirection::Col)
 //                 .flexGap(S::px(12))
 //             (
-//                 text("LinkedIn News").fontSize(S::pt(15)).font(ArialBold).color(simd_float4{0.12,0.16,0.2,1.0}),
+//                 elements::span().fontSize(S::pt(15)).font(ArialBold).color(simd_float4{0.12,0.16,0.2,1.0})(text("LinkedIn News")),
 //                 div().display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(4))
 //                 (
-//                     text("Renderer benchmarks are up").fontSize(S::pt(13)).font(ArialBold).color(simd_float4{0.14,0.17,0.21,1.0}),
-//                     text("Top story   1,204 readers").fontSize(S::pt(11)).color(simd_float4{0.5,0.55,0.6,1.0})
+//                     elements::span().fontSize(S::pt(13)).font(ArialBold).color(simd_float4{0.14,0.17,0.21,1.0})(text("Renderer benchmarks are up")),
+//                     elements::span().fontSize(S::pt(11)).color(simd_float4{0.5,0.55,0.6,1.0})(text("Top story   1,204 readers"))
 //                 ),
 //                 div().display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(4))
 //                 (
-//                     text("More teams are testing native grids").fontSize(S::pt(13)).font(ArialBold).color(simd_float4{0.14,0.17,0.21,1.0}),
-//                     text("Trending   884 readers").fontSize(S::pt(11)).color(simd_float4{0.5,0.55,0.6,1.0})
+//                     elements::span().fontSize(S::pt(13)).font(ArialBold).color(simd_float4{0.14,0.17,0.21,1.0})(text("More teams are testing native grids")),
+//                     elements::span().fontSize(S::pt(11)).color(simd_float4{0.5,0.55,0.6,1.0})(text("Trending   884 readers"))
 //                 ),
 //                 div().display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(4))
 //                 (
-//                     text("UI infra hiring cools, specialists still win").fontSize(S::pt(13)).font(ArialBold).color(simd_float4{0.14,0.17,0.21,1.0}),
-//                     text("3h ago   642 readers").fontSize(S::pt(11)).color(simd_float4{0.5,0.55,0.6,1.0})
+//                     elements::span().fontSize(S::pt(13)).font(ArialBold).color(simd_float4{0.14,0.17,0.21,1.0})(text("UI infra hiring cools, specialists still win")),
+//                     elements::span().fontSize(S::pt(11)).color(simd_float4{0.5,0.55,0.6,1.0})(text("3h ago   642 readers"))
 //                 )
 //             ),
 //             div()
-//                 .color(simd_float4{1.0,1.0,1.0,1.0})
+//                 .backgroundColor(simd_float4{1.0,1.0,1.0,1.0})
 //                 .cornerRadius(S::px(10))
 //                 .borderColor(simd_float4{0.86,0.88,0.91,1.0})
 //                 .borderWidth(S::px(1))
@@ -1252,7 +1252,7 @@ auto index() -> void {
 //                 .flexDirection(gui::FlexDirection::Col)
 //                 .flexGap(S::px(14))
 //             (
-//                 text("Add to your feed").fontSize(S::pt(15)).font(ArialBold).color(simd_float4{0.12,0.16,0.2,1.0}),
+//                 elements::span().fontSize(S::pt(15)).font(ArialBold).color(simd_float4{0.12,0.16,0.2,1.0})(text("Add to your feed")),
 //                 div()
 //                     .display(gui::Display::Flex)
 //                     .alignItems(gui::AlignItems::Center)
@@ -1265,17 +1265,17 @@ auto index() -> void {
 //                     (
 //                         div(S::px(42), S::px(42), simd_float4{0.82,0.51,0.19,1.0}).cornerRadius(S::px(21)).display(gui::Display::Flex).alignItems(gui::AlignItems::Center).justifyContent(gui::JustifyContent::Center)
 //                         (
-//                             text("AK").fontSize(S::pt(12)).font(ArialBold).color(simd_float4{1.0,1.0,1.0,1.0})
+//                             elements::span().fontSize(S::pt(12)).font(ArialBold).color(simd_float4{1.0,1.0,1.0,1.0})(text("AK"))
 //                         ),
 //                         div().display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(3))
 //                         (
-//                             text("Ada Kim").fontSize(S::pt(13)).font(ArialBold).color(simd_float4{0.14,0.17,0.21,1.0}),
-//                             text("Graphics engineer").fontSize(S::pt(11)).color(simd_float4{0.5,0.55,0.6,1.0})
+//                             elements::span().fontSize(S::pt(13)).font(ArialBold).color(simd_float4{0.14,0.17,0.21,1.0})(text("Ada Kim")),
+//                             elements::span().fontSize(S::pt(11)).color(simd_float4{0.5,0.55,0.6,1.0})(text("Graphics engineer"))
 //                         )
 //                     ),
 //                     div(S::px(74), S::px(32), simd_float4{1.0,1.0,1.0,1.0}).cornerRadius(S::px(16)).borderColor(simd_float4{0.47,0.52,0.57,1.0}).borderWidth(S::px(1)).display(gui::Display::Flex).alignItems(gui::AlignItems::Center).justifyContent(gui::JustifyContent::Center)
 //                     (
-//                         text("+ Follow").fontSize(S::pt(11)).font(ArialBold).color(simd_float4{0.26,0.31,0.36,1.0})
+//                         elements::span().fontSize(S::pt(11)).font(ArialBold).color(simd_float4{0.26,0.31,0.36,1.0})(text("+ Follow"))
 //                     )
 //                 ),
 //                 div()
@@ -1290,17 +1290,17 @@ auto index() -> void {
 //                     (
 //                         div(S::px(42), S::px(42), simd_float4{0.26,0.56,0.39,1.0}).cornerRadius(S::px(21)).display(gui::Display::Flex).alignItems(gui::AlignItems::Center).justifyContent(gui::JustifyContent::Center)
 //                         (
-//                             text("LM").fontSize(S::pt(12)).font(ArialBold).color(simd_float4{1.0,1.0,1.0,1.0})
+//                             elements::span().fontSize(S::pt(12)).font(ArialBold).color(simd_float4{1.0,1.0,1.0,1.0})(text("LM"))
 //                         ),
 //                         div().display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(3))
 //                         (
-//                             text("Layout Monthly").fontSize(S::pt(13)).font(ArialBold).color(simd_float4{0.14,0.17,0.21,1.0}),
-//                             text("Newsletter").fontSize(S::pt(11)).color(simd_float4{0.5,0.55,0.6,1.0})
+//                             elements::span().fontSize(S::pt(13)).font(ArialBold).color(simd_float4{0.14,0.17,0.21,1.0})(text("Layout Monthly")),
+//                             elements::span().fontSize(S::pt(11)).color(simd_float4{0.5,0.55,0.6,1.0})(text("Newsletter"))
 //                         )
 //                     ),
 //                     div(S::px(74), S::px(32), simd_float4{1.0,1.0,1.0,1.0}).cornerRadius(S::px(16)).borderColor(simd_float4{0.47,0.52,0.57,1.0}).borderWidth(S::px(1)).display(gui::Display::Flex).alignItems(gui::AlignItems::Center).justifyContent(gui::JustifyContent::Center)
 //                     (
-//                         text("+ Follow").fontSize(S::pt(11)).font(ArialBold).color(simd_float4{0.26,0.31,0.36,1.0})
+//                         elements::span().fontSize(S::pt(11)).font(ArialBold).color(simd_float4{0.26,0.31,0.36,1.0})(text("+ Follow"))
 //                     )
 //                 )
 //             )
@@ -1339,15 +1339,15 @@ auto index() -> void {
     //                 .alignItems(gui::AlignItems::Center)
     //                 .justifyContent(gui::JustifyContent::Center)
     //             (
-    //                 text("♪").fontSize(S::pt(20)).color(simd_float4{1.0,1.0,1.0,1.0})
+    //                 elements::span().fontSize(S::pt(20)).color(simd_float4{1.0,1.0,1.0,1.0})(text("♪"))
     //             ),
     //             div()
     //                 .display(gui::Display::Flex)
     //                 .flexDirection(gui::FlexDirection::Col)
     //                 .flexGap(S::px(3))
     //             (
-    //                 text("Endless Reverie").fontSize(S::pt(14)).font(ArialBold).color(simd_float4{0.92,0.92,0.94,1.0}),
-    //                 text("Glass Prism  ·  Mirrors").fontSize(S::pt(12)).color(simd_float4{0.48,0.48,0.54,1.0})
+    //                 elements::span().fontSize(S::pt(14)).font(ArialBold).color(simd_float4{0.92,0.92,0.94,1.0})(text("Endless Reverie")),
+    //                 elements::span().fontSize(S::pt(12)).color(simd_float4{0.48,0.48,0.54,1.0})(text("Glass Prism  ·  Mirrors"))
     //             )
     //         ),
     //         div()
@@ -1361,7 +1361,7 @@ auto index() -> void {
     //                 .alignItems(gui::AlignItems::Center)
     //                 .justifyContent(gui::JustifyContent::Center)
     //             (
-    //                 text("|<").fontSize(S::pt(11)).color(simd_float4{0.65,0.65,0.70,1.0})
+    //                 elements::span().fontSize(S::pt(11)).color(simd_float4{0.65,0.65,0.70,1.0})(text("|<"))
     //             ),
     //             div(S::px(44), S::px(44), simd_float4{0.18,0.72,0.56,1.0})
     //                 .cornerRadius(S::px(22))
@@ -1369,7 +1369,7 @@ auto index() -> void {
     //                 .alignItems(gui::AlignItems::Center)
     //                 .justifyContent(gui::JustifyContent::Center)
     //             (
-    //                 text("||").fontSize(S::pt(15)).font(ArialBold).color(simd_float4{1.0,1.0,1.0,1.0})
+    //                 elements::span().fontSize(S::pt(15)).font(ArialBold).color(simd_float4{1.0,1.0,1.0,1.0})(text("||"))
     //             ),
     //             div(S::px(32), S::px(32), simd_float4{0.20,0.20,0.24,1.0})
     //                 .cornerRadius(S::px(16))
@@ -1377,7 +1377,7 @@ auto index() -> void {
     //                 .alignItems(gui::AlignItems::Center)
     //                 .justifyContent(gui::JustifyContent::Center)
     //             (
-    //                 text(">|").fontSize(S::pt(11)).color(simd_float4{0.65,0.65,0.70,1.0})
+    //                 elements::span().fontSize(S::pt(11)).color(simd_float4{0.65,0.65,0.70,1.0})(text(">|"))
     //             )
     //         ),
     //         div()
@@ -1385,14 +1385,14 @@ auto index() -> void {
     //             .alignItems(gui::AlignItems::Center)
     //             .flexGap(S::px(10))
     //         (
-    //             text("2:14").fontSize(S::pt(12)).color(simd_float4{0.48,0.48,0.54,1.0}),
+    //             elements::span().fontSize(S::pt(12)).color(simd_float4{0.48,0.48,0.54,1.0})(text("2:14")),
     //             div(S::px(100), S::px(4), simd_float4{0.24,0.24,0.28,1.0})
     //                 .cornerRadius(S::px(2))
     //             (
     //                 div(S::px(48), S::px(4), simd_float4{0.18,0.72,0.56,1.0})
     //                     .cornerRadius(S::px(2))()
     //             ),
-    //             text("4:38").fontSize(S::pt(12)).color(simd_float4{0.48,0.48,0.54,1.0})
+    //             elements::span().fontSize(S::pt(12)).color(simd_float4{0.48,0.48,0.54,1.0})(text("4:38"))
     //         )
     //     ),
     //     // ── Body ──
@@ -1421,8 +1421,8 @@ auto index() -> void {
     //                 .alignItems(gui::AlignItems::Center)
     //                 .justifyContent(gui::JustifyContent::SpaceBetween)
     //             (
-    //                 text("PLAYLIST").fontSize(S::pt(10)).font(ArialBold).color(simd_float4{0.38,0.38,0.44,1.0}),
-    //                 text("12 tracks").fontSize(S::pt(10)).color(simd_float4{0.38,0.38,0.44,1.0})
+    //                 elements::span().fontSize(S::pt(10)).font(ArialBold).color(simd_float4{0.38,0.38,0.44,1.0})(text("PLAYLIST")),
+    //                 elements::span().fontSize(S::pt(10)).color(simd_float4{0.38,0.38,0.44,1.0})(text("12 tracks"))
     //             ),
     //             // 01 – active
     //             div(S::percent(1.0), S::px(52), simd_float4{0.14,0.22,0.20,1.0})
@@ -1431,10 +1431,10 @@ auto index() -> void {
     //             (
     //                 div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
     //                 (
-    //                     text("01").fontSize(S::pt(11)).color(simd_float4{0.18,0.72,0.56,1.0}),
-    //                     text("Endless Reverie").fontSize(S::pt(13)).font(ArialBold).color(simd_float4{0.18,0.72,0.56,1.0})
+    //                     elements::span().fontSize(S::pt(11)).color(simd_float4{0.18,0.72,0.56,1.0})(text("01")),
+    //                     elements::span().fontSize(S::pt(13)).font(ArialBold).color(simd_float4{0.18,0.72,0.56,1.0})(text("Endless Reverie"))
     //                 ),
-    //                 text("4:38").fontSize(S::pt(12)).color(simd_float4{0.18,0.72,0.56,1.0})
+    //                 elements::span().fontSize(S::pt(12)).color(simd_float4{0.18,0.72,0.56,1.0})(text("4:38"))
     //             ),
     //             // 02
     //             div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
@@ -1443,10 +1443,10 @@ auto index() -> void {
     //             (
     //                 div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
     //                 (
-    //                     text("02").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
-    //                     text("Crystalline").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
+    //                     elements::span().fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0})(text("02")),
+    //                     elements::span().fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})(text("Crystalline"))
     //                 ),
-    //                 text("3:52").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
+    //                 elements::span().fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})(text("3:52"))
     //             ),
     //             // 03
     //             div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
@@ -1455,10 +1455,10 @@ auto index() -> void {
     //             (
     //                 div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
     //                 (
-    //                     text("03").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
-    //                     text("Pale Shore").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
+    //                     elements::span().fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0})(text("03")),
+    //                     elements::span().fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})(text("Pale Shore"))
     //                 ),
-    //                 text("5:14").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
+    //                 elements::span().fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})(text("5:14"))
     //             ),
     //             // 04
     //             div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
@@ -1467,10 +1467,10 @@ auto index() -> void {
     //             (
     //                 div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
     //                 (
-    //                     text("04").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
-    //                     text("Inversion").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
+    //                     elements::span().fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0})(text("04")),
+    //                     elements::span().fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})(text("Inversion"))
     //                 ),
-    //                 text("4:07").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
+    //                 elements::span().fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})(text("4:07"))
     //             ),
     //             // 05
     //             div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
@@ -1479,10 +1479,10 @@ auto index() -> void {
     //             (
     //                 div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
     //                 (
-    //                     text("05").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
-    //                     text("Soft Architecture").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
+    //                     elements::span().fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0})(text("05")),
+    //                     elements::span().fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})(text("Soft Architecture"))
     //                 ),
-    //                 text("6:21").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
+    //                 elements::span().fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})(text("6:21"))
     //             ),
     //             // 06
     //             div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
@@ -1491,10 +1491,10 @@ auto index() -> void {
     //             (
     //                 div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
     //                 (
-    //                     text("06").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
-    //                     text("Between Frames").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
+    //                     elements::span().fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0})(text("06")),
+    //                     elements::span().fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})(text("Between Frames"))
     //                 ),
-    //                 text("3:44").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
+    //                 elements::span().fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})(text("3:44"))
     //             ),
     //             // 07
     //             div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
@@ -1503,10 +1503,10 @@ auto index() -> void {
     //             (
     //                 div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
     //                 (
-    //                     text("07").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
-    //                     text("Nocturne Loop").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
+    //                     elements::span().fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0})(text("07")),
+    //                     elements::span().fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})(text("Nocturne Loop"))
     //                 ),
-    //                 text("4:58").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
+    //                 elements::span().fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})(text("4:58"))
     //             ),
     //             // 08
     //             div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
@@ -1515,10 +1515,10 @@ auto index() -> void {
     //             (
     //                 div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
     //                 (
-    //                     text("08").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
-    //                     text("Refract").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
+    //                     elements::span().fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0})(text("08")),
+    //                     elements::span().fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})(text("Refract"))
     //                 ),
-    //                 text("3:30").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
+    //                 elements::span().fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})(text("3:30"))
     //             ),
     //             // 09
     //             div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
@@ -1527,10 +1527,10 @@ auto index() -> void {
     //             (
     //                 div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
     //                 (
-    //                     text("09").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
-    //                     text("Diffusion").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
+    //                     elements::span().fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0})(text("09")),
+    //                     elements::span().fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})(text("Diffusion"))
     //                 ),
-    //                 text("5:02").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
+    //                 elements::span().fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})(text("5:02"))
     //             ),
     //             // 10
     //             div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
@@ -1539,10 +1539,10 @@ auto index() -> void {
     //             (
     //                 div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
     //                 (
-    //                     text("10").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
-    //                     text("Afterimage").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
+    //                     elements::span().fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0})(text("10")),
+    //                     elements::span().fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})(text("Afterimage"))
     //                 ),
-    //                 text("4:15").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
+    //                 elements::span().fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})(text("4:15"))
     //             ),
     //             // 11
     //             div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
@@ -1551,10 +1551,10 @@ auto index() -> void {
     //             (
     //                 div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
     //                 (
-    //                     text("11").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
-    //                     text("Threshold").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
+    //                     elements::span().fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0})(text("11")),
+    //                     elements::span().fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})(text("Threshold"))
     //                 ),
-    //                 text("7:03").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
+    //                 elements::span().fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})(text("7:03"))
     //             ),
     //             // 12
     //             div(S::percent(1.0), S::px(52), simd_float4{0.0,0.0,0.0,0.0})
@@ -1563,10 +1563,10 @@ auto index() -> void {
     //             (
     //                 div().display(gui::Display::Flex).alignItems(gui::AlignItems::Center).flexGap(S::px(12))
     //                 (
-    //                     text("12").fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0}),
-    //                     text("Dissolve").fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})
+    //                     elements::span().fontSize(S::pt(11)).color(simd_float4{0.35,0.35,0.42,1.0})(text("12")),
+    //                     elements::span().fontSize(S::pt(13)).color(simd_float4{0.75,0.75,0.80,1.0})(text("Dissolve"))
     //                 ),
-    //                 text("4:49").fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})
+    //                 elements::span().fontSize(S::pt(12)).color(simd_float4{0.38,0.38,0.44,1.0})(text("4:49"))
     //             )
     //         ),
     //         // sidebar end
@@ -1592,23 +1592,23 @@ auto index() -> void {
     //                     .alignItems(gui::AlignItems::Center)
     //                     .justifyContent(gui::JustifyContent::Center)
     //                 (
-    //                     text("♫").fontSize(S::pt(52)).color(simd_float4{1.0,1.0,1.0,1.0})
+    //                     elements::span().fontSize(S::pt(52)).color(simd_float4{1.0,1.0,1.0,1.0})(text("♫"))
     //                 ),
     //                 div()
     //                     .display(gui::Display::Flex)
     //                     .flexDirection(gui::FlexDirection::Col)
     //                     .flexGap(S::px(6))
     //                 (
-    //                     text("ALBUM").fontSize(S::pt(10)).font(ArialBold).color(simd_float4{0.38,0.38,0.44,1.0}),
-    //                     text("Mirrors")
+    //                     elements::span().fontSize(S::pt(10)).font(ArialBold).color(simd_float4{0.38,0.38,0.44,1.0})(text("ALBUM")),
+    //                     elements::span()
     //                         .fontSize(S::pt(30))
     //                         .font(ArialBold)
-    //                         .color(simd_float4{0.92,0.92,0.94,1.0})
+    //                         .color(simd_float4{0.92,0.92,0.94,1.0})(text("Mirrors"))
     //                         .addEventListener(runtime::EventType::MouseDown, [](auto& node, Event&) {
     //                             node.text(node.text() == "Mirrors" ? "Mirrors — Extended Edition" : "Mirrors");
     //                         }),
-    //                     text("Glass Prism").fontSize(S::pt(16)).color(simd_float4{0.18,0.72,0.56,1.0}),
-    //                     text("2024  ·  Ambient  ·  12 tracks").fontSize(S::pt(12)).color(simd_float4{0.48,0.48,0.54,1.0}),
+    //                     elements::span().fontSize(S::pt(16)).color(simd_float4{0.18,0.72,0.56,1.0})(text("Glass Prism")),
+    //                     elements::span().fontSize(S::pt(12)).color(simd_float4{0.48,0.48,0.54,1.0})(text("2024  ·  Ambient  ·  12 tracks")),
     //                     div()
     //                         .display(gui::Display::Flex)
     //                         .flexGap(S::px(10))
@@ -1620,7 +1620,7 @@ auto index() -> void {
     //                             .alignItems(gui::AlignItems::Center)
     //                             .justifyContent(gui::JustifyContent::Center)
     //                         (
-    //                             text("Play all").fontSize(S::pt(13)).font(ArialBold).color(simd_float4{1.0,1.0,1.0,1.0})
+    //                             elements::span().fontSize(S::pt(13)).font(ArialBold).color(simd_float4{1.0,1.0,1.0,1.0})(text("Play all"))
     //                         ),
     //                         div(S::px(96), S::px(32), simd_float4{0.20,0.20,0.24,1.0})
     //                             .cornerRadius(S::px(16))
@@ -1628,7 +1628,7 @@ auto index() -> void {
     //                             .alignItems(gui::AlignItems::Center)
     //                             .justifyContent(gui::JustifyContent::Center)
     //                         (
-    //                             text("Shuffle").fontSize(S::pt(13)).color(simd_float4{0.72,0.72,0.78,1.0})
+    //                             elements::span().fontSize(S::pt(13)).color(simd_float4{0.72,0.72,0.78,1.0})(text("Shuffle"))
     //                         )
     //                     )
     //                 )
@@ -1643,8 +1643,8 @@ auto index() -> void {
     //                 .justifyContent(gui::JustifyContent::SpaceBetween)
     //                 .flexShrink(S::px(0.0))
     //             (
-    //                 text("LYRICS").fontSize(S::pt(10)).font(ArialBold).color(simd_float4{0.38,0.38,0.44,1.0}),
-    //                 text("Endless Reverie").fontSize(S::pt(12)).color(simd_float4{0.48,0.48,0.54,1.0})
+    //                 elements::span().fontSize(S::pt(10)).font(ArialBold).color(simd_float4{0.38,0.38,0.44,1.0})(text("LYRICS")),
+    //                 elements::span().fontSize(S::pt(12)).color(simd_float4{0.48,0.48,0.54,1.0})(text("Endless Reverie"))
     //             ),
     //             // Scrollable lyrics
     //             div(S::percent(1.0), S::percent(1.0), simd_float4{0.13,0.13,0.16,1.0})
@@ -1656,42 +1656,42 @@ auto index() -> void {
     //                 .flexGap(S::px(7))
     //                 .flexGrow(S::px(1))
     //             (
-    //                 text("Through the glass, a world apart,").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
-    //                 text("endless echoes fill the dark.").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
-    //                 text("Fractures in the silver light —").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
+    //                 elements::span().fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0})(text("Through the glass, a world apart,")),
+    //                 elements::span().fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0})(text("endless echoes fill the dark.")),
+    //                 elements::span().fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0})(text("Fractures in the silver light —")),
     //                 div(S::percent(1.0), S::px(8), simd_float4{0.0,0.0,0.0,0.0})(),
-    //                 text("Hold a breath and feel the weight").fontSize(S::pt(15)).color(simd_float4{0.92,0.92,0.94,1.0}),
-    //                 text("of every word you couldn't say,").fontSize(S::pt(15)).color(simd_float4{0.92,0.92,0.94,1.0}),
-    //                 text("mirrored back in shades of grey.").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
+    //                 elements::span().fontSize(S::pt(15)).color(simd_float4{0.92,0.92,0.94,1.0})(text("Hold a breath and feel the weight")),
+    //                 elements::span().fontSize(S::pt(15)).color(simd_float4{0.92,0.92,0.94,1.0})(text("of every word you couldn't say,")),
+    //                 elements::span().fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0})(text("mirrored back in shades of grey.")),
     //                 div(S::percent(1.0), S::px(8), simd_float4{0.0,0.0,0.0,0.0})(),
-    //                 text("Reverie, reverie —").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
-    //                 text("I found you at the edge of sleep.").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
-    //                 text("Reverie, reverie —").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
-    //                 text("a promise too fragile to keep.").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
+    //                 elements::span().fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0})(text("Reverie, reverie —")),
+    //                 elements::span().fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0})(text("I found you at the edge of sleep.")),
+    //                 elements::span().fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0})(text("Reverie, reverie —")),
+    //                 elements::span().fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0})(text("a promise too fragile to keep.")),
     //                 div(S::percent(1.0), S::px(8), simd_float4{0.0,0.0,0.0,0.0})(),
-    //                 text("Soft light bends around your face,").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
-    //                 text("I chase the outline, lose the trace.").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
-    //                 text("The mirror holds what time erased —").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
+    //                 elements::span().fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0})(text("Soft light bends around your face,")),
+    //                 elements::span().fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0})(text("I chase the outline, lose the trace.")),
+    //                 elements::span().fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0})(text("The mirror holds what time erased —")),
     //                 div(S::percent(1.0), S::px(8), simd_float4{0.0,0.0,0.0,0.0})(),
-    //                 text("Still you linger in the seams,").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
-    //                 text("half-remembered, half in dreams.").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
-    //                 text("I reach — the surface bends and gleams.").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
+    //                 elements::span().fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0})(text("Still you linger in the seams,")),
+    //                 elements::span().fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0})(text("half-remembered, half in dreams.")),
+    //                 elements::span().fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0})(text("I reach — the surface bends and gleams.")),
     //                 div(S::percent(1.0), S::px(8), simd_float4{0.0,0.0,0.0,0.0})(),
-    //                 text("Reverie, reverie —").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
-    //                 text("I found you at the edge of sleep.").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
-    //                 text("Reverie, reverie —").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
-    //                 text("a promise too fragile to keep.").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
+    //                 elements::span().fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0})(text("Reverie, reverie —")),
+    //                 elements::span().fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0})(text("I found you at the edge of sleep.")),
+    //                 elements::span().fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0})(text("Reverie, reverie —")),
+    //                 elements::span().fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0})(text("a promise too fragile to keep.")),
     //                 div(S::percent(1.0), S::px(8), simd_float4{0.0,0.0,0.0,0.0})(),
-    //                 text("(Instrumental)").fontSize(S::pt(14)).color(simd_float4{0.35,0.35,0.42,1.0}),
+    //                 elements::span().fontSize(S::pt(14)).color(simd_float4{0.35,0.35,0.42,1.0})(text("(Instrumental)")),
     //                 div(S::percent(1.0), S::px(8), simd_float4{0.0,0.0,0.0,0.0})(),
-    //                 text("The glass grows cold, the echo fades,").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
-    //                 text("and all that's left is what remains —").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
-    //                 text("a shape of light, a broken name.").fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0}),
+    //                 elements::span().fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0})(text("The glass grows cold, the echo fades,")),
+    //                 elements::span().fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0})(text("and all that's left is what remains —")),
+    //                 elements::span().fontSize(S::pt(15)).color(simd_float4{0.52,0.52,0.58,1.0})(text("a shape of light, a broken name.")),
     //                 div(S::percent(1.0), S::px(8), simd_float4{0.0,0.0,0.0,0.0})(),
-    //                 text("Reverie, reverie —").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
-    //                 text("I found you at the edge of sleep.").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
-    //                 text("Reverie, reverie —").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0}),
-    //                 text("a promise too fragile to keep.").fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0})
+    //                 elements::span().fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0})(text("Reverie, reverie —")),
+    //                 elements::span().fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0})(text("I found you at the edge of sleep.")),
+    //                 elements::span().fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0})(text("Reverie, reverie —")),
+    //                 elements::span().fontSize(S::pt(15)).color(simd_float4{0.18,0.72,0.56,1.0})(text("a promise too fragile to keep."))
     //             )
     //         )
     //     )
@@ -1707,19 +1707,19 @@ auto index() -> void {
     // (
     //     div(S::minContent(), S::autoSize(), simd_float4{0.078,0.722,0.859,1.0})
     //     (
-    //         text(intrinsicText)
+    //         elements::span()
     //             .font(Arial)
     //             .fontSize(S::pt(18))
-    //             .color(simd_float4{0.961,0.969,1.0,1.0})
+    //             .color(simd_float4{0.961,0.969,1.0,1.0})(text(intrinsicText))
     //     ),
 
     //     div(S::maxContent(), S::autoSize(), simd_float4{0.961,0.302,0.459,1.0})
     //         .marginTop(S::px(20))
     //     (
-    //         text(intrinsicText)
+    //         elements::span()
     //             .font(Arial)
     //             .fontSize(S::pt(18))
-    //             .color(simd_float4{0.961,0.969,1.0,1.0})
+    //             .color(simd_float4{0.961,0.969,1.0,1.0})(text(intrinsicText))
     //     ),
 
     //     div(S::px(360), S::autoSize(), simd_float4{0.149,0.161,0.200,1.0})
@@ -1727,10 +1727,10 @@ auto index() -> void {
     //     (
     //         div(S::fitContent(), S::autoSize(), simd_float4{0.980,0.761,0.200,1.0})
     //         (
-    //             text(intrinsicText)
+    //             elements::span()
     //                 .font(Arial)
     //                 .fontSize(S::pt(18))
-    //                 .color(simd_float4{0.078,0.090,0.110,1.0})
+    //                 .color(simd_float4{0.078,0.090,0.110,1.0})(text(intrinsicText))
     //         )
     //     ),
 
@@ -1738,20 +1738,20 @@ auto index() -> void {
     //         .minWidth(S::maxContent())
     //         .marginTop(S::px(20))
     //     (
-    //         text(intrinsicText)
+    //         elements::span()
     //             .font(Arial)
     //             .fontSize(S::pt(18))
-    //             .color(simd_float4{0.078,0.090,0.110,1.0})
+    //             .color(simd_float4{0.078,0.090,0.110,1.0})(text(intrinsicText))
     //     ),
 
     //     div(S::px(640), S::autoSize(), simd_float4{0.639,0.420,0.961,1.0})
     //         .maxWidth(S::minContent())
     //         .marginTop(S::px(20))
     //     (
-    //         text(intrinsicText)
+    //         elements::span()
     //             .font(Arial)
     //             .fontSize(S::pt(18))
-    //             .color(simd_float4{0.961,0.969,1.0,1.0})
+    //             .color(simd_float4{0.961,0.969,1.0,1.0})(text(intrinsicText))
     //     )
     // );
 
@@ -1786,25 +1786,25 @@ auto index() -> void {
 //         .padding(S::px(48))
 //         .flexGap(S::px(28))
 //     (
-//         text("PHASE A: INDEFINITE PERCENT VS AUTO")
+//         elements::span()
 //             .font(Arial)
 //             .fontSize(S::pt(24))
-//             .color(simd_float4{0.96,0.97,1.0,1.0}),
-//         text("Compare each cyan percentage target and auto control with the browser reference")
+//             .color(simd_float4{0.96,0.97,1.0,1.0})(text("PHASE A: INDEFINITE PERCENT VS AUTO")),
+//         elements::span()
 //             .font(Arial)
 //             .fontSize(S::pt(14))
-//             .color(simd_float4{0.70,0.73,0.80,1.0}),
+//             .color(simd_float4{0.70,0.73,0.80,1.0})(text("Compare each cyan percentage target and auto control with the browser reference")),
 
 //         // Width case: row flex parent has no definite width.
-//         text("INDEFINITE WIDTH — 60% TARGET VS AUTO CONTROL")
+//         elements::span()
 //             .font(Arial)
 //             .fontSize(S::pt(13))
-//             .color(simd_float4{0.98,0.76,0.24,1.0}),
+//             .color(simd_float4{0.98,0.76,0.24,1.0})(text("INDEFINITE WIDTH — 60% TARGET VS AUTO CONTROL")),
 //         div().display(gui::Display::Flex).alignItems(gui::AlignItems::FlexStart).flexGap(S::px(48))
 //         (
 //             div().display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).alignItems(gui::AlignItems::FlexStart).flexGap(S::px(8))
 //             (
-//                 text("AUTO CONTROL").font(Arial).fontSize(S::pt(12)).color(simd_float4{0.38,0.92,0.56,1.0}),
+//                 elements::span().font(Arial).fontSize(S::pt(12)).color(simd_float4{0.38,0.92,0.56,1.0})(text("AUTO CONTROL")),
 //                 div(S::autoSize(), S::px(112), simd_float4{0.15,0.16,0.20,1.0})
 //                     .display(gui::Display::Flex).alignItems(gui::AlignItems::Center).padding(S::px(14))
 //                 (
@@ -1818,7 +1818,7 @@ auto index() -> void {
 //             ),
 //             div().display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).alignItems(gui::AlignItems::FlexStart).flexGap(S::px(8))
 //             (
-//                 text("60% TARGET").font(Arial).fontSize(S::pt(12)).color(simd_float4{1.0,0.54,0.22,1.0}),
+//                 elements::span().font(Arial).fontSize(S::pt(12)).color(simd_float4{1.0,0.54,0.22,1.0})(text("60% TARGET")),
 //                 div(S::autoSize(), S::px(112), simd_float4{0.15,0.16,0.20,1.0})
 //                     .display(gui::Display::Flex).alignItems(gui::AlignItems::Center).padding(S::px(14))
 //                 (
@@ -1833,15 +1833,15 @@ auto index() -> void {
 //         ),
 
 //         // Height case: column flex parent has no definite height.
-//         text("INDEFINITE HEIGHT — 50% TARGET VS AUTO CONTROL")
+//         elements::span()
 //             .font(Arial)
 //             .fontSize(S::pt(13))
-//             .color(simd_float4{0.98,0.76,0.24,1.0}),
+//             .color(simd_float4{0.98,0.76,0.24,1.0})(text("INDEFINITE HEIGHT — 50% TARGET VS AUTO CONTROL")),
 //         div().display(gui::Display::Flex).alignItems(gui::AlignItems::FlexStart).flexGap(S::px(48))
 //         (
 //             div().display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(8))
 //             (
-//                 text("AUTO CONTROL").font(Arial).fontSize(S::pt(12)).color(simd_float4{0.38,0.92,0.56,1.0}),
+//                 elements::span().font(Arial).fontSize(S::pt(12)).color(simd_float4{0.38,0.92,0.56,1.0})(text("AUTO CONTROL")),
 //                 div(S::px(360), S::autoSize(), simd_float4{0.15,0.16,0.20,1.0})
 //                     .display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).alignItems(gui::AlignItems::Stretch).padding(S::px(14))
 //                 (
@@ -1855,7 +1855,7 @@ auto index() -> void {
 //             ),
 //             div().display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(8))
 //             (
-//                 text("50% TARGET").font(Arial).fontSize(S::pt(12)).color(simd_float4{1.0,0.54,0.22,1.0}),
+//                 elements::span().font(Arial).fontSize(S::pt(12)).color(simd_float4{1.0,0.54,0.22,1.0})(text("50% TARGET")),
 //                 div(S::px(360), S::autoSize(), simd_float4{0.15,0.16,0.20,1.0})
 //                     .display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).alignItems(gui::AlignItems::Stretch).padding(S::px(14))
 //                 (
@@ -1886,98 +1886,98 @@ auto index() -> void {
     //     .padding(S::px(28))
     //     .overflow(gui::Overflow::Scroll)
     // (
-    //     text("HarfBuzz shaping coverage").font(ArialBold).fontSize(S::pt(24)).color(body),
-    //     text("Kerning, ligatures, combining marks, and contextual script shaping")
-    //         .fontSize(S::pt(13)).color(note),
+    //     elements::span().font(ArialBold).fontSize(S::pt(24)).color(body)(text("HarfBuzz shaping coverage")),
+    //     elements::span()
+    //         .fontSize(S::pt(13)).color(note)(text("Kerning, ligatures, combining marks, and contextual script shaping")),
 
-    //     div().width(S::percent(1.0)).color(panel).padding(S::px(18))
+    //     div().width(S::percent(1.0)).backgroundColor(panel).padding(S::px(18))
     //         .display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(8))
     //     (
-    //         text("4. Kerning").font(ArialBold).fontSize(S::pt(13)).color(heading),
-    //         text("AVATAR   To Wa Yo VA").font(Arial).fontSize(S::pt(34)).color(body),
-    //         text("Look for tighter AV, To, Wa, and Yo pairs.").fontSize(S::pt(12)).color(note)
+    //         elements::span().font(ArialBold).fontSize(S::pt(13)).color(heading)(text("4. Kerning")),
+    //         elements::span().font(Arial).fontSize(S::pt(34)).color(body)(text("AVATAR   To Wa Yo VA")),
+    //         elements::span().fontSize(S::pt(12)).color(note)(text("Look for tighter AV, To, Wa, and Yo pairs."))
     //     ),
 
-    //     div().width(S::percent(1.0)).color(panel).padding(S::px(18))
+    //     div().width(S::percent(1.0)).backgroundColor(panel).padding(S::px(18))
     //         .display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(8))
     //     (
-    //         text("5. Ligatures").font(ArialBold).fontSize(S::pt(13)).color(heading),
-    //         text("office   affinity   ffi   fi   fl").font(Helvetica).fontSize(S::pt(34)).color(body),
-    //         text("Helvetica should substitute fi/fl glyphs; ‘office’ should contain an fi ligature.")
-    //             .fontSize(S::pt(12)).color(note)
+    //         elements::span().font(ArialBold).fontSize(S::pt(13)).color(heading)(text("5. Ligatures")),
+    //         elements::span().font(Helvetica).fontSize(S::pt(34)).color(body)(text("office   affinity   ffi   fi   fl")),
+    //         elements::span()
+    //             .fontSize(S::pt(12)).color(note)(text("Helvetica should substitute fi/fl glyphs; ‘office’ should contain an fi ligature."))
     //     ),
 
-    //     div().width(S::percent(1.0)).color(panel).padding(S::px(18))
+    //     div().width(S::percent(1.0)).backgroundColor(panel).padding(S::px(18))
     //         .display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(8))
     //     (
-    //         text("6a. Combining marks").font(ArialBold).fontSize(S::pt(13)).color(heading),
-    //         text("decomposed:  cafe\xCC\x81   A\xCC\x8A   n\xCC\x83").font(Arial).fontSize(S::pt(34)).color(body),
-    //         text("composed:    café   Å   ñ").font(Arial).fontSize(S::pt(34)).color(body),
-    //         text("The two rows should have equivalent accent placement.").fontSize(S::pt(12)).color(note)
+    //         elements::span().font(ArialBold).fontSize(S::pt(13)).color(heading)(text("6a. Combining marks")),
+    //         elements::span().font(Arial).fontSize(S::pt(34)).color(body)(text("decomposed:  cafe\xCC\x81   A\xCC\x8A   n\xCC\x83")),
+    //         elements::span().font(Arial).fontSize(S::pt(34)).color(body)(text("composed:    café   Å   ñ")),
+    //         elements::span().fontSize(S::pt(12)).color(note)(text("The two rows should have equivalent accent placement."))
     //     ),
 
-    //     div().width(S::percent(1.0)).color(panel).padding(S::px(18))
+    //     div().width(S::percent(1.0)).backgroundColor(panel).padding(S::px(18))
     //         .display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(8))
     //     (
-    //         text("6b. Arabic contextual shaping").font(ArialBold).fontSize(S::pt(13)).color(heading),
-    //         text("السلام عليكم").font(GeezaPro).fontSize(S::pt(40)).color(body),
-    //         text("Letters should join contextually; lam-alef should form a ligature.").fontSize(S::pt(12)).color(note)
+    //         elements::span().font(ArialBold).fontSize(S::pt(13)).color(heading)(text("6b. Arabic contextual shaping")),
+    //         elements::span().font(GeezaPro).fontSize(S::pt(40)).color(body)(text("السلام عليكم")),
+    //         elements::span().fontSize(S::pt(12)).color(note)(text("Letters should join contextually; lam-alef should form a ligature."))
     //     ),
 
-    //     div().width(S::percent(1.0)).color(panel).padding(S::px(18))
+    //     div().width(S::percent(1.0)).backgroundColor(panel).padding(S::px(18))
     //         .display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(8))
     //     (
-    //         text("6c. Devanagari reordering and conjuncts").font(ArialBold).fontSize(S::pt(13)).color(heading),
-    //         text("नमस्ते दुनिया").font(Devanagari).fontSize(S::pt(40)).color(body),
-    //         text("The conjunct and pre-base vowel marks should be shaped and positioned.")
-    //             .fontSize(S::pt(12)).color(note)
+    //         elements::span().font(ArialBold).fontSize(S::pt(13)).color(heading)(text("6c. Devanagari reordering and conjuncts")),
+    //         elements::span().font(Devanagari).fontSize(S::pt(40)).color(body)(text("नमस्ते दुनिया")),
+    //         elements::span()
+    //             .fontSize(S::pt(12)).color(note)(text("The conjunct and pre-base vowel marks should be shaped and positioned."))
     //     ),
 
-    //     div().width(S::percent(1.0)).color(panel).padding(S::px(18))
+    //     div().width(S::percent(1.0)).backgroundColor(panel).padding(S::px(18))
     //         .display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(8))
     //     (
-    //         text("7a. Mixed LTR and RTL runs").font(ArialBold).fontSize(S::pt(13)).color(heading),
-    //         text("Hello السلام").font(Arial).fontSize(S::pt(30)).color(body),
-    //         text("السلام Hello").font(Arial).fontSize(S::pt(30)).color(body),
-    //         text("Each Arabic run should remain joined while the two scripts retain their reading order.")
-    //             .fontSize(S::pt(12)).color(note)
+    //         elements::span().font(ArialBold).fontSize(S::pt(13)).color(heading)(text("7a. Mixed LTR and RTL runs")),
+    //         elements::span().font(Arial).fontSize(S::pt(30)).color(body)(text("Hello السلام")),
+    //         elements::span().font(Arial).fontSize(S::pt(30)).color(body)(text("السلام Hello")),
+    //         elements::span()
+    //             .fontSize(S::pt(12)).color(note)(text("Each Arabic run should remain joined while the two scripts retain their reading order."))
     //     ),
 
-    //     div().width(S::percent(1.0)).color(panel).padding(S::px(18))
+    //     div().width(S::percent(1.0)).backgroundColor(panel).padding(S::px(18))
     //         .display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(8))
     //     (
-    //         text("7b. Numbers and neutral punctuation").font(ArialBold).fontSize(S::pt(13)).color(heading),
-    //         text("السلام 123 عليكم").font(Arial).fontSize(S::pt(30)).color(body),
-    //         text("Hello (السلام) 123").font(Arial).fontSize(S::pt(30)).color(body),
-    //         text("The digits should read 123 and the parentheses should enclose the Arabic word.")
-    //             .fontSize(S::pt(12)).color(note)
+    //         elements::span().font(ArialBold).fontSize(S::pt(13)).color(heading)(text("7b. Numbers and neutral punctuation")),
+    //         elements::span().font(Arial).fontSize(S::pt(30)).color(body)(text("السلام 123 عليكم")),
+    //         elements::span().font(Arial).fontSize(S::pt(30)).color(body)(text("Hello (السلام) 123")),
+    //         elements::span()
+    //             .fontSize(S::pt(12)).color(note)(text("The digits should read 123 and the parentheses should enclose the Arabic word."))
     //     ),
 
-    //     div().width(S::percent(1.0)).color(panel).padding(S::px(18))
+    //     div().width(S::percent(1.0)).backgroundColor(panel).padding(S::px(18))
     //         .display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(8))
     //     (
-    //         text("7c. Bidi resolution across text siblings").font(ArialBold).fontSize(S::pt(13)).color(heading),
+    //         elements::span().font(ArialBold).fontSize(S::pt(13)).color(heading)(text("7c. Bidi resolution across text siblings")),
     //         div()
     //         (
-    //             text("Hello ").font(Arial).fontSize(S::pt(30)).color(body),
-    //             text("السلام").font(GeezaPro).fontSize(S::pt(30)).color(body),
-    //             text(" 123").font(Arial).fontSize(S::pt(30)).color(body)
+    //             elements::span().font(Arial).fontSize(S::pt(30)).color(body)(text("Hello ")),
+    //             elements::span().font(GeezaPro).fontSize(S::pt(30)).color(body)(text("السلام")),
+    //             elements::span().font(Arial).fontSize(S::pt(30)).color(body)(text(" 123"))
     //         ),
-    //         text("This is three sibling Text nodes and should match a single mixed-direction sentence.")
-    //             .fontSize(S::pt(12)).color(note)
+    //         elements::span()
+    //             .fontSize(S::pt(12)).color(note)(text("This is three sibling Text nodes and should match a single mixed-direction sentence."))
     //     ),
 
-    //     div().width(S::percent(1.0)).color(panel).padding(S::px(18))
+    //     div().width(S::percent(1.0)).backgroundColor(panel).padding(S::px(18))
     //         .display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(8))
     //     (
-    //         text("7d. Mixed-direction wrapping").font(ArialBold).fontSize(S::pt(13)).color(heading),
+    //         elements::span().font(ArialBold).fontSize(S::pt(13)).color(heading)(text("7d. Mixed-direction wrapping")),
     //         div().width(S::px(260))
     //         (
-    //             text("Hello السلام 123 عليكم from a narrow mixed-direction line")
-    //                 .font(Arial).fontSize(S::pt(24)).color(body)
+    //             elements::span()
+    //                 .font(Arial).fontSize(S::pt(24)).color(body)(text("Hello السلام 123 عليكم from a narrow mixed-direction line"))
     //         ),
-    //         text("Every physical line should remain separate, joined, and non-overlapping.")
-    //             .fontSize(S::pt(12)).color(note)
+    //         elements::span()
+    //             .fontSize(S::pt(12)).color(note)(text("Every physical line should remain separate, joined, and non-overlapping."))
     //     )
     // );
 
@@ -1996,42 +1996,42 @@ auto index() -> void {
 //     (
 //         div().display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(4))
 //         (
-//             text("Start").fontSize(S::pt(12)).color(labelColor),
-//             div().width(S::px(280)).minHeight(S::px(90)).color(panelColor)
+//             elements::span().fontSize(S::pt(12)).color(labelColor)(text("Start")),
+//             div().width(S::px(280)).minHeight(S::px(90)).backgroundColor(panelColor)
 //                 .textAlign(gui::TextAlign::Start)
 //             (
-//                 text(alignmentSample).fontSize(S::pt(16)).lineHeight(1.25f).color(textColor)
-//                     .whiteSpace(gui::WhiteSpace::PreWrap)
+//                 elements::span().fontSize(S::pt(16)).lineHeight(1.25f).color(textColor)
+//                     .whiteSpace(gui::WhiteSpace::PreWrap)(text(alignmentSample))
 //             )
 //         ),
 //         div().display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(4))
 //         (
-//             text("Left").fontSize(S::pt(12)).color(labelColor),
-//             div().width(S::px(280)).minHeight(S::px(90)).color(panelColor)
+//             elements::span().fontSize(S::pt(12)).color(labelColor)(text("Left")),
+//             div().width(S::px(280)).minHeight(S::px(90)).backgroundColor(panelColor)
 //                 .textAlign(gui::TextAlign::Left)
 //             (
-//                 text(alignmentSample).fontSize(S::pt(16)).lineHeight(1.25f).color(textColor)
-//                     .whiteSpace(gui::WhiteSpace::PreWrap)
+//                 elements::span().fontSize(S::pt(16)).lineHeight(1.25f).color(textColor)
+//                     .whiteSpace(gui::WhiteSpace::PreWrap)(text(alignmentSample))
 //             )
 //         ),
 //         div().display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(4))
 //         (
-//             text("Center").fontSize(S::pt(12)).color(labelColor),
-//             div().width(S::px(280)).minHeight(S::px(90)).color(panelColor)
+//             elements::span().fontSize(S::pt(12)).color(labelColor)(text("Center")),
+//             div().width(S::px(280)).minHeight(S::px(90)).backgroundColor(panelColor)
 //                 .textAlign(gui::TextAlign::Center)
 //             (
-//                 text(alignmentSample).fontSize(S::pt(16)).lineHeight(1.25f).color(textColor)
-//                     .whiteSpace(gui::WhiteSpace::PreWrap)
+//                 elements::span().fontSize(S::pt(16)).lineHeight(1.25f).color(textColor)
+//                     .whiteSpace(gui::WhiteSpace::PreWrap)(text(alignmentSample))
 //             )
 //         ),
 //         div().display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(4))
 //         (
-//             text("Right").fontSize(S::pt(12)).color(labelColor),
-//             div().width(S::px(280)).minHeight(S::px(90)).color(panelColor)
+//             elements::span().fontSize(S::pt(12)).color(labelColor)(text("Right")),
+//             div().width(S::px(280)).minHeight(S::px(90)).backgroundColor(panelColor)
 //                 .textAlign(gui::TextAlign::Right)
 //             (
-//                 text(alignmentSample).fontSize(S::pt(16)).lineHeight(1.25f).color(textColor)
-//                     .whiteSpace(gui::WhiteSpace::PreWrap)
+//                 elements::span().fontSize(S::pt(16)).lineHeight(1.25f).color(textColor)
+//                     .whiteSpace(gui::WhiteSpace::PreWrap)(text(alignmentSample))
 //             )
 //         )
 //     );
@@ -2054,48 +2054,48 @@ auto index() -> void {
 //     (
 //         div().display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(4))
 //         (
-//             text("Normal").fontSize(S::pt(12)).color(labelColor),
-//             div().width(S::px(280)).minHeight(S::px(90)).color(panelColor)
+//             elements::span().fontSize(S::pt(12)).color(labelColor)(text("Normal")),
+//             div().width(S::px(280)).minHeight(S::px(90)).backgroundColor(panelColor)
 //             (
-//                 text(sample).fontSize(S::pt(16)).lineHeight(1.25f).color(textColor)
+//                 elements::span().fontSize(S::pt(16)).lineHeight(1.25f).color(textColor)
+//                     .whiteSpace(gui::WhiteSpace::Normal)(text(sample))
+//             )
+//         ),
+//         div().display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(4))
+//         (
+//             elements::span().fontSize(S::pt(12)).color(labelColor)(text("NoWrap")),
+//             div().width(S::px(280)).minHeight(S::px(90)).backgroundColor(panelColor)
+//             (
+//                 elements::span().fontSize(S::pt(16)).lineHeight(1.25f).color(textColor)
+//                     .whiteSpace(gui::WhiteSpace::NoWrap)(text(sample))
+//             )
+//         ),
+//         div().display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(4))
+//         (
+//             elements::span().fontSize(S::pt(12)).color(labelColor)(text("Pre")),
+//             div().width(S::px(280)).minHeight(S::px(90)).backgroundColor(panelColor)
+//             (
+//                 elements::span().fontSize(S::pt(16)).lineHeight(1.25f).color(textColor)
+//                     .whiteSpace(gui::WhiteSpace::Pre)(text(sample))
+//             )
+//         ),
+//         div().display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(4))
+//         (
+//             elements::span().fontSize(S::pt(12)).color(labelColor)(text("PreWrap")),
+//             div().width(S::px(280)).minHeight(S::px(90)).backgroundColor(panelColor)
+//             (
+//                 elements::span().fontSize(S::pt(16)).lineHeight(1.25f).color(textColor)
+//                     .whiteSpace(gui::WhiteSpace::PreWrap)(text(sample))
+//             )
+//         ),
+//         div().display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(4))
+//         (
+//             elements::span().fontSize(S::pt(12)).color(labelColor)(text("Normal + BreakAll")),
+//             div().width(S::px(280)).minHeight(S::px(90)).backgroundColor(panelColor)
+//             (
+//                 elements::span().fontSize(S::pt(16)).lineHeight(1.25f).color(textColor)
 //                     .whiteSpace(gui::WhiteSpace::Normal)
-//             )
-//         ),
-//         div().display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(4))
-//         (
-//             text("NoWrap").fontSize(S::pt(12)).color(labelColor),
-//             div().width(S::px(280)).minHeight(S::px(90)).color(panelColor)
-//             (
-//                 text(sample).fontSize(S::pt(16)).lineHeight(1.25f).color(textColor)
-//                     .whiteSpace(gui::WhiteSpace::NoWrap)
-//             )
-//         ),
-//         div().display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(4))
-//         (
-//             text("Pre").fontSize(S::pt(12)).color(labelColor),
-//             div().width(S::px(280)).minHeight(S::px(90)).color(panelColor)
-//             (
-//                 text(sample).fontSize(S::pt(16)).lineHeight(1.25f).color(textColor)
-//                     .whiteSpace(gui::WhiteSpace::Pre)
-//             )
-//         ),
-//         div().display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(4))
-//         (
-//             text("PreWrap").fontSize(S::pt(12)).color(labelColor),
-//             div().width(S::px(280)).minHeight(S::px(90)).color(panelColor)
-//             (
-//                 text(sample).fontSize(S::pt(16)).lineHeight(1.25f).color(textColor)
-//                     .whiteSpace(gui::WhiteSpace::PreWrap)
-//             )
-//         ),
-//         div().display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(4))
-//         (
-//             text("Normal + BreakAll").fontSize(S::pt(12)).color(labelColor),
-//             div().width(S::px(280)).minHeight(S::px(90)).color(panelColor)
-//             (
-//                 text(breakAllSample).fontSize(S::pt(16)).lineHeight(1.25f).color(textColor)
-//                     .whiteSpace(gui::WhiteSpace::Normal)
-//                     .wordBreak(gui::WordBreak::BreakAll)
+//                     .wordBreak(gui::WordBreak::BreakAll)(text(breakAllSample))
 //             )
 //         )
 //     );
@@ -2115,81 +2115,81 @@ auto index() -> void {
     // (
     //     div().display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(4))
     //     (
-    //         text("Clip").fontSize(S::pt(12)).color(labelColor),
-    //         div().width(S::px(280)).height(S::px(32)).color(panelColor)
+    //         elements::span().fontSize(S::pt(12)).color(labelColor)(text("Clip")),
+    //         div().width(S::px(280)).height(S::px(32)).backgroundColor(panelColor)
     //             .overflow(gui::Overflow::Hidden)
     //             .textOverflow(gui::TextOverflow::clip())
     //         (
-    //             text(overflowSample).fontSize(S::pt(16)).lineHeight(1.25f).color(textColor)
-    //                 .whiteSpace(gui::WhiteSpace::NoWrap)
+    //             elements::span().fontSize(S::pt(16)).lineHeight(1.25f).color(textColor)
+    //                 .whiteSpace(gui::WhiteSpace::NoWrap)(text(overflowSample))
     //         )
     //     ),
     //     div().display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(4))
     //     (
-    //         text("Ellipsis, text fits").fontSize(S::pt(12)).color(labelColor),
-    //         div().width(S::px(280)).height(S::px(32)).color(panelColor)
+    //         elements::span().fontSize(S::pt(12)).color(labelColor)(text("Ellipsis, text fits")),
+    //         div().width(S::px(280)).height(S::px(32)).backgroundColor(panelColor)
     //             .overflow(gui::Overflow::Hidden)
     //             .textOverflow(gui::TextOverflow::ellipsis())
     //         (
-    //             text("Short text").fontSize(S::pt(16)).lineHeight(1.25f).color(textColor)
-    //                 .whiteSpace(gui::WhiteSpace::NoWrap)
+    //             elements::span().fontSize(S::pt(16)).lineHeight(1.25f).color(textColor)
+    //                 .whiteSpace(gui::WhiteSpace::NoWrap)(text("Short text"))
     //         )
     //     ),
     //     div().display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(4))
     //     (
-    //         text("Ellipsis").fontSize(S::pt(12)).color(labelColor),
-    //         div().width(S::px(280)).height(S::px(32)).color(panelColor)
+    //         elements::span().fontSize(S::pt(12)).color(labelColor)(text("Ellipsis")),
+    //         div().width(S::px(280)).height(S::px(32)).backgroundColor(panelColor)
     //             .overflow(gui::Overflow::Hidden)
     //             .textOverflow(gui::TextOverflow::ellipsis())
     //         (
-    //             text(overflowSample).fontSize(S::pt(16)).lineHeight(1.25f).color(textColor)
-    //                 .whiteSpace(gui::WhiteSpace::NoWrap)
+    //             elements::span().fontSize(S::pt(16)).lineHeight(1.25f).color(textColor)
+    //                 .whiteSpace(gui::WhiteSpace::NoWrap)(text(overflowSample))
     //         )
     //     ),
     //     div().display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(4))
     //     (
-    //         text("Ellipsis, narrower than marker").fontSize(S::pt(12)).color(labelColor),
-    //         div().width(S::px(6)).height(S::px(32)).color(panelColor)
+    //         elements::span().fontSize(S::pt(12)).color(labelColor)(text("Ellipsis, narrower than marker")),
+    //         div().width(S::px(6)).height(S::px(32)).backgroundColor(panelColor)
     //             .overflow(gui::Overflow::Hidden)
     //             .textOverflow(gui::TextOverflow::ellipsis())
     //         (
-    //             text("Wide text").fontSize(S::pt(16)).lineHeight(1.25f).color(textColor)
-    //                 .whiteSpace(gui::WhiteSpace::NoWrap)
+    //             elements::span().fontSize(S::pt(16)).lineHeight(1.25f).color(textColor)
+    //                 .whiteSpace(gui::WhiteSpace::NoWrap)(text("Wide text"))
     //         )
     //     ),
     //     div().display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(4))
     //     (
-    //         text("Custom ending").fontSize(S::pt(12)).color(labelColor),
-    //         div().width(S::px(280)).height(S::px(32)).color(panelColor)
+    //         elements::span().fontSize(S::pt(12)).color(labelColor)(text("Custom ending")),
+    //         div().width(S::px(280)).height(S::px(32)).backgroundColor(panelColor)
     //             .overflow(gui::Overflow::Hidden)
     //             .textOverflow(gui::TextOverflow::custom(" [more]"))
     //         (
-    //             text(overflowSample).fontSize(S::pt(16)).lineHeight(1.25f).color(textColor)
-    //                 .whiteSpace(gui::WhiteSpace::NoWrap)
+    //             elements::span().fontSize(S::pt(16)).lineHeight(1.25f).color(textColor)
+    //                 .whiteSpace(gui::WhiteSpace::NoWrap)(text(overflowSample))
     //         )
     //     ),
     //     div().display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(4))
     //     (
-    //         text("Ellipsis + Scroll").fontSize(S::pt(12)).color(labelColor),
-    //         div().width(S::px(140)).height(S::px(32)).color(panelColor)
+    //         elements::span().fontSize(S::pt(12)).color(labelColor)(text("Ellipsis + Scroll")),
+    //         div().width(S::px(140)).height(S::px(32)).backgroundColor(panelColor)
     //             .overflow(gui::Overflow::Scroll)
     //             .textOverflow(gui::TextOverflow::ellipsis())
     //         (
-    //             text(overflowSample).fontSize(S::pt(16)).lineHeight(1.25f).color(textColor)
-    //                 .whiteSpace(gui::WhiteSpace::NoWrap)
+    //             elements::span().fontSize(S::pt(16)).lineHeight(1.25f).color(textColor)
+    //                 .whiteSpace(gui::WhiteSpace::NoWrap)(text(overflowSample))
     //         )
     //     ),
     //     div().display(gui::Display::Flex).flexDirection(gui::FlexDirection::Col).flexGap(S::px(4))
     //     (
-    //         text("Nested clipping ancestor").fontSize(S::pt(12)).color(labelColor),
-    //         div().width(S::px(280)).height(S::px(32)).color(panelColor)
+    //         elements::span().fontSize(S::pt(12)).color(labelColor)(text("Nested clipping ancestor")),
+    //         div().width(S::px(280)).height(S::px(32)).backgroundColor(panelColor)
     //             .overflow(gui::Overflow::Hidden)
     //             .textOverflow(gui::TextOverflow::ellipsis())
     //         (
     //             div()
     //             (
-    //                 text(overflowSample).fontSize(S::pt(16)).lineHeight(1.25f).color(textColor)
-    //                     .whiteSpace(gui::WhiteSpace::NoWrap)
+    //                 elements::span().fontSize(S::pt(16)).lineHeight(1.25f).color(textColor)
+    //                     .whiteSpace(gui::WhiteSpace::NoWrap)(text(overflowSample))
     //             )
     //         )
     //     )
@@ -2202,7 +2202,7 @@ auto index() -> void {
 // div()
 //     .width(S::percent(1.0))
 //     .height(S::percent(1.0))
-//     .color(simd_float4{0.09,0.09,0.11,1.0})
+//     .backgroundColor(simd_float4{0.09,0.09,0.11,1.0})
 //     .display(gui::Display::Flex)
 //     .flexDirection(gui::FlexDirection::Col)
 //     .flexGap(S::px(16))
@@ -2210,7 +2210,7 @@ auto index() -> void {
 // (
 //     div()
 //         .width(S::percent(1.0))
-//         .color(simd_float4{0.13,0.13,0.16,1.0})
+//         .backgroundColor(simd_float4{0.13,0.13,0.16,1.0})
 //         .display(gui::Display::Flex)
 //         .flexDirection(gui::FlexDirection::Row)
 //         .flexWrap(gui::FlexWrap::Wrap)
@@ -2221,7 +2221,7 @@ auto index() -> void {
 //     (
 //         div()
 //             .height(S::px(36))
-//             .color(simd_float4{0.18,0.72,0.56,1.0})
+//             .backgroundColor(simd_float4{0.18,0.72,0.56,1.0})
 //             .flexGrow(S::px(1))
 //             .minWidth(S::px(80))
 //             .maxWidth(S::px(200))
@@ -2229,7 +2229,7 @@ auto index() -> void {
 //         (),
 //         div()
 //             .height(S::px(36))
-//             .color(simd_float4{0.30,0.30,0.36,1.0})
+//             .backgroundColor(simd_float4{0.30,0.30,0.36,1.0})
 //             .flexGrow(S::px(2))
 //             .minWidth(S::px(120))
 //             .maxWidth(S::px(400))
@@ -2238,7 +2238,7 @@ auto index() -> void {
 //         div()
 //             .width(S::px(60))
 //             .height(S::px(36))
-//             .color(simd_float4{0.22,0.22,0.28,1.0})
+//             .backgroundColor(simd_float4{0.22,0.22,0.28,1.0})
 //             .flexShrink(S::px(0.0))
 //             .cornerRadius(S::px(6))
 //         ()
@@ -2246,7 +2246,7 @@ auto index() -> void {
 
 //     div()
 //         .width(S::percent(1.0))
-//         .color(simd_float4{0.11,0.11,0.14,1.0})
+//         .backgroundColor(simd_float4{0.11,0.11,0.14,1.0})
 //         .display(gui::Display::Grid)
 //         .gridTemplateColumns({S::percent(0.33), S::percent(0.33), S::percent(0.33)})
 //         .gridTemplateRows({S::px(80), S::px(80)})
@@ -2257,13 +2257,13 @@ auto index() -> void {
 //         .padding(S::px(12))
 //     (
 //         div()
-//             .color(simd_float4{0.18,0.72,0.56,1.0})
+//             .backgroundColor(simd_float4{0.18,0.72,0.56,1.0})
 //             .minHeight(S::px(60))
 //             .maxHeight(S::px(140))
 //             .cornerRadius(S::px(6))
 //         (),
 //         div()
-//             .color(simd_float4{0.30,0.30,0.36,1.0})
+//             .backgroundColor(simd_float4{0.30,0.30,0.36,1.0})
 //             .gridColumn(2, 4)
 //             .minWidth(S::px(160))
 //             .maxWidth(S::px(500))
@@ -2271,7 +2271,7 @@ auto index() -> void {
 //             .cornerRadius(S::px(6))
 //         (),
 //         div()
-//             .color(simd_float4{0.22,0.22,0.28,1.0})
+//             .backgroundColor(simd_float4{0.22,0.22,0.28,1.0})
 //             .gridColumn(1, 4)
 //             .minHeight(S::px(40))
 //             .maxHeight(S::px(80))
@@ -2281,7 +2281,7 @@ auto index() -> void {
 
 //     div()
 //         .width(S::percent(1.0))
-//         .color(simd_float4{0.13,0.13,0.16,1.0})
+//         .backgroundColor(simd_float4{0.13,0.13,0.16,1.0})
 //         .minWidth(S::px(200))
 //         .maxWidth(S::px(600))
 //         .minHeight(S::px(80))
@@ -2292,7 +2292,7 @@ auto index() -> void {
 //         div()
 //             .width(S::percent(0.6))
 //             .height(S::px(20))
-//             .color(simd_float4{0.18,0.72,0.56,1.0})
+//             .backgroundColor(simd_float4{0.18,0.72,0.56,1.0})
 //             .minWidth(S::px(100))
 //             .maxWidth(S::px(320))
 //             .cornerRadius(S::px(4))
@@ -2300,7 +2300,7 @@ auto index() -> void {
 //         div()
 //             .width(S::percent(0.9))
 //             .height(S::px(20))
-//             .color(simd_float4{0.30,0.30,0.36,1.0})
+//             .backgroundColor(simd_float4{0.30,0.30,0.36,1.0})
 //             .minWidth(S::px(140))
 //             .maxWidth(S::px(480))
 //             .marginTop(S::px(8))
@@ -2309,7 +2309,7 @@ auto index() -> void {
 //         div()
 //             .width(S::percent(0.4))
 //             .height(S::px(20))
-//             .color(simd_float4{0.22,0.22,0.28,1.0})
+//             .backgroundColor(simd_float4{0.22,0.22,0.28,1.0})
 //             .minWidth(S::px(80))
 //             .maxWidth(S::px(200))
 //             .marginTop(S::px(8))
@@ -2324,7 +2324,7 @@ auto index() -> void {
 div()
     .width(S::percent(1.0))
     .height(S::percent(1.0))
-    .color(simd_float4{0.09,0.09,0.11,1.0})
+    .backgroundColor(simd_float4{0.09,0.09,0.11,1.0})
     .display(gui::Display::Grid)
     .gridTemplateColumns({S::percent(0.5), S::percent(0.5)})
     .gridTemplateRows({S::px(200), S::px(200)})
@@ -2333,7 +2333,7 @@ div()
     .padding(S::px(24))
 (
     div()
-        .color(simd_float4{0.13,0.13,0.16,1.0})
+        .backgroundColor(simd_float4{0.13,0.13,0.16,1.0})
         .display(gui::Display::Flex)
         .flexDirection(gui::FlexDirection::Row)
         .flexGap(S::px(8))
@@ -2343,7 +2343,7 @@ div()
     (
         div()
             .height(S::percent(1.0))
-            .color(simd_float4{0.18,0.72,0.56,1.0})
+            .backgroundColor(simd_float4{0.18,0.72,0.56,1.0})
             .flexGrow(S::px(1))
             .minWidth(S::px(60))
             .maxWidth(S::px(180))
@@ -2351,7 +2351,7 @@ div()
         (),
         div()
             .height(S::percent(1.0))
-            .color(simd_float4{0.22,0.22,0.28,1.0})
+            .backgroundColor(simd_float4{0.22,0.22,0.28,1.0})
             .flexGrow(S::px(3))
             .minWidth(S::px(100))
             .cornerRadius(S::px(6))
@@ -2362,7 +2362,7 @@ div()
         (
             div()
                 .width(S::percent(1.0))
-                .color(simd_float4{0.18,0.72,0.56,1.0})
+                .backgroundColor(simd_float4{0.18,0.72,0.56,1.0})
                 .flexGrow(S::px(1))
                 .minHeight(S::px(24))
                 .maxHeight(S::px(60))
@@ -2370,14 +2370,14 @@ div()
             (),
             div()
                 .width(S::percent(1.0))
-                .color(simd_float4{0.30,0.30,0.36,1.0})
+                .backgroundColor(simd_float4{0.30,0.30,0.36,1.0})
                 .flexGrow(S::px(2))
                 .minHeight(S::px(40))
                 .cornerRadius(S::px(4))
             (),
             div()
                 .width(S::percent(1.0))
-                .color(simd_float4{0.18,0.72,0.56,1.0})
+                .backgroundColor(simd_float4{0.18,0.72,0.56,1.0})
                 .flexGrow(S::px(1))
                 .minHeight(S::px(24))
                 .maxHeight(S::px(60))
@@ -2387,7 +2387,7 @@ div()
     ),
 
     div()
-        .color(simd_float4{0.13,0.13,0.16,1.0})
+        .backgroundColor(simd_float4{0.13,0.13,0.16,1.0})
         .display(gui::Display::Flex)
         .flexDirection(gui::FlexDirection::Col)
         .flexGap(S::px(8))
@@ -2395,7 +2395,7 @@ div()
     (
         div()
             .width(S::percent(1.0))
-            .color(simd_float4{0.22,0.22,0.28,1.0})
+            .backgroundColor(simd_float4{0.22,0.22,0.28,1.0})
             .flexGrow(S::px(1))
             .minHeight(S::px(40))
             .maxHeight(S::px(80))
@@ -2403,7 +2403,7 @@ div()
         (),
         div()
             .width(S::percent(1.0))
-            .color(simd_float4{0.30,0.30,0.36,1.0})
+            .backgroundColor(simd_float4{0.30,0.30,0.36,1.0})
             .flexShrink(S::px(0.0))
             .height(S::px(60))
             .minWidth(S::px(80))
@@ -2411,7 +2411,7 @@ div()
         (),
         div()
             .width(S::percent(1.0))
-            .color(simd_float4{0.22,0.22,0.28,1.0})
+            .backgroundColor(simd_float4{0.22,0.22,0.28,1.0})
             .flexGrow(S::px(2))
             .minHeight(S::px(40))
             .cornerRadius(S::px(6))
@@ -2419,7 +2419,7 @@ div()
     ),
 
     div()
-        .color(simd_float4{0.11,0.11,0.14,1.0})
+        .backgroundColor(simd_float4{0.11,0.11,0.14,1.0})
         .gridColumn(1, 3)
         .display(gui::Display::Flex)
         .flexDirection(gui::FlexDirection::Row)
@@ -2431,7 +2431,7 @@ div()
     (
         div()
             .height(S::px(48))
-            .color(simd_float4{0.18,0.72,0.56,1.0})
+            .backgroundColor(simd_float4{0.18,0.72,0.56,1.0})
             .flexGrow(S::px(1))
             .minWidth(S::px(80))
             .maxWidth(S::px(160))
@@ -2439,7 +2439,7 @@ div()
         (),
         div()
             .height(S::px(48))
-            .color(simd_float4{0.22,0.22,0.28,1.0})
+            .backgroundColor(simd_float4{0.22,0.22,0.28,1.0})
             .flexGrow(S::px(1))
             .minWidth(S::px(80))
             .maxWidth(S::px(160))
@@ -2447,7 +2447,7 @@ div()
         (),
         div()
             .height(S::px(48))
-            .color(simd_float4{0.30,0.30,0.36,1.0})
+            .backgroundColor(simd_float4{0.30,0.30,0.36,1.0})
             .flexGrow(S::px(1))
             .minWidth(S::px(80))
             .maxWidth(S::px(160))
@@ -2455,7 +2455,7 @@ div()
         (),
         div()
             .height(S::px(48))
-            .color(simd_float4{0.18,0.72,0.56,1.0})
+            .backgroundColor(simd_float4{0.18,0.72,0.56,1.0})
             .flexGrow(S::px(1))
             .minWidth(S::px(80))
             .maxWidth(S::px(160))
@@ -2463,7 +2463,7 @@ div()
         (),
         div()
             .height(S::px(48))
-            .color(simd_float4{0.22,0.22,0.28,1.0})
+            .backgroundColor(simd_float4{0.22,0.22,0.28,1.0})
             .flexGrow(S::px(1))
             .minWidth(S::px(80))
             .maxWidth(S::px(160))
@@ -2477,7 +2477,7 @@ div()
 div()
     .width(S::percent(1.0))
     .height(S::percent(1.0))
-    .color(simd_float4{0.04,0.04,0.05,1.0})
+    .backgroundColor(simd_float4{0.04,0.04,0.05,1.0})
     .display(gui::Display::Grid)
     .gridTemplateColumns({S::percent(0.5), S::percent(0.5)})
     .gridTemplateRows({S::percent(0.5), S::percent(0.5)})
@@ -2486,7 +2486,7 @@ div()
     .padding(S::px(24))
 (
     div()
-        .color(simd_float4{0.12,0.12,0.15,1.0})
+        .backgroundColor(simd_float4{0.12,0.12,0.15,1.0})
         .display(gui::Display::Flex)
         .flexDirection(gui::FlexDirection::Row)
         .flexGap(S::px(10))
@@ -2496,7 +2496,7 @@ div()
     (
         div()
             .height(S::percent(1.0))
-            .color(simd_float4{0.95,0.18,0.22,1.0})
+            .backgroundColor(simd_float4{0.95,0.18,0.22,1.0})
             .flexGrow(S::px(2))
             .flexShrink(S::px(1))
             .minWidth(S::px(90))
@@ -2505,7 +2505,7 @@ div()
         (),
         div()
             .height(S::percent(1.0))
-            .color(simd_float4{0.10,0.72,0.95,1.0})
+            .backgroundColor(simd_float4{0.10,0.72,0.95,1.0})
             .flexGrow(S::px(1))
             .flexShrink(S::px(4))
             .minWidth(S::px(160))
@@ -2514,7 +2514,7 @@ div()
         (),
         div()
             .height(S::percent(1.0))
-            .color(simd_float4{0.95,0.84,0.16,1.0})
+            .backgroundColor(simd_float4{0.95,0.84,0.16,1.0})
             .flexGrow(S::px(3))
             .flexShrink(S::px(1))
             .minWidth(S::px(70))
@@ -2524,7 +2524,7 @@ div()
     ),
 
     div()
-        .color(simd_float4{0.12,0.12,0.15,1.0})
+        .backgroundColor(simd_float4{0.12,0.12,0.15,1.0})
         .display(gui::Display::Flex)
         .flexDirection(gui::FlexDirection::Col)
         .flexGap(S::px(10))
@@ -2534,7 +2534,7 @@ div()
     (
         div()
             .width(S::percent(1.0))
-            .color(simd_float4{0.32,0.95,0.42,1.0})
+            .backgroundColor(simd_float4{0.32,0.95,0.42,1.0})
             .flexGrow(S::px(1))
             .flexShrink(S::px(1))
             .minHeight(S::px(42))
@@ -2543,7 +2543,7 @@ div()
         (),
         div()
             .width(S::percent(1.0))
-            .color(simd_float4{0.68,0.28,0.96,1.0})
+            .backgroundColor(simd_float4{0.68,0.28,0.96,1.0})
             .flexGrow(S::px(4))
             .flexShrink(S::px(1))
             .minHeight(S::px(90))
@@ -2552,7 +2552,7 @@ div()
         (),
         div()
             .width(S::percent(1.0))
-            .color(simd_float4{1.00,0.48,0.12,1.0})
+            .backgroundColor(simd_float4{1.00,0.48,0.12,1.0})
             .flexGrow(S::px(2))
             .flexShrink(S::px(3))
             .minHeight(S::px(38))
@@ -2562,7 +2562,7 @@ div()
     ),
 
     div()
-        .color(simd_float4{0.12,0.12,0.15,1.0})
+        .backgroundColor(simd_float4{0.12,0.12,0.15,1.0})
         .display(gui::Display::Grid)
         .gridTemplateColumns({S::percent(0.45), S::percent(0.55)})
         .gridTemplateRows({S::percent(1.0)})
@@ -2573,14 +2573,14 @@ div()
     (
         div()
             .height(S::percent(1.0))
-            .color(simd_float4{0.00,0.78,0.58,1.0})
+            .backgroundColor(simd_float4{0.00,0.78,0.58,1.0})
             .minWidth(S::px(140))
             .maxWidth(S::px(220))
             .cornerRadius(S::px(5))
         (),
         div()
             .height(S::percent(1.0))
-            .color(simd_float4{0.96,0.22,0.62,1.0})
+            .backgroundColor(simd_float4{0.96,0.22,0.62,1.0})
             .display(gui::Display::Flex)
             .flexDirection(gui::FlexDirection::Col)
             .flexGap(S::px(8))
@@ -2591,7 +2591,7 @@ div()
         (
             div()
                 .width(S::percent(1.0))
-                .color(simd_float4{0.98,0.92,0.32,1.0})
+                .backgroundColor(simd_float4{0.98,0.92,0.32,1.0})
                 .flexGrow(S::px(2))
                 .minHeight(S::px(36))
                 .maxHeight(S::px(80))
@@ -2599,7 +2599,7 @@ div()
             (),
             div()
                 .width(S::percent(1.0))
-                .color(simd_float4{0.16,0.36,0.98,1.0})
+                .backgroundColor(simd_float4{0.16,0.36,0.98,1.0})
                 .flexGrow(S::px(1))
                 .minHeight(S::px(52))
                 .maxHeight(S::px(100))
@@ -2609,7 +2609,7 @@ div()
     ),
 
     div()
-        .color(simd_float4{0.12,0.12,0.15,1.0})
+        .backgroundColor(simd_float4{0.12,0.12,0.15,1.0})
         .display(gui::Display::Flex)
         .flexDirection(gui::FlexDirection::Row)
         .flexWrap(gui::FlexWrap::Wrap)
@@ -2620,7 +2620,7 @@ div()
     (
         div()
             .height(S::px(52))
-            .color(simd_float4{0.94,0.18,0.18,1.0})
+            .backgroundColor(simd_float4{0.94,0.18,0.18,1.0})
             .flexGrow(S::px(1))
             .flexShrink(S::px(1))
             .minWidth(S::px(130))
@@ -2629,7 +2629,7 @@ div()
         (),
         div()
             .height(S::px(52))
-            .color(simd_float4{0.16,0.84,0.90,1.0})
+            .backgroundColor(simd_float4{0.16,0.84,0.90,1.0})
             .flexGrow(S::px(3))
             .flexShrink(S::px(1))
             .minWidth(S::px(90))
@@ -2638,7 +2638,7 @@ div()
         (),
         div()
             .height(S::px(52))
-            .color(simd_float4{0.94,0.84,0.14,1.0})
+            .backgroundColor(simd_float4{0.94,0.84,0.14,1.0})
             .flexGrow(S::px(1))
             .flexShrink(S::px(2))
             .minWidth(S::px(150))
@@ -2647,7 +2647,7 @@ div()
         (),
         div()
             .height(S::px(52))
-            .color(simd_float4{0.54,0.28,0.98,1.0})
+            .backgroundColor(simd_float4{0.54,0.28,0.98,1.0})
             .flexGrow(S::px(2))
             .flexShrink(S::px(1))
             .minWidth(S::px(100))
@@ -2662,7 +2662,7 @@ div()
 div()
     .width(S::percent(1.0))
     .height(S::percent(1.0))
-    .color(simd_float4{0.04,0.04,0.05,1.0})
+    .backgroundColor(simd_float4{0.04,0.04,0.05,1.0})
     .display(gui::Display::Grid)
     .gridTemplateColumns({S::percent(0.5), S::percent(0.5)})
     .gridTemplateRows({S::percent(0.5), S::percent(0.5)})
@@ -2671,7 +2671,7 @@ div()
     .padding(S::px(24))
 (
     div()
-        .color(simd_float4{0.12,0.12,0.15,1.0})
+        .backgroundColor(simd_float4{0.12,0.12,0.15,1.0})
         .overflow(gui::Overflow::Scroll)
         .padding(S::px(12))
         .minWidth(S::px(260))
@@ -2682,27 +2682,27 @@ div()
         div()
             .width(S::px(640))
             .height(S::px(56))
-            .color(simd_float4{0.95,0.18,0.22,1.0})
+            .backgroundColor(simd_float4{0.95,0.18,0.22,1.0})
             .cornerRadius(S::px(5))
         (),
         div()
             .width(S::px(500))
             .height(S::px(56))
-            .color(simd_float4{0.10,0.72,0.95,1.0})
+            .backgroundColor(simd_float4{0.10,0.72,0.95,1.0})
             .marginTop(S::px(10))
             .cornerRadius(S::px(5))
         (),
         div()
             .width(S::px(760))
             .height(S::px(56))
-            .color(simd_float4{0.95,0.84,0.16,1.0})
+            .backgroundColor(simd_float4{0.95,0.84,0.16,1.0})
             .marginTop(S::px(10))
             .cornerRadius(S::px(5))
         ()
     ),
 
     div()
-        .color(simd_float4{0.12,0.12,0.15,1.0})
+        .backgroundColor(simd_float4{0.12,0.12,0.15,1.0})
         .overflow(gui::Overflow::Scroll)
         .display(gui::Display::Flex)
         .flexDirection(gui::FlexDirection::Col)
@@ -2716,28 +2716,28 @@ div()
         div()
             .width(S::percent(1.0))
             .height(S::px(90))
-            .color(simd_float4{0.32,0.95,0.42,1.0})
+            .backgroundColor(simd_float4{0.32,0.95,0.42,1.0})
             .minWidth(S::px(360))
             .cornerRadius(S::px(5))
         (),
         div()
             .width(S::percent(1.0))
             .height(S::px(120))
-            .color(simd_float4{0.68,0.28,0.96,1.0})
+            .backgroundColor(simd_float4{0.68,0.28,0.96,1.0})
             .minWidth(S::px(520))
             .cornerRadius(S::px(5))
         (),
         div()
             .width(S::percent(1.0))
             .height(S::px(90))
-            .color(simd_float4{1.00,0.48,0.12,1.0})
+            .backgroundColor(simd_float4{1.00,0.48,0.12,1.0})
             .minWidth(S::px(420))
             .cornerRadius(S::px(5))
         ()
     ),
 
     div()
-        .color(simd_float4{0.12,0.12,0.15,1.0})
+        .backgroundColor(simd_float4{0.12,0.12,0.15,1.0})
         .overflow(gui::Overflow::Scroll)
         .display(gui::Display::Grid)
         .gridTemplateColumns({S::px(220), S::px(260), S::px(180)})
@@ -2751,37 +2751,37 @@ div()
         .maxHeight(S::px(300))
     (
         div()
-            .color(simd_float4{0.00,0.78,0.58,1.0})
+            .backgroundColor(simd_float4{0.00,0.78,0.58,1.0})
             .minWidth(S::px(220))
             .minHeight(S::px(110))
             .cornerRadius(S::px(5))
         (),
         div()
-            .color(simd_float4{0.96,0.22,0.62,1.0})
+            .backgroundColor(simd_float4{0.96,0.22,0.62,1.0})
             .minWidth(S::px(260))
             .minHeight(S::px(110))
             .cornerRadius(S::px(5))
         (),
         div()
-            .color(simd_float4{0.98,0.92,0.32,1.0})
+            .backgroundColor(simd_float4{0.98,0.92,0.32,1.0})
             .minWidth(S::px(180))
             .minHeight(S::px(110))
             .cornerRadius(S::px(5))
         (),
         div()
-            .color(simd_float4{0.16,0.36,0.98,1.0})
+            .backgroundColor(simd_float4{0.16,0.36,0.98,1.0})
             .minWidth(S::px(220))
             .minHeight(S::px(130))
             .cornerRadius(S::px(5))
         (),
         div()
-            .color(simd_float4{0.94,0.18,0.18,1.0})
+            .backgroundColor(simd_float4{0.94,0.18,0.18,1.0})
             .minWidth(S::px(260))
             .minHeight(S::px(130))
             .cornerRadius(S::px(5))
         (),
         div()
-            .color(simd_float4{0.16,0.84,0.90,1.0})
+            .backgroundColor(simd_float4{0.16,0.84,0.90,1.0})
             .minWidth(S::px(180))
             .minHeight(S::px(130))
             .cornerRadius(S::px(5))
@@ -2789,7 +2789,7 @@ div()
     ),
 
     div()
-        .color(simd_float4{0.12,0.12,0.15,1.0})
+        .backgroundColor(simd_float4{0.12,0.12,0.15,1.0})
         .overflow(gui::Overflow::Scroll)
         .display(gui::Display::Flex)
         .flexDirection(gui::FlexDirection::Row)
@@ -2802,21 +2802,21 @@ div()
     (
         div()
             .height(S::percent(1.0))
-            .color(simd_float4{0.95,0.84,0.16,1.0})
+            .backgroundColor(simd_float4{0.95,0.84,0.16,1.0})
             .flexShrink(S::px(0))
             .width(S::px(180))
             .cornerRadius(S::px(5))
         (),
         div()
             .height(S::percent(1.0))
-            .color(simd_float4{0.54,0.28,0.98,1.0})
+            .backgroundColor(simd_float4{0.54,0.28,0.98,1.0})
             .flexShrink(S::px(0))
             .width(S::px(240))
             .cornerRadius(S::px(5))
         (),
         div()
             .height(S::percent(1.0))
-            .color(simd_float4{0.32,0.95,0.42,1.0})
+            .backgroundColor(simd_float4{0.32,0.95,0.42,1.0})
             .flexShrink(S::px(0))
             .width(S::px(300))
             .cornerRadius(S::px(5))
@@ -2829,7 +2829,7 @@ div()
 div()
     .width(S::percent(1.0))
     .height(S::percent(1.0))
-    .color(simd_float4{0.04,0.04,0.05,1.0})
+    .backgroundColor(simd_float4{0.04,0.04,0.05,1.0})
     .display(gui::Display::Grid)
     .gridTemplateColumns({S::percent(0.5), S::percent(0.5)})
     .gridTemplateRows({S::percent(0.5), S::percent(0.5)})
@@ -2838,7 +2838,7 @@ div()
     .padding(S::px(24))
 (
     div()
-        .color(simd_float4{0.12,0.12,0.15,1.0})
+        .backgroundColor(simd_float4{0.12,0.12,0.15,1.0})
         .display(gui::Display::Flex)
         .flexDirection(gui::FlexDirection::Row)
         .justifyContent(gui::JustifyContent::SpaceBetween)
@@ -2851,28 +2851,28 @@ div()
         div()
             .width(S::px(70))
             .height(S::px(50))
-            .color(simd_float4{0.95,0.18,0.22,1.0})
+            .backgroundColor(simd_float4{0.95,0.18,0.22,1.0})
             .alignSelf(gui::AlignSelf::FlexStart)
             .cornerRadius(S::px(5))
         (),
         div()
             .width(S::px(90))
             .height(S::px(80))
-            .color(simd_float4{0.10,0.72,0.95,1.0})
+            .backgroundColor(simd_float4{0.10,0.72,0.95,1.0})
             .alignSelf(gui::AlignSelf::Center)
             .cornerRadius(S::px(5))
         (),
         div()
             .width(S::px(80))
             .height(S::px(55))
-            .color(simd_float4{0.95,0.84,0.16,1.0})
+            .backgroundColor(simd_float4{0.95,0.84,0.16,1.0})
             .alignSelf(gui::AlignSelf::FlexEnd)
             .cornerRadius(S::px(5))
         ()
     ),
 
     div()
-        .color(simd_float4{0.12,0.12,0.15,1.0})
+        .backgroundColor(simd_float4{0.12,0.12,0.15,1.0})
         .display(gui::Display::Flex)
         .flexDirection(gui::FlexDirection::Col)
         .justifyContent(gui::JustifyContent::SpaceBetween)
@@ -2885,28 +2885,28 @@ div()
         div()
             .width(S::px(70))
             .height(S::px(44))
-            .color(simd_float4{0.32,0.95,0.42,1.0})
+            .backgroundColor(simd_float4{0.32,0.95,0.42,1.0})
             .alignSelf(gui::AlignSelf::FlexStart)
             .cornerRadius(S::px(5))
         (),
         div()
             .width(S::px(150))
             .height(S::px(60))
-            .color(simd_float4{0.68,0.28,0.96,1.0})
+            .backgroundColor(simd_float4{0.68,0.28,0.96,1.0})
             .alignSelf(gui::AlignSelf::Center)
             .cornerRadius(S::px(5))
         (),
         div()
             .width(S::px(100))
             .height(S::px(52))
-            .color(simd_float4{1.00,0.48,0.12,1.0})
+            .backgroundColor(simd_float4{1.00,0.48,0.12,1.0})
             .alignSelf(gui::AlignSelf::Auto)
             .cornerRadius(S::px(5))
         ()
     ),
 
     div()
-        .color(simd_float4{0.12,0.12,0.15,1.0})
+        .backgroundColor(simd_float4{0.12,0.12,0.15,1.0})
         .display(gui::Display::Grid)
         .gridTemplateColumns({S::percent(0.5), S::percent(0.5)})
         .gridTemplateRows({S::percent(0.5), S::percent(0.5)})
@@ -2920,26 +2920,26 @@ div()
         div()
             .width(S::px(80))
             .height(S::px(46))
-            .color(simd_float4{0.00,0.78,0.58,1.0})
+            .backgroundColor(simd_float4{0.00,0.78,0.58,1.0})
             .alignSelf(gui::AlignSelf::FlexStart)
             .cornerRadius(S::px(5))
         (),
         div()
             .width(S::px(110))
             .height(S::px(70))
-            .color(simd_float4{0.96,0.22,0.62,1.0})
+            .backgroundColor(simd_float4{0.96,0.22,0.62,1.0})
             .alignSelf(gui::AlignSelf::Center)
             .cornerRadius(S::px(5))
         (),
         div()
             .width(S::px(90))
             .height(S::px(52))
-            .color(simd_float4{0.98,0.92,0.32,1.0})
+            .backgroundColor(simd_float4{0.98,0.92,0.32,1.0})
             .alignSelf(gui::AlignSelf::FlexEnd)
             .cornerRadius(S::px(5))
         (),
         div()
-            .color(simd_float4{0.16,0.36,0.98,1.0})
+            .backgroundColor(simd_float4{0.16,0.36,0.98,1.0})
             .alignSelf(gui::AlignSelf::Stretch)
             .minWidth(S::px(90))
             .maxWidth(S::px(180))
@@ -2950,7 +2950,7 @@ div()
     ),
 
     div()
-        .color(simd_float4{0.12,0.12,0.15,1.0})
+        .backgroundColor(simd_float4{0.12,0.12,0.15,1.0})
         .display(gui::Display::Flex)
         .flexDirection(gui::FlexDirection::Row)
         .justifyContent(gui::JustifyContent::Center)
@@ -2962,7 +2962,7 @@ div()
     (
         div()
             .width(S::px(74))
-            .color(simd_float4{0.94,0.18,0.18,1.0})
+            .backgroundColor(simd_float4{0.94,0.18,0.18,1.0})
             // .alignSelf(gui::AlignSelf::Stretch)
             // .height(S::px(100))
             .minHeight(S::px(60))
@@ -2972,14 +2972,14 @@ div()
         div()
             .width(S::px(120))
             .height(S::px(70))
-            .color(simd_float4{0.16,0.84,0.90,1.0})
+            .backgroundColor(simd_float4{0.16,0.84,0.90,1.0})
             .alignSelf(gui::AlignSelf::Center)
             .cornerRadius(S::px(5))
         (),
         div()
             .width(S::px(90))
             .height(S::px(56))
-            .color(simd_float4{0.54,0.28,0.98,1.0})
+            .backgroundColor(simd_float4{0.54,0.28,0.98,1.0})
             .alignSelf(gui::AlignSelf::FlexEnd)
             .cornerRadius(S::px(5))
         ()
@@ -2992,7 +2992,7 @@ div()
 div()
     .width(S::percent(1.0))
     .height(S::percent(1.0))
-    .color(simd_float4{0.04,0.04,0.05,1.0})
+    .backgroundColor(simd_float4{0.04,0.04,0.05,1.0})
     .display(gui::Display::Grid)
     .gridTemplateColumns({S::fr(1.0), S::fr(1.0)})
     .gridTemplateRows({S::fr(1.0), S::fr(1.0)})
@@ -3001,7 +3001,7 @@ div()
     .padding(S::px(24))
 (
     div()
-        .color(simd_float4{0.12,0.12,0.15,1.0})
+        .backgroundColor(simd_float4{0.12,0.12,0.15,1.0})
         .display(gui::Display::Flex)
         .flexDirection(gui::FlexDirection::Row)
         .flexGap(S::px(10))
@@ -3013,7 +3013,7 @@ div()
         div()
             .width(S::percent(0.35))
             .height(S::percent(1.0))
-            .color(simd_float4{0.95,0.18,0.22,1.0})
+            .backgroundColor(simd_float4{0.95,0.18,0.22,1.0})
             .minWidth(S::px(90))
             .maxWidth(S::px(180))
             .cornerRadius(S::px(5))
@@ -3021,14 +3021,14 @@ div()
         div()
             .width(S::px(140))
             .height(S::percent(1.0))
-            .color(simd_float4{0.10,0.72,0.95,1.0})
+            .backgroundColor(simd_float4{0.10,0.72,0.95,1.0})
             .minWidth(S::px(100))
             .maxWidth(S::px(220))
             .cornerRadius(S::px(5))
         (),
         div()
             .height(S::percent(1.0))
-            .color(simd_float4{0.95,0.84,0.16,1.0})
+            .backgroundColor(simd_float4{0.95,0.84,0.16,1.0})
             .flexGrow(S::px(1))
             .minWidth(S::px(80))
             .maxWidth(S::px(260))
@@ -3037,7 +3037,7 @@ div()
     ),
 
     div()
-        .color(simd_float4{0.12,0.12,0.15,1.0})
+        .backgroundColor(simd_float4{0.12,0.12,0.15,1.0})
         .display(gui::Display::Flex)
         .flexDirection(gui::FlexDirection::Col)
         .flexGap(S::px(10))
@@ -3049,7 +3049,7 @@ div()
         div()
             .width(S::percent(1.0))
             .height(S::percent(0.25))
-            .color(simd_float4{0.32,0.95,0.42,1.0})
+            .backgroundColor(simd_float4{0.32,0.95,0.42,1.0})
             .minHeight(S::px(42))
             .maxHeight(S::px(90))
             .cornerRadius(S::px(5))
@@ -3057,14 +3057,14 @@ div()
         div()
             .width(S::px(180))
             .height(S::px(64))
-            .color(simd_float4{0.68,0.28,0.96,1.0})
+            .backgroundColor(simd_float4{0.68,0.28,0.96,1.0})
             .minWidth(S::px(120))
             .maxWidth(S::px(260))
             .cornerRadius(S::px(5))
         (),
         div()
             .width(S::percent(0.75))
-            .color(simd_float4{1.00,0.48,0.12,1.0})
+            .backgroundColor(simd_float4{1.00,0.48,0.12,1.0})
             .flexGrow(S::px(1))
             .minHeight(S::px(50))
             .maxHeight(S::px(130))
@@ -3073,7 +3073,7 @@ div()
     ),
 
     div()
-        .color(simd_float4{0.12,0.12,0.15,1.0})
+        .backgroundColor(simd_float4{0.12,0.12,0.15,1.0})
         .display(gui::Display::Grid)
         .gridTemplateColumns({S::px(140), S::percent(0.5), S::fr(1.0)})
         .gridTemplateRows({S::px(70), S::percent(0.45), S::fr(1.0)})
@@ -3084,34 +3084,34 @@ div()
         .minHeight(S::px(190))
     (
         div()
-            .color(simd_float4{0.00,0.78,0.58,1.0})
+            .backgroundColor(simd_float4{0.00,0.78,0.58,1.0})
             .minWidth(S::px(90))
             .minHeight(S::px(46))
             .cornerRadius(S::px(5))
         (),
         div()
-            .color(simd_float4{0.96,0.22,0.62,1.0})
+            .backgroundColor(simd_float4{0.96,0.22,0.62,1.0})
             .minWidth(S::px(130))
             .maxWidth(S::px(220))
             .minHeight(S::px(50))
             .cornerRadius(S::px(5))
         (),
         div()
-            .color(simd_float4{0.98,0.92,0.32,1.0})
+            .backgroundColor(simd_float4{0.98,0.92,0.32,1.0})
             .minWidth(S::px(80))
             .maxWidth(S::px(180))
             .minHeight(S::px(50))
             .cornerRadius(S::px(5))
         (),
         div()
-            .color(simd_float4{0.16,0.36,0.98,1.0})
+            .backgroundColor(simd_float4{0.16,0.36,0.98,1.0})
             .gridColumn(1, 3)
             .minHeight(S::px(70))
             .maxHeight(S::px(120))
             .cornerRadius(S::px(5))
         (),
         div()
-            .color(simd_float4{0.94,0.18,0.18,1.0})
+            .backgroundColor(simd_float4{0.94,0.18,0.18,1.0})
             .minWidth(S::px(90))
             .minHeight(S::px(60))
             .cornerRadius(S::px(5))
@@ -3119,7 +3119,7 @@ div()
     ),
 
     div()
-        .color(simd_float4{0.12,0.12,0.15,1.0})
+        .backgroundColor(simd_float4{0.12,0.12,0.15,1.0})
         .display(gui::Display::Flex)
         .flexDirection(gui::FlexDirection::Row)
         .flexWrap(gui::FlexWrap::Wrap)
@@ -3132,14 +3132,14 @@ div()
         div()
             .width(S::percent(0.4))
             .height(S::px(54))
-            .color(simd_float4{0.16,0.84,0.90,1.0})
+            .backgroundColor(simd_float4{0.16,0.84,0.90,1.0})
             .minWidth(S::px(110))
             .maxWidth(S::px(220))
             .cornerRadius(S::px(5))
         (),
         div()
             .height(S::px(54))
-            .color(simd_float4{0.54,0.28,0.98,1.0})
+            .backgroundColor(simd_float4{0.54,0.28,0.98,1.0})
             .flexGrow(S::px(1))
             .minWidth(S::px(90))
             .maxWidth(S::px(180))
@@ -3148,7 +3148,7 @@ div()
         div()
             .width(S::px(150))
             .height(S::px(54))
-            .color(simd_float4{0.95,0.84,0.16,1.0})
+            .backgroundColor(simd_float4{0.95,0.84,0.16,1.0})
             .minWidth(S::px(120))
             .maxWidth(S::px(210))
             .cornerRadius(S::px(5))
@@ -3156,7 +3156,7 @@ div()
         div()
             .width(S::percent(0.65))
             .height(S::px(54))
-            .color(simd_float4{0.32,0.95,0.42,1.0})
+            .backgroundColor(simd_float4{0.32,0.95,0.42,1.0})
             .minWidth(S::px(160))
             .maxWidth(S::px(300))
             .cornerRadius(S::px(5))
@@ -3168,7 +3168,7 @@ div()
 // div()
 //     .width(S::percent(1.0))
 //     .height(S::percent(1.0))
-//     .color(simd_float4{0.04,0.04,0.05,1.0})
+//     .backgroundColor(simd_float4{0.04,0.04,0.05,1.0})
 //     .display(gui::Display::Grid)
 //     .gridTemplateColumns({S::fr(1.0), S::fr(1.0)})
 //     .gridTemplateRows({S::fr(1.0), S::fr(1.0)})
@@ -3177,7 +3177,7 @@ div()
 //     .padding(S::px(40))
 // (
 //     div()
-//         .color(simd_float4{0.12,0.12,0.15,1.0})
+//         .backgroundColor(simd_float4{0.12,0.12,0.15,1.0})
 //         .display(gui::Display::Grid)
 //         .gridTemplateColumns({S::fr(1.0)})
 //         .gridTemplateRows({S::fr(1.0)})
@@ -3188,13 +3188,13 @@ div()
 //         div()
 //             .width(S::px(120))
 //             .height(S::px(80))
-//             .color(simd_float4{0.95,0.18,0.22,1.0})
+//             .backgroundColor(simd_float4{0.95,0.18,0.22,1.0})
 //             .cornerRadius(S::px(5))
 //         ()
 //     ),
 
 //     div()
-//         .color(simd_float4{0.12,0.12,0.15,1.0})
+//         .backgroundColor(simd_float4{0.12,0.12,0.15,1.0})
 //         .display(gui::Display::Grid)
 //         .gridTemplateColumns({S::fr(1.0)})
 //         .gridTemplateRows({S::fr(1.0)})
@@ -3205,13 +3205,13 @@ div()
 //         div()
 //             .width(S::px(120))
 //             .height(S::px(80))
-//             .color(simd_float4{0.32,0.95,0.42,1.0})
+//             .backgroundColor(simd_float4{0.32,0.95,0.42,1.0})
 //             .cornerRadius(S::px(5))
 //         ()
 //     ),
 
 //     div()
-//         .color(simd_float4{0.12,0.12,0.15,1.0})
+//         .backgroundColor(simd_float4{0.12,0.12,0.15,1.0})
 //         .display(gui::Display::Grid)
 //         .gridTemplateColumns({S::fr(1.0)})
 //         .gridTemplateRows({S::fr(1.0)})
@@ -3223,13 +3223,13 @@ div()
 //             .width(S::px(120))
 //             .height(S::px(80))
 //             .justifySelf(gui::JustifySelf::Start)
-//             .color(simd_float4{0.10,0.72,0.95,1.0})
+//             .backgroundColor(simd_float4{0.10,0.72,0.95,1.0})
 //             .cornerRadius(S::px(5))
 //         ()
 //     ),
 
 //     div()
-//         .color(simd_float4{0.12,0.12,0.15,1.0})
+//         .backgroundColor(simd_float4{0.12,0.12,0.15,1.0})
 //         .display(gui::Display::Grid)
 //         .gridTemplateColumns({S::fr(1.0)})
 //         .gridTemplateRows({S::fr(1.0)})
@@ -3240,7 +3240,7 @@ div()
 //         div()
 //             .height(S::px(80))
 //             .justifySelf(gui::JustifySelf::Stretch)
-//             .color(simd_float4{0.54,0.28,0.98,1.0})
+//             .backgroundColor(simd_float4{0.54,0.28,0.98,1.0})
 //             .cornerRadius(S::px(5))
 //         ()
 //     )
@@ -3253,7 +3253,7 @@ div()
 // div()
 //     .width(S::percent(1.0))
 //     .height(S::percent(1.0))
-//     .color(simd_float4{0.04,0.04,0.05,1.0})
+//     .backgroundColor(simd_float4{0.04,0.04,0.05,1.0})
 //     .display(gui::Display::Grid)
 //     .gridTemplateColumns({S::px(260), S::percent(0.35), S::fr(1.0)})
 //     .gridTemplateRows({S::px(178), S::fr(1.0), S::px(148)})
@@ -3264,23 +3264,23 @@ div()
 //     div()
 //         .gridColumn(1, 4)
 //         .gridRow(1, 2)
-//         .color(simd_float4{0.12,0.12,0.15,1.0})
+//         .backgroundColor(simd_float4{0.12,0.12,0.15,1.0})
 //         .display(gui::Display::Flex)
 //         .flexDirection(gui::FlexDirection::Row)
 //         .flexGap(S::px(12))
 //         .padding(S::px(12))
 //         .minHeight(S::px(150))
 //     (
-//         div().width(S::px(170)).height(S::percent(1.0)).minWidth(S::px(120)).maxWidth(S::px(220)).color(simd_float4{0.00,0.78,0.58,1.0}).cornerRadius(S::px(5))(),
-//         div().width(S::percent(0.28)).height(S::percent(1.0)).minWidth(S::px(180)).maxWidth(S::px(420)).color(simd_float4{0.96,0.22,0.62,1.0}).cornerRadius(S::px(5))(),
-//         div().height(S::percent(1.0)).flexGrow(S::px(1)).minWidth(S::px(180)).maxWidth(S::px(520)).color(simd_float4{0.98,0.92,0.32,1.0}).cornerRadius(S::px(5))(),
-//         div().width(S::px(140)).height(S::percent(1.0)).minWidth(S::px(110)).maxWidth(S::px(180)).color(simd_float4{0.16,0.84,0.90,1.0}).cornerRadius(S::px(5))()
+//         div().width(S::px(170)).height(S::percent(1.0)).minWidth(S::px(120)).maxWidth(S::px(220)).backgroundColor(simd_float4{0.00,0.78,0.58,1.0}).cornerRadius(S::px(5))(),
+//         div().width(S::percent(0.28)).height(S::percent(1.0)).minWidth(S::px(180)).maxWidth(S::px(420)).backgroundColor(simd_float4{0.96,0.22,0.62,1.0}).cornerRadius(S::px(5))(),
+//         div().height(S::percent(1.0)).flexGrow(S::px(1)).minWidth(S::px(180)).maxWidth(S::px(520)).backgroundColor(simd_float4{0.98,0.92,0.32,1.0}).cornerRadius(S::px(5))(),
+//         div().width(S::px(140)).height(S::percent(1.0)).minWidth(S::px(110)).maxWidth(S::px(180)).backgroundColor(simd_float4{0.16,0.84,0.90,1.0}).cornerRadius(S::px(5))()
 //     ),
 
 //     div()
 //         .gridColumn(1, 2)
 //         .gridRow(2, 3)
-//         .color(simd_float4{0.12,0.12,0.15,1.0})
+//         .backgroundColor(simd_float4{0.12,0.12,0.15,1.0})
 //         .display(gui::Display::Flex)
 //         .flexDirection(gui::FlexDirection::Col)
 //         .flexGap(S::px(10))
@@ -3288,16 +3288,16 @@ div()
 //         .minWidth(S::px(220))
 //         .minHeight(S::px(220))
 //     (
-//         div().width(S::percent(1.0)).height(S::percent(0.22)).minHeight(S::px(46)).maxHeight(S::px(90)).color(simd_float4{0.95,0.18,0.22,1.0}).cornerRadius(S::px(5))(),
-//         div().width(S::px(155)).height(S::px(62)).minWidth(S::px(120)).maxWidth(S::px(210)).color(simd_float4{0.10,0.72,0.95,1.0}).cornerRadius(S::px(5))(),
-//         div().width(S::percent(0.72)).flexGrow(S::px(1)).minHeight(S::px(70)).maxHeight(S::px(180)).color(simd_float4{1.00,0.48,0.12,1.0}).cornerRadius(S::px(5))(),
-//         div().width(S::percent(0.45)).height(S::px(48)).minWidth(S::px(90)).maxWidth(S::px(150)).color(simd_float4{0.54,0.28,0.98,1.0}).cornerRadius(S::px(5))()
+//         div().width(S::percent(1.0)).height(S::percent(0.22)).minHeight(S::px(46)).maxHeight(S::px(90)).backgroundColor(simd_float4{0.95,0.18,0.22,1.0}).cornerRadius(S::px(5))(),
+//         div().width(S::px(155)).height(S::px(62)).minWidth(S::px(120)).maxWidth(S::px(210)).backgroundColor(simd_float4{0.10,0.72,0.95,1.0}).cornerRadius(S::px(5))(),
+//         div().width(S::percent(0.72)).flexGrow(S::px(1)).minHeight(S::px(70)).maxHeight(S::px(180)).backgroundColor(simd_float4{1.00,0.48,0.12,1.0}).cornerRadius(S::px(5))(),
+//         div().width(S::percent(0.45)).height(S::px(48)).minWidth(S::px(90)).maxWidth(S::px(150)).backgroundColor(simd_float4{0.54,0.28,0.98,1.0}).cornerRadius(S::px(5))()
 //     ),
 
 //     div()
 //         .gridColumn(2, 3)
 //         .gridRow(2, 3)
-//         .color(simd_float4{0.12,0.12,0.15,1.0})
+//         .backgroundColor(simd_float4{0.12,0.12,0.15,1.0})
 //         .display(gui::Display::Grid)
 //         .gridTemplateColumns({S::px(120), S::percent(0.45), S::fr(1.0)})
 //         .gridTemplateRows({S::px(64), S::percent(0.5), S::fr(1.0)})
@@ -3307,18 +3307,18 @@ div()
 //         .minWidth(S::px(300))
 //         .minHeight(S::px(220))
 //     (
-//         div().color(simd_float4{0.32,0.95,0.42,1.0}).minWidth(S::px(90)).minHeight(S::px(46)).cornerRadius(S::px(5))(),
-//         div().color(simd_float4{0.68,0.28,0.96,1.0}).minWidth(S::px(130)).maxWidth(S::px(240)).minHeight(S::px(50)).cornerRadius(S::px(5))(),
-//         div().color(simd_float4{0.98,0.92,0.32,1.0}).minWidth(S::px(80)).maxWidth(S::px(170)).minHeight(S::px(50)).cornerRadius(S::px(5))(),
-//         div().gridColumn(1, 3).color(simd_float4{0.16,0.36,0.98,1.0}).minHeight(S::px(74)).maxHeight(S::px(130)).cornerRadius(S::px(5))(),
-//         div().color(simd_float4{0.94,0.18,0.18,1.0}).minWidth(S::px(90)).minHeight(S::px(60)).cornerRadius(S::px(5))(),
-//         div().gridColumn(1, 4).color(simd_float4{0.16,0.84,0.90,1.0}).minHeight(S::px(46)).maxHeight(S::px(80)).cornerRadius(S::px(5))()
+//         div().backgroundColor(simd_float4{0.32,0.95,0.42,1.0}).minWidth(S::px(90)).minHeight(S::px(46)).cornerRadius(S::px(5))(),
+//         div().backgroundColor(simd_float4{0.68,0.28,0.96,1.0}).minWidth(S::px(130)).maxWidth(S::px(240)).minHeight(S::px(50)).cornerRadius(S::px(5))(),
+//         div().backgroundColor(simd_float4{0.98,0.92,0.32,1.0}).minWidth(S::px(80)).maxWidth(S::px(170)).minHeight(S::px(50)).cornerRadius(S::px(5))(),
+//         div().gridColumn(1, 3).backgroundColor(simd_float4{0.16,0.36,0.98,1.0}).minHeight(S::px(74)).maxHeight(S::px(130)).cornerRadius(S::px(5))(),
+//         div().backgroundColor(simd_float4{0.94,0.18,0.18,1.0}).minWidth(S::px(90)).minHeight(S::px(60)).cornerRadius(S::px(5))(),
+//         div().gridColumn(1, 4).backgroundColor(simd_float4{0.16,0.84,0.90,1.0}).minHeight(S::px(46)).maxHeight(S::px(80)).cornerRadius(S::px(5))()
 //     ),
 
 //     div()
 //         .gridColumn(3, 4)
 //         .gridRow(2, 3)
-//         .color(simd_float4{0.12,0.12,0.15,1.0})
+//         .backgroundColor(simd_float4{0.12,0.12,0.15,1.0})
 //         .display(gui::Display::Flex)
 //         .flexDirection(gui::FlexDirection::Row)
 //         .flexWrap(gui::FlexWrap::Wrap)
@@ -3327,17 +3327,17 @@ div()
 //         .minWidth(S::px(260))
 //         .minHeight(S::px(220))
 //     (
-//         div().width(S::percent(0.36)).height(S::px(58)).minWidth(S::px(110)).maxWidth(S::px(210)).color(simd_float4{0.95,0.84,0.16,1.0}).cornerRadius(S::px(5))(),
-//         div().height(S::px(58)).flexGrow(S::px(1)).minWidth(S::px(120)).maxWidth(S::px(240)).color(simd_float4{0.00,0.78,0.58,1.0}).cornerRadius(S::px(5))(),
-//         div().width(S::px(180)).height(S::px(58)).minWidth(S::px(140)).maxWidth(S::px(220)).color(simd_float4{0.96,0.22,0.62,1.0}).cornerRadius(S::px(5))(),
-//         div().width(S::percent(0.62)).height(S::px(58)).minWidth(S::px(180)).maxWidth(S::px(340)).color(simd_float4{0.16,0.36,0.98,1.0}).cornerRadius(S::px(5))(),
-//         div().height(S::px(58)).flexGrow(S::px(1)).minWidth(S::px(90)).maxWidth(S::px(160)).color(simd_float4{1.00,0.48,0.12,1.0}).cornerRadius(S::px(5))()
+//         div().width(S::percent(0.36)).height(S::px(58)).minWidth(S::px(110)).maxWidth(S::px(210)).backgroundColor(simd_float4{0.95,0.84,0.16,1.0}).cornerRadius(S::px(5))(),
+//         div().height(S::px(58)).flexGrow(S::px(1)).minWidth(S::px(120)).maxWidth(S::px(240)).backgroundColor(simd_float4{0.00,0.78,0.58,1.0}).cornerRadius(S::px(5))(),
+//         div().width(S::px(180)).height(S::px(58)).minWidth(S::px(140)).maxWidth(S::px(220)).backgroundColor(simd_float4{0.96,0.22,0.62,1.0}).cornerRadius(S::px(5))(),
+//         div().width(S::percent(0.62)).height(S::px(58)).minWidth(S::px(180)).maxWidth(S::px(340)).backgroundColor(simd_float4{0.16,0.36,0.98,1.0}).cornerRadius(S::px(5))(),
+//         div().height(S::px(58)).flexGrow(S::px(1)).minWidth(S::px(90)).maxWidth(S::px(160)).backgroundColor(simd_float4{1.00,0.48,0.12,1.0}).cornerRadius(S::px(5))()
 //     ),
 
 //     div()
 //         .gridColumn(1, 4)
 //         .gridRow(3, 4)
-//         .color(simd_float4{0.12,0.12,0.15,1.0})
+//         .backgroundColor(simd_float4{0.12,0.12,0.15,1.0})
 //         .display(gui::Display::Grid)
 //         .gridTemplateColumns({S::percent(0.25), S::px(220), S::fr(1.0), S::px(160)})
 //         .gridTemplateRows({S::fr(1.0)})
@@ -3345,10 +3345,10 @@ div()
 //         .padding(S::px(12))
 //         .minHeight(S::px(120))
 //     (
-//         div().color(simd_float4{0.68,0.28,0.96,1.0}).minWidth(S::px(120)).cornerRadius(S::px(5))(),
-//         div().color(simd_float4{0.10,0.72,0.95,1.0}).minWidth(S::px(160)).maxWidth(S::px(220)).cornerRadius(S::px(5))(),
-//         div().color(simd_float4{0.32,0.95,0.42,1.0}).minWidth(S::px(220)).cornerRadius(S::px(5))(),
-//         div().color(simd_float4{0.95,0.18,0.22,1.0}).minWidth(S::px(120)).cornerRadius(S::px(5))()
+//         div().backgroundColor(simd_float4{0.68,0.28,0.96,1.0}).minWidth(S::px(120)).cornerRadius(S::px(5))(),
+//         div().backgroundColor(simd_float4{0.10,0.72,0.95,1.0}).minWidth(S::px(160)).maxWidth(S::px(220)).cornerRadius(S::px(5))(),
+//         div().backgroundColor(simd_float4{0.32,0.95,0.42,1.0}).minWidth(S::px(220)).cornerRadius(S::px(5))(),
+//         div().backgroundColor(simd_float4{0.95,0.18,0.22,1.0}).minWidth(S::px(120)).cornerRadius(S::px(5))()
 //     )
 // );
 
@@ -3361,7 +3361,7 @@ div()
 //     .height(S::percent(1.0))
 //     .padding(S::px(24))
 //     .overflow(gui::Overflow::Scroll)
-//     .color(simd_float4{0.055,0.067,0.086,1.0})
+//     .backgroundColor(simd_float4{0.055,0.067,0.086,1.0})
 //     .display(gui::Display::Flex)
 //     .flexDirection(gui::FlexDirection::Col)
 //     .flexGap(S::px(18))
@@ -3375,16 +3375,16 @@ div()
 //         .display(gui::Display::Flex)
 //         .alignItems(gui::AlignItems::Center)
 //         .justifyContent(gui::JustifyContent::SpaceBetween)
-//         .color(simd_float4{0.102,0.122,0.161,1.0})
+//         .backgroundColor(simd_float4{0.102,0.122,0.161,1.0})
 //     (
-//         text("FIELD NOTES")
+//         elements::span()
 //             .font(ArialBold)
 //             .fontSize(S::pt(24))
-//             .color(simd_float4{1.0,1.0,1.0,1.0}),
-//         text("Aspect-ratio layout study")
+//             .color(simd_float4{1.0,1.0,1.0,1.0})(text("FIELD NOTES")),
+//         elements::span()
 //             .font(Arial)
 //             .fontSize(S::pt(16))
-//             .color(simd_float4{0.522,0.569,0.678,1.0})
+//             .color(simd_float4{0.522,0.569,0.678,1.0})(text("Aspect-ratio layout study"))
 //     ),
 
 //     div()
@@ -3406,21 +3406,21 @@ div()
 //                 .height(S::autoSize())
 //                 .aspectRatio(4, 1)
 //                 .padding(S::px(24))
-//                 .color(simd_float4{0.180,0.478,0.722,1.0})
+//                 .backgroundColor(simd_float4{0.180,0.478,0.722,1.0})
 //             (
 //                 div()
 //                 (
-//                     text("DESERT LIGHT")
+//                     elements::span()
 //                         .font(ArialBold)
 //                         .fontSize(S::pt(37))
-//                         .color(simd_float4{1.0,1.0,1.0,1.0})
+//                         .color(simd_float4{1.0,1.0,1.0,1.0})(text("DESERT LIGHT"))
 //                 ),
 //                 div()
 //                 (
-//                     text("A responsive hero whose height follows its final width.")
+//                     elements::span()
 //                         .font(Arial)
 //                         .fontSize(S::pt(17))
-//                         .color(simd_float4{0.820,0.902,0.980,1.0})
+//                         .color(simd_float4{0.820,0.902,0.980,1.0})(text("A responsive hero whose height follows its final width."))
 //                 ),
 //                 div()
 //                     .position(gui::Position::Absolute)
@@ -3430,12 +3430,12 @@ div()
 //                     .right(S::px(24))
 //                     .top(S::px(24))
 //                     .padding(S::px(12))
-//                     .color(simd_float4{0.980,0.761,0.200,1.0})
+//                     .backgroundColor(simd_float4{0.980,0.761,0.200,1.0})
 //                 (
-//                     text("FEATURED")
+//                     elements::span()
 //                         .font(ArialBold)
 //                         .fontSize(S::pt(15))
-//                         .color(simd_float4{0.161,0.122,0.039,1.0})
+//                         .color(simd_float4{0.161,0.122,0.039,1.0})(text("FEATURED"))
 //                 )
 //             ),
 
@@ -3450,27 +3450,27 @@ div()
 //                     .height(S::autoSize())
 //                     .aspectRatio(5, 3)
 //                     .padding(S::px(16))
-//                     .color(simd_float4{0.961,0.302,0.459,1.0})
+//                     .backgroundColor(simd_float4{0.961,0.302,0.459,1.0})
 //                 (
-//                     text("CANYON").font(ArialBold).fontSize(S::pt(16)).color(simd_float4{1.0,1.0,1.0,1.0})
+//                     elements::span().font(ArialBold).fontSize(S::pt(16)).color(simd_float4{1.0,1.0,1.0,1.0})(text("CANYON"))
 //                 ),
 //                 div()
 //                     .width(S::percent(1.0))
 //                     .height(S::autoSize())
 //                     .aspectRatio(5, 3)
 //                     .padding(S::px(16))
-//                     .color(simd_float4{0.380,0.922,0.561,1.0})
+//                     .backgroundColor(simd_float4{0.380,0.922,0.561,1.0})
 //                 (
-//                     text("TIDELINE").font(ArialBold).fontSize(S::pt(16)).color(simd_float4{0.039,0.141,0.090,1.0})
+//                     elements::span().font(ArialBold).fontSize(S::pt(16)).color(simd_float4{0.039,0.141,0.090,1.0})(text("TIDELINE"))
 //                 ),
 //                 div()
 //                     .width(S::percent(1.0))
 //                     .height(S::autoSize())
 //                     .aspectRatio(5, 3)
 //                     .padding(S::px(16))
-//                     .color(simd_float4{0.639,0.420,0.961,1.0})
+//                     .backgroundColor(simd_float4{0.639,0.420,0.961,1.0})
 //                 (
-//                     text("NIGHTFALL").font(ArialBold).fontSize(S::pt(16)).color(simd_float4{1.0,1.0,1.0,1.0})
+//                     elements::span().font(ArialBold).fontSize(S::pt(16)).color(simd_float4{1.0,1.0,1.0,1.0})(text("NIGHTFALL"))
 //                 )
 //             )
 //         ),
@@ -3482,29 +3482,29 @@ div()
 //             .display(gui::Display::Flex)
 //             .flexDirection(gui::FlexDirection::Col)
 //             .flexGap(S::px(14))
-//             .color(simd_float4{0.102,0.122,0.161,1.0})
+//             .backgroundColor(simd_float4{0.102,0.122,0.161,1.0})
 //         (
 //             image(butterflyPath, S::percent(1.0), S::autoSize())
 //                 .aspectRatio(1, 1),
-//             text("SPECIMEN 07")
+//             elements::span()
 //                 .font(ArialBold)
 //                 .fontSize(S::pt(19))
-//                 .color(simd_float4{1.0,1.0,1.0,1.0}),
-//             text("The replaced image shares the same square presentation as the GUI reference.")
+//                 .color(simd_float4{1.0,1.0,1.0,1.0})(text("SPECIMEN 07")),
+//             elements::span()
 //                 .font(Arial)
 //                 .fontSize(S::pt(16))
-//                 .color(simd_float4{0.522,0.569,0.678,1.0}),
+//                 .color(simd_float4{0.522,0.569,0.678,1.0})(text("The replaced image shares the same square presentation as the GUI reference.")),
 //             div()
 //                 .width(S::percent(1.0))
 //                 .height(S::autoSize())
 //                 .aspectRatio(3, 1)
 //                 .padding(S::px(12))
-//                 .color(simd_float4{0.980,0.761,0.200,1.0})
+//                 .backgroundColor(simd_float4{0.980,0.761,0.200,1.0})
 //             (
-//                 text("VIEW COLLECTION")
+//                 elements::span()
 //                     .font(ArialBold)
 //                     .fontSize(S::pt(15))
-//                     .color(simd_float4{0.161,0.122,0.039,1.0})
+//                     .color(simd_float4{0.161,0.122,0.039,1.0})(text("VIEW COLLECTION"))
 //             )
 //         )
 //     ),
@@ -3520,16 +3520,16 @@ div()
 //         .display(gui::Display::Flex)
 //         .alignItems(gui::AlignItems::Center)
 //         .justifyContent(gui::JustifyContent::SpaceBetween)
-//         .color(simd_float4{0.141,0.161,0.212,1.0})
+//         .backgroundColor(simd_float4{0.141,0.161,0.212,1.0})
 //     (
-//         text("Build a collection around the dimensions that matter.")
+//         elements::span()
 //             .font(ArialBold)
 //             .fontSize(S::pt(19))
-//             .color(simd_float4{1.0,1.0,1.0,1.0}),
-//         text("EXPLORE ->")
+//             .color(simd_float4{1.0,1.0,1.0,1.0})(text("Build a collection around the dimensions that matter.")),
+//         elements::span()
 //             .font(ArialBold)
 //             .fontSize(S::pt(16))
-//             .color(simd_float4{0.980,0.761,0.200,1.0})
+//             .color(simd_float4{0.980,0.761,0.200,1.0})(text("EXPLORE ->"))
 //     ),
 
 //     div()
@@ -3538,21 +3538,21 @@ div()
 //         .height(S::px(220))
 //         .flexShrink(S::px(0))
 //         .padding(S::px(22))
-//         .color(simd_float4{0.102,0.122,0.161,1.0})
+//         .backgroundColor(simd_float4{0.102,0.122,0.161,1.0})
 //     (
 //         div()
 //         (
-//             text("FLOATING EXHIBIT")
+//             elements::span()
 //                 .font(ArialBold)
 //                 .fontSize(S::pt(19))
-//                 .color(simd_float4{1.0,1.0,1.0,1.0})
+//                 .color(simd_float4{1.0,1.0,1.0,1.0})(text("FLOATING EXHIBIT"))
 //         ),
 //         div()
 //         (
-//             text("This inset-resolved card intentionally crosses the section boundary.")
+//             elements::span()
 //                 .font(Arial)
 //                 .fontSize(S::pt(16))
-//                 .color(simd_float4{0.522,0.569,0.678,1.0})
+//                 .color(simd_float4{0.522,0.569,0.678,1.0})(text("This inset-resolved card intentionally crosses the section boundary."))
 //         ),
 //         div()
 //             .position(gui::Position::Absolute)
@@ -3563,17 +3563,17 @@ div()
 //             .height(S::autoSize())
 //             .aspectRatio(6, 1)
 //             .padding(S::px(18))
-//             .color(simd_float4{0.961,0.302,0.459,1.0})
+//             .backgroundColor(simd_float4{0.961,0.302,0.459,1.0})
 //         (
 //             div()
 //                 .width(S::percent(0.46))
 //                 .height(S::percent(0.34))
-//                 .color(simd_float4{0.980,0.761,0.200,1.0})
+//                 .backgroundColor(simd_float4{0.980,0.761,0.200,1.0})
 //             (),
-//             text("OUT OF FLOW / IN PROPORTION")
+//             elements::span()
 //                 .font(ArialBold)
 //                 .fontSize(S::pt(17))
-//                 .color(simd_float4{1.0,1.0,1.0,1.0})
+//                 .color(simd_float4{1.0,1.0,1.0,1.0})(text("OUT OF FLOW / IN PROPORTION"))
 //         )
 //     ),
 
@@ -3584,12 +3584,12 @@ div()
 //         .paddingTop(S::px(180))
 //         .paddingLeft(S::px(22))
 //         .paddingRight(S::px(22))
-//         .color(simd_float4{0.122,0.141,0.188,1.0})
+//         .backgroundColor(simd_float4{0.122,0.141,0.188,1.0})
 //     (
-//         text("ARCHIVE")
+//         elements::span()
 //             .font(ArialBold)
 //             .fontSize(S::pt(20))
-//             .color(simd_float4{1.0,1.0,1.0,1.0}),
+//             .color(simd_float4{1.0,1.0,1.0,1.0})(text("ARCHIVE")),
 //         div()
 //             .width(S::percent(1.0))
 //             .display(gui::Display::Flex)
@@ -3602,20 +3602,20 @@ div()
 //                 .height(S::px(76))
 //                 .aspectRatio(2, 1)
 //                 .flexShrink(S::px(0))
-//                 .color(simd_float4{0.078,0.722,0.859,1.0})
+//                 .backgroundColor(simd_float4{0.078,0.722,0.859,1.0})
 //             (),
 //             div()
 //                 .width(S::percent(0.38))
 //                 .maxWidth(S::px(360))
 //                 .height(S::autoSize())
 //                 .aspectRatio(3, 1)
-//                 .color(simd_float4{0.380,0.922,0.561,1.0})
+//                 .backgroundColor(simd_float4{0.380,0.922,0.561,1.0})
 //             (),
 //             div()
 //                 .width(S::px(180))
 //                 .height(S::autoSize())
 //                 .aspectRatio(3, 2)
-//                 .color(simd_float4{0.639,0.420,0.961,1.0})
+//                 .backgroundColor(simd_float4{0.639,0.420,0.961,1.0})
 //             ()
 //         )
 //     )
@@ -3644,7 +3644,7 @@ div()
     //         .flexGap(gui::Size::px(20))
     //         .display(gui::Display::Flex)
     //         .alignItems(gui::AlignItems::Stretch)
-    //         .color(simd_float4{1.0,1.0,1.0,1.0})
+    //         .backgroundColor(simd_float4{1.0,1.0,1.0,1.0})
     //         .cornerRadius(gui::Size::px(12))
     //     (
     //         image(butterflyPath, gui::Size::px(128), gui::Size::px(128)),
@@ -3687,19 +3687,19 @@ div()
     //     div(S::minContent(), S::autoSize(), simd_float4{0.20,0.70,0.90,1.0})
     //         .padding(S::px(8))
     //     (
-    //         text(intrinsicText)
+    //         elements::span()
     //             .font(Arial)
     //             .fontSize(S::pt(18))
-    //             .color(simd_float4{0.05,0.05,0.05,1.0})
+    //             .color(simd_float4{0.05,0.05,0.05,1.0})(text(intrinsicText))
     //     ),
     //     div(S::maxContent(), S::autoSize(), simd_float4{0.95,0.55,0.25,1.0})
     //         .padding(S::px(8))
     //         .marginTop(S::px(24))
     //     (
-    //         text(intrinsicText)
+    //         elements::span()
     //             .font(Arial)
     //             .fontSize(S::pt(18))
-    //             .color(simd_float4{0.05,0.05,0.05,1.0})
+    //             .color(simd_float4{0.05,0.05,0.05,1.0})(text(intrinsicText))
     //     )
     // );
 
@@ -3707,10 +3707,10 @@ div()
 
     // div()
     //     // .width(S::px(50))
-    //     .color(simd_float4{0.678, 0.847, 0.902, 1.0})
+    //     .backgroundColor(simd_float4{0.678, 0.847, 0.902, 1.0})
     //     .marginTop(S::px(32))
     // (
-    //     text("hello world").width(S::px(50))
+    //     elements::span().width(S::px(50))(text("hello world"))
     // );
 
     // // Crates: a record-collection browser.
@@ -3748,7 +3748,7 @@ div()
 
     // auto chip = [&](const char* label, simd_float4 fg, simd_float4 fill) {
     //     return div()
-    //         .color(fill)
+    //         .backgroundColor(fill)
     //         .height(S::px(22))
     //         .paddingLeft(S::px(9))
     //         .paddingRight(S::px(9))
@@ -3759,13 +3759,13 @@ div()
     //         .display(Display::Flex)
     //         .alignItems(AlignItems::Center)
     //     (
-    //         text(label).font(SFMono).fontSize(S::pt(10)).color(fg)
+    //         elements::span().font(SFMono).fontSize(S::pt(10)).color(fg)(text(label))
     //     );
     // };
 
     // auto button = [&](const char* label, simd_float4 fill, simd_float4 hoverFill, simd_float4 fg) {
     //     return div()
-    //         .color(fill)
+    //         .backgroundColor(fill)
     //         .height(S::px(36))
     //         .flexGrow(S::px(1))
     //         .cornerRadius(S::px(8))
@@ -3773,13 +3773,13 @@ div()
     //         .alignItems(AlignItems::Center)
     //         .justifyContent(JustifyContent::Center)
     //         .addEventListener(EventType::MouseEnter, [hoverFill](auto& node, Event&) {
-    //             node.color(hoverFill);
+    //             node.backgroundColor(hoverFill);
     //         })
     //         .addEventListener(EventType::MouseLeave, [fill](auto& node, Event&) {
-    //             node.color(fill);
+    //             node.backgroundColor(fill);
     //         })
     //     (
-    //         text(label).font(ArialBold).fontSize(S::pt(12)).color(fg)
+    //         elements::span().font(ArialBold).fontSize(S::pt(12)).color(fg)(text(label))
     //     );
     // };
 
@@ -3787,7 +3787,7 @@ div()
     //     auto selected = std::make_shared<bool>(false);
 
     //     return div()
-    //         .color(transparent)
+    //         .backgroundColor(transparent)
     //         .height(S::px(58))
     //         .flexShrink(S::px(0))
     //         .paddingLeft(S::px(12))
@@ -3798,21 +3798,21 @@ div()
     //         .flexGap(S::px(12))
     //         .addEventListener(EventType::MouseEnter, [selected](auto& node, Event&) {
     //             if (!*selected) {
-    //                 node.color(hover);
+    //                 node.backgroundColor(hover);
     //             }
     //         })
     //         .addEventListener(EventType::MouseLeave, [selected](auto& node, Event&) {
     //             if (!*selected) {
-    //                 node.color(transparent);
+    //                 node.backgroundColor(transparent);
     //             }
     //         })
     //         .addEventListener(EventType::Click, [selected](auto& node, Event&) {
     //             *selected = !*selected;
 
     //             if (*selected) {
-    //                 node.color(coralDim);
+    //                 node.backgroundColor(coralDim);
     //             } else {
-    //                 node.color(hover);
+    //                 node.backgroundColor(hover);
     //             }
     //         })
     //     (
@@ -3823,7 +3823,7 @@ div()
     //             .alignItems(AlignItems::Center)
     //             .justifyContent(JustifyContent::Center)
     //         (
-    //             text(initials).font(DINAlternateBold).fontSize(S::pt(12)).color(bg)
+    //             elements::span().font(DINAlternateBold).fontSize(S::pt(12)).color(bg)(text(initials))
     //         ),
     //         div()
     //             .flexGrow(S::px(1))
@@ -3832,8 +3832,8 @@ div()
     //             .flexDirection(FlexDirection::Col)
     //             .flexGap(S::px(3))
     //         (
-    //             text(artist).font(ArialBold).fontSize(S::pt(13)).color(ink),
-    //             text(meta).font(SFMono).fontSize(S::pt(10)).color(muted)
+    //             elements::span().font(ArialBold).fontSize(S::pt(13)).color(ink)(text(artist)),
+    //             elements::span().font(SFMono).fontSize(S::pt(10)).color(muted)(text(meta))
     //         ),
     //         chip(genre, muted, raised)
     //     );
@@ -3849,7 +3849,7 @@ div()
     //             .position(gui::Position::Sticky)
     //             .top(S::px(0))
     //             .zIndex(1)
-    //             .color(panel)
+    //             .backgroundColor(panel)
     //             .height(S::px(34))
     //             .flexShrink(S::px(0))
     //             .paddingLeft(S::px(12))
@@ -3858,8 +3858,8 @@ div()
     //             .alignItems(AlignItems::Center)
     //             .justifyContent(JustifyContent::SpaceBetween)
     //         (
-    //             text(letter).font(DINAlternateBold).fontSize(S::pt(15)).color(coral),
-    //             text(count).font(SFMono).fontSize(S::pt(10)).color(muted)
+    //             elements::span().font(DINAlternateBold).fontSize(S::pt(15)).color(coral)(text(letter)),
+    //             elements::span().font(SFMono).fontSize(S::pt(10)).color(muted)(text(count))
     //         ),
     //         rows...
     //     );
@@ -3870,8 +3870,8 @@ div()
     //         .display(Display::Flex)
     //         .justifyContent(JustifyContent::SpaceBetween)
     //     (
-    //         text(label).font(SF).fontSize(S::pt(11)).color(muted),
-    //         text(value).font(SFMono).fontSize(S::pt(11)).color(ink)
+    //         elements::span().font(SF).fontSize(S::pt(11)).color(muted)(text(label)),
+    //         elements::span().font(SFMono).fontSize(S::pt(11)).color(ink)(text(value))
     //     );
     // };
 
@@ -3901,8 +3901,8 @@ div()
     //                 .cornerRadiusTopRight(S::px(4))
     //                 .cornerRadiusBottomLeft(S::px(4))
     //             (),
-    //             text("CRATES").font(DINAlternateBold).fontSize(S::pt(20)).color(ink),
-    //             text("16 records · 6 shelves").font(SFMono).fontSize(S::pt(11)).color(muted)
+    //             elements::span().font(DINAlternateBold).fontSize(S::pt(20)).color(ink)(text("CRATES")),
+    //             elements::span().font(SFMono).fontSize(S::pt(11)).color(muted)(text("16 records · 6 shelves"))
     //         ),
     //         div()
     //             .display(Display::Flex)
@@ -3910,7 +3910,7 @@ div()
     //             .flexGap(S::px(8))
     //         (
     //             div()
-    //                 .color(panel)
+    //                 .backgroundColor(panel)
     //                 .borderColor(outline)
     //                 .borderWidth(S::px(1))
     //                 .height(S::px(34))
@@ -3920,10 +3920,10 @@ div()
     //                 .display(Display::Flex)
     //                 .alignItems(AlignItems::Center)
     //             (
-    //                 text("Search the shelf").font(SF).fontSize(S::pt(12)).color(muted)
+    //                 elements::span().font(SF).fontSize(S::pt(12)).color(muted)(text("Search the shelf"))
     //             ),
     //             div()
-    //                 .color(raised)
+    //                 .backgroundColor(raised)
     //                 .height(S::px(34))
     //                 .paddingLeft(S::px(14))
     //                 .paddingRight(S::px(14))
@@ -3934,13 +3934,13 @@ div()
     //                     on = !on;
 
     //                     if (on) {
-    //                         node.color(coral);
+    //                         node.backgroundColor(coral);
     //                     } else {
-    //                         node.color(raised);
+    //                         node.backgroundColor(raised);
     //                     }
     //                 })
     //             (
-    //                 text("Shuffle").font(ArialBold).fontSize(S::pt(12)).color(ink)
+    //                 elements::span().font(ArialBold).fontSize(S::pt(12)).color(ink)(text("Shuffle"))
     //             )
     //         )
     //     ),
@@ -3957,7 +3957,7 @@ div()
     //     (
     //         // Shelf: scrollport with sticky letter headers
     //         div()
-    //             .color(panel)
+    //             .backgroundColor(panel)
     //             .borderColor(outline)
     //             .borderWidth(S::px(1))
     //             .cornerRadius(S::px(14))
@@ -4008,7 +4008,7 @@ div()
     //         div()
     //             .width(S::px(300))
     //             .flexShrink(S::px(0))
-    //             .color(panel)
+    //             .backgroundColor(panel)
     //             .borderColor(outline)
     //             .borderWidth(S::px(1))
     //             .cornerRadius(S::px(14))
@@ -4030,7 +4030,7 @@ div()
     //                     .position(gui::Position::Absolute)
     //                     .top(S::px(10))
     //                     .right(S::px(10))
-    //                     .color(coral)
+    //                     .backgroundColor(coral)
     //                     .height(S::px(22))
     //                     .paddingLeft(S::px(9))
     //                     .paddingRight(S::px(9))
@@ -4038,7 +4038,7 @@ div()
     //                     .display(Display::Flex)
     //                     .alignItems(AlignItems::Center)
     //                 (
-    //                     text("NOW PLAYING").font(DINAlternateBold).fontSize(S::pt(10)).color(bg)
+    //                     elements::span().font(DINAlternateBold).fontSize(S::pt(10)).color(bg)(text("NOW PLAYING"))
     //                 )
     //             ),
     //             div()
@@ -4046,8 +4046,8 @@ div()
     //                 .flexDirection(FlexDirection::Col)
     //                 .flexGap(S::px(3))
     //             (
-    //                 text("Loveless").font(NewYork).fontSize(S::pt(22)).color(ink),
-    //                 text("My Bloody Valentine · 1991").font(SF).fontSize(S::pt(12)).color(muted)
+    //                 elements::span().font(NewYork).fontSize(S::pt(22)).color(ink)(text("Loveless")),
+    //                 elements::span().font(SF).fontSize(S::pt(12)).color(muted)(text("My Bloody Valentine · 1991"))
     //             ),
     //             div()
     //                 .display(Display::Flex)
@@ -4069,19 +4069,19 @@ div()
     //                     .display(Display::Flex)
     //                     .justifyContent(JustifyContent::SpaceBetween)
     //                 (
-    //                     text("Only Shallow").font(ArialBold).fontSize(S::pt(12)).color(ink),
-    //                     text("01:58 / 04:17").font(SFMono).fontSize(S::pt(10)).color(muted)
+    //                     elements::span().font(ArialBold).fontSize(S::pt(12)).color(ink)(text("Only Shallow")),
+    //                     elements::span().font(SFMono).fontSize(S::pt(10)).color(muted)(text("01:58 / 04:17"))
     //                 ),
     //                 div()
     //                     .width(S::percent(1.0))
     //                     .height(S::px(6))
-    //                     .color(raised)
+    //                     .backgroundColor(raised)
     //                     .cornerRadius(S::px(3))
     //                 (
     //                     div()
     //                         .width(S::percent(0.46))
     //                         .height(S::percent(1.0))
-    //                         .color(coral)
+    //                         .backgroundColor(coral)
     //                         .cornerRadius(S::px(3))
     //                     ()
     //                 )
@@ -4093,7 +4093,7 @@ div()
     //                 button("Play", coral, avatarA, bg),
     //                 button("Queue", raised, hover, ink)
     //             ),
-    //             div().height(S::px(1)).color(outline)(),
+    //             div().height(S::px(1)).backgroundColor(outline)(),
     //             div()
     //                 .display(Display::Flex)
     //                 .flexDirection(FlexDirection::Col)
@@ -4146,8 +4146,8 @@ div()
     //         .flexDirection(FlexDirection::Col)
     //         .flexGap(S::px(3))
     //     (
-    //         text(title).font(ArialBold).fontSize(S::pt(12)).color(ink),
-    //         text(spec).font(SFMono).fontSize(S::pt(9)).color(muted)
+    //         elements::span().font(ArialBold).fontSize(S::pt(12)).color(ink)(text(title)),
+    //         elements::span().font(SFMono).fontSize(S::pt(9)).color(muted)(text(spec))
     //     );
     // };
 
@@ -4176,11 +4176,11 @@ div()
     //         .flexGap(S::px(8))
     //         .marginBottom(S::px(28))
     //     (
-    //         text("ELEVATION").font(DINAlternateBold).fontSize(S::pt(26)).color(ink),
-    //         text("box-shadow on divs and images · hover the button, click to press it")
-    //             .font(SFMono).fontSize(S::pt(11)).color(muted)
+    //         elements::span().font(DINAlternateBold).fontSize(S::pt(26)).color(ink)(text("ELEVATION")),
+    //         elements::span()
+    //             .font(SFMono).fontSize(S::pt(11)).color(muted)(text("box-shadow on divs and images · hover the button, click to press it"))
     //     ),
-    //     div().height(S::px(1)).color(rule)(),
+    //     div().height(S::px(1)).backgroundColor(rule)(),
 
     //     div()
     //         .display(Display::Flex)
@@ -4342,7 +4342,7 @@ div()
     //                     }
     //                 })
     //             (
-    //                 text("press me").font(ArialBold).fontSize(S::pt(12)).color(paper)
+    //                 elements::span().font(ArialBold).fontSize(S::pt(12)).color(paper)(text("press me"))
     //             ),
     //             "Interactive", "hover: lift · click: inset"
     //         )
@@ -4379,8 +4379,8 @@ div()
     //             .flexDirection(FlexDirection::Col)
     //             .flexGap(S::px(3))
     //         (
-    //             text(title).font(ArialBold).fontSize(S::pt(12)).color(ink),
-    //             text(spec).font(SFMono).fontSize(S::pt(9)).color(muted)
+    //             elements::span().font(ArialBold).fontSize(S::pt(12)).color(ink)(text(title)),
+    //             elements::span().font(SFMono).fontSize(S::pt(9)).color(muted)(text(spec))
     //         );
     //     };
 
@@ -4407,8 +4407,8 @@ div()
     //             .marginTop(S::px(36))
     //             .marginBottom(S::px(8))
     //         (
-    //             text(title).font(DINAlternateBold).fontSize(S::pt(18)).color(ink),
-    //             div().height(S::px(1)).color(rule)()
+    //             elements::span().font(DINAlternateBold).fontSize(S::pt(18)).color(ink)(text(title)),
+    //             div().height(S::px(1)).backgroundColor(rule)()
     //         );
     //     };
 
@@ -4448,7 +4448,7 @@ div()
     //             .alignItems(AlignItems::Center)
     //             .paddingLeft(S::px(10))
     //         (
-    //             text("probe").font(ArialBold).fontSize(S::pt(11)).color(paper)
+    //             elements::span().font(ArialBold).fontSize(S::pt(11)).color(paper)(text("probe"))
     //         );
     //     };
 
@@ -4457,7 +4457,7 @@ div()
     //             .cornerRadius(S::px(6))
     //             .padding(S::px(10))
     //         (
-    //             text("in-flow").font(SFMono).fontSize(S::pt(10)).color(muted)
+    //             elements::span().font(SFMono).fontSize(S::pt(10)).color(muted)(text("in-flow"))
     //         );
     //     };
 
@@ -4479,9 +4479,9 @@ div()
     //             .flexDirection(FlexDirection::Col)
     //             .flexGap(S::px(8))
     //         (
-    //             text("TRANSFORMS").font(DINAlternateBold).fontSize(S::pt(26)).color(ink),
-    //             text("ghost = layout box · transforms never move layout")
-    //                 .font(SFMono).fontSize(S::pt(11)).color(muted)
+    //             elements::span().font(DINAlternateBold).fontSize(S::pt(26)).color(ink)(text("TRANSFORMS")),
+    //             elements::span()
+    //                 .font(SFMono).fontSize(S::pt(11)).color(muted)(text("ghost = layout box · transforms never move layout"))
     //         ),
 
     //         section("Rendering • origin is box center • order is T•R•S"),
@@ -4525,7 +4525,7 @@ div()
     //                 ghosted(
     //                     card(mint).rotate(0.5f)
     //                         .addEventListener(EventType::Click, [](auto& node, Event&) {
-    //                             node.color(node.color().y > 0.5f ? grape : mint);
+    //                             node.backgroundColor(node.backgroundColor().y > 0.5f ? grape : mint);
     //                         })
     //                     ()
     //                 )
@@ -4552,7 +4552,7 @@ div()
     //                         div(S::px(70), S::px(40), grape)
     //                             .cornerRadius(S::px(8))
     //                             .addEventListener(EventType::Click, [](auto& node, Event&) {
-    //                                 node.color(node.color().x > 0.5f ? grape : tangerine);
+    //                                 node.backgroundColor(node.backgroundColor().x > 0.5f ? grape : tangerine);
     //                             })
     //                         ()
     //                     )
@@ -4690,8 +4690,8 @@ div()
     //             .flexDirection(FlexDirection::Col)
     //             .flexGap(S::px(3))
     //         (
-    //             text(title).font(ArialBold).fontSize(S::pt(12)).color(ink),
-    //             text(spec).font(SFMono).fontSize(S::pt(9)).color(muted)
+    //             elements::span().font(ArialBold).fontSize(S::pt(12)).color(ink)(text(title)),
+    //             elements::span().font(SFMono).fontSize(S::pt(9)).color(muted)(text(spec))
     //         );
     //     };
 
@@ -4727,11 +4727,11 @@ div()
     //             .flexGap(S::px(8))
     //             .marginBottom(S::px(28))
     //         (
-    //             text("STROKES").font(DINAlternateBold).fontSize(S::pt(26)).color(ink),
-    //             text("border-style on divs and images · click the last card to cycle its style")
-    //                 .font(SFMono).fontSize(S::pt(11)).color(muted)
+    //             elements::span().font(DINAlternateBold).fontSize(S::pt(26)).color(ink)(text("STROKES")),
+    //             elements::span()
+    //                 .font(SFMono).fontSize(S::pt(11)).color(muted)(text("border-style on divs and images · click the last card to cycle its style"))
     //         ),
-    //         div().height(S::px(1)).color(rule)(),
+    //         div().height(S::px(1)).backgroundColor(rule)(),
 
     //         div()
     //             .display(Display::Flex)
@@ -4799,7 +4799,7 @@ div()
     //                         }
     //                     })
     //                 (
-    //                     text("click me").font(ArialBold).fontSize(S::pt(12)).color(paper)
+    //                     elements::span().font(ArialBold).fontSize(S::pt(12)).color(paper)(text("click me"))
     //                 ),
     //                 "Interactive", "click: solid → dashed → dotted → double")
     //         )
@@ -4837,8 +4837,8 @@ div()
 //                 .flexDirection(FlexDirection::Col)
 //                 .flexGap(S::px(3))
 //             (
-//                 text(title).font(ArialBold).fontSize(S::pt(12)).color(ink),
-//                 text(spec).font(SFMono).fontSize(S::pt(9)).color(muted)
+//                 elements::span().font(ArialBold).fontSize(S::pt(12)).color(ink)(text(title)),
+//                 elements::span().font(SFMono).fontSize(S::pt(9)).color(muted)(text(spec))
 //             );
 //         };
 // 
@@ -4865,8 +4865,8 @@ div()
 //                 .marginTop(S::px(36))
 //                 .marginBottom(S::px(8))
 //             (
-//                 text(title).font(DINAlternateBold).fontSize(S::pt(18)).color(ink),
-//                 div().height(S::px(1)).color(rule)()
+//                 elements::span().font(DINAlternateBold).fontSize(S::pt(18)).color(ink)(text(title)),
+//                 div().height(S::px(1)).backgroundColor(rule)()
 //             );
 //         };
 // 
@@ -4915,9 +4915,9 @@ div()
 //                 .flexDirection(FlexDirection::Col)
 //                 .flexGap(S::px(8))
 //             (
-//                 text("OPACITY").font(DINAlternateBold).fontSize(S::pt(26)).color(ink),
-//                 text("effective = product of ancestors · per-primitive, no group compositing")
-//                     .font(SFMono).fontSize(S::pt(11)).color(muted)
+//                 elements::span().font(DINAlternateBold).fontSize(S::pt(26)).color(ink)(text("OPACITY")),
+//                 elements::span()
+//                     .font(SFMono).fontSize(S::pt(11)).color(muted)(text("effective = product of ancestors · per-primitive, no group compositing"))
 //             ),
 // 
 //             section("Levels · fill and border fade together"),
@@ -4992,7 +4992,7 @@ div()
 //                     backdrop(
 //                         centered(card(paper).opacity(0.4f))
 //                         (
-//                             text("Opacity").font(DINAlternateBold).fontSize(S::pt(22)).color(ink)
+//                             elements::span().font(DINAlternateBold).fontSize(S::pt(22)).color(ink)(text("Opacity"))
 //                         )
 //                     )
 //                 ),
@@ -5010,7 +5010,7 @@ div()
 //             row(
 //                 cell("text 0.5", "premultiplied path",
 //                     backdrop(
-//                         text("Opacity").font(DINAlternateBold).fontSize(S::pt(26)).color(ink).opacity(0.5f)
+//                         elements::span().font(DINAlternateBold).fontSize(S::pt(26)).color(ink).opacity(0.5f)(text("Opacity"))
 //                     )
 //                 ),
 //                 cell("image 0.5", "",
@@ -5120,7 +5120,7 @@ div()
     //     constexpr simd_float4 blue {0.000, 0.400, 0.850, 1.0};
 
     //     auto link = [&](const std::string& label, std::string url) {
-    //         return text(label).fontSize(S::pt(14)).color(blue)
+    //         return elements::span().fontSize(S::pt(14)).color(blue)(text(label))
     //             .addEventListener(EventType::Click, [url = std::move(url)](auto&, Event&) {
     //                 AppKit_Extensions::openURL(url.c_str());
     //             });
@@ -5131,9 +5131,9 @@ div()
     //     (
     //         div()
     //         (
-    //             text("This paragraph has a ").fontSize(S::pt(14)).color(ink),
+    //             elements::span().fontSize(S::pt(14)).color(ink)(text("This paragraph has a ")),
     //             link("link to the repo", "https://github.com/taanishr/butterfly"),
-    //             text(" in the middle of it, and another one at the end: ").fontSize(S::pt(14)).color(ink),
+    //             elements::span().fontSize(S::pt(14)).color(ink)(text(" in the middle of it, and another one at the end: ")),
     //             link("apple.com", "https://www.apple.com")
     //         )
     //     );
@@ -5148,208 +5148,208 @@ div()
     // base direction is not a builder property; it is inherited from the default at
     // layout.hpp InheritedProperties::direction. flip that to rtl and recompile for the
     // rtl base pass, which is why these rows are written to be read under either base.
-    {
-        using S = gui::Size;
+    // {
+    //     using S = gui::Size;
 
-        auto marginRow = [&](const char* label, const char* content, auto configure) {
-            return div()
-                .display(gui::Display::Flex)
-                .flexDirection(gui::FlexDirection::Col)
-                .alignItems(gui::AlignItems::FlexStart)
-                .flexGap(S::px(6))
-            (
-                text(label)
-                    .font(Arial)
-                    .fontSize(S::pt(12))
-                    .color(simd_float4{0.38,0.92,0.56,1.0}),
-                div(S::autoSize(), S::autoSize(), simd_float4{0.15,0.16,0.20,1.0})
-                (
-                    configure(
-                        text(content)
-                            .font(Arial)
-                            .fontSize(S::pt(18))
-                            .color(simd_float4{0.98,0.76,0.20,1.0})
-                    )
-                )
-            );
-        };
+    //     auto marginRow = [&](const char* label, const char* content, auto configure) {
+    //         return div()
+    //             .display(gui::Display::Flex)
+    //             .flexDirection(gui::FlexDirection::Col)
+    //             .alignItems(gui::AlignItems::FlexStart)
+    //             .flexGap(S::px(6))
+    //         (
+    //             elements::span()
+    //                 .font(Arial)
+    //                 .fontSize(S::pt(12))
+    //                 .color(simd_float4{0.38,0.92,0.56,1.0})(text(label)),
+    //             div(S::autoSize(), S::autoSize(), simd_float4{0.15,0.16,0.20,1.0})
+    //             (
+    //                 configure(
+    //                     elements::span()
+    //                         .font(Arial)
+    //                         .fontSize(S::pt(18))
+    //                         .color(simd_float4{0.98,0.76,0.20,1.0})(text(content))
+    //                 )
+    //             )
+    //         );
+    //     };
 
-        auto adjacentRow = [&](const char* label, auto configureFirst, auto configureSecond) {
-            return div()
-                .display(gui::Display::Flex)
-                .flexDirection(gui::FlexDirection::Col)
-                .alignItems(gui::AlignItems::FlexStart)
-                .flexGap(S::px(6))
-            (
-                text(label)
-                    .font(Arial)
-                    .fontSize(S::pt(12))
-                    .color(simd_float4{0.38,0.92,0.56,1.0}),
-                div(S::autoSize(), S::autoSize(), simd_float4{0.15,0.16,0.20,1.0})
-                (
-                    configureFirst(
-                        text("alpha")
-                            .font(Arial)
-                            .fontSize(S::pt(18))
-                            .color(simd_float4{0.98,0.76,0.20,1.0})
-                    ),
-                    configureSecond(
-                        text("beta")
-                            .font(Arial)
-                            .fontSize(S::pt(18))
-                            .color(simd_float4{0.45,0.80,0.98,1.0})
-                    )
-                )
-            );
-        };
+    //     auto adjacentRow = [&](const char* label, auto configureFirst, auto configureSecond) {
+    //         return div()
+    //             .display(gui::Display::Flex)
+    //             .flexDirection(gui::FlexDirection::Col)
+    //             .alignItems(gui::AlignItems::FlexStart)
+    //             .flexGap(S::px(6))
+    //         (
+    //             elements::span()
+    //                 .font(Arial)
+    //                 .fontSize(S::pt(12))
+    //                 .color(simd_float4{0.38,0.92,0.56,1.0})(text(label)),
+    //             div(S::autoSize(), S::autoSize(), simd_float4{0.15,0.16,0.20,1.0})
+    //             (
+    //                 configureFirst(
+    //                     elements::span()
+    //                         .font(Arial)
+    //                         .fontSize(S::pt(18))
+    //                         .color(simd_float4{0.98,0.76,0.20,1.0})(text("alpha"))
+    //                 ),
+    //                 configureSecond(
+    //                     elements::span()
+    //                         .font(Arial)
+    //                         .fontSize(S::pt(18))
+    //                         .color(simd_float4{0.45,0.80,0.98,1.0})(text("beta"))
+    //                 )
+    //             )
+    //         );
+    //     };
 
-        constexpr const char* latin = "alpha beta gamma delta";
-        // pure rtl run: under an ltr base every fragment takes an odd bidi level, so
-        // reorderLineFragments reverses the whole run.
-        constexpr const char* hebrew = "שלום עולם שלום עולם";
-        // mixed runs: only the hebrew spans reverse, so the element's logically first
-        // and last fragments are NOT the visually leftmost and rightmost ones.
-        constexpr const char* mixed = "alpha שלום beta עולם";
+    //     constexpr const char* latin = "alpha beta gamma delta";
+    //     // pure rtl run: under an ltr base every fragment takes an odd bidi level, so
+    //     // reorderLineFragments reverses the whole run.
+    //     constexpr const char* hebrew = "שלום עולם שלום עולם";
+    //     // mixed runs: only the hebrew spans reverse, so the element's logically first
+    //     // and last fragments are NOT the visually leftmost and rightmost ones.
+    //     constexpr const char* mixed = "alpha שלום beta עולם";
 
-        div(S::percent(1.0), S::percent(1.0), simd_float4{0.06,0.07,0.09,1.0})
-            .display(gui::Display::Flex)
-            .flexDirection(gui::FlexDirection::Col)
-            .alignItems(gui::AlignItems::FlexStart)
-            .padding(S::px(48))
-            .flexGap(S::px(20))
-            .overflow(gui::Overflow::Scroll)
-        (
-            text("INLINE MARGINS ON MULTI WORD TEXT")
-                .font(Arial)
-                .fontSize(S::pt(22))
-                .color(simd_float4{0.96,0.97,1.0,1.0}),
+    //     div(S::percent(1.0), S::percent(1.0), simd_float4{0.06,0.07,0.09,1.0})
+    //         .display(gui::Display::Flex)
+    //         .flexDirection(gui::FlexDirection::Col)
+    //         .alignItems(gui::AlignItems::FlexStart)
+    //         .padding(S::px(48))
+    //         .flexGap(S::px(20))
+    //         .overflow(gui::Overflow::Scroll)
+    //     (
+    //         elements::span()
+    //             .font(Arial)
+    //             .fontSize(S::pt(22))
+    //             .color(simd_float4{0.96,0.97,1.0,1.0})(text("INLINE MARGINS ON MULTI WORD TEXT")),
 
-            marginRow("LATIN, NO MARGIN (CONTROL)", latin, [](auto t) { return t; }),
-            marginRow("LATIN, MARGIN RIGHT 20", latin, [&](auto t) { return t.marginRight(S::px(20)); }),
-            marginRow("LATIN, MARGIN LEFT 20", latin, [&](auto t) { return t.marginLeft(S::px(20)); }),
-            marginRow("LATIN, MARGIN LEFT 20 + RIGHT 20", latin, [&](auto t) {
-                return t.marginLeft(S::px(20)).marginRight(S::px(20));
-            }),
+    //         marginRow("LATIN, NO MARGIN (CONTROL)", latin, [](auto t) { return t; }),
+    //         marginRow("LATIN, MARGIN RIGHT 20", latin, [&](auto t) { return t.marginRight(S::px(20)); }),
+    //         marginRow("LATIN, MARGIN LEFT 20", latin, [&](auto t) { return t.marginLeft(S::px(20)); }),
+    //         marginRow("LATIN, MARGIN LEFT 20 + RIGHT 20", latin, [&](auto t) {
+    //             return t.marginLeft(S::px(20)).marginRight(S::px(20));
+    //         }),
 
-            marginRow("RTL RUN, NO MARGIN (CONTROL)", hebrew, [](auto t) { return t; }),
-            marginRow("RTL RUN, MARGIN RIGHT 20", hebrew, [&](auto t) { return t.marginRight(S::px(20)); }),
-            marginRow("RTL RUN, MARGIN LEFT 20", hebrew, [&](auto t) { return t.marginLeft(S::px(20)); }),
+    //         marginRow("RTL RUN, NO MARGIN (CONTROL)", hebrew, [](auto t) { return t; }),
+    //         marginRow("RTL RUN, MARGIN RIGHT 20", hebrew, [&](auto t) { return t.marginRight(S::px(20)); }),
+    //         marginRow("RTL RUN, MARGIN LEFT 20", hebrew, [&](auto t) { return t.marginLeft(S::px(20)); }),
 
-            marginRow("MIXED, NO MARGIN (CONTROL)", mixed, [](auto t) { return t; }),
-            marginRow("MIXED, MARGIN RIGHT 20", mixed, [&](auto t) { return t.marginRight(S::px(20)); }),
-            marginRow("MIXED, MARGIN LEFT 20", mixed, [&](auto t) { return t.marginLeft(S::px(20)); }),
+    //         marginRow("MIXED, NO MARGIN (CONTROL)", mixed, [](auto t) { return t; }),
+    //         marginRow("MIXED, MARGIN RIGHT 20", mixed, [&](auto t) { return t.marginRight(S::px(20)); }),
+    //         marginRow("MIXED, MARGIN LEFT 20", mixed, [&](auto t) { return t.marginLeft(S::px(20)); }),
 
-            adjacentRow("ADJACENT, NO MARGIN (CONTROL)",
-                [](auto t) { return t; },
-                [](auto t) { return t; }),
-            adjacentRow("ADJACENT, FIRST MARGIN RIGHT 20",
-                [&](auto t) { return t.marginRight(S::px(20)); },
-                [](auto t) { return t; }),
-            adjacentRow("ADJACENT, SECOND MARGIN LEFT 20",
-                [](auto t) { return t; },
-                [&](auto t) { return t.marginLeft(S::px(20)); }),
-            adjacentRow("ADJACENT, BOTH 20",
-                [&](auto t) { return t.marginRight(S::px(20)); },
-                [&](auto t) { return t.marginLeft(S::px(20)); })
-        );
-    }
+    //         adjacentRow("ADJACENT, NO MARGIN (CONTROL)",
+    //             [](auto t) { return t; },
+    //             [](auto t) { return t; }),
+    //         adjacentRow("ADJACENT, FIRST MARGIN RIGHT 20",
+    //             [&](auto t) { return t.marginRight(S::px(20)); },
+    //             [](auto t) { return t; }),
+    //         adjacentRow("ADJACENT, SECOND MARGIN LEFT 20",
+    //             [](auto t) { return t; },
+    //             [&](auto t) { return t.marginLeft(S::px(20)); }),
+    //         adjacentRow("ADJACENT, BOTH 20",
+    //             [&](auto t) { return t.marginRight(S::px(20)); },
+    //             [&](auto t) { return t.marginLeft(S::px(20)); })
+    //     );
+    // }
 
-    // ── inline padding on multi word text ──
-    {
-        using S = gui::Size;
+    // // ── inline padding on multi word text ──
+    // {
+    //     using S = gui::Size;
 
-        auto paddingRow = [&](const char* label, const char* content, auto configure) {
-            return div()
-                .display(gui::Display::Flex)
-                .flexDirection(gui::FlexDirection::Col)
-                .alignItems(gui::AlignItems::FlexStart)
-                .flexGap(S::px(6))
-            (
-                text(label)
-                    .font(Arial)
-                    .fontSize(S::pt(12))
-                    .color(simd_float4{0.38,0.92,0.56,1.0}),
-                div(S::autoSize(), S::autoSize(), simd_float4{0.15,0.16,0.20,1.0})
-                (
-                    configure(
-                        text(content)
-                            .font(Arial)
-                            .fontSize(S::pt(18))
-                            .color(simd_float4{0.98,0.76,0.20,1.0})
-                    )
-                )
-            );
-        };
+    //     auto paddingRow = [&](const char* label, const char* content, auto configure) {
+    //         return div()
+    //             .display(gui::Display::Flex)
+    //             .flexDirection(gui::FlexDirection::Col)
+    //             .alignItems(gui::AlignItems::FlexStart)
+    //             .flexGap(S::px(6))
+    //         (
+    //             elements::span()
+    //                 .font(Arial)
+    //                 .fontSize(S::pt(12))
+    //                 .color(simd_float4{0.38,0.92,0.56,1.0})(text(label)),
+    //             div(S::autoSize(), S::autoSize(), simd_float4{0.15,0.16,0.20,1.0})
+    //             (
+    //                 configure(
+    //                     elements::span()
+    //                         .font(Arial)
+    //                         .fontSize(S::pt(18))
+    //                         .color(simd_float4{0.98,0.76,0.20,1.0})(text(content))
+    //                 )
+    //             )
+    //         );
+    //     };
 
-        constexpr const char* latin = "alpha beta gamma delta";
-        constexpr const char* hebrew = "שלום עולם שלום עולם";
-        constexpr const char* mixed = "alpha שלום beta עולם";
+    //     constexpr const char* latin = "alpha beta gamma delta";
+    //     constexpr const char* hebrew = "שלום עולם שלום עולם";
+    //     constexpr const char* mixed = "alpha שלום beta עולם";
 
-        div(S::percent(1.0), S::percent(1.0), simd_float4{0.06,0.07,0.09,1.0})
-            .display(gui::Display::Flex)
-            .flexDirection(gui::FlexDirection::Col)
-            .alignItems(gui::AlignItems::FlexStart)
-            .padding(S::px(48))
-            .flexGap(S::px(20))
-            .overflow(gui::Overflow::Scroll)
-        (
-            text("INLINE PADDING ON MULTI WORD TEXT")
-                .font(Arial)
-                .fontSize(S::pt(22))
-                .color(simd_float4{0.96,0.97,1.0,1.0}),
+    //     div(S::percent(1.0), S::percent(1.0), simd_float4{0.06,0.07,0.09,1.0})
+    //         .display(gui::Display::Flex)
+    //         .flexDirection(gui::FlexDirection::Col)
+    //         .alignItems(gui::AlignItems::FlexStart)
+    //         .padding(S::px(48))
+    //         .flexGap(S::px(20))
+    //         .overflow(gui::Overflow::Scroll)
+    //     (
+    //         elements::span()
+    //             .font(Arial)
+    //             .fontSize(S::pt(22))
+    //             .color(simd_float4{0.96,0.97,1.0,1.0})(text("INLINE PADDING ON MULTI WORD TEXT")),
 
-            paddingRow("LATIN, NO PADDING (CONTROL)", latin, [](auto t) { return t; }),
-            paddingRow("LATIN, PADDING RIGHT 20", latin, [&](auto t) { return t.paddingRight(S::px(20)); }),
-            paddingRow("LATIN, PADDING LEFT 20", latin, [&](auto t) { return t.paddingLeft(S::px(20)); }),
-            paddingRow("LATIN, PADDING LEFT 20 + RIGHT 20", latin, [&](auto t) {
-                return t.paddingLeft(S::px(20)).paddingRight(S::px(20));
-            }),
+    //         paddingRow("LATIN, NO PADDING (CONTROL)", latin, [](auto t) { return t; }),
+    //         paddingRow("LATIN, PADDING RIGHT 20", latin, [&](auto t) { return t.paddingRight(S::px(20)); }),
+    //         paddingRow("LATIN, PADDING LEFT 20", latin, [&](auto t) { return t.paddingLeft(S::px(20)); }),
+    //         paddingRow("LATIN, PADDING LEFT 20 + RIGHT 20", latin, [&](auto t) {
+    //             return t.paddingLeft(S::px(20)).paddingRight(S::px(20));
+    //         }),
 
-            paddingRow("RTL RUN, NO PADDING (CONTROL)", hebrew, [](auto t) { return t; }),
-            paddingRow("RTL RUN, PADDING RIGHT 20", hebrew, [&](auto t) { return t.paddingRight(S::px(20)); }),
-            paddingRow("RTL RUN, PADDING LEFT 20", hebrew, [&](auto t) { return t.paddingLeft(S::px(20)); }),
-            paddingRow("RTL RUN, PADDING LEFT 20 + RIGHT 20", hebrew, [&](auto t) {
-                return t.paddingLeft(S::px(20)).paddingRight(S::px(20));
-            }),
+    //         paddingRow("RTL RUN, NO PADDING (CONTROL)", hebrew, [](auto t) { return t; }),
+    //         paddingRow("RTL RUN, PADDING RIGHT 20", hebrew, [&](auto t) { return t.paddingRight(S::px(20)); }),
+    //         paddingRow("RTL RUN, PADDING LEFT 20", hebrew, [&](auto t) { return t.paddingLeft(S::px(20)); }),
+    //         paddingRow("RTL RUN, PADDING LEFT 20 + RIGHT 20", hebrew, [&](auto t) {
+    //             return t.paddingLeft(S::px(20)).paddingRight(S::px(20));
+    //         }),
 
-            paddingRow("MIXED, NO PADDING (CONTROL)", mixed, [](auto t) { return t; }),
-            paddingRow("MIXED, PADDING RIGHT 20", mixed, [&](auto t) { return t.paddingRight(S::px(20)); }),
-            paddingRow("MIXED, PADDING LEFT 20", mixed, [&](auto t) { return t.paddingLeft(S::px(20)); }),
-            paddingRow("MIXED, PADDING LEFT 20 + RIGHT 20", mixed, [&](auto t) {
-                return t.paddingLeft(S::px(20)).paddingRight(S::px(20));
-            }),
+    //         paddingRow("MIXED, NO PADDING (CONTROL)", mixed, [](auto t) { return t; }),
+    //         paddingRow("MIXED, PADDING RIGHT 20", mixed, [&](auto t) { return t.paddingRight(S::px(20)); }),
+    //         paddingRow("MIXED, PADDING LEFT 20", mixed, [&](auto t) { return t.paddingLeft(S::px(20)); }),
+    //         paddingRow("MIXED, PADDING LEFT 20 + RIGHT 20", mixed, [&](auto t) {
+    //             return t.paddingLeft(S::px(20)).paddingRight(S::px(20));
+    //         }),
 
-            paddingRow("LATIN, MARGIN LEFT 20 + PADDING LEFT 10", latin, [&](auto t) {
-                return t.marginLeft(S::px(20)).paddingLeft(S::px(10));
-            }),
-            paddingRow("LATIN, MARGIN RIGHT 20 + PADDING RIGHT 10", latin, [&](auto t) {
-                return t.marginRight(S::px(20)).paddingRight(S::px(10));
-            }),
-            paddingRow("LATIN, MARGIN 20 + PADDING 10, BOTH SIDES", latin, [&](auto t) {
-                return t.marginLeft(S::px(20)).marginRight(S::px(20)).paddingLeft(S::px(10)).paddingRight(S::px(10));
-            }),
+    //         paddingRow("LATIN, MARGIN LEFT 20 + PADDING LEFT 10", latin, [&](auto t) {
+    //             return t.marginLeft(S::px(20)).paddingLeft(S::px(10));
+    //         }),
+    //         paddingRow("LATIN, MARGIN RIGHT 20 + PADDING RIGHT 10", latin, [&](auto t) {
+    //             return t.marginRight(S::px(20)).paddingRight(S::px(10));
+    //         }),
+    //         paddingRow("LATIN, MARGIN 20 + PADDING 10, BOTH SIDES", latin, [&](auto t) {
+    //             return t.marginLeft(S::px(20)).marginRight(S::px(20)).paddingLeft(S::px(10)).paddingRight(S::px(10));
+    //         }),
 
-            paddingRow("RTL RUN, MARGIN LEFT 20 + PADDING LEFT 10", hebrew, [&](auto t) {
-                return t.marginLeft(S::px(20)).paddingLeft(S::px(10));
-            }),
-            paddingRow("RTL RUN, MARGIN RIGHT 20 + PADDING RIGHT 10", hebrew, [&](auto t) {
-                return t.marginRight(S::px(20)).paddingRight(S::px(10));
-            }),
-            paddingRow("RTL RUN, MARGIN 20 + PADDING 10, BOTH SIDES", hebrew, [&](auto t) {
-                return t.marginLeft(S::px(20)).marginRight(S::px(20)).paddingLeft(S::px(10)).paddingRight(S::px(10));
-            }),
+    //         paddingRow("RTL RUN, MARGIN LEFT 20 + PADDING LEFT 10", hebrew, [&](auto t) {
+    //             return t.marginLeft(S::px(20)).paddingLeft(S::px(10));
+    //         }),
+    //         paddingRow("RTL RUN, MARGIN RIGHT 20 + PADDING RIGHT 10", hebrew, [&](auto t) {
+    //             return t.marginRight(S::px(20)).paddingRight(S::px(10));
+    //         }),
+    //         paddingRow("RTL RUN, MARGIN 20 + PADDING 10, BOTH SIDES", hebrew, [&](auto t) {
+    //             return t.marginLeft(S::px(20)).marginRight(S::px(20)).paddingLeft(S::px(10)).paddingRight(S::px(10));
+    //         }),
 
-            paddingRow("MIXED, MARGIN LEFT 20 + PADDING LEFT 10", mixed, [&](auto t) {
-                return t.marginLeft(S::px(20)).paddingLeft(S::px(10));
-            }),
-            paddingRow("MIXED, MARGIN RIGHT 20 + PADDING RIGHT 10", mixed, [&](auto t) {
-                return t.marginRight(S::px(20)).paddingRight(S::px(10));
-            }),
-            paddingRow("MIXED, MARGIN 20 + PADDING 10, BOTH SIDES", mixed, [&](auto t) {
-                return t.marginLeft(S::px(20)).marginRight(S::px(20)).paddingLeft(S::px(10)).paddingRight(S::px(10));
-            })
-        );
-    }
+    //         paddingRow("MIXED, MARGIN LEFT 20 + PADDING LEFT 10", mixed, [&](auto t) {
+    //             return t.marginLeft(S::px(20)).paddingLeft(S::px(10));
+    //         }),
+    //         paddingRow("MIXED, MARGIN RIGHT 20 + PADDING RIGHT 10", mixed, [&](auto t) {
+    //             return t.marginRight(S::px(20)).paddingRight(S::px(10));
+    //         }),
+    //         paddingRow("MIXED, MARGIN 20 + PADDING 10, BOTH SIDES", mixed, [&](auto t) {
+    //             return t.marginLeft(S::px(20)).marginRight(S::px(20)).paddingLeft(S::px(10)).paddingRight(S::px(10));
+    //         })
+    //     );
+    // }
 
     // // Inline siblings wrapping at the element boundary: the first text fills line 0,
     // // the second text's first fragment starts on line 1.
@@ -5357,10 +5357,10 @@ div()
     //     using S = gui::Size;
 
     //     const auto label = [&](const char* s) {
-    //         return text(s)
+    //         return elements::span()
     //             .font(Arial)
     //             .fontSize(S::pt(12))
-    //             .color(simd_float4{0.38,0.92,0.56,1.0});
+    //             .color(simd_float4{0.38,0.92,0.56,1.0})(text(s));
     //     };
 
     //     const auto box = [&]() {
@@ -5376,13 +5376,13 @@ div()
     //         label("TWO ELEMENTS, WRAP BETWEEN THEM"),
     //         box()
     //         (
-    //             text("alpha ").font(Arial).fontSize(S::pt(18)).color(yellow),
-    //             text("betabetabetabeta").font(Arial).fontSize(S::pt(18)).color(blue)
+    //             elements::span().font(Arial).fontSize(S::pt(18)).color(yellow)(text("alpha ")),
+    //             elements::span().font(Arial).fontSize(S::pt(18)).color(blue)(text("betabetabetabeta"))
     //         ),
     //         label("SINGLE ELEMENT (CONTROL)").marginTop(S::px(24)),
     //         box()
     //         (
-    //             text("alpha betabetabetabeta").font(Arial).fontSize(S::pt(18)).color(yellow)
+    //             elements::span().font(Arial).fontSize(S::pt(18)).color(yellow)(text("alpha betabetabetabeta"))
     //         )
     //     );
     // }
@@ -5418,7 +5418,7 @@ div()
     //     constexpr auto A = "/Users/treja/projects/gui/assets/clones/";
 
     //     auto navLink = [&](const char* label) {
-    //         return text(label).font(Inter).fontSize(S::pt(11.5)).color(white);
+    //         return elements::span().font(Inter).fontSize(S::pt(11.5)).color(white)(text(label));
     //     };
 
     //     auto issueRow = [&](const char* icon, const char* id, const char* title, const char* tag, simd_float4 tagColor) {
@@ -5433,9 +5433,9 @@ div()
     //             .borderColor(hairline)
     //             .borderWidth(S::px(1))
     //         (
-    //             text(id).font(SFMono).fontSize(S::pt(9)).color(dim),
+    //             elements::span().font(SFMono).fontSize(S::pt(9)).color(dim)(text(id)),
     //             svg(std::string(A) + icon, S::px(13), S::px(13)),
-    //             text(title).font(Inter).fontSize(S::pt(10.5)).color(white).flexGrow(S::px(1)),
+    //             elements::span().font(Inter).fontSize(S::pt(10.5)).color(white).flexGrow(S::px(1))(text(title)),
     //             div(S::autoSize(), S::autoSize(), clear)
     //                 .display(Display::Flex)
     //                 .alignItems(AlignItems::Center)
@@ -5447,7 +5447,7 @@ div()
     //                 .borderWidth(S::px(1))
     //             (
     //                 div(S::px(7), S::px(7), tagColor).cornerRadius(S::px(4))(),
-    //                 text(tag).font(Inter).fontSize(S::pt(9)).color(grey)
+    //                 elements::span().font(Inter).fontSize(S::pt(9)).color(grey)(text(tag))
     //             ),
     //             div(S::px(18), S::px(18), rgb(60, 64, 72)).cornerRadius(S::px(9))()
     //         );
@@ -5457,7 +5457,7 @@ div()
     //         return div()
     //             .flexGrow(S::px(1))
     //             .minWidth(S::px(180))
-    //             .color(panel)
+    //             .backgroundColor(panel)
     //             .cornerRadius(S::px(12))
     //             .borderColor(hairline)
     //             .borderWidth(S::px(1))
@@ -5467,15 +5467,15 @@ div()
     //             .flexGap(S::px(12))
     //         (
     //             svg(std::string(A) + icon, S::px(22), S::px(22)),
-    //             text(title).font(InterBold).fontSize(S::pt(13)).color(white),
+    //             elements::span().font(InterBold).fontSize(S::pt(13)).color(white)(text(title)),
     //             div().width(S::percent(1.0))(
-    //                 text(body).font(Inter).fontSize(S::pt(11)).color(grey).lineHeight(1.5)
+    //                 elements::span().font(Inter).fontSize(S::pt(11)).color(grey).lineHeight(1.5)(text(body))
     //             )
     //         );
     //     };
 
     //     auto customer = [&](const char* name) {
-    //         return text(name).font(InterBold).fontSize(S::pt(13)).color(rgb(120, 124, 132));
+    //         return elements::span().font(InterBold).fontSize(S::pt(13)).color(rgb(120, 124, 132))(text(name));
     //     };
 
     //     div(S::percent(1.0), S::percent(1.0), bg)
@@ -5497,7 +5497,7 @@ div()
     //             div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(26))(
     //                 div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
     //                     svg(std::string(A) + "linear-logo.svg", S::px(20), S::px(20)),
-    //                     text("Linear").font(InterBold).fontSize(S::pt(13)).color(white)
+    //                     elements::span().font(InterBold).fontSize(S::pt(13)).color(white)(text("Linear"))
     //                 ),
     //                 navLink("Product"),
     //                 navLink("Resources"),
@@ -5514,7 +5514,7 @@ div()
     //                     .display(Display::Flex)
     //                     .alignItems(AlignItems::Center)
     //                 (
-    //                     text("Sign up").font(InterBold).fontSize(S::pt(11)).color(bg)
+    //                     elements::span().font(InterBold).fontSize(S::pt(11)).color(bg)(text("Sign up"))
     //                 )
     //             )
     //         ),
@@ -5530,12 +5530,12 @@ div()
     //             .flexGap(S::px(22))
     //         (
     //             div().maxWidth(S::px(620))(
-    //                 text("Linear is a purpose-built tool for planning and building products")
-    //                     .font(InterBold).fontSize(S::pt(40)).color(white).lineHeight(1.08)
+    //                 elements::span()
+    //                     .font(InterBold).fontSize(S::pt(40)).color(white).lineHeight(1.08)(text("Linear is a purpose-built tool for planning and building products"))
     //             ),
     //             div().maxWidth(S::px(460))(
-    //                 text("Meet the system for modern software development. Streamline issues, projects, and product roadmaps.")
-    //                     .font(Inter).fontSize(S::pt(15)).color(grey).lineHeight(1.45)
+    //                 elements::span()
+    //                     .font(Inter).fontSize(S::pt(15)).color(grey).lineHeight(1.45)(text("Meet the system for modern software development. Streamline issues, projects, and product roadmaps."))
     //             ),
     //             div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(18)).marginTop(S::px(6))(
     //                 div(S::autoSize(), S::px(38), white)
@@ -5544,10 +5544,10 @@ div()
     //                     .display(Display::Flex)
     //                     .alignItems(AlignItems::Center)
     //                 (
-    //                     text("Start building").font(InterBold).fontSize(S::pt(12)).color(bg)
+    //                     elements::span().font(InterBold).fontSize(S::pt(12)).color(bg)(text("Start building"))
     //                 ),
     //                 div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(4))(
-    //                     text("Introducing Linear for Agents").font(Inter).fontSize(S::pt(12)).color(grey),
+    //                     elements::span().font(Inter).fontSize(S::pt(12)).color(grey)(text("Introducing Linear for Agents")),
     //                     svg(std::string(A) + "chevron-right.svg", S::px(12), S::px(12))
     //                 )
     //             )
@@ -5580,23 +5580,23 @@ div()
     //                 (
     //                     div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(7)).marginBottom(S::px(10))(
     //                         div(S::px(16), S::px(16), indigo).cornerRadius(S::px(4))(),
-    //                         text("Butterfly").font(InterBold).fontSize(S::pt(10)).color(white)
+    //                         elements::span().font(InterBold).fontSize(S::pt(10)).color(white)(text("Butterfly"))
     //                     ),
-    //                     text("Inbox").font(Inter).fontSize(S::pt(10)).color(grey),
-    //                     text("My issues").font(Inter).fontSize(S::pt(10)).color(grey),
-    //                     text("Views").font(Inter).fontSize(S::pt(10)).color(grey),
-    //                     text("Workspace").font(Inter).fontSize(S::pt(8.5)).color(dim).marginTop(S::px(10)),
-    //                     text("Initiatives").font(Inter).fontSize(S::pt(10)).color(grey),
-    //                     text("Projects").font(Inter).fontSize(S::pt(10)).color(grey),
-    //                     text("Teams").font(Inter).fontSize(S::pt(10)).color(grey),
-    //                     text("Your teams").font(Inter).fontSize(S::pt(8.5)).color(dim).marginTop(S::px(10)),
+    //                     elements::span().font(Inter).fontSize(S::pt(10)).color(grey)(text("Inbox")),
+    //                     elements::span().font(Inter).fontSize(S::pt(10)).color(grey)(text("My issues")),
+    //                     elements::span().font(Inter).fontSize(S::pt(10)).color(grey)(text("Views")),
+    //                     elements::span().font(Inter).fontSize(S::pt(8.5)).color(dim).marginTop(S::px(10))(text("Workspace")),
+    //                     elements::span().font(Inter).fontSize(S::pt(10)).color(grey)(text("Initiatives")),
+    //                     elements::span().font(Inter).fontSize(S::pt(10)).color(grey)(text("Projects")),
+    //                     elements::span().font(Inter).fontSize(S::pt(10)).color(grey)(text("Teams")),
+    //                     elements::span().font(Inter).fontSize(S::pt(8.5)).color(dim).marginTop(S::px(10))(text("Your teams")),
     //                     div(S::autoSize(), S::px(24), rgb(255,255,255,0.05f)).cornerRadius(S::px(5))
     //                         .paddingLeft(S::px(6)).display(Display::Flex).alignItems(AlignItems::Center)
     //                     (
-    //                         text("Renderer").font(Inter).fontSize(S::pt(10)).color(white)
+    //                         elements::span().font(Inter).fontSize(S::pt(10)).color(white)(text("Renderer"))
     //                     ),
-    //                     text("Layout").font(Inter).fontSize(S::pt(10)).color(grey).marginLeft(S::px(6)),
-    //                     text("Text").font(Inter).fontSize(S::pt(10)).color(grey).marginLeft(S::px(6))
+    //                     elements::span().font(Inter).fontSize(S::pt(10)).color(grey).marginLeft(S::px(6))(text("Layout")),
+    //                     elements::span().font(Inter).fontSize(S::pt(10)).color(grey).marginLeft(S::px(6))(text("Text"))
     //                 ),
     //                 // issue list
     //                 div()
@@ -5613,13 +5613,13 @@ div()
     //                         .borderWidth(S::px(1))
     //                     (
     //                         div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
-    //                             text("Renderer").font(InterBold).fontSize(S::pt(10.5)).color(white),
+    //                             elements::span().font(InterBold).fontSize(S::pt(10.5)).color(white)(text("Renderer")),
     //                             svg(std::string(A) + "chevron-right.svg", S::px(11), S::px(11)),
-    //                             text("Active issues").font(Inter).fontSize(S::pt(10.5)).color(grey)
+    //                             elements::span().font(Inter).fontSize(S::pt(10.5)).color(grey)(text("Active issues"))
     //                         ),
     //                         div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
-    //                             text("Filter").font(Inter).fontSize(S::pt(9.5)).color(grey),
-    //                             text("Display").font(Inter).fontSize(S::pt(9.5)).color(grey)
+    //                             elements::span().font(Inter).fontSize(S::pt(9.5)).color(grey)(text("Filter")),
+    //                             elements::span().font(Inter).fontSize(S::pt(9.5)).color(grey)(text("Display"))
     //                         )
     //                     ),
     //                     div(S::percent(1.0), S::px(26), rgb(255,255,255,0.03f))
@@ -5627,8 +5627,8 @@ div()
     //                         .paddingLeft(S::px(14))
     //                     (
     //                         svg(std::string(A) + "lin-inprogress.svg", S::px(12), S::px(12)),
-    //                         text("In Progress").font(InterBold).fontSize(S::pt(9.5)).color(white),
-    //                         text("3").font(Inter).fontSize(S::pt(9.5)).color(dim)
+    //                         elements::span().font(InterBold).fontSize(S::pt(9.5)).color(white)(text("In Progress")),
+    //                         elements::span().font(Inter).fontSize(S::pt(9.5)).color(dim)(text("3"))
     //                     ),
     //                     issueRow("lin-inprogress.svg", "BUT-142", "Sticky positioning inside nested scroll containers", "Layout", rgb(94,106,210)),
     //                     issueRow("lin-inprogress.svg", "BUT-139", "SDF border joins for dashed elliptical corners", "Renderer", rgb(38,166,154)),
@@ -5638,8 +5638,8 @@ div()
     //                         .paddingLeft(S::px(14))
     //                     (
     //                         svg(std::string(A) + "lin-backlog.svg", S::px(12), S::px(12)),
-    //                         text("Todo").font(InterBold).fontSize(S::pt(9.5)).color(white),
-    //                         text("4").font(Inter).fontSize(S::pt(9.5)).color(dim)
+    //                         elements::span().font(InterBold).fontSize(S::pt(9.5)).color(white)(text("Todo")),
+    //                         elements::span().font(Inter).fontSize(S::pt(9.5)).color(dim)(text("4"))
     //                     ),
     //                     issueRow("lin-backlog.svg", "BUT-150", "Glyph atlas eviction under memory pressure", "Text", rgb(242,153,74)),
     //                     issueRow("lin-backlog.svg", "BUT-148", "Grid auto-placement with dense packing", "Layout", rgb(94,106,210)),
@@ -5660,7 +5660,7 @@ div()
     //             .alignItems(AlignItems::Center)
     //             .flexGap(S::px(26))
     //         (
-    //             text("Powering the world's best product teams.").font(Inter).fontSize(S::pt(12)).color(grey),
+    //             elements::span().font(Inter).fontSize(S::pt(12)).color(grey)(text("Powering the world's best product teams.")),
     //             div().display(Display::Flex).flexWrap(gui::FlexWrap::Wrap).justifyContent(JustifyContent::Center).flexGap(S::px(40))(
     //                 customer("ramp"), customer("Vercel"), customer("CashApp"), customer("scale"),
     //                 customer("perplexity"), customer("Retool"), customer("Mercury"), customer("Brex")
@@ -5679,12 +5679,12 @@ div()
     //             .flexGap(S::px(34))
     //         (
     //             div().maxWidth(S::px(520))(
-    //                 text("Made for modern product teams")
-    //                     .font(InterBold).fontSize(S::pt(28)).color(white).lineHeight(1.1)
+    //                 elements::span()
+    //                     .font(InterBold).fontSize(S::pt(28)).color(white).lineHeight(1.1)(text("Made for modern product teams"))
     //             ),
     //             div().maxWidth(S::px(520))(
-    //                 text("Linear is shaped by the practices and principles that distinguish world-class product teams from the rest: relentless focus, fast execution, and a commitment to the quality of craft.")
-    //                     .font(Inter).fontSize(S::pt(12.5)).color(grey).lineHeight(1.5)
+    //                 elements::span()
+    //                     .font(Inter).fontSize(S::pt(12.5)).color(grey).lineHeight(1.5)(text("Linear is shaped by the practices and principles that distinguish world-class product teams from the rest: relentless focus, fast execution, and a commitment to the quality of craft."))
     //             ),
     //             div().width(S::percent(1.0)).display(Display::Flex).flexWrap(gui::FlexWrap::Wrap).flexGap(S::px(14))(
     //                 featureCard("lin-bolt.svg",   "Purpose-built for product development", "Every part of Linear is designed to keep you in flow, from keyboard-first navigation to instant sync."),
@@ -5749,7 +5749,7 @@ div()
     //             .display(Display::Flex)
     //             .alignItems(AlignItems::Center)
     //         (
-    //             text(n).font(SansBold).fontSize(S::pt(9)).color(fg)
+    //             elements::span().font(SansBold).fontSize(S::pt(9)).color(fg)(text(n))
     //         );
     //     };
 
@@ -5763,7 +5763,7 @@ div()
     //             .flexShrink(S::px(0))
     //             .position(Position::Relative)
     //         (
-    //             text(label).font(active ? SansBold : Sans).fontSize(S::pt(10.5)).color(fg),
+    //             elements::span().font(active ? SansBold : Sans).fontSize(S::pt(10.5)).color(fg)(text(label)),
     //             count ? counter(count) : div(S::px(0), S::px(0), clear)(),
     //             div(S::percent(1.0), S::px(2), active ? orange : clear)
     //                 .position(Position::Absolute)
@@ -5785,12 +5785,12 @@ div()
     //         (
     //             icon(iconName),
     //             div().width(S::px(150)).flexShrink(S::px(0)).overflow(gui::Overflow::Hidden)(
-    //                 text(name).font(Sans).fontSize(S::pt(10.5)).color(fg)
+    //                 elements::span().font(Sans).fontSize(S::pt(10.5)).color(fg)(text(name))
     //             ),
     //             div().flexGrow(S::px(1)).overflow(gui::Overflow::Hidden)(
-    //                 text(message).font(Sans).fontSize(S::pt(10.5)).color(muted).whiteSpace(gui::WhiteSpace::NoWrap)
+    //                 elements::span().font(Sans).fontSize(S::pt(10.5)).color(muted).whiteSpace(gui::WhiteSpace::NoWrap)(text(message))
     //             ),
-    //             text(age).font(Sans).fontSize(S::pt(10.5)).color(muted).flexShrink(S::px(0))
+    //             elements::span().font(Sans).fontSize(S::pt(10.5)).color(muted).flexShrink(S::px(0))(text(age))
     //         );
     //     };
 
@@ -5801,25 +5801,25 @@ div()
     //             .display(Display::Flex)
     //             .alignItems(AlignItems::Center)
     //         (
-    //             text(label).font(Sans).fontSize(S::pt(9.5)).color(link)
+    //             elements::span().font(Sans).fontSize(S::pt(9.5)).color(link)(text(label))
     //         );
     //     };
 
     //     auto sideHeading = [&](const char* label) {
-    //         return text(label).font(SansBold).fontSize(S::pt(11.5)).color(fg);
+    //         return elements::span().font(SansBold).fontSize(S::pt(11.5)).color(fg)(text(label));
     //     };
 
     //     auto langDot = [&](simd_float4 c, const char* name, const char* pct) {
     //         return div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(6))(
     //             div(S::px(8), S::px(8), c).cornerRadius(S::px(4))(),
-    //             text(name).font(SansBold).fontSize(S::pt(9.5)).color(fg),
-    //             text(pct).font(Sans).fontSize(S::pt(9.5)).color(muted)
+    //             elements::span().font(SansBold).fontSize(S::pt(9.5)).color(fg)(text(name)),
+    //             elements::span().font(Sans).fontSize(S::pt(9.5)).color(muted)(text(pct))
     //         );
     //     };
 
     //     auto paragraph = [&](const char* body) {
     //         return div().marginBottom(S::px(14))(
-    //             text(body).font(Sans).fontSize(S::pt(11.5)).color(fg).lineHeight(1.55)
+    //             elements::span().font(Sans).fontSize(S::pt(11.5)).color(fg).lineHeight(1.55)(text(body))
     //         );
     //     };
 
@@ -5827,7 +5827,7 @@ div()
     //         return div().paddingBottom(S::px(6)).marginTop(S::px(10)).marginBottom(S::px(14))
     //             .borderColor(rgb(209, 217, 224, 0.7f)).borderBottomWidth(S::px(1))
     //         (
-    //             text(title).font(SansBold).fontSize(S::pt(size)).color(fg)
+    //             elements::span().font(SansBold).fontSize(S::pt(size)).color(fg)(text(title))
     //         );
     //     };
 
@@ -5848,9 +5848,9 @@ div()
     //             ),
     //             icon("gh-mark.svg", 32),
     //             div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(4))(
-    //                 text("taanishr").font(Sans).fontSize(S::pt(11)).color(fg),
-    //                 text("/").font(Sans).fontSize(S::pt(11)).color(muted),
-    //                 text("butterfly").font(SansBold).fontSize(S::pt(11)).color(fg)
+    //                 elements::span().font(Sans).fontSize(S::pt(11)).color(fg)(text("taanishr")),
+    //                 elements::span().font(Sans).fontSize(S::pt(11)).color(muted)(text("/")),
+    //                 elements::span().font(SansBold).fontSize(S::pt(11)).color(fg)(text("butterfly"))
     //             ),
     //             div().flexGrow(S::px(1))(),
     //             div(S::px(240), S::px(30), canvas)
@@ -5864,12 +5864,12 @@ div()
     //             (
     //                 div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(6))(
     //                     icon("gh-search.svg", 14),
-    //                     text("Type / to search").font(Sans).fontSize(S::pt(10.5)).color(muted)
+    //                     elements::span().font(Sans).fontSize(S::pt(10.5)).color(muted)(text("Type / to search"))
     //                 ),
     //                 div(S::px(20), S::px(20), clear).cornerRadius(S::px(4)).borderColor(border).borderWidth(S::px(1))
     //                     .display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::Center)
     //                 (
-    //                     text("/").font(Sans).fontSize(S::pt(9)).color(muted)
+    //                     elements::span().font(Sans).fontSize(S::pt(9)).color(muted)(text("/"))
     //                 )
     //             ),
     //             div(S::px(32), S::px(32), rgb(94, 106, 210)).cornerRadius(S::px(16))()
@@ -5887,7 +5887,7 @@ div()
     //             div().display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::SpaceBetween)(
     //                 div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
     //                     icon("gh-repo.svg"),
-    //                     text("butterfly").font(SansBold).fontSize(S::pt(14)).color(fg)
+    //                     elements::span().font(SansBold).fontSize(S::pt(14)).color(fg)(text("butterfly"))
     //                         .addEventListener(EventType::Click, [](auto&, Event&) {
     //                             AppKit_Extensions::openURL("https://github.com/taanishr/butterfly");
     //                         }),
@@ -5897,13 +5897,13 @@ div()
     //                         .paddingLeft(S::px(7)).paddingRight(S::px(7))
     //                         .display(Display::Flex).alignItems(AlignItems::Center)
     //                     (
-    //                         text("Public").font(Sans).fontSize(S::pt(9)).color(muted)
+    //                         elements::span().font(Sans).fontSize(S::pt(9)).color(muted)(text("Public"))
     //                     )
     //                 ),
     //                 div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
-    //                     button(subtle, icon("gh-eye.svg"),  text("Watch").font(SansBold).fontSize(S::pt(10)).color(fg), counter("4")),
-    //                     button(subtle, icon("gh-fork.svg"), text("Fork").font(SansBold).fontSize(S::pt(10)).color(fg),  counter("12")),
-    //                     button(subtle, icon("gh-star.svg"), text("Star").font(SansBold).fontSize(S::pt(10)).color(fg),  counter("318"))
+    //                     button(subtle, icon("gh-eye.svg"),  elements::span().font(SansBold).fontSize(S::pt(10)).color(fg)(text("Watch")), counter("4")),
+    //                     button(subtle, icon("gh-fork.svg"), elements::span().font(SansBold).fontSize(S::pt(10)).color(fg)(text("Fork")),  counter("12")),
+    //                     button(subtle, icon("gh-star.svg"), elements::span().font(SansBold).fontSize(S::pt(10)).color(fg)(text("Star")),  counter("318"))
     //                 )
     //             ),
     //             div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(6)).marginTop(S::px(10))(
@@ -5931,15 +5931,15 @@ div()
     //                 // branch bar
     //                 div().display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::SpaceBetween)(
     //                     div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
-    //                         button(subtle, icon("gh-branch.svg"), text("main").font(SansBold).fontSize(S::pt(10)).color(fg), text("▾").font(Sans).fontSize(S::pt(9)).color(muted)),
+    //                         button(subtle, icon("gh-branch.svg"), elements::span().font(SansBold).fontSize(S::pt(10)).color(fg)(text("main")), elements::span().font(Sans).fontSize(S::pt(9)).color(muted)(text("▾"))),
     //                         div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(5))(
     //                             icon("gh-branch.svg", 14),
-    //                             text("3 Branches").font(Sans).fontSize(S::pt(10)).color(muted)
+    //                             elements::span().font(Sans).fontSize(S::pt(10)).color(muted)(text("3 Branches"))
     //                         )
     //                     ),
     //                     div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
-    //                         button(subtle, text("Add file").font(SansBold).fontSize(S::pt(10)).color(fg), text("▾").font(Sans).fontSize(S::pt(9)).color(muted)),
-    //                         button(green, text("<> Code").font(SansBold).fontSize(S::pt(10)).color(canvas), text("▾").font(Sans).fontSize(S::pt(9)).color(canvas))
+    //                         button(subtle, elements::span().font(SansBold).fontSize(S::pt(10)).color(fg)(text("Add file")), elements::span().font(Sans).fontSize(S::pt(9)).color(muted)(text("▾"))),
+    //                         button(green, elements::span().font(SansBold).fontSize(S::pt(10)).color(canvas)(text("<> Code")), elements::span().font(Sans).fontSize(S::pt(9)).color(canvas)(text("▾")))
     //                     )
     //                 ),
     //                 // file table
@@ -5952,14 +5952,14 @@ div()
     //                     (
     //                         div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
     //                             div(S::px(20), S::px(20), rgb(94, 106, 210)).cornerRadius(S::px(10))(),
-    //                             text("taanishr").font(SansBold).fontSize(S::pt(10.5)).color(fg),
-    //                             text("removal of measure, added an openURL binding").font(Sans).fontSize(S::pt(10.5)).color(muted)
+    //                             elements::span().font(SansBold).fontSize(S::pt(10.5)).color(fg)(text("taanishr")),
+    //                             elements::span().font(Sans).fontSize(S::pt(10.5)).color(muted)(text("removal of measure, added an openURL binding"))
     //                         ),
     //                         div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(8))(
     //                             icon("gh-check.svg", 14),
-    //                             text("5f55633").font(SFMono).fontSize(S::pt(9.5)).color(muted),
-    //                             text("· 2 hours ago").font(Sans).fontSize(S::pt(10.5)).color(muted),
-    //                             text("184 Commits").font(SansBold).fontSize(S::pt(10.5)).color(fg).marginLeft(S::px(8))
+    //                             elements::span().font(SFMono).fontSize(S::pt(9.5)).color(muted)(text("5f55633")),
+    //                             elements::span().font(Sans).fontSize(S::pt(10.5)).color(muted)(text("· 2 hours ago")),
+    //                             elements::span().font(SansBold).fontSize(S::pt(10.5)).color(fg).marginLeft(S::px(8))(text("184 Commits"))
     //                         )
     //                     ),
     //                     fileRow("gh-folder.svg", "apple-extensions", "Swift AppKit/MTK bridge for the metal-cpp side",   "3 weeks ago"),
@@ -5982,8 +5982,8 @@ div()
     //                         .paddingLeft(S::px(14))
     //                         .borderColor(border).borderBottomWidth(S::px(1))
     //                     (
-    //                         text("README").font(SansBold).fontSize(S::pt(10.5)).color(fg),
-    //                         text("MIT license").font(Sans).fontSize(S::pt(10.5)).color(muted)
+    //                         elements::span().font(SansBold).fontSize(S::pt(10.5)).color(fg)(text("README")),
+    //                         elements::span().font(Sans).fontSize(S::pt(10.5)).color(muted)(text("MIT license"))
     //                     ),
     //                     div().padding(S::px(28))(
     //                         readmeHeading("Butterfly - A declarative, GPU-rendered UI library", 20),
@@ -5991,14 +5991,14 @@ div()
     //                         paragraph("Butterfly is a declarative, GPU-rendered UI library that aims to implement a useful enough subset of the HTML/CSS standard. The library itself loosely follows the CSS spec (it is a pain to read)."),
     //                         paragraph("Butterfly is largely written in C++, with a few Swift bindings. It currently only supports MacOS, as it relies on Metal as its graphics api."),
     //                         div().marginBottom(S::px(14))(
-    //                             text("Currently, there is support for:").font(Sans).fontSize(S::pt(11.5)).color(fg)
+    //                             elements::span().font(Sans).fontSize(S::pt(11.5)).color(fg)(text("Currently, there is support for:"))
     //                         ),
     //                         div().paddingLeft(S::px(22)).display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(4))(
-    //                             text("•  Four semantic elements: SVGs, Images, Divs, Text").font(Sans).fontSize(S::pt(11.5)).color(fg),
-    //                             text("•  Display modes: Flexbox, Grid, Block, Inline").font(Sans).fontSize(S::pt(11.5)).color(fg),
-    //                             text("•  Positioning: Static, Relative, Absolute, Fixed, Sticky").font(Sans).fontSize(S::pt(11.5)).color(fg),
-    //                             text("•  Many many many borders").font(Sans).fontSize(S::pt(11.5)).color(fg),
-    //                             text("•  Super smooth text, unicode support, bidi support").font(Sans).fontSize(S::pt(11.5)).color(fg)
+    //                             elements::span().font(Sans).fontSize(S::pt(11.5)).color(fg)(text("•  Four semantic elements: SVGs, Images, Divs, Text")),
+    //                             elements::span().font(Sans).fontSize(S::pt(11.5)).color(fg)(text("•  Display modes: Flexbox, Grid, Block, Inline")),
+    //                             elements::span().font(Sans).fontSize(S::pt(11.5)).color(fg)(text("•  Positioning: Static, Relative, Absolute, Fixed, Sticky")),
+    //                             elements::span().font(Sans).fontSize(S::pt(11.5)).color(fg)(text("•  Many many many borders")),
+    //                             elements::span().font(Sans).fontSize(S::pt(11.5)).color(fg)(text("•  Super smooth text, unicode support, bidi support"))
     //                         )
     //                     )
     //                 )
@@ -6007,23 +6007,23 @@ div()
     //             div().display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(14))(
     //                 sideHeading("About"),
     //                 div()(
-    //                     text("A declarative, GPU-rendered UI library for macOS. Flexbox, grid, sticky positioning, SDF borders, and real text — on Metal.")
-    //                         .font(Sans).fontSize(S::pt(10.5)).color(fg).lineHeight(1.5)
+    //                     elements::span()
+    //                         .font(Sans).fontSize(S::pt(10.5)).color(fg).lineHeight(1.5)(text("A declarative, GPU-rendered UI library for macOS. Flexbox, grid, sticky positioning, SDF borders, and real text — on Metal."))
     //                 ),
     //                 div().display(Display::Flex).flexWrap(gui::FlexWrap::Wrap).flexGap(S::px(5))(
     //                     pill("metal"), pill("cpp"), pill("gui"), pill("flexbox"), pill("css-grid"), pill("sdf"), pill("freetype")
     //                 ),
     //                 div().display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(8))(
-    //                     text("Readme").font(Sans).fontSize(S::pt(10.5)).color(muted),
-    //                     text("MIT license").font(Sans).fontSize(S::pt(10.5)).color(muted),
+    //                     elements::span().font(Sans).fontSize(S::pt(10.5)).color(muted)(text("Readme")),
+    //                     elements::span().font(Sans).fontSize(S::pt(10.5)).color(muted)(text("MIT license")),
     //                     div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(5))(
-    //                         icon("gh-star.svg", 14), text("318 stars").font(Sans).fontSize(S::pt(10.5)).color(muted)
+    //                         icon("gh-star.svg", 14), elements::span().font(Sans).fontSize(S::pt(10.5)).color(muted)(text("318 stars"))
     //                     ),
     //                     div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(5))(
-    //                         icon("gh-eye.svg", 14), text("4 watching").font(Sans).fontSize(S::pt(10.5)).color(muted)
+    //                         icon("gh-eye.svg", 14), elements::span().font(Sans).fontSize(S::pt(10.5)).color(muted)(text("4 watching"))
     //                     ),
     //                     div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(5))(
-    //                         icon("gh-fork.svg", 14), text("12 forks").font(Sans).fontSize(S::pt(10.5)).color(muted)
+    //                         icon("gh-fork.svg", 14), elements::span().font(Sans).fontSize(S::pt(10.5)).color(muted)(text("12 forks"))
     //                     )
     //                 ),
     //                 div(S::percent(1.0), S::px(1), border).marginTop(S::px(6))(),
@@ -6031,8 +6031,8 @@ div()
     //                     sideHeading("Releases"), counter("3")
     //                 ),
     //                 div().display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(3))(
-    //                     text("v0.1.0 — Sticky & SDF borders").font(SansBold).fontSize(S::pt(10.5)).color(fg),
-    //                     text("Latest · 2 weeks ago").font(Sans).fontSize(S::pt(9.5)).color(muted)
+    //                     elements::span().font(SansBold).fontSize(S::pt(10.5)).color(fg)(text("v0.1.0 — Sticky & SDF borders")),
+    //                     elements::span().font(Sans).fontSize(S::pt(9.5)).color(muted)(text("Latest · 2 weeks ago"))
     //                 ),
     //                 div(S::percent(1.0), S::px(1), border).marginTop(S::px(6))(),
     //                 sideHeading("Languages"),
@@ -6086,22 +6086,22 @@ div()
     //     constexpr auto A = "/Users/treja/projects/gui/assets/clones/";
     //     constexpr auto butterflyPath = "/Users/treja/projects/gui/assets/butterfly.png";
 
-    //     auto body = [&](const char* s) { return text(s).font(Sans).fontSize(S::pt(11)).color(ink).lineHeight(1.6); };
-    //     auto a    = [&](const char* s) { return text(s).font(Sans).fontSize(S::pt(11)).color(link).lineHeight(1.6); };
-    //     auto sup  = [&](const char* s) { return text(s).font(Sans).fontSize(S::pt(7.5)).color(link); };
+    //     auto body = [&](const char* s) { return elements::span().font(Sans).fontSize(S::pt(11)).color(ink).lineHeight(1.6)(text(s)); };
+    //     auto a    = [&](const char* s) { return elements::span().font(Sans).fontSize(S::pt(11)).color(link).lineHeight(1.6)(text(s)); };
+    //     auto sup  = [&](const char* s) { return elements::span().font(Sans).fontSize(S::pt(7.5)).color(link)(text(s)); };
 
     //     auto heading = [&](const char* title) {
     //         return div().width(S::percent(1.0)).marginTop(S::px(22)).marginBottom(S::px(8))
     //             .paddingBottom(S::px(3))
     //             .borderColor(rule).borderBottomWidth(S::px(1))
     //         (
-    //             text(title).font(Serif).fontSize(S::pt(17)).color(ink)
+    //             elements::span().font(Serif).fontSize(S::pt(17)).color(ink)(text(title))
     //         );
     //     };
 
     //     auto tocItem = [&](const char* label, bool active, int indent = 0) {
     //         return div().paddingLeft(S::px(indent * 14))(
-    //             text(label).font(active ? SansBold : Sans).fontSize(S::pt(10)).color(active ? ink : link)
+    //             elements::span().font(active ? SansBold : Sans).fontSize(S::pt(10)).color(active ? ink : link)(text(label))
     //         );
     //     };
 
@@ -6113,7 +6113,7 @@ div()
     //             .alignItems(AlignItems::Center)
     //             .position(Position::Relative)
     //         (
-    //             text(label).font(Sans).fontSize(S::pt(10.5)).color(active ? ink : link),
+    //             elements::span().font(Sans).fontSize(S::pt(10.5)).color(active ? ink : link)(text(label)),
     //             div(S::percent(1.0), S::px(2), active ? ink : clear)
     //                 .position(Position::Absolute).bottom(S::px(0)).left(S::px(0))()
     //         );
@@ -6124,9 +6124,9 @@ div()
     //             .paddingTop(S::px(1)).paddingBottom(S::px(1))
     //         (
     //             div().width(S::px(80)).flexShrink(S::px(0))(
-    //                 text(k).font(SansBold).fontSize(S::pt(9)).color(ink)
+    //                 elements::span().font(SansBold).fontSize(S::pt(9)).color(ink)(text(k))
     //             ),
-    //             text(v).font(Sans).fontSize(S::pt(9)).color(italic ? ink : link)
+    //             elements::span().font(Sans).fontSize(S::pt(9)).color(italic ? ink : link)(text(v))
     //         );
     //     };
 
@@ -6135,7 +6135,7 @@ div()
     //             .paddingTop(S::px(3)).paddingBottom(S::px(3))
     //             .display(Display::Flex).justifyContent(JustifyContent::Center)
     //         (
-    //             text(label).font(SansBold).fontSize(S::pt(9.5)).color(ink)
+    //             elements::span().font(SansBold).fontSize(S::pt(9.5)).color(ink)(text(label))
     //         );
     //     };
 
@@ -6163,11 +6163,11 @@ div()
     //                     div(S::px(36), S::px(36), rgb(230, 232, 235)).cornerRadius(S::px(18))
     //                         .display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::Center)
     //                     (
-    //                         text("W").font(Serif).fontSize(S::pt(20)).color(ink)
+    //                         elements::span().font(Serif).fontSize(S::pt(20)).color(ink)(text("W"))
     //                     ),
     //                     div().display(Display::Flex).flexDirection(FlexDirection::Col)(
-    //                         text("WIKIPEDIA").font(Serif).fontSize(S::pt(15)).color(ink),
-    //                         text("The Free Encyclopedia").font(Serif).fontSize(S::pt(7.5)).color(ink)
+    //                         elements::span().font(Serif).fontSize(S::pt(15)).color(ink)(text("WIKIPEDIA")),
+    //                         elements::span().font(Serif).fontSize(S::pt(7.5)).color(ink)(text("The Free Encyclopedia"))
     //                     )
     //                 ),
     //                 div(S::px(300), S::px(32), paper)
@@ -6178,21 +6178,21 @@ div()
     //                     .marginLeft(S::px(10))
     //                 (
     //                     svg(std::string(A) + "wiki-search.svg", S::px(14), S::px(14)),
-    //                     text("Search Wikipedia").font(Sans).fontSize(S::pt(10.5)).color(muted).flexGrow(S::px(1)),
+    //                     elements::span().font(Sans).fontSize(S::pt(10.5)).color(muted).flexGrow(S::px(1))(text("Search Wikipedia")),
     //                     div(S::autoSize(), S::percent(1.0), chrome)
     //                         .paddingLeft(S::px(12)).paddingRight(S::px(12))
     //                         .borderColor(rule).borderLeftWidth(S::px(1))
     //                         .display(Display::Flex).alignItems(AlignItems::Center)
     //                     (
-    //                         text("Search").font(Sans).fontSize(S::pt(10.5)).color(ink)
+    //                         elements::span().font(Sans).fontSize(S::pt(10.5)).color(ink)(text("Search"))
     //                     )
     //                 )
     //             ),
     //             div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(14))(
-    //                 text("Donate").font(Sans).fontSize(S::pt(10.5)).color(link),
-    //                 text("Create account").font(Sans).fontSize(S::pt(10.5)).color(link),
-    //                 text("Log in").font(Sans).fontSize(S::pt(10.5)).color(link),
-    //                 text("···").font(Sans).fontSize(S::pt(10.5)).color(muted)
+    //                 elements::span().font(Sans).fontSize(S::pt(10.5)).color(link)(text("Donate")),
+    //                 elements::span().font(Sans).fontSize(S::pt(10.5)).color(link)(text("Create account")),
+    //                 elements::span().font(Sans).fontSize(S::pt(10.5)).color(link)(text("Log in")),
+    //                 elements::span().font(Sans).fontSize(S::pt(10.5)).color(muted)(text("···"))
     //             )
     //         ),
 
@@ -6208,8 +6208,8 @@ div()
     //             // TOC
     //             div().display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(9)).paddingTop(S::px(48))(
     //                 div().display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::SpaceBetween).paddingBottom(S::px(6))(
-    //                     text("Contents").font(SansBold).fontSize(S::pt(10.5)).color(ink),
-    //                     text("hide").font(Sans).fontSize(S::pt(9)).color(link)
+    //                     elements::span().font(SansBold).fontSize(S::pt(10.5)).color(ink)(text("Contents")),
+    //                     elements::span().font(Sans).fontSize(S::pt(9)).color(link)(text("hide"))
     //                 ),
     //                 tocItem("(Top)", true),
     //                 tocItem("Etymology", false),
@@ -6233,7 +6233,7 @@ div()
     //                 div().width(S::percent(1.0)).paddingBottom(S::px(4))
     //                     .borderColor(rule).borderBottomWidth(S::px(1))
     //                 (
-    //                     text("Butterfly").font(Serif).fontSize(S::pt(25)).color(ink)
+    //                     elements::span().font(Serif).fontSize(S::pt(25)).color(ink)(text("Butterfly"))
     //                 ),
     //                 // tabs
     //                 div().width(S::percent(1.0)).display(Display::Flex).justifyContent(JustifyContent::SpaceBetween)(
@@ -6245,7 +6245,7 @@ div()
     //                     )
     //                 ),
     //                 div().marginTop(S::px(12)).marginBottom(S::px(12))(
-    //                     text("From Wikipedia, the free encyclopedia").font(Sans).fontSize(S::pt(9.5)).color(muted)
+    //                     elements::span().font(Sans).fontSize(S::pt(9.5)).color(muted)(text("From Wikipedia, the free encyclopedia"))
     //                 ),
 
     //                 // body grid: text | infobox
@@ -6255,7 +6255,7 @@ div()
     //                             body("For other uses, see "), a("Butterfly (disambiguation)"), body(".")
     //                         ),
     //                         div().width(S::percent(1.0)).marginBottom(S::px(12))(
-    //                             text("Butterflies").font(SansBold).fontSize(S::pt(11)).color(ink).lineHeight(1.6),
+    //                             elements::span().font(SansBold).fontSize(S::pt(11)).color(ink).lineHeight(1.6)(text("Butterflies")),
     //                             body(" are winged "), a("insects"), body(" from the "), a("lepidopteran"),
     //                             body(" suborder "), a("Rhopalocera"),
     //                             body(", characterized by large, often brightly coloured wings that often fold together when at rest, and a conspicuous, fluttering flight. The oldest butterfly fossils have been dated to the "),
@@ -6280,10 +6280,10 @@ div()
     //                         div().width(S::percent(1.0)).marginBottom(S::px(12))(
     //                             body("The "), a("Oxford English Dictionary"),
     //                             body(" derives the word straightforwardly from "), a("Old English"),
-    //                             text(" butorflēoge").font(Sans).fontSize(S::pt(11)).color(ink).lineHeight(1.6),
+    //                             elements::span().font(Sans).fontSize(S::pt(11)).color(ink).lineHeight(1.6)(text(" butorflēoge")),
     //                             body(", butter-fly; similar names in Old Dutch and Old High German show that the name is ancient, but modern Dutch and German use different words ("),
-    //                             text("vlinder").font(Sans).fontSize(S::pt(11)).color(ink), body(" and "),
-    //                             text("Schmetterling").font(Sans).fontSize(S::pt(11)).color(ink),
+    //                             elements::span().font(Sans).fontSize(S::pt(11)).color(ink)(text("vlinder")), body(" and "),
+    //                             elements::span().font(Sans).fontSize(S::pt(11)).color(ink)(text("Schmetterling")),
     //                             body("). Butterflies were thought to steal milk and butter, or that they fly around in fields during the spring, when the grass is green and the butter is yellow."), sup("[3]")
     //                         ),
 
@@ -6305,7 +6305,7 @@ div()
     //                             body(" Butterflies evolved from "), a("moths"),
     //                             body(", so while the butterflies are "), a("monophyletic"),
     //                             body(" (forming a single clade), the moths are not. The oldest known butterfly is "),
-    //                             text("Protocoeliades kristenseni").font(Sans).fontSize(S::pt(11)).color(link),
+    //                             elements::span().font(Sans).fontSize(S::pt(11)).color(link)(text("Protocoeliades kristenseni")),
     //                             body(" from the Palaeocene aged "), a("Fur Formation"), body(" of Denmark, approximately 55 million years old.")
     //                         )
     //                     ),
@@ -6324,12 +6324,12 @@ div()
     //                             .paddingTop(S::px(5)).paddingBottom(S::px(5))
     //                             .display(Display::Flex).flexDirection(FlexDirection::Col).alignItems(AlignItems::Center)
     //                         (
-    //                             text("Butterflies").font(SansBold).fontSize(S::pt(12)).color(ink),
-    //                             text("Temporal range: Paleocene–present").font(Sans).fontSize(S::pt(8)).color(ink)
+    //                             elements::span().font(SansBold).fontSize(S::pt(12)).color(ink)(text("Butterflies")),
+    //                             elements::span().font(Sans).fontSize(S::pt(8)).color(ink)(text("Temporal range: Paleocene–present"))
     //                         ),
     //                         image(butterflyPath, S::percent(1.0), S::autoSize()).aspectRatio(1, 1),
     //                         div().width(S::percent(1.0)).display(Display::Flex).justifyContent(JustifyContent::Center).paddingBottom(S::px(4))(
-    //                             text("A Peacock butterfly, Aglais io").font(Sans).fontSize(S::pt(8.5)).color(ink)
+    //                             elements::span().font(Sans).fontSize(S::pt(8.5)).color(ink)(text("A Peacock butterfly, Aglais io"))
     //                         ),
     //                         taxonHeader("Scientific classification"),
     //                         div().width(S::percent(1.0)).display(Display::Flex).flexDirection(FlexDirection::Col).paddingLeft(S::px(4))(
@@ -6341,9 +6341,9 @@ div()
     //                         ),
     //                         taxonHeader("Superfamilies"),
     //                         div().width(S::percent(1.0)).display(Display::Flex).flexDirection(FlexDirection::Col).alignItems(AlignItems::Center).flexGap(S::px(2)).paddingTop(S::px(2)).paddingBottom(S::px(4))(
-    //                             text("Hedyloidea").font(Sans).fontSize(S::pt(9)).color(link),
-    //                             text("Hesperioidea").font(Sans).fontSize(S::pt(9)).color(link),
-    //                             text("Papilionoidea").font(Sans).fontSize(S::pt(9)).color(visited)
+    //                             elements::span().font(Sans).fontSize(S::pt(9)).color(link)(text("Hedyloidea")),
+    //                             elements::span().font(Sans).fontSize(S::pt(9)).color(link)(text("Hesperioidea")),
+    //                             elements::span().font(Sans).fontSize(S::pt(9)).color(visited)(text("Papilionoidea"))
     //                         )
     //                     )
     //                 ),
@@ -6360,10 +6360,10 @@ div()
     //     using S = gui::Size;
 
     //     const auto label = [&](const char* s) {
-    //         return text(s)
+    //         return elements::span()
     //             .font(Arial)
     //             .fontSize(S::pt(12))
-    //             .color(simd_float4{0.38,0.92,0.56,1.0});
+    //             .color(simd_float4{0.38,0.92,0.56,1.0})(text(s));
     //     };
 
     //     const auto panel = simd_float4{0.15,0.16,0.20,1.0};
@@ -6495,19 +6495,19 @@ div()
     //     };
 
     //     auto navLink = [&](const char* label) {
-    //         return text(label).font(Verdana).fontSize(S::pt(10)).color(ink);
+    //         return elements::span().font(Verdana).fontSize(S::pt(10)).color(ink)(text(label));
     //     };
 
     //     auto navSeparator = [&]() {
-    //         return text("|").font(Verdana).fontSize(S::pt(10)).color(ink);
+    //         return elements::span().font(Verdana).fontSize(S::pt(10)).color(ink)(text("|"));
     //     };
 
     //     auto footerLink = [&](const char* label) {
-    //         return text(label).font(Verdana).fontSize(S::pt(8)).color(ink);
+    //         return elements::span().font(Verdana).fontSize(S::pt(8)).color(ink)(text(label));
     //     };
 
     //     auto footerSeparator = [&]() {
-    //         return text("|").font(Verdana).fontSize(S::pt(8)).color(ink);
+    //         return elements::span().font(Verdana).fontSize(S::pt(8)).color(ink)(text("|"));
     //     };
 
     //     auto storyRow = [&](int rank, const Story& story) {
@@ -6516,24 +6516,24 @@ div()
 
     //         auto titleLine = div().display(Display::Flex).alignItems(AlignItems::Center)(
     //             div().width(S::px(26)).flexShrink(S::px(0)).display(Display::Flex).justifyContent(JustifyContent::FlexEnd)(
-    //                 text(std::to_string(rank) + ".").font(Verdana).fontSize(S::pt(10)).color(muted)
+    //                 elements::span().font(Verdana).fontSize(S::pt(10)).color(muted)(text(std::to_string(rank) + "."))
     //             ),
     //             div().width(S::px(18)).flexShrink(S::px(0)).display(Display::Flex).justifyContent(JustifyContent::Center)(
     //                 svg(std::string(A) + "hn-upvote.svg", S::px(10), S::px(10))
     //             ),
-    //             text(story.title).font(Verdana).fontSize(S::pt(10)).color(ink)
+    //             elements::span().font(Verdana).fontSize(S::pt(10)).color(ink)(text(story.title))
     //         );
 
     //         if (!story.site.empty()) {
     //             titleLine(
-    //                 text("(" + story.site + ")").font(Verdana).fontSize(S::pt(8)).color(muted).marginLeft(S::px(5))
+    //                 elements::span().font(Verdana).fontSize(S::pt(8)).color(muted).marginLeft(S::px(5))(text("(" + story.site + ")"))
     //             );
     //         }
 
     //         return div().width(S::percent(1.0)).marginBottom(S::px(6))(
     //             titleLine,
     //             div().paddingLeft(S::px(44)).marginTop(S::px(2))(
-    //                 text(subtext).font(Verdana).fontSize(S::pt(7)).color(muted)
+    //                 elements::span().font(Verdana).fontSize(S::pt(7)).color(muted)(text(subtext))
     //             )
     //         );
     //     };
@@ -6565,9 +6565,9 @@ div()
     //                         .marginRight(S::px(2))
     //                         .display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::Center)
     //                     (
-    //                         text("Y").font(VerdanaBold).fontSize(S::pt(9)).color(white)
+    //                         elements::span().font(VerdanaBold).fontSize(S::pt(9)).color(white)(text("Y"))
     //                     ),
-    //                     text("Hacker News").font(VerdanaBold).fontSize(S::pt(10)).color(ink).marginRight(S::px(6)),
+    //                     elements::span().font(VerdanaBold).fontSize(S::pt(10)).color(ink).marginRight(S::px(6))(text("Hacker News")),
     //                     navLink("new"), navSeparator(),
     //                     navLink("past"), navSeparator(),
     //                     navLink("comments"), navSeparator(),
@@ -6583,7 +6583,7 @@ div()
     //             storyList,
 
     //             div().paddingLeft(S::px(44)).paddingTop(S::px(4)).paddingBottom(S::px(12))(
-    //                 text("More").font(Verdana).fontSize(S::pt(10)).color(ink)
+    //                 elements::span().font(Verdana).fontSize(S::pt(10)).color(ink)(text("More"))
     //             ),
 
     //             // ── Footer ──
@@ -6602,7 +6602,7 @@ div()
     //                     footerLink("Contact")
     //                 ),
     //                 div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(6))(
-    //                     text("Search:").font(Verdana).fontSize(S::pt(10)).color(muted),
+    //                     elements::span().font(Verdana).fontSize(S::pt(10)).color(muted)(text("Search:")),
     //                     div(S::px(160), S::px(18), white).borderColor(rgb(118, 118, 118)).borderWidth(S::px(1))()
     //                 )
     //             )
@@ -6610,210 +6610,208 @@ div()
     //     );
     // }
 
-    /*
-    // ═══════════════════════════════════════════════════════════════════
-    // Clone: stripe.com landing page
-    // ═══════════════════════════════════════════════════════════════════
-    {
-        using S = gui::Size;
-        using gui::Display;
-        using gui::FlexDirection;
-        using gui::AlignItems;
-        using gui::JustifyContent;
-        using gui::Position;
+    // // ═══════════════════════════════════════════════════════════════════
+    // // Clone: stripe.com landing page
+    // // ═══════════════════════════════════════════════════════════════════
+    // {
+    //     using S = gui::Size;
+    //     using gui::Display;
+    //     using gui::FlexDirection;
+    //     using gui::AlignItems;
+    //     using gui::JustifyContent;
+    //     using gui::Position;
 
-        constexpr auto rgb = [](int r, int g, int b, float a = 1.0f) {
-            return simd_float4{r / 255.0f, g / 255.0f, b / 255.0f, a};
-        };
+    //     constexpr auto rgb = [](int r, int g, int b, float a = 1.0f) {
+    //         return simd_float4{r / 255.0f, g / 255.0f, b / 255.0f, a};
+    //     };
 
-        const auto white   = rgb(255, 255, 255);
-        const auto navy    = rgb(10, 37, 64);
-        const auto slate   = rgb(66, 84, 102);
-        const auto blurple = rgb(99, 91, 255);
-        const auto mist    = rgb(246, 249, 252);
-        const auto haze    = rgb(173, 189, 204);
-        const auto clear   = rgb(0, 0, 0, 0.0f);
+    //     const auto white   = rgb(255, 255, 255);
+    //     const auto navy    = rgb(10, 37, 64);
+    //     const auto slate   = rgb(66, 84, 102);
+    //     const auto blurple = rgb(99, 91, 255);
+    //     const auto mist    = rgb(246, 249, 252);
+    //     const auto haze    = rgb(173, 189, 204);
+    //     const auto clear   = rgb(0, 0, 0, 0.0f);
 
-        const std::string Sans     = Helvetica;
-        const std::string SansBold = ArialBold;
-        constexpr auto A = "/Users/treja/projects/gui/assets/clones/";
+    //     const std::string Sans     = Helvetica;
+    //     const std::string SansBold = ArialBold;
+    //     constexpr auto A = "/Users/treja/projects/gui/assets/clones/";
 
-        auto navItem = [&](const char* label) {
-            return text(label).font(SansBold).fontSize(S::pt(11)).color(navy);
-        };
+    //     auto navItem = [&](const char* label) {
+    //         return elements::span().font(SansBold).fontSize(S::pt(11)).color(navy)(text(label));
+    //     };
 
-        auto arrowButton = [&](const char* label, simd_float4 fill, simd_float4 labelColor, const char* arrow) {
-            return div(S::autoSize(), S::px(38), fill)
-                .cornerRadius(S::px(19))
-                .paddingLeft(S::px(18)).paddingRight(S::px(14))
-                .display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(6))
-            (
-                text(label).font(SansBold).fontSize(S::pt(11)).color(labelColor),
-                svg(std::string(A) + arrow, S::px(10), S::px(10))
-            );
-        };
+    //     auto arrowButton = [&](const char* label, simd_float4 fill, simd_float4 labelColor, const char* arrow) {
+    //         return div(S::autoSize(), S::px(38), fill)
+    //             .cornerRadius(S::px(19))
+    //             .paddingLeft(S::px(18)).paddingRight(S::px(14))
+    //             .display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(6))
+    //         (
+    //             elements::span().font(SansBold).fontSize(S::pt(11)).color(labelColor)(text(label)),
+    //             svg(std::string(A) + arrow, S::px(10), S::px(10))
+    //         );
+    //     };
 
-        auto band = [&](simd_float4 color) {
-            return div(S::percent(1.0), S::px(130), color).opacity(0.9f)();
-        };
+    //     auto band = [&](simd_float4 color) {
+    //         return div(S::percent(1.0), S::px(130), color).opacity(0.9f)();
+    //     };
 
-        auto logo = [&](const char* name) {
-            return div().display(Display::Flex).justifyContent(JustifyContent::Center)(
-                text(name).font(SansBold).fontSize(S::pt(17)).color(rgb(10, 37, 64, 0.55f))
-            );
-        };
+    //     auto logo = [&](const char* name) {
+    //         return div().display(Display::Flex).justifyContent(JustifyContent::Center)(
+    //             elements::span().font(SansBold).fontSize(S::pt(17)).color(rgb(10, 37, 64, 0.55f))(text(name))
+    //         );
+    //     };
 
-        auto productCard = [&](simd_float4 accent, const char* title, const char* body) {
-            return div(S::autoSize(), S::autoSize(), white)
-                .cornerRadius(S::px(8))
-                .padding(S::px(24))
-                .shadowOffsetY(S::px(15)).shadowBlur(S::px(35)).shadowColor(rgb(50, 50, 93, 0.12f))
-                .display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(12))
-            (
-                div(S::px(32), S::px(32), accent).cornerRadius(S::px(8))(),
-                text(title).font(SansBold).fontSize(S::pt(13)).color(navy),
-                text(body).font(Sans).fontSize(S::pt(11)).color(slate).lineHeight(1.55),
-                div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(4))(
-                    text("Learn more").font(SansBold).fontSize(S::pt(10.5)).color(blurple),
-                    svg(std::string(A) + "stripe-arrow-dark.svg", S::px(10), S::px(10))
-                )
-            );
-        };
+    //     auto productCard = [&](simd_float4 accent, const char* title, const char* body) {
+    //         return div(S::autoSize(), S::autoSize(), white)
+    //             .cornerRadius(S::px(8))
+    //             .padding(S::px(24))
+    //             .shadowOffsetY(S::px(15)).shadowBlur(S::px(35)).shadowColor(rgb(50, 50, 93, 0.12f))
+    //             .display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(12))
+    //         (
+    //             div(S::px(32), S::px(32), accent).cornerRadius(S::px(8))(),
+    //             elements::span().font(SansBold).fontSize(S::pt(13)).color(navy)(text(title)),
+    //             elements::span().font(Sans).fontSize(S::pt(11)).color(slate).lineHeight(1.55)(text(body)),
+    //             div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(4))(
+    //                 elements::span().font(SansBold).fontSize(S::pt(10.5)).color(blurple)(text("Learn more")),
+    //                 svg(std::string(A) + "stripe-arrow-dark.svg", S::px(10), S::px(10))
+    //             )
+    //         );
+    //     };
 
-        auto stat = [&](const char* value, const char* label) {
-            return div()
-                .paddingLeft(S::px(16))
-                .borderColor(blurple).borderLeftWidth(S::px(1))
-                .display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(8))
-            (
-                text(value).font(SansBold).fontSize(S::pt(26)).color(white),
-                text(label).font(Sans).fontSize(S::pt(11)).color(haze).lineHeight(1.5)
-            );
-        };
+    //     auto stat = [&](const char* value, const char* label) {
+    //         return div()
+    //             .paddingLeft(S::px(16))
+    //             .borderColor(blurple).borderLeftWidth(S::px(1))
+    //             .display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(8))
+    //         (
+    //             elements::span().font(SansBold).fontSize(S::pt(26)).color(white)(text(value)),
+    //             elements::span().font(Sans).fontSize(S::pt(11)).color(haze).lineHeight(1.5)(text(label))
+    //         );
+    //     };
 
-        div(S::percent(1.0), S::percent(1.0), white)
-            .overflow(gui::Overflow::Scroll)
-        (
-            // ── Hero ──
-            div(S::percent(1.0), S::px(640), white)
-                .position(Position::Relative)
-                .overflow(gui::Overflow::Hidden)
-            (
-                div(S::px(1800), S::autoSize(), clear)
-                    .position(Position::Absolute)
-                    .top(S::px(-360)).left(S::percent(0.3))
-                    .rotate(-0.21f)
-                (
-                    band(rgb(169, 96, 238)),
-                    band(rgb(255, 51, 61)),
-                    band(rgb(255, 203, 87)),
-                    band(rgb(144, 224, 255)),
-                    band(rgb(169, 96, 238))
-                ),
+    //     div(S::percent(1.0), S::percent(1.0), white)
+    //         .overflow(gui::Overflow::Scroll)
+    //     (
+    //         // ── Hero ──
+    //         div(S::percent(1.0), S::px(640), white)
+    //             .position(Position::Relative)
+    //             .overflow(gui::Overflow::Hidden)
+    //         (
+    //             div(S::px(1800), S::autoSize(), clear)
+    //                 .position(Position::Absolute)
+    //                 .top(S::px(-360)).left(S::percent(0.3))
+    //                 .rotate(-0.21f)
+    //             (
+    //                 band(rgb(169, 96, 238)),
+    //                 band(rgb(255, 51, 61)),
+    //                 band(rgb(255, 203, 87)),
+    //                 band(rgb(144, 224, 255)),
+    //                 band(rgb(169, 96, 238))
+    //             ),
 
-                // nav
-                div(S::percent(1.0), S::px(72), clear)
-                    .position(Position::Relative)
-                    .paddingLeft(S::px(64)).paddingRight(S::px(64))
-                    .display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::SpaceBetween)
-                (
-                    div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(32))(
-                        text("stripe").font(SansBold).fontSize(S::pt(22)).color(navy),
-                        navItem("Products"),
-                        navItem("Solutions"),
-                        navItem("Developers"),
-                        navItem("Resources"),
-                        navItem("Pricing")
-                    ),
-                    div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(12))(
-                        arrowButton("Sign in", rgb(255, 255, 255, 0.25f), white, "stripe-arrow.svg"),
-                        arrowButton("Contact sales", white, blurple, "stripe-arrow-dark.svg")
-                    )
-                ),
+    //             // nav
+    //             div(S::percent(1.0), S::px(72), clear)
+    //                 .position(Position::Relative)
+    //                 .paddingLeft(S::px(64)).paddingRight(S::px(64))
+    //                 .display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::SpaceBetween)
+    //             (
+    //                 div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(32))(
+    //                     elements::span().font(SansBold).fontSize(S::pt(22)).color(navy)(text("stripe")),
+    //                     navItem("Products"),
+    //                     navItem("Solutions"),
+    //                     navItem("Developers"),
+    //                     navItem("Resources"),
+    //                     navItem("Pricing")
+    //                 ),
+    //                 div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(12))(
+    //                     arrowButton("Sign in", rgb(255, 255, 255, 0.25f), white, "stripe-arrow.svg"),
+    //                     arrowButton("Contact sales", white, blurple, "stripe-arrow-dark.svg")
+    //                 )
+    //             ),
 
-                // headline
-                div()
-                    .position(Position::Relative)
-                    .paddingLeft(S::px(64))
-                    .paddingTop(S::px(96))
-                    .maxWidth(S::px(760))
-                    .display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(28))
-                (
-                    text("Financial infrastructure to grow your revenue").font(SansBold).fontSize(S::pt(52)).color(navy).lineHeight(1.05),
-                    div().maxWidth(S::px(540))(
-                        text("Join the millions of companies that use Stripe to accept payments online and in person, embed financial services, power custom revenue models, and build a more profitable business.")
-                            .font(Sans).fontSize(S::pt(14)).color(slate).lineHeight(1.55)
-                    ),
-                    div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(16))(
-                        arrowButton("Start now", blurple, white, "stripe-arrow.svg"),
-                        arrowButton("Contact sales", clear, blurple, "stripe-arrow-dark.svg")
-                    )
-                )
-            ),
+    //             // headline
+    //             div()
+    //                 .position(Position::Relative)
+    //                 .paddingLeft(S::px(64))
+    //                 .paddingTop(S::px(96))
+    //                 .maxWidth(S::px(760))
+    //                 .display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(28))
+    //             (
+    //                 elements::span().font(SansBold).fontSize(S::pt(52)).color(navy).lineHeight(1.05)(text("Financial infrastructure to grow your revenue")),
+    //                 div().maxWidth(S::px(540))(
+    //                     elements::span()
+    //                         .font(Sans).fontSize(S::pt(14)).color(slate).lineHeight(1.55)(text("Join the millions of companies that use Stripe to accept payments online and in person, embed financial services, power custom revenue models, and build a more profitable business."))
+    //                 ),
+    //                 div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(16))(
+    //                     arrowButton("Start now", blurple, white, "stripe-arrow.svg"),
+    //                     arrowButton("Contact sales", clear, blurple, "stripe-arrow-dark.svg")
+    //                 )
+    //             )
+    //         ),
 
-            // ── Logos ──
-            div()
-                .width(S::percent(1.0))
-                .paddingLeft(S::px(64)).paddingRight(S::px(64))
-                .paddingTop(S::px(32)).paddingBottom(S::px(48))
-                .display(Display::Grid)
-                .gridTemplateColumns({S::fr(1), S::fr(1), S::fr(1), S::fr(1)})
-                .gridRowGap(S::px(32))
-            (
-                logo("OpenAI"), logo("amazon"), logo("Google"), logo("Marriott"),
-                logo("shopify"), logo("airbnb"), logo("URBN"), logo("lyft")
-            ),
+    //         // ── Logos ──
+    //         div()
+    //             .width(S::percent(1.0))
+    //             .paddingLeft(S::px(64)).paddingRight(S::px(64))
+    //             .paddingTop(S::px(32)).paddingBottom(S::px(48))
+    //             .display(Display::Grid)
+    //             .gridTemplateColumns({S::fr(1), S::fr(1), S::fr(1), S::fr(1)})
+    //             .gridRowGap(S::px(32))
+    //         (
+    //             logo("OpenAI"), logo("amazon"), logo("Google"), logo("Marriott"),
+    //             logo("shopify"), logo("airbnb"), logo("URBN"), logo("lyft")
+    //         ),
 
-            // ── Products ──
-            div(S::percent(1.0), S::autoSize(), mist)
-                .paddingLeft(S::px(64)).paddingRight(S::px(64))
-                .paddingTop(S::px(96)).paddingBottom(S::px(96))
-                .display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(20))
-            (
-                text("Modular solutions").font(SansBold).fontSize(S::pt(13)).color(blurple),
-                div().maxWidth(S::px(720))(
-                    text("A fully integrated suite of financial and payments products").font(SansBold).fontSize(S::pt(34)).color(navy).lineHeight(1.15)
-                ),
-                div().maxWidth(S::px(620)).marginBottom(S::px(28))(
-                    text("Reduce costs, grow revenue, and run your business more efficiently on a fully integrated, AI-powered platform. Use Stripe to handle all of your payments-related needs.")
-                        .font(Sans).fontSize(S::pt(13)).color(slate).lineHeight(1.55)
-                ),
-                div()
-                    .width(S::percent(1.0))
-                    .display(Display::Grid)
-                    .gridTemplateColumns({S::fr(1), S::fr(1), S::fr(1)})
-                    .gridColumnGap(S::px(24))
-                (
-                    productCard(blurple, "Payments", "Accept and optimize payments globally, online and in person."),
-                    productCard(rgb(0, 212, 255), "Billing", "Manage subscriptions, invoicing, and usage-based pricing."),
-                    productCard(rgb(255, 91, 145), "Connect", "Build and scale a multiparty payments platform or marketplace.")
-                )
-            ),
+    //         // ── Products ──
+    //         div(S::percent(1.0), S::autoSize(), mist)
+    //             .paddingLeft(S::px(64)).paddingRight(S::px(64))
+    //             .paddingTop(S::px(96)).paddingBottom(S::px(96))
+    //             .display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(20))
+    //         (
+    //             elements::span().font(SansBold).fontSize(S::pt(13)).color(blurple)(text("Modular solutions")),
+    //             div().maxWidth(S::px(720))(
+    //                 elements::span().font(SansBold).fontSize(S::pt(34)).color(navy).lineHeight(1.15)(text("A fully integrated suite of financial and payments products"))
+    //             ),
+    //             div().maxWidth(S::px(620)).marginBottom(S::px(28))(
+    //                 elements::span()
+    //                     .font(Sans).fontSize(S::pt(13)).color(slate).lineHeight(1.55)(text("Reduce costs, grow revenue, and run your business more efficiently on a fully integrated, AI-powered platform. Use Stripe to handle all of your payments-related needs."))
+    //             ),
+    //             div()
+    //                 .width(S::percent(1.0))
+    //                 .display(Display::Grid)
+    //                 .gridTemplateColumns({S::fr(1), S::fr(1), S::fr(1)})
+    //                 .gridColumnGap(S::px(24))
+    //             (
+    //                 productCard(blurple, "Payments", "Accept and optimize payments globally, online and in person."),
+    //                 productCard(rgb(0, 212, 255), "Billing", "Manage subscriptions, invoicing, and usage-based pricing."),
+    //                 productCard(rgb(255, 91, 145), "Connect", "Build and scale a multiparty payments platform or marketplace.")
+    //             )
+    //         ),
 
-            // ── Stats ──
-            div(S::percent(1.0), S::autoSize(), navy)
-                .paddingLeft(S::px(64)).paddingRight(S::px(64))
-                .paddingTop(S::px(96)).paddingBottom(S::px(96))
-                .display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(48))
-            (
-                div().maxWidth(S::px(640))(
-                    text("The backbone of global commerce").font(SansBold).fontSize(S::pt(30)).color(white).lineHeight(1.15)
-                ),
-                div()
-                    .width(S::percent(1.0))
-                    .display(Display::Grid)
-                    .gridTemplateColumns({S::fr(1), S::fr(1), S::fr(1), S::fr(1)})
-                    .gridColumnGap(S::px(32))
-                (
-                    stat("500M+", "API requests per day, peaking at 13,000 requests a second."),
-                    stat("99.999%", "historical uptime for Stripe services."),
-                    stat("47+", "countries with local acquiring, optimizing acceptance rates."),
-                    stat("135+", "currencies and payment methods supported.")
-                )
-            )
-        );
-    }
-    */
+    //         // ── Stats ──
+    //         div(S::percent(1.0), S::autoSize(), navy)
+    //             .paddingLeft(S::px(64)).paddingRight(S::px(64))
+    //             .paddingTop(S::px(96)).paddingBottom(S::px(96))
+    //             .display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(48))
+    //         (
+    //             div().maxWidth(S::px(640))(
+    //                 elements::span().font(SansBold).fontSize(S::pt(30)).color(white).lineHeight(1.15)(text("The backbone of global commerce"))
+    //             ),
+    //             div()
+    //                 .width(S::percent(1.0))
+    //                 .display(Display::Grid)
+    //                 .gridTemplateColumns({S::fr(1), S::fr(1), S::fr(1), S::fr(1)})
+    //                 .gridColumnGap(S::px(32))
+    //             (
+    //                 stat("500M+", "API requests per day, peaking at 13,000 requests a second."),
+    //                 stat("99.999%", "historical uptime for Stripe services."),
+    //                 stat("47+", "countries with local acquiring, optimizing acceptance rates."),
+    //                 stat("135+", "currencies and payment methods supported.")
+    //             )
+    //         )
+    //     );
+    // }
 
     // ═══════════════════════════════════════════════════════════════════
     // Animations: settings panel
@@ -6861,15 +6859,15 @@ div()
                 .paddingLeft(S::px(12))
                 .display(Display::Flex).alignItems(AlignItems::Center)
                 .addEventListener(EventType::MouseEnter, [raised](auto& node, Event&) {
-                    node.animateColor(raised, 0.12);
+                    node.animateBackgroundColor(raised, 0.12);
                 })
                 .addEventListener(EventType::MouseLeave, [rest](auto& node, Event&) {
-                    node.animateColor(rest, 0.2);
+                    node.animateBackgroundColor(rest, 0.2);
                 })
             (
-                text(label).font(Arial).fontSize(S::pt(12)).color(active ? ink : muted)
+                elements::span().font(Arial).fontSize(S::pt(12)).color(active ? ink : muted)
                     .whiteSpace(WhiteSpace::NoWrap)
-                    .pointerEvents(PointerEvents::None)
+                    .pointerEvents(PointerEvents::None)(text(label))
             );
         };
 
@@ -6884,8 +6882,8 @@ div()
                 .paddingTop(S::px(14)).paddingBottom(S::px(14))
             (
                 div().display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(4))(
-                    text(label).font(ArialBold).fontSize(S::pt(13)).color(ink),
-                    text(detail).font(Arial).fontSize(S::pt(11)).color(muted)
+                    elements::span().font(ArialBold).fontSize(S::pt(13)).color(ink)(text(label)),
+                    elements::span().font(Arial).fontSize(S::pt(11)).color(muted)(text(detail))
                 ),
                 div(S::px(44), S::px(24), on ? green : off)
                     .cornerRadius(S::px(12))
@@ -6894,7 +6892,7 @@ div()
                     .addEventListener(EventType::MouseDown, [knob, green, off](auto& track, Event&) mutable {
                         bool isOn = knob.translate().value_or(simd_float2{0.0f, 0.0f}).x > 0.0f;
                         knob.animateTranslate(simd_float2{isOn ? 0.0f : 20.0f, 0.0f}, 0.18, Easing::EaseOutQuad);
-                        track.animateColor(isOn ? off : green, 0.18);
+                        track.animateBackgroundColor(isOn ? off : green, 0.18);
                     })
                 (
                     knob
@@ -6907,13 +6905,13 @@ div()
                 .cornerRadius(S::px(8))
                 .display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::Center)
                 .addEventListener(EventType::MouseEnter, [hover](auto& node, Event&) {
-                    node.animateColor(hover, 0.15);
+                    node.animateBackgroundColor(hover, 0.15);
                 })
                 .addEventListener(EventType::MouseLeave, [rest](auto& node, Event&) {
-                    node.animateColor(rest, 0.2);
+                    node.animateBackgroundColor(rest, 0.2);
                 })
             (
-                text(label).font(ArialBold).fontSize(S::pt(12)).color(ink).pointerEvents(PointerEvents::None)
+                elements::span().font(ArialBold).fontSize(S::pt(12)).color(ink).pointerEvents(PointerEvents::None)(text(label))
             );
         };
 
@@ -6923,7 +6921,7 @@ div()
             .flexShrink(S::px(0))
             .display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::Center)
         (
-            text("≡").font(ArialBold).fontSize(S::pt(14)).color(ink).pointerEvents(PointerEvents::None)
+            elements::span().font(ArialBold).fontSize(S::pt(14)).color(ink).pointerEvents(PointerEvents::None)(text("≡"))
         );
 
         auto sidebar = div(S::px(232), S::autoSize(), surface)
@@ -6935,7 +6933,7 @@ div()
         (
             div().display(Display::Flex).alignItems(AlignItems::Center).flexGap(S::px(12)).marginBottom(S::px(16))(
                 collapse,
-                text("butterfly").font(ArialBold).fontSize(S::pt(15)).color(ink).whiteSpace(WhiteSpace::NoWrap)
+                elements::span().font(ArialBold).fontSize(S::pt(15)).color(ink).whiteSpace(WhiteSpace::NoWrap)(text("butterfly"))
             ),
             navItem("General", false),
             navItem("Appearance", true),
@@ -6957,9 +6955,9 @@ div()
             .flexShrink(S::px(0))
             .display(Display::Flex).alignItems(AlignItems::Center)
         (
-            text("Changes are saved automatically. Click to dismiss.").font(Arial).fontSize(S::pt(12)).color(ink)
+            elements::span().font(Arial).fontSize(S::pt(12)).color(ink)
                 .whiteSpace(WhiteSpace::NoWrap)
-                .pointerEvents(PointerEvents::None)
+                .pointerEvents(PointerEvents::None)(text("Changes are saved automatically. Click to dismiss."))
         );
 
         banner.addEventListener(EventType::MouseDown, [](auto& node, Event&) {
@@ -6981,8 +6979,8 @@ div()
             .display(Display::Flex).alignItems(AlignItems::Center).justifyContent(JustifyContent::SpaceBetween)
             .paddingTop(S::px(14)).paddingBottom(S::px(14))
         (
-            text("Advanced").font(ArialBold).fontSize(S::pt(13)).color(ink).pointerEvents(PointerEvents::None),
-            text("show / hide").font(Arial).fontSize(S::pt(11)).color(muted).pointerEvents(PointerEvents::None)
+            elements::span().font(ArialBold).fontSize(S::pt(13)).color(ink).pointerEvents(PointerEvents::None)(text("Advanced")),
+            elements::span().font(Arial).fontSize(S::pt(11)).color(muted).pointerEvents(PointerEvents::None)(text("show / hide"))
         );
 
         advancedHeader.addEventListener(EventType::MouseDown, [details](auto&, Event&) mutable {
@@ -7000,8 +6998,8 @@ div()
                 .display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(20))
             (
                 div().display(Display::Flex).flexDirection(FlexDirection::Col).flexGap(S::px(6))(
-                    text("Appearance").font(ArialBold).fontSize(S::pt(24)).color(ink),
-                    text("Tune how the window looks and renders.").font(Arial).fontSize(S::pt(13)).color(muted)
+                    elements::span().font(ArialBold).fontSize(S::pt(24)).color(ink)(text("Appearance")),
+                    elements::span().font(Arial).fontSize(S::pt(13)).color(muted)(text("Tune how the window looks and renders."))
                 ),
 
                 banner,
@@ -7041,15 +7039,358 @@ div()
 
     //     auto row = [&](float width) {
     //         return div(S::px(width), S::autoSize(), simd_float4{1, 1, 1, 1}).marginBottom(S::px(8))(
-    //             text("aaaa ").font(Arial).fontSize(S::pt(16)).color(simd_float4{0, 0, 0, 1}),
-    //             text("foo").font(Arial).fontSize(S::pt(16)).color(simd_float4{1, 0, 0, 1}),
-    //             text("bar").font(Arial).fontSize(S::pt(16)).color(simd_float4{0, 0, 1, 1})
+    //             elements::span().font(Arial).fontSize(S::pt(16)).color(simd_float4{0, 0, 0, 1})(text("aaaa ")),
+    //             elements::span().font(Arial).fontSize(S::pt(16)).color(simd_float4{1, 0, 0, 1})(text("foo")),
+    //             elements::span().font(Arial).fontSize(S::pt(16)).color(simd_float4{0, 0, 1, 1})(text("bar"))
     //         );
     //     };
 
     //     div(S::percent(1.0), S::percent(1.0), simd_float4{0.8, 0.8, 0.8, 1}).paddingTop(S::px(40))(
     //         row(40), row(45), row(50), row(55), row(60), row(65),
     //         row(70), row(75), row(80), row(85), row(90), row(95)
+    //     );
+    // }
+
+    // {
+    //     using S = gui::Size;
+
+    //     const simd_float4 labelColor{0.70, 0.73, 0.80, 1.0};
+    //     const simd_float4 rowColor{0.15, 0.16, 0.20, 1.0};
+    //     const simd_float4 itemColor{0.08, 0.72, 0.86, 1.0};
+    //     const simd_float4 textColor{0.96, 0.97, 1.0, 1.0};
+
+    //     auto label = [&](const std::string& value) {
+    //         return elements::span().font(Arial).fontSize(S::pt(12)).color(labelColor)(text(value));
+    //     };
+
+    //     auto row = [&]() {
+    //         return div(S::autoSize(), S::autoSize(), rowColor)
+    //             .display(gui::Display::Flex)
+    //             .alignItems(gui::AlignItems::Center)
+    //             .flexGap(S::px(16))
+    //             .padding(S::px(10))
+    //             .font(Arial)
+    //             .fontSize(S::pt(14))
+    //             .color(textColor);
+    //     };
+
+    //     auto appendRow = row();
+    //     appendRow.addEventListener(runtime::EventType::MouseDown, [appendRow](auto&, Event&) mutable {
+    //         appendRow(text(" again"));
+    //     });
+
+    //     div(S::percent(1.0), S::percent(1.0), simd_float4{0.06, 0.07, 0.09, 1.0})
+    //         .display(gui::Display::Flex)
+    //         .flexDirection(gui::FlexDirection::Col)
+    //         .alignItems(gui::AlignItems::FlexStart)
+    //         .padding(S::px(48))
+    //         .flexGap(S::px(12))
+    //     (
+    //         label("CONSECUTIVE TEXT — ONE ITEM, NO GAP BETWEEN \"Hello\" AND \"world\""),
+    //         row()(text("Hello "), text("world")),
+
+    //         label("TEXT, DIV, TEXT — TWO TEXT ITEMS AROUND THE DIV"),
+    //         row()(text("left"), div(S::px(24), S::px(24), itemColor)(), text("right")),
+
+    //         label("TEXT, ABSPOS, TEXT — TWO ITEMS (ABSPOS BREAKS THE RUN)"),
+    //         row().position(gui::Position::Relative)(
+    //             text("before"),
+    //             div(S::px(12), S::px(12), simd_float4{0.96, 0.30, 0.46, 1.0}).position(gui::Position::Absolute).right(S::px(4)).top(S::px(4))(),
+    //             text("after")
+    //         ),
+
+    //         label("DIV, WHITESPACE, DIV — ONE 16PX GAP (WHITESPACE RUN NOT RENDERED)"),
+    //         row()(div(S::px(24), S::px(24), itemColor)(), text("   "), div(S::px(24), S::px(24), itemColor)()),
+
+    //         label("GRID: \"a\" \"b\" DIV \"c\" — THREE CELLS: \"ab\", DIV, \"c\""),
+    //         div(S::px(360), S::autoSize(), rowColor)
+    //             .display(gui::Display::Grid)
+    //             .gridTemplateColumns({S::fr(1.0), S::fr(1.0), S::fr(1.0)})
+    //             .gridColumnGap(S::px(10))
+    //             .padding(S::px(10))
+    //             .font(Arial)
+    //             .fontSize(S::pt(14))
+    //             .color(textColor)
+    //         (text("a"), text("b"), div(S::px(24), S::px(24), itemColor)(), text("c")),
+
+    //         label("FLEX: TEXT, SPAN, TEXT — THREE ITEMS"),
+    //         row()(text("one "), elements::span()(text("two")), text(" three")),
+
+    //         label("BLOCK: SAME CHILDREN — ONE LINE, NO ANONYMOUS BOXES"),
+    //         row().display(gui::Display::Block)(text("one "), elements::span()(text("two")), text(" three")),
+
+    //         label("CLICK TO APPEND \" again\" — ABSORBED INTO THE SAME ITEM, NO 16PX GAP"),
+    //         appendRow(text("hello"))
+    //     );
+    // }
+
+    // // ═══════════════════════════════════════════════════════════════════
+    // // Inline line boxes: one inline box (span) split across several line
+    // // boxes of different widths.
+    // //   first/last fragments start/end mid-line
+    // //   padding, border, margin only on the unbroken sides
+    // //   text-align shifting every line, nesting, mixed line heights
+    // //   wrapping spans next to anonymous flex/grid items
+    // // Browser reference: tests/layout/web/src/app/inline-line-boxes/page.tsx
+    // // ═══════════════════════════════════════════════════════════════════
+    // {
+    //     using S = gui::Size;
+
+    //     const auto ink = simd_float4{0.96,0.97,1.0,1.0};
+    //     const auto dark = simd_float4{0.078,0.090,0.110,1.0};
+    //     const auto panel = simd_float4{0.15,0.16,0.20,1.0};
+    //     const auto yellow = simd_float4{0.98,0.76,0.20,1.0};
+    //     const auto blue = simd_float4{0.45,0.80,0.98,1.0};
+    //     const auto pink = simd_float4{0.96,0.30,0.46,1.0};
+    //     const auto green = simd_float4{0.38,0.92,0.56,1.0};
+    //     const auto purple = simd_float4{0.64,0.42,0.96,1.0};
+    //     const auto cyan = simd_float4{0.08,0.72,0.86,1.0};
+
+    //     const auto label = [&](const char* s) {
+    //         return elements::span()
+    //             .font(Arial)
+    //             .fontSize(S::pt(12))
+    //             .color(green)(text(s));
+    //     };
+
+    //     const auto box = [&](float width) {
+    //         return div(S::px(width), S::autoSize(), panel)
+    //             .font(Arial)
+    //             .fontSize(S::pt(18))
+    //             .color(ink);
+    //     };
+
+    //     const auto testCase = [&](const char* name, auto content) {
+    //         return div()
+    //             .display(gui::Display::Flex)
+    //             .flexDirection(gui::FlexDirection::Col)
+    //             .alignItems(gui::AlignItems::FlexStart)
+    //             .flexGap(S::px(6))
+    //         (
+    //             label(name),
+    //             content
+    //         );
+    //     };
+
+    //     const auto column = [&]() {
+    //         return div(S::px(320), S::autoSize(), simd_float4{0.0,0.0,0.0,0.0})
+    //             .flexShrink(S::px(0))
+    //             .display(gui::Display::Flex)
+    //             .flexDirection(gui::FlexDirection::Col)
+    //             .alignItems(gui::AlignItems::FlexStart)
+    //             .flexGap(S::px(20));
+    //     };
+
+    //     const auto ladderRow = [&](float width) {
+    //         return box(width)
+    //         (
+    //             text("ab "),
+    //             elements::span()
+    //                 .backgroundColor(purple)
+    //                 .color(dark)
+    //                 .borderColor(yellow)
+    //                 .borderLeftWidth(S::px(4))
+    //                 .borderRightWidth(S::px(4))(text("inline box breaking at different points")),
+    //             text(" cd")
+    //         );
+    //     };
+
+    //     div(S::percent(1.0), S::percent(1.0), simd_float4{0.06,0.07,0.09,1.0})
+    //         .display(gui::Display::Flex)
+    //         .alignItems(gui::AlignItems::FlexStart)
+    //         .padding(S::px(24))
+    //         .flexGap(S::px(24))
+    //         .overflow(gui::Overflow::Scroll)
+    //     (
+    //         column()
+    //         (
+    //             testCase("BACKGROUND, STARTS AND ENDS MID-LINE", box(260)
+    //             (
+    //                 text("lead in "),
+    //                 elements::span()
+    //                     .backgroundColor(yellow)
+    //                     .color(dark)(text("this inline box wraps across several line boxes of different widths")),
+    //                 text(" and a tail")
+    //             )),
+
+    //             testCase("PADDING 12 + BORDER 3, FIRST/LAST EDGES ONLY", box(260)
+    //             (
+    //                 text("lead in "),
+    //                 elements::span()
+    //                     .backgroundColor(blue)
+    //                     .color(dark)
+    //                     .paddingLeft(S::px(12))
+    //                     .paddingRight(S::px(12))
+    //                     .paddingTop(S::px(2))
+    //                     .paddingBottom(S::px(2))
+    //                     .borderColor(pink)
+    //                     .borderWidth(S::px(3))(text("padding and border split at every line break")),
+    //                 text(" tail")
+    //             )),
+
+    //             testCase("MARGIN 24 BOTH SIDES, FIRST/LAST ONLY", box(260)
+    //             (
+    //                 text("lead"),
+    //                 elements::span()
+    //                     .backgroundColor(green)
+    //                     .color(dark)
+    //                     .marginLeft(S::px(24))
+    //                     .marginRight(S::px(24))(text("margins apply to the first and last fragment")),
+    //                 text("tail")
+    //             )),
+
+    //             testCase("TEXT-ALIGN CENTER", box(260).textAlign(gui::TextAlign::Center)
+    //             (
+    //                 text("centered "),
+    //                 elements::span()
+    //                     .backgroundColor(yellow)
+    //                     .color(dark)
+    //                     .paddingLeft(S::px(6))
+    //                     .paddingRight(S::px(6))(text("each fragment shifts with its own line box width")),
+    //                 text(" end")
+    //             )),
+
+    //             testCase("TEXT-ALIGN RIGHT", box(260).textAlign(gui::TextAlign::Right)
+    //             (
+    //                 text("right "),
+    //                 elements::span()
+    //                     .backgroundColor(pink)
+    //                     .color(dark)
+    //                     .borderColor(ink)
+    //                     .borderWidth(S::px(2))(text("right aligned fragments of one inline box")),
+    //                 text(" end")
+    //             )),
+
+    //             testCase("CLICK TO GROW, FRAGMENTS REFLOW", box(260)
+    //             (
+    //                 text("lead "),
+    //                 elements::span()
+    //                     .backgroundColor(cyan)
+    //                     .color(dark)
+    //                     .paddingLeft(S::px(8))
+    //                     .paddingRight(S::px(8))
+    //                 (
+    //                     text("click me to grow")
+    //                         .addEventListener(runtime::EventType::MouseDown, [](auto& node, Event&) {
+    //                             node.text(node.text() + " and grow");
+    //                         })
+    //                 ),
+    //                 text(" tail")
+    //             )),
+
+    //             testCase("BIDI: RTL WORDS INSIDE A WRAPPING SPAN", box(260)
+    //             (
+    //                 text("lead "),
+    //                 elements::span()
+    //                     .backgroundColor(cyan)
+    //                     .color(dark)
+    //                     .paddingLeft(S::px(8))
+    //                     .paddingRight(S::px(8))(text("alpha שלום עולם beta gamma שלום delta")),
+    //                 text(" tail")
+    //             ))
+    //         ),
+    //         column()
+    //         (
+    //             testCase("NESTED: BOTH OUTER AND INNER WRAP", box(280)
+    //             (
+    //                 text("start "),
+    //                 elements::span()
+    //                     .backgroundColor(blue)
+    //                     .color(dark)
+    //                     .paddingLeft(S::px(8))
+    //                     .paddingRight(S::px(8))
+    //                 (
+    //                     text("outer opens here and "),
+    //                     elements::span()
+    //                         .backgroundColor(pink)
+    //                         .borderColor(yellow)
+    //                         .borderWidth(S::px(2))(text("the inner span also breaks across lines")),
+    //                     text(" then outer closes")
+    //                 ),
+    //                 text(" end")
+    //             )),
+
+    //             testCase("MIXED FONT SIZES, UNEVEN LINE HEIGHTS", box(280)
+    //             (
+    //                 elements::span()
+    //                     .backgroundColor(green)
+    //                     .color(dark)
+    //                     .fontSize(S::pt(14))
+    //                 (
+    //                     text("small words then "),
+    //                     elements::span().fontSize(S::pt(28))(text("Large words")),
+    //                     text(" and small again, wrapping onward")
+    //                 )
+    //             )),
+
+    //             testCase("ADJACENT WRAPPING SPANS", box(280)
+    //             (
+    //                 elements::span()
+    //                     .backgroundColor(yellow)
+    //                     .color(dark)(text("first span wraps over a line ")),
+    //                 elements::span()
+    //                     .backgroundColor(blue)
+    //                     .color(dark)(text("second span picks up mid-line and wraps"))
+    //             )),
+
+    //             testCase("WIDTH LADDER 120 / 170 / 220", div()
+    //                 .display(gui::Display::Flex)
+    //                 .flexDirection(gui::FlexDirection::Col)
+    //                 .alignItems(gui::AlignItems::FlexStart)
+    //                 .flexGap(S::px(8))
+    //             (
+    //                 ladderRow(120),
+    //                 ladderRow(170),
+    //                 ladderRow(220)
+    //             )),
+
+    //             // anonymous item: the two text runs merge into one item and shrink to the leftover width
+    //             testCase("FLEX: ANONYMOUS ITEM + WRAPPING SPAN ITEM", div(S::px(300), S::autoSize(), panel)
+    //                 .display(gui::Display::Flex)
+    //                 .flexGap(S::px(10))
+    //                 .padding(S::px(8))
+    //                 .font(Arial)
+    //                 .fontSize(S::pt(14))
+    //                 .color(ink)
+    //             (
+    //                 text("anonymous item "),
+    //                 text("text wraps in its own box"),
+    //                 div(S::px(170), S::autoSize(), simd_float4{0.22,0.23,0.28,1.0})
+    //                     .flexShrink(S::px(0))
+    //                 (
+    //                     text("lead "),
+    //                     elements::span()
+    //                         .backgroundColor(yellow)
+    //                         .color(dark)
+    //                         .paddingLeft(S::px(6))
+    //                         .paddingRight(S::px(6))(text("wrapping span inside a flex item")),
+    //                     text(" tail")
+    //                 )
+    //             )),
+
+    //             testCase("GRID: ANONYMOUS CELL + WRAPPING SPAN CELL", div(S::px(300), S::autoSize(), panel)
+    //                 .display(gui::Display::Grid)
+    //                 .gridTemplateColumns({S::fr(1.0), S::fr(1.0)})
+    //                 .gridColumnGap(S::px(10))
+    //                 .padding(S::px(8))
+    //                 .font(Arial)
+    //                 .fontSize(S::pt(14))
+    //                 .color(ink)
+    //             (
+    //                 text("anonymous "),
+    //                 text("cell text wraps too"),
+    //                 div()
+    //                 (
+    //                     text("cell "),
+    //                     elements::span()
+    //                         .backgroundColor(pink)
+    //                         .color(dark)
+    //                         .borderColor(ink)
+    //                         .borderWidth(S::px(2))(text("span wraps in the grid cell")),
+    //                     text(" end")
+    //                 )
+    //             ))
+    //         )
     //     );
     // }
 }

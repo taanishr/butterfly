@@ -21,7 +21,9 @@ namespace elements {
 
         auto currTree = TreeStack::getCurrentTree();
 
-        return NodeBuilder(ctx, *currTree, std::move(elem), proc);
+        auto builder = NodeBuilder(ctx, *currTree, std::move(elem), proc);
+        builder.treeNode()->metadata.displayName = "div";
+        return builder;
     }
 
     NodeBuilder<Div<DivStorage>, DivProcessor<DivStorage, DivUniforms>> div(Size width, Size height, simd_float4 color)
@@ -33,28 +35,39 @@ namespace elements {
         auto currTree = TreeStack::getCurrentTree();
 
         auto builder = NodeBuilder(ctx, *currTree, std::move(elem), proc);
+        builder.treeNode()->metadata.displayName = "div";
         builder.width(width);
         builder.height(height);
-        builder.color(color);
+        builder.backgroundColor(color);
         return builder;
     }
 
-    NodeBuilder<Text<TextStorage>, TextProcessor<TextStorage, TextUniforms>> text(const std::string& text,
-                 Size fontSize, simd_float4 color,
-                 const std::string& font)
+    NodeBuilder<Div<DivStorage>, DivProcessor<DivStorage, DivUniforms>> span()
+    {
+        auto& ctx = ContextManager::getContext();
+        auto& proc = getDivProcessor(ctx);
+        Div elem {ctx};
+
+        auto currTree = TreeStack::getCurrentTree();
+
+        auto builder = NodeBuilder(ctx, *currTree, std::move(elem), proc);
+        builder.treeNode()->metadata.displayName = "span";
+        builder.display(Display::Inline);
+        return builder;
+    }
+
+    NodeBuilder<Text<TextStorage>, TextProcessor<TextStorage, TextUniforms>> text(const std::string& text)
     {
         auto& ctx = ContextManager::getContext();
         auto& proc = getTextProcessor(ctx);
         Text elem{ctx};
         auto& desc = elem.getDescriptor();
         desc.text = text;
-        desc.fontSize = fontSize;
-        desc.font = font;
 
         auto currTree = TreeStack::getCurrentTree();
         auto builder = NodeBuilder(ctx, *currTree, std::move(elem), proc);
-        builder.display(Display::Inline);
-        builder.color(color);
+        builder.treeNode()->metadata.displayName = "text";
+        builder.treeNode()->shared.display = Display::Inline;
         return builder;
     }
 
@@ -69,6 +82,7 @@ namespace elements {
         auto currTree = TreeStack::getCurrentTree();
 
         auto builder = NodeBuilder(ctx, *currTree, std::move(elem), proc);
+        builder.treeNode()->metadata.displayName = "image";
         builder.display(Display::Inline);
         builder.width(width);
         builder.height(height);
@@ -86,6 +100,7 @@ namespace elements {
         auto currTree = TreeStack::getCurrentTree();
 
         auto builder = NodeBuilder(ctx, *currTree, std::move(elem), proc);
+        builder.treeNode()->metadata.displayName = "svg";
         builder.display(Display::Inline);
         builder.width(width);
         builder.height(height);

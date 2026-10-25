@@ -76,7 +76,7 @@ namespace elements {
         }
     };
 
-    struct DivStyleUniforms {
+    struct DivUniforms {
         simd_float4 color;
         CornerRadii cornerRadius;
         BorderUniform border;
@@ -84,29 +84,30 @@ namespace elements {
         float opacity;
     };
 
-    struct DivGeometryUniforms {
+    struct DivGeometry {
         simd_float2 rectCenter;
         simd_float2 halfExtent;
+        simd_float2 quadMin;
+        simd_float2 quadMax;
+        CornerRadii cornerRadius;
+        simd_float4 borderWidths;
         uint32_t numClips;
         simd_float3x3 transform;
     };
 
-    struct DivUniforms {
-        DivStyleUniforms style;
-        DivGeometryUniforms geometry;
-    };
-
     struct DivStorage {
         DivStorage(UIContext& ctx):
-            atomsBuffer{ctx.allocator, 6*sizeof(DivPoint), MaxOutstandingFrameCount},
+            atomsBuffer{ctx.allocator, 4*sizeof(DivPoint), MaxOutstandingFrameCount},
             placementsBuffer{ctx.allocator, sizeof(simd_float2), MaxOutstandingFrameCount},
             uniformsBuffer{ctx.allocator, sizeof(DivUniforms), MaxOutstandingFrameCount},
+            fragmentsBuffer{ctx.allocator, sizeof(DivGeometry), MaxOutstandingFrameCount},
             clipsBuffer{ctx.allocator, sizeof(ClipUniform) * 4, MaxOutstandingFrameCount}
         {}
 
         FrameBufferedBuffer<DivPoint> atomsBuffer;
         FrameBufferedBuffer<simd_float2> placementsBuffer;
         FrameBufferedBuffer<DivUniforms> uniformsBuffer;
+        FrameBufferedBuffer<DivGeometry> fragmentsBuffer;
         FrameBufferedBuffer<ClipUniform> clipsBuffer;
     };
 
@@ -232,17 +233,15 @@ namespace elements {
             std::vector<Atom> atoms {};
             
             // prepare buffer
-            size_t bufferLen = 6*sizeof(DivPoint);
+            size_t bufferLen = 4*sizeof(DivPoint);
 
-            std::array<DivPoint, 6> atomPoints {{
-                {{0,0}, 0},
-                {{0,0}, 0},
+            std::array<DivPoint, 4> atomPoints {{
                 {{0,0}, 0},
                 {{0,0}, 0},
                 {{0,0}, 0},
                 {{0,0}, 0},
             }};
-            
+
             // std::memcpy(atomsBuffer->contents(), atomPoints.data(), bufferLen);
             fragment.fragmentStorage.atomsBuffer.write(ctx.frameIndex, atomPoints.data(), bufferLen);
 
@@ -270,27 +269,34 @@ namespace elements {
         template <LayoutStateType L>
         Atomized postLayout(Fragment<S>& fragment, Constraints&, SharedDescriptor& shared, DivDescriptor& desc, Atomized& atomized, L& layout) {
             std::vector<Atom> atoms {};
-            
-            // get measurements
-            float width = layout.computedBox.width;
-            float height = layout.computedBox.height;
+            std::vector<simd_float2> atomOffsets {};
 
-            // finish allocating atom
-            Atom atom;
-            atom.atomBufferHandle = fragment.fragmentStorage.atomsBuffer.getBufferHandle(0);
-            atom.offset = 0;
-            atom.length = 6*sizeof(DivPoint);
-            atom.width = width;
-            atom.height = height;
-            
-            atoms.push_back(atom);
-            
+            for (const auto& boxFragment : layout.boxFragments) {
+                atomOffsets.push_back(simd_float2{boxFragment.computedBox.x, boxFragment.computedBox.y});
+
+                // get measurements
+                float width = boxFragment.computedBox.width;
+                float height = boxFragment.computedBox.height;
+
+                // finish allocating atom
+                Atom atom;
+                atom.atomBufferHandle = fragment.fragmentStorage.atomsBuffer.getBufferHandle(0);
+                atom.offset = 0;
+                atom.length = 4*sizeof(DivPoint);
+                atom.width = width;
+                atom.height = height;
+
+                atoms.push_back(atom);
+            }
+
+            layout.atomOffsets = std::move(atomOffsets);
+
             return Atomized{
                 .id = fragment.id,
                 .atoms = std::move(atoms)
             };
         }
-        
+
         template <LayoutStateType L>
         Placed place(Fragment<S>& fragment, Constraints& constraints, SharedDescriptor& shared, DivDescriptor& desc, Atomized& atomized, L& lr)
         {
@@ -324,16 +330,18 @@ namespace elements {
             const auto& border = sizeResult.border;
             simd_float4 borderWidths {std::get<float>(border.top), std::get<float>(border.right), std::get<float>(border.bottom), std::get<float>(border.left)};
 
+            const auto& box = layout::boundingBox(layout.boxFragments).computedBox;
+
             // radius calculation
             CornerRadii cornerRadius = style::resolveCornerRadii(
                 shared,
-                layout.computedBox.width,
-                layout.computedBox.height
+                box.width,
+                box.height
             );
 
             // shadow calculation
-            float width = layout.computedBox.width;
-            float height = layout.computedBox.height;
+            float width = box.width;
+            float height = box.height;
             const auto& boxShadow = shared.boxShadow;
             float shadowBlur = std::max(boxShadow.blur.resolveOr(Size::px(width), 0.0f), 0.0f);
 
@@ -355,53 +363,88 @@ namespace elements {
             }
 
             // push style uniforms
-            DivStyleUniforms styleUniforms{
-                .color = constraints.color,
+            DivUniforms uniforms{
+                .color = constraints.backgroundColor,
                 .cornerRadius = cornerRadius,
                 .border = { .widths = borderWidths, .color = shared.border.color, .style = shared.border.style },
                 .shadow = shadow,
                 .opacity = constraints.opacity
             };
 
-            // geometry uniforms
-            DivGeometryUniforms geometryUniforms {};
+            // geometry
+            std::vector<DivGeometry> geometries {};
+            geometries.reserve(layout.boxFragments.size());
 
-            if (placed.placements.size() > 0) {
-                auto offset = placed.placements.front();
+            for (size_t i = 0; i < layout.boxFragments.size() && i < placed.placements.size(); ++i) {
+                const auto& boxFragment = layout.boxFragments[i];
+                const auto& fragmentBox = boxFragment.computedBox;
+                auto offset = placed.placements[i];
 
-                simd_float2 halfExtent { layout.computedBox.width / 2.0f, layout.computedBox.height / 2.0f };
+                DivGeometry geometry {};
+
+                simd_float2 halfExtent { fragmentBox.width / 2.0f, fragmentBox.height / 2.0f };
                 simd_float2 rectCenter { offset.x + halfExtent.x, offset.y + halfExtent.y };
 
-                geometryUniforms.halfExtent = halfExtent;
-                geometryUniforms.rectCenter = rectCenter;
+                geometry.halfExtent = halfExtent;
+                geometry.rectCenter = rectCenter;
+
+                CornerRadii fragmentRadius = cornerRadius;
+                simd_float4 fragmentBorderWidths = borderWidths;
+
+                if (boxFragment.brokenTop) {
+                    fragmentRadius.topLeft = 0;
+                    fragmentRadius.topRight = 0;
+                    fragmentBorderWidths.x = 0;
+                }
+
+                if (boxFragment.brokenRight) {
+                    fragmentRadius.topRight = 0;
+                    fragmentRadius.bottomRight = 0;
+                    fragmentBorderWidths.y = 0;
+                }
+
+                if (boxFragment.brokenBottom) {
+                    fragmentRadius.bottomRight = 0;
+                    fragmentRadius.bottomLeft = 0;
+                    fragmentBorderWidths.z = 0;
+                }
+
+                if (boxFragment.brokenLeft) {
+                    fragmentRadius.topLeft = 0;
+                    fragmentRadius.bottomLeft = 0;
+                    fragmentBorderWidths.w = 0;
+                }
+
+                geometry.cornerRadius = fragmentRadius;
+                geometry.borderWidths = fragmentBorderWidths;
+
+                // draw quad; expanded past the box to hold the outer shadow
+                geometry.quadMin = {
+                    std::min(0.0f, shadow.offset.x - shadowExtent),
+                    std::min(0.0f, shadow.offset.y - shadowExtent)
+                };
+                geometry.quadMax = {
+                    std::max(fragmentBox.width, fragmentBox.width + shadow.offset.x + shadowExtent),
+                    std::max(fragmentBox.height, fragmentBox.height + shadow.offset.y + shadowExtent)
+                };
+
+                geometry.numClips = static_cast<uint32_t>(layout.clipUniforms.size());
+                geometry.transform = constraints.transform;
+
+                geometries.push_back(geometry);
             }
 
-            geometryUniforms.numClips = static_cast<uint32_t>(layout.clipUniforms.size());
-            geometryUniforms.transform = constraints.transform;
-
-            // draw quad; expanded past the box to hold the outer shadow
-            float minX = std::min(0.0f, shadow.offset.x - shadowExtent);
-            float minY = std::min(0.0f, shadow.offset.y - shadowExtent);
-            float maxX = std::max(width, width + shadow.offset.x + shadowExtent);
-            float maxY = std::max(height, height + shadow.offset.y + shadowExtent);
-
-            std::array<DivPoint, 6> atomPoints {{
-                {{minX, minY}, 0},
-                {{maxX, minY}, 0},
-                {{minX, maxY}, 0},
-                {{minX, maxY}, 0},
-                {{maxX, minY}, 0},
-                {{maxX, maxY}, 0},
+            std::array<DivPoint, 4> atomPoints {{
+                {{0, 0}, 0},
+                {{1, 0}, 0},
+                {{0, 1}, 0},
+                {{1, 1}, 0},
             }};
 
-            fragment.fragmentStorage.atomsBuffer.write(ctx.frameIndex, atomPoints.data(), 6*sizeof(DivPoint));
-            
-            DivUniforms uniforms {
-                .style = styleUniforms,
-                .geometry = geometryUniforms
-            };
+            fragment.fragmentStorage.atomsBuffer.write(ctx.frameIndex, atomPoints.data(), 4*sizeof(DivPoint));
 
             fragment.fragmentStorage.uniformsBuffer.write(ctx.frameIndex, &uniforms, sizeof(DivUniforms));
+            fragment.fragmentStorage.fragmentsBuffer.write(ctx.frameIndex, geometries.data(), sizeof(DivGeometry) * geometries.size());
             fragment.fragmentStorage.clipsBuffer.write(
                 ctx.frameIndex,
                 layout.clipUniforms.data(),
@@ -423,6 +466,10 @@ namespace elements {
             // the obvious ideal is: separate shaders
             // so we'd switch on what finalized's DivStyleUniforms type looks like
             // then run diff pipelines for each
+            if (finalized.atomized.atoms.empty()) {
+                return;
+            }
+
             auto pipeline = getPipeline();
             encoder->setRenderPipelineState(pipeline);
             
@@ -434,30 +481,60 @@ namespace elements {
             // fragment buffers
             auto uniformsBuf = fragment.fragmentStorage.uniformsBuffer.getBuffer(ctx.frameIndex);
             auto clipsBuf = fragment.fragmentStorage.clipsBuffer.getBuffer(ctx.frameIndex);
-            
+            auto fragmentsBuf = fragment.fragmentStorage.fragmentsBuffer.getBuffer(ctx.frameIndex);
+
             encoder->setVertexBuffer(atomBuf, 0, 0);
             encoder->setVertexBuffer(atomPlacementBuf, 0, 1);
             encoder->setVertexBuffer(frameInfoBuf, 0, 2);
-            encoder->setVertexBuffer(uniformsBuf, 0, 3);
+            encoder->setVertexBuffer(fragmentsBuf, 0, 3);
 
             encoder->setFragmentBuffer(uniformsBuf, 0, 0);
             encoder->setFragmentBuffer(clipsBuf, 0, 1);
-            
-            encoder->drawPrimitives(MTL::PrimitiveTypeTriangle, NS::UInteger(0), 6);
+            encoder->setFragmentBuffer(fragmentsBuf, 0, 2);
+
+            encoder->drawPrimitives(MTL::PrimitiveTypeTriangleStrip, NS::UInteger(0), NS::UInteger(4), NS::UInteger(finalized.atomized.atoms.size()));
         }
 
         std::function<bool(HitTestContext<U>& context, simd_float2 testPoint)> setupHitTestFunction() {
             auto hitTestFunction = [](HitTestContext<U>& context, simd_float2 testPoint){
-                const auto& box = std::visit(
-                    [](const auto& state) -> const layout::LayoutBox& { return state.computedBox; },
+                const auto& boxFragments = std::visit(
+                    [](const auto& state) -> const std::vector<layout::BoxFragment>& { return state.boxFragments; },
                     context.layout
                 );
-                simd_float2 halfExtent {box.width / 2.0f, box.height / 2.0f};
-                simd_float2 centerPoint {box.x + halfExtent.x, box.y + halfExtent.y};
-                simd_float2 localTestPoint = testPoint - centerPoint;
-                const CornerRadii& cr = context.finalized.uniforms.style.cornerRadius;
 
-                return rounded_rect_sdf(localTestPoint, halfExtent, cr) < 0.0;
+                for (const auto& boxFragment : boxFragments) {
+                    const auto& box = boxFragment.computedBox;
+                    simd_float2 halfExtent {box.width / 2.0f, box.height / 2.0f};
+                    simd_float2 centerPoint {box.x + halfExtent.x, box.y + halfExtent.y};
+                    simd_float2 localTestPoint = testPoint - centerPoint;
+                    CornerRadii cr = context.finalized.uniforms.cornerRadius;
+
+                    if (boxFragment.brokenTop) {
+                        cr.topLeft = 0;
+                        cr.topRight = 0;
+                    }
+
+                    if (boxFragment.brokenRight) {
+                        cr.topRight = 0;
+                        cr.bottomRight = 0;
+                    }
+
+                    if (boxFragment.brokenBottom) {
+                        cr.bottomRight = 0;
+                        cr.bottomLeft = 0;
+                    }
+
+                    if (boxFragment.brokenLeft) {
+                        cr.topLeft = 0;
+                        cr.bottomLeft = 0;
+                    }
+
+                    if (rounded_rect_sdf(localTestPoint, halfExtent, cr) < 0.0) {
+                        return true;
+                    }
+                }
+
+                return false;
             };
 
             return hitTestFunction;

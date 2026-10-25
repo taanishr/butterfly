@@ -99,6 +99,15 @@ namespace tree {
     
     using EventHandler = std::function<void(Event&)>;
 
+    // this provides additional metadata on the nature of a box
+    // i.e. is it anonymouus
+    // and separates what its display name is (svg, span, div) from its backing element (div will be alot of backing elements)
+    struct NodeMetadata {
+        bool anonymous{false};
+        std::string_view displayName;
+        std::string_view backing;
+    };
+
     struct TreeNode {
         template<ElementType E, typename P>
             requires ProcessorType<P, typename E::StorageType, typename E::DescriptorType, typename E::UniformsType>
@@ -108,7 +117,10 @@ namespace tree {
             id(nextId++),
             paintPreorderIndex{0},
             paintPostorderIndex{0}
-        {}
+        {
+            metadata.backing = element->elementTypeName();
+            metadata.displayName = metadata.backing;
+        }
 
         ~TreeNode() {
             instrumentation::removeNode(id);
@@ -119,10 +131,16 @@ namespace tree {
         }
 
         TreeNode* dispatch(Event& event) {
+            if (pendingDelete) {
+                return nullptr;
+            }
+
             auto it = eventHandlers.find(event.type);
             if (it != eventHandlers.end()) {
                 for (auto& handler : it->second) {
-                    if (event.propagationStopped) break;
+                    if (event.propagationStopped || pendingDelete) {
+                        break;
+                    }
                     handler(event);
                 }
             }
@@ -185,10 +203,17 @@ namespace tree {
             simd_float2 localPoint {local.x, local.y};
 
             bool withinBounds = std::visit([&](const auto& state) {
-                const auto& box = state.computedBox;
+                bool withinFragment = false;
+                for (const auto& fragment : state.boxFragments) {
+                    const auto& box = fragment.computedBox;
+                    if (localPoint.x >= box.x && localPoint.x <= box.x + box.width &&
+                        localPoint.y >= box.y && localPoint.y <= box.y + box.height) {
+                        withinFragment = true;
+                        break;
+                    }
+                }
 
-                if (localPoint.x < box.x || localPoint.x > box.x + box.width ||
-                    localPoint.y < box.y || localPoint.y > box.y + box.height) {
+                if (!withinFragment) {
                     return false;
                 }
 
@@ -212,7 +237,8 @@ namespace tree {
         Size getWidth() const { return shared.width; }
         Size getHeight() const { return shared.height; }
         float getOpacity() const { return shared.opacity; }
-        simd_float4 getColor() const { return shared.color; }
+        simd_float4 getBackgroundColor() const { return shared.backgroundColor; }
+        simd_float4 getColor() const { return shared.color.value_or(effectiveColor); }
         simd_float3x3 getTransform() const { return shared.transform.value_or(matrix_identity_float3x3); }
         Size getMarginTop() const { return shared.marginTop.value_or(shared.margin); }
         Size getMarginBottom() const { return shared.marginBottom.value_or(shared.margin); }
@@ -240,12 +266,14 @@ namespace tree {
 
         
         std::unique_ptr<ElementBase> element;
+        NodeMetadata metadata;
         TreeNode* parent = nullptr;
         std::vector<std::unique_ptr<TreeNode>> children;
         uint64_t id;
         std::optional<int64_t> zIndex;
         uint64_t paintPreorderIndex;
         uint64_t paintPostorderIndex;
+        bool pendingDelete{false};
 
         std::optional<Atomized> atomized;
         std::optional<PreLayoutResult> preLayout;
@@ -261,6 +289,7 @@ namespace tree {
         SharedDescriptor shared;
         std::array<std::optional<animation::AnimationState>, animation::Animatable::Count> animations;
         std::optional<Display> computedDisplay;
+        layout::InheritedProperties inheritedProperties{};
         DirtyBits dirtySelf{~DirtyBits::None};
         DirtyBits dirtySubtree{~DirtyBits::None};
         std::optional<ConstraintsKey> constraintsKey;
@@ -268,6 +297,7 @@ namespace tree {
         simd_float3x3 transform {matrix_identity_float3x3};
         simd_float3x3 inverseTransform {matrix_identity_float3x3};
         float effectiveOpacity{1.0f};
+        simd_float4 effectiveColor{1, 1, 1, 1};
     private:
         static uint64_t nextId;
     };
@@ -289,6 +319,16 @@ namespace tree {
     void createStackingContexts(TreeNode* node, std::vector<TreeNode*>& order);
     std::optional<std::string> getText(TreeNode* node);
     std::optional<style::WhiteSpace> getWhiteSpace(TreeNode* node);
+
+    using layout::InlineFlowKind;
+
+    struct InlineFlowItem {
+        InlineFlowKind kind;
+        TreeNode* node;
+    };
+
+    void appendInlineFlow(TreeNode* node, std::vector<InlineFlowItem>& flow);
+    std::vector<InlineFlowItem> inlineFlow(TreeNode* container);
     Result<std::vector<std::optional<bidi::TextBidiInput>>>
     prepareChildBidiInputs(
         TreeNode* parent,
@@ -299,12 +339,6 @@ namespace tree {
     
     // full blown inline context
     std::shared_ptr<layout::InlineFormattingContext> buildInlineBoxes(
-        RenderTree& tree, TreeNode* node, const FrameInfo& frameInfo,
-        const Constraints& constraints, const SizeRequest& request, const InlineSizingInput& sizing,
-        std::optional<std::unordered_map<size_t, SizeResult>&> sizeCache);
-
-    // inline context calculated for a single child, independently of other siblings
-    layout::InlineFormattingInput buildIsolatedInlineBoxes(
         RenderTree& tree, TreeNode* node, const FrameInfo& frameInfo,
         const Constraints& constraints, const SizeRequest& request, const InlineSizingInput& sizing,
         std::optional<std::unordered_map<size_t, SizeResult>&> sizeCache);

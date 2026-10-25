@@ -3,12 +3,15 @@
 #include "layout/sizing.hpp"
 #include "layout/layout.hpp"
 #include "render_tree.hpp"
+#include "context_manager.hpp"
+#include "overloaded.hpp"
 #include "utf8.hpp"
 #include "text/textShaper.hpp"
 #include <algorithm>
 #include <any>
 #include <cstdint>
 #include <cstdlib>
+#include <limits>
 #include <memory>
 #include <simd/vector_types.h>
 #include <string>
@@ -42,47 +45,114 @@ namespace tree {
         return std::nullopt;
     }
 
+    void appendInlineFlow(TreeNode* node, std::vector<InlineFlowItem>& flow) {
+        for (auto& child : node->children) {
+            if (getText(child.get()).has_value()) {
+                flow.push_back({.kind = InlineFlowKind::Text, .node = child.get()});
+            } else if (child->element->isInline()) {
+                flow.push_back({.kind = InlineFlowKind::Atomic, .node = child.get()});
+            } else if (child->getDisplay() == Display::Inline) {
+                flow.push_back({.kind = InlineFlowKind::Open, .node = child.get()});
+                if (child->children.empty()) {
+                    flow.push_back({.kind = InlineFlowKind::Placeholder, .node = child.get()});
+                } else {
+                    appendInlineFlow(child.get(), flow);
+                }
+                flow.push_back({.kind = InlineFlowKind::Close, .node = child.get()});
+            } else if (node->getDisplay() == Display::Inline) {
+                // in the <open><block><close> case 
+                // open and close live on diff lines
+                // but there wasnt a thing for the open placeholder to attach to for edges/reordering
+                // so placeholder fixes this
+                flow.push_back({.kind = InlineFlowKind::Placeholder, .node = node});
+                flow.push_back({.kind = InlineFlowKind::Block, .node = child.get()});
+                flow.push_back({.kind = InlineFlowKind::Placeholder, .node = node});
+            } else {
+                flow.push_back({.kind = InlineFlowKind::Block, .node = child.get()});
+            }
+        }
+    }
+
+    std::vector<InlineFlowItem> inlineFlow(TreeNode* container) {
+        std::vector<InlineFlowItem> flow;
+        flow.reserve(container->children.size());
+        appendInlineFlow(container, flow);
+        return flow;
+    }
+
+    void appendBidiText(TreeNode* node, std::string& paragraph) {
+        if (auto text = getText(node)) {
+            std::string bidiText = *text;
+            const auto whiteSpace = getWhiteSpace(node)
+                .value_or(WhiteSpace::Normal);
+            if (whiteSpace == WhiteSpace::Normal || whiteSpace == WhiteSpace::NoWrap) {
+                for (char& byte : bidiText) {
+                    if (byte == '\r' || byte == '\n') byte = ' ';
+                }
+            }
+
+            paragraph += bidiText;
+        } else if (node->element->isInline()) {
+            paragraph += "\xEF\xBF\xBC";
+        } else if (node->getDisplay() == Display::Inline) {
+            for (auto& child : node->children) {
+                appendBidiText(child.get(), paragraph);
+            }
+        } else {
+            // block handling; splits the line
+            paragraph += "\n";
+        }
+    }
+
+    bidi::TextBidiInput sliceTextBidiInput(
+        const std::shared_ptr<const bidi::TextBidiContext>& context,
+        size_t sliceStart,
+        size_t sliceLength
+    ) {
+        const size_t sliceEnd = sliceStart + sliceLength;
+        std::vector<bidi::TextShapingRun> sliceRuns;
+        for (const auto& run : context->runs()) {
+            const size_t runEnd = run.byteStart + run.byteLength;
+            const size_t start = std::max(sliceStart, run.byteStart);
+            const size_t end = std::min(sliceEnd, runEnd);
+            if (start >= end) {
+                continue;
+            }
+            sliceRuns.push_back({
+                .byteStart = start - sliceStart,
+                .byteLength = end - start,
+                .level = run.level,
+                .scriptTag = run.scriptTag
+            });
+        }
+        return bidi::TextBidiInput{
+            .context = context,
+            .paragraphByteStart = sliceStart,
+            .byteLength = sliceLength,
+            .runs = sliceRuns
+        };
+    }
+
     Result<std::vector<std::optional<bidi::TextBidiInput>>> prepareChildBidiInputs(
         TreeNode* parent,
         layout::Direction baseDirection
     ) {
         std::vector<std::optional<bidi::TextBidiInput>> inputs(parent->children.size());
 
-        size_t sequenceStart = 0;
-        while (sequenceStart < parent->children.size()) {
-            while (sequenceStart < parent->children.size() &&
-                   !parent->children[sequenceStart]->element->isInline()) {
-                ++sequenceStart;
-            }
-            if (sequenceStart == parent->children.size()) break;
+        // avoid allocs if we're a leaf node
+        if (parent->children.empty()) {
+            return inputs;
+        }
 
-            size_t sequenceEnd = sequenceStart;
+        // the child will split the parent text accordingly; we hand the children the slice range
+        // this is for proper recursive handling now that we have inline children
+        bidi::TextBidiInput source;
+        if (parent->getDisplay() == Display::Inline) {
+            source = *parent->textBidiInput;
+        } else {
             std::string paragraph;
-            std::vector<size_t> childStarts;
-            std::vector<size_t> childLengths;
-            while (sequenceEnd < parent->children.size()) {
-                auto* child = parent->children[sequenceEnd].get();
-                if (!child->element->isInline()) break;
-
-                childStarts.push_back(paragraph.size());
-
-                if (auto childText = getText(child)) {
-                    std::string bidiText = *childText;
-                    const auto whiteSpace = getWhiteSpace(child)
-                        .value_or(WhiteSpace::Normal);
-                    if (whiteSpace == WhiteSpace::Normal || whiteSpace == WhiteSpace::NoWrap) {
-                        for (char& byte : bidiText) {
-                            if (byte == '\r' || byte == '\n') byte = ' ';
-                        }
-                    }
-
-                    paragraph += bidiText;
-                } else {
-                    paragraph += "\xEF\xBF\xBC";
-                }
-
-                childLengths.push_back(paragraph.size() - childStarts.back());
-                ++sequenceEnd;
+            for (auto& child : parent->children) {
+                appendBidiText(child.get(), paragraph);
             }
 
             auto resolvedContext = bidi::TextBidiContext::create(
@@ -92,54 +162,30 @@ namespace tree {
                     : bidi::BidiBaseDirection::Ltr
             );
             if (!resolvedContext) return std::unexpected{resolvedContext.error()};
-            auto context = std::make_shared<bidi::TextBidiContext>(std::move(*resolvedContext));
+            source = bidi::TextBidiInput{
+                .context = std::make_shared<bidi::TextBidiContext>(std::move(*resolvedContext)),
+                .paragraphByteStart = 0,
+                .byteLength = paragraph.size()
+            };
+        }
 
-            for (size_t i = sequenceStart; i < sequenceEnd; ++i) {
-                const size_t childStart = childStarts[i - sequenceStart];
-                const size_t childLength = childLengths[i - sequenceStart];
-                const size_t childEnd = childStart + childLength;
-                std::vector<bidi::TextShapingRun> childRuns;
-                for (const auto& run : context->runs()) {
-                    const size_t runEnd = run.byteStart + run.byteLength;
-                    const size_t start = std::max(childStart, run.byteStart);
-                    const size_t end = std::min(childEnd, runEnd);
-                    if (start >= end) continue;
-                    childRuns.push_back({
-                        .byteStart = start - childStart,
-                        .byteLength = end - start,
-                        .level = run.level,
-                        .scriptTag = run.scriptTag
-                    });
-                }
-                inputs[i] = bidi::TextBidiInput{
-                    .context = context,
-                    .paragraphByteStart = childStart,
-                    .byteLength = childLength,
-                    .runs = childRuns
-                };
-            }
-            sequenceStart = sequenceEnd;
+        size_t childStart = source.paragraphByteStart;
+        for (size_t i = 0; i < parent->children.size(); ++i) {
+            std::string childText;
+            appendBidiText(parent->children[i].get(), childText);
+            inputs[i] = sliceTextBidiInput(source.context, childStart, childText.size());
+            childStart += childText.size();
         }
 
         return inputs;
     }
 
     std::optional<WhiteSpace> getWhiteSpace(TreeNode* node) {
-        std::any request{DescriptorPayload{GetField{.name = "whiteSpace"}}};
-        auto resp = node->element->request(RequestTarget::Descriptor, request);
-        if (resp.has_value()) {
-            return std::any_cast<WhiteSpace>(resp);
-        }
-        return std::nullopt;
+        return node->inheritedProperties.whiteSpace;
     }
 
     std::optional<WordBreak> getWordBreak(TreeNode* node) {
-        std::any request{DescriptorPayload{GetField{.name = "wordBreak"}}};
-        auto resp = node->element->request(RequestTarget::Descriptor, request);
-        if (resp.has_value()) {
-            return std::any_cast<WordBreak>(resp);
-        }
-        return std::nullopt;
+        return node->inheritedProperties.wordBreak;
     }
 
     ShapedRun* getShapedRun(TreeNode* node) {
@@ -185,13 +231,20 @@ namespace tree {
             size_t atomStart = atoms.size();
             size_t atomEnd = 0;
             float width = 0.0f;
+            float height = 0.0f;
+            float ascent = 0.0f;
+            float descent = 0.0f;
 
             for (size_t i = runStart; i < runEnd; ++i) {
                 const auto& cluster = shapedRun.clusters[i];
                 atomStart = std::min(atomStart, cluster.glyphStart);
                 atomEnd = std::max(atomEnd, cluster.glyphStart + cluster.glyphCount);
                 for (size_t glyph = 0; glyph < cluster.glyphCount; ++glyph) {
-                    width += atoms[cluster.glyphStart + glyph].width;
+                    const auto& atom = atoms[cluster.glyphStart + glyph];
+                    width += atom.width;
+                    height = std::max(height, atom.lineHeight);
+                    ascent = std::max(ascent, atom.ascent);
+                    descent = std::max(descent, atom.descent);
                 }
             }
 
@@ -205,12 +258,16 @@ namespace tree {
             }
 
             LineFragment fragment{
+                .kind = InlineFlowKind::Text,
                 .width = width,
+                .height = height,
+                .ascent = ascent,
+                .descent = descent,
                 .atomStart = atomStart,
                 .atomCount = atomEnd - atomStart,
                 .textByteStart = byteStart,
                 .textByteLength = byteEnd - byteStart,
-                .bidiLevel = run.bidiLevel,
+                .bidiLevel = layout::ResolvedLevel{run.bidiLevel},
             };
 
             fragments.push_back(fragment);
@@ -220,22 +277,47 @@ namespace tree {
     void reorderLineFragments(layout::InlineFormattingContext& context, bool isLtr) {
         std::vector<LineFragment*> fragments;
         fragments.reserve(context.fragments.size());
+        std::vector<uint8_t> levels;
+        levels.reserve(context.fragments.size());
+        struct LineElementSlice {
+            size_t start = 0;
+            size_t end = 0;
+            size_t first = std::numeric_limits<size_t>::max();
+            size_t last = 0;
+        };
+        std::unordered_map<size_t, LineElementSlice> lineElementSlices;
 
-        std::unordered_map<size_t, size_t> elementFragmentIndices;
+        std::vector<LineFragment*> visual;
+        visual.reserve(context.fragments.size());
 
         for (size_t lineIndex = 0; lineIndex < context.lineBoxes.size(); ++lineIndex) {
             auto& lineBox = context.lineBoxes[lineIndex];
             fragments.clear();
+            levels.clear();
             int maximumLevel = 0;
             int minimumOddLevel = -1;
 
             for (size_t i = 0; i < lineBox.fragmentCount; ++i) {
                 auto& fragment = context.fragments[lineBox.fragmentStart + i];
-                fragments.push_back(&fragment);
-                maximumLevel = std::max(maximumLevel, static_cast<int>(fragment.bidiLevel));
-                if ((fragment.bidiLevel & 1u) != 0 &&
-                    (minimumOddLevel == -1 || fragment.bidiLevel < minimumOddLevel)) {
-                    minimumOddLevel = fragment.bidiLevel;
+                if (fragment.bidiLevel) {
+                    fragments.push_back(&fragment);
+                }
+            }
+
+            levels.resize(fragments.size());
+            uint8_t nextLevel = isLtr ? 0 : 1;
+            for (size_t i = fragments.size(); i-- > 0;) {
+                nextLevel = std::visit(Overloaded{
+                    [](const layout::ResolvedLevel& resolved) { return resolved.level; },
+                    [&](const layout::InheritedLevel&) { return nextLevel; }
+                }, *fragments[i]->bidiLevel);
+                levels[i] = nextLevel;
+            }
+
+            for (uint8_t level : levels) {
+                maximumLevel = std::max(maximumLevel, static_cast<int>(level));
+                if ((level & 1u) != 0 && (minimumOddLevel == -1 || level < minimumOddLevel)) {
+                    minimumOddLevel = level;
                 }
             }
 
@@ -244,13 +326,13 @@ namespace tree {
                     size_t start = 0;
                     while (start < fragments.size()) {
                         while (start < fragments.size() &&
-                               fragments[start]->bidiLevel < level) {
+                               levels[start] < level) {
                             ++start;
                         }
 
                         size_t end = start;
                         while (end < fragments.size() &&
-                               fragments[end]->bidiLevel >= level) {
+                               levels[end] >= level) {
                             ++end;
                         }
 
@@ -258,31 +340,72 @@ namespace tree {
                             fragments.begin() + start,
                             fragments.begin() + end
                         );
+                        std::reverse(
+                            levels.begin() + start,
+                            levels.begin() + end
+                        );
                         start = end;
                     }
                 }
             }
 
-            for (size_t i = 0; i < fragments.size(); ++i) {
-                auto* fragment = isLtr ? fragments[i] : fragments[fragments.size() - 1 - i];
-                fragment->elementFragmentIndex = elementFragmentIndices[fragment->elementIndex]++;
+            auto* lineStart = &context.fragments[lineBox.fragmentStart];
+            lineElementSlices.clear();
 
-                if (fragment->elementFragmentIndex != 0) {
-                    fragment->leadingMargin = 0.0f;
-                    fragment->leadingPadding = 0.0f;
+            for (size_t i = 0; i < lineBox.fragmentCount; ++i) {
+                auto& fragment = lineStart[i];
+                if (fragment.kind == InlineFlowKind::Open) {
+                    auto& slice = lineElementSlices.try_emplace(fragment.elementIndex, LineElementSlice{.end = lineBox.fragmentCount}).first->second;
+                    slice.start = i + 1;
+                } else if (fragment.kind == InlineFlowKind::Close) {
+                    auto& slice = lineElementSlices.try_emplace(fragment.elementIndex, LineElementSlice{.end = lineBox.fragmentCount}).first->second;
+                    slice.end = i;
+                }
+            }
+
+            for (size_t v = 0; v < fragments.size(); ++v) {
+                const size_t logical = fragments[v] - lineStart;
+                for (auto& [elementIndex, slice] : lineElementSlices) {
+                    if (logical >= slice.start && logical < slice.end) {
+                        slice.first = std::min(slice.first, v);
+                        slice.last = std::max(slice.last, v);
+                    }
+                }
+            }
+
+            visual.clear();
+
+            for (size_t v = 0; v < fragments.size(); ++v) {
+                for (size_t i = 0; i < lineBox.fragmentCount; ++i) {
+                    auto& edge = lineStart[isLtr ? i : lineBox.fragmentCount - 1 - i];
+                    if (edge.kind != InlineFlowKind::Open && edge.kind != InlineFlowKind::Close) {
+                        continue;
+                    }
+
+                    if ((edge.kind == InlineFlowKind::Open) == isLtr && lineElementSlices[edge.elementIndex].first == v) {
+                        visual.push_back(&edge);
+                    }
                 }
 
-                if (fragment->elementFragmentIndex + 1 != fragment->elementFragmentCount) {
-                    fragment->trailingMargin = 0.0f;
-                    fragment->trailingPadding = 0.0f;
+                visual.push_back(fragments[v]);
+
+                for (size_t i = 0; i < lineBox.fragmentCount; ++i) {
+                    auto& edge = lineStart[isLtr ? i : lineBox.fragmentCount - 1 - i];
+                    if (edge.kind != InlineFlowKind::Open && edge.kind != InlineFlowKind::Close) {
+                        continue;
+                    }
+
+                    if ((edge.kind == InlineFlowKind::Open) != isLtr && lineElementSlices[edge.elementIndex].last == v) {
+                        visual.push_back(&edge);
+                    }
                 }
             }
 
             float offset = 0.0f;
 
-            for (auto* fragment : fragments) {
-                fragment->offset = isLtr ? offset + fragment->leadingMargin + fragment->leadingPadding : offset + fragment->trailingMargin + fragment->trailingPadding;
-                offset += fragment->leadingMargin + fragment->leadingPadding + fragment->width + fragment->trailingPadding + fragment->trailingMargin;
+            for (auto* fragment : visual) {
+                fragment->offset = isLtr ? offset + fragment->leadingMargin : offset + fragment->trailingMargin;
+                offset += fragment->leadingMargin + fragment->width + fragment->trailingMargin;
             }
         }
     }
@@ -339,8 +462,13 @@ namespace tree {
         }
 
         for (size_t f = pendingStart; f < fragments.size(); ++f) {
+            const auto& fragment = fragments[f];
+            const float halfLeading = (fragment.height - fragment.ascent - fragment.descent) / 2.0f;
             fragments[f].lineBoxIndex = currentLineBoxIndex;
+            currentLineBox.ascent = std::max(currentLineBox.ascent, fragment.ascent + halfLeading);
+            currentLineBox.descent = std::max(currentLineBox.descent, fragment.descent + halfLeading);
         }
+        currentLineBox.height = currentLineBox.ascent + currentLineBox.descent;
 
         currentLineBox.fragmentCount += fragments.size() - pendingStart;
         currentLineBox.width += pendingWidth;
@@ -374,7 +502,8 @@ namespace tree {
         if (std::holds_alternative<float>(sizeResult.borderBoxSize.height)) {
             atoms.front().height = std::get<float>(sizeResult.borderBoxSize.height);
         }
-        
+        atoms.front().ascent = atoms.front().height;
+
         commitPendingFragments(
             widthRequest,
             availableWidth,
@@ -387,10 +516,13 @@ namespace tree {
         );
 
         LineFragment fragment {
+            .kind = InlineFlowKind::Atomic,
             .width = atoms.front().width,
+            .height = atoms.front().height,
+            .ascent = atoms.front().ascent,
             .atomStart = 0,
             .atomCount = atoms.size(),
-            .bidiLevel = run.level,
+            .bidiLevel = layout::ResolvedLevel{run.level},
         };
 
         fragments.push_back(fragment);
@@ -405,7 +537,6 @@ namespace tree {
         WhiteSpace whiteSpace,
         WordBreak wordBreak,
         ResolvedMargins margins,
-        const PaddingResult& padding,
         bool isLtr,
         const SizeState& availableWidth,
         std::optional<IntrinsicRequest> widthRequest,
@@ -419,8 +550,6 @@ namespace tree {
     ) {
         const float marginStart = isLtr ? margins.left : margins.right;
         const float marginEnd = isLtr ? margins.right : margins.left;
-        const auto* paddingStart = std::get_if<float>(isLtr ? &padding.left : &padding.right);
-        const auto* paddingEnd = std::get_if<float>(isLtr ? &padding.right : &padding.left);
 
         const bool preserveLineFeeds = whiteSpace == WhiteSpace::Pre ||  whiteSpace == WhiteSpace::PreWrap;
         const bool allowSoftWrap = whiteSpace == WhiteSpace::Normal || whiteSpace == WhiteSpace::PreWrap;
@@ -429,10 +558,6 @@ namespace tree {
         float runningWidth = marginStart;
         float runningEdge = marginStart;
 
-        if (paddingStart) {
-            runningWidth += *paddingStart;
-            runningEdge += *paddingStart;
-        }
         size_t runningAtomCount = 0;
         size_t runningClusterStart = 0;
         size_t idx = 0;
@@ -452,11 +577,6 @@ namespace tree {
                 if (idx + 1 >= shapedRun.clusters.size()) {
                     runningWidth += marginEnd;
                     runningEdge += marginEnd;
-
-                    if (paddingEnd) {
-                        runningWidth += *paddingEnd;
-                        runningEdge += *paddingEnd;
-                    }
                 }
 
                 runningAtomCount += cluster.glyphCount;
@@ -514,11 +634,6 @@ namespace tree {
                 if (idx + 1 >= shapedRun.clusters.size()) {
                     runningWidth += marginEnd;
                     runningEdge += marginEnd;
-
-                    if (paddingEnd) {
-                        runningWidth += *paddingEnd;
-                        runningEdge += *paddingEnd;
-                    }
                 }
 
                 if (lastFragmentHasBreakOpportunity) {
@@ -573,11 +688,6 @@ namespace tree {
             if (idx >= shapedRun.clusters.size()) {
                 runningWidth += marginEnd;
                 runningEdge += marginEnd;
-
-                if (paddingEnd) {
-                    runningWidth += *paddingEnd;
-                    runningEdge += *paddingEnd;
-                }
             }
 
             if (lastFragmentHasBreakOpportunity) {
@@ -614,11 +724,6 @@ namespace tree {
             runningWidth += marginEnd;
             runningEdge += marginEnd;
 
-            if (paddingEnd) {
-                runningWidth += *paddingEnd;
-                runningEdge += *paddingEnd;
-            }
-
             if (lastFragmentHasBreakOpportunity) {
                 commitPendingFragments(
                     widthRequest,
@@ -646,163 +751,14 @@ namespace tree {
     }
     
 
-    layout::InlineFormattingInput buildIsolatedInlineBoxes(
-        RenderTree& tree, TreeNode* node, const FrameInfo& frameInfo,
-        const Constraints& constraints, const SizeRequest& request, const InlineSizingInput& sizing,
-        std::optional<std::unordered_map<size_t, SizeResult>&> sizeCache) {
-        auto context = std::make_shared<layout::InlineFormattingContext>();
-        auto& fragments = context->fragments;
-        auto& lineBoxes = context->lineBoxes;
-        LineBox currentLineBox{};
-        size_t currentLineBoxIndex = 0;
-        size_t pendingStart = 0;
-        float pendingWidth = 0.0f;
-        bool lastFragmentHasBreakOpportunity = false;
-        SizeState availableWidth = calculateSize(sizing.availableWidth, std::monostate{});
-        const bool isLtr = constraints.inheritedProperties.direction == layout::Direction::ltr;
-
-        if (node->element->isInline()) {
-            auto textResp = getText(node);
-            ResolvedMargins margins {};
-            auto& atoms = node->atomized->atoms;
-            PaddingResult padding {};
-
-            if (textResp.has_value()) {
-                padding = resolvePadding(request);
-
-                appendTextLineFragments(
-                    *textResp,
-                    *getShapedRun(node),
-                    atoms,
-                    getWhiteSpace(node).value_or(WhiteSpace::Normal),
-                    getWordBreak(node).value_or(WordBreak::Normal),
-                    margins,
-                    padding,
-                    isLtr,
-                    availableWidth,
-                    sizing.widthRequest,
-                    fragments,
-                    lineBoxes,
-                    currentLineBox,
-                    currentLineBoxIndex,
-                    pendingStart,
-                    pendingWidth,
-                    lastFragmentHasBreakOpportunity
-                );
-            } else {
-                const auto sizeResult = evaluateSize(tree, node, frameInfo, constraints, request, sizeCache);
-                const auto& run = node->textBidiInput->runs.front();
-                appendAtomicInlineFragment(
-                    atoms,
-                    sizeResult,
-                    run,
-                    margins,
-                    availableWidth,
-                    sizing.widthRequest,
-                    fragments,
-                    lineBoxes,
-                    currentLineBox,
-                    currentLineBoxIndex,
-                    pendingStart,
-                    pendingWidth,
-                    lastFragmentHasBreakOpportunity
-                );
-            }
-
-            const auto* paddingStart = std::get_if<float>(isLtr ? &padding.left : &padding.right);
-            const auto* paddingEnd = std::get_if<float>(isLtr ? &padding.right : &padding.left);
-
-            for (size_t f = 0; f < fragments.size(); ++f) {
-                fragments[f].elementIndex = 0;
-                fragments[f].elementFragmentIndex = f;
-                fragments[f].elementFragmentCount = fragments.size();
-                fragments[f].leadingMargin = isLtr ? margins.left : margins.right;
-                fragments[f].trailingMargin = isLtr ? margins.right : margins.left;
-
-                if (paddingStart) {
-                    fragments[f].leadingPadding = *paddingStart;
-                }
-
-                if (paddingEnd) {
-                    fragments[f].trailingPadding = *paddingEnd;
-                }
-            }
-        }
-
-        commitPendingFragments(
-            sizing.widthRequest,
-            availableWidth,
-            fragments,
-            lineBoxes,
-            currentLineBox,
-            currentLineBoxIndex,
-            pendingStart,
-            pendingWidth
-        );
-
-        if (currentLineBox.fragmentCount > 0) {
-            lineBoxes.push_back(std::move(currentLineBox));
-        }
-
-        reorderLineFragments(*context, isLtr);
-
-        if (sizing.trackIntrinsicWidth && sizing.widthRequest != IntrinsicRequest::None) {
-            if (sizing.widthRequest != IntrinsicRequest::Minimum) {
-                InlineSizingInput minimumSizing {
-                    .availableWidth = std::monostate{},
-                    .widthRequest = IntrinsicRequest::Minimum,
-                    .trackIntrinsicWidth = false,
-                };
-                auto minContext = buildIsolatedInlineBoxes(tree, node, frameInfo, constraints, request, minimumSizing, sizeCache).context;
-                context->minFragments = std::move(minContext->fragments);
-                context->minLineBoxes = std::move(minContext->lineBoxes);
-            }
-
-            if (sizing.widthRequest != IntrinsicRequest::Maximum) {
-                InlineSizingInput maximumSizing {
-                    .availableWidth = std::monostate{},
-                    .widthRequest = IntrinsicRequest::Maximum,
-                    .trackIntrinsicWidth = false,
-                };
-                auto maxContext = buildIsolatedInlineBoxes(tree, node, frameInfo, constraints, request, maximumSizing, sizeCache).context;
-                context->maxFragments = std::move(maxContext->fragments);
-                context->maxLineBoxes = std::move(maxContext->lineBoxes);
-            }
-
-            const auto& minLineBoxes = context->minLineBoxes.empty() ? context->lineBoxes : context->minLineBoxes;
-            const auto& maxLineBoxes = context->maxLineBoxes.empty() ? context->lineBoxes : context->maxLineBoxes;
-
-            if (!minLineBoxes.empty() || !maxLineBoxes.empty()) {
-                float minContent = 0.0f;
-                for (const auto& lineBox : minLineBoxes) {
-                    minContent = std::max(minContent, lineBox.width);
-                }
-                float maxContent = 0.0f;
-
-                for (const auto& lineBox : maxLineBoxes) {
-                    maxContent = std::max(maxContent, lineBox.width);
-                }
-                context->intrinsicSizes = layout::IntrinsicSizes{.minimum = minContent, .maximum = maxContent};
-            }
-        }
-
-        return {
-            .context = context,
-            .fragments = {.start = 0, .count = fragments.size()},
-            .minFragments = {.start = 0, .count = context->minFragments.size()},
-            .maxFragments = {.start = 0, .count = context->maxFragments.size()},
-        };
-    }
-
     std::shared_ptr<layout::InlineFormattingContext> buildInlineBoxes(
         RenderTree& tree, TreeNode* node, const FrameInfo& frameInfo,
         const Constraints& constraints, const SizeRequest& request, const InlineSizingInput& sizing,
         std::optional<std::unordered_map<size_t, SizeResult>&> sizeCache) {
-        bool prevInline = false;
         auto context = std::make_shared<layout::InlineFormattingContext>();
         auto& childrenLineBoxes = context->lineBoxes;
         auto& fragments = context->fragments;
-        auto& childFragments = context->childFragments;
+        auto& nodeFragments = context->nodeFragments;
         LineBox currentLineBox {};
         size_t currentLineBoxIndex = 0;
         size_t pendingStart = 0;
@@ -812,21 +768,17 @@ namespace tree {
         const bool isLtr = constraints.inheritedProperties.direction == layout::Direction::ltr;
 
 
-        for (uint64_t i = 0; i < node->children.size(); ++i) {
-            auto& child = node->children[i];
+        const auto flow = inlineFlow(node);
+
+        for (size_t i = 0; i < flow.size(); ++i) {
+            auto* child = flow[i].node;
 
             size_t childFragmentStart = fragments.size();
 
-            if (child->element->isInline()) {
-                auto textResp = getText(child.get());
+            if (flow[i].kind != InlineFlowKind::Block) {
+                auto textResp = getText(child);
                 auto margins = child->preLayout->resolvedMargins;
                 auto& atoms = child->atomized->atoms;
-
-                if (i > 0 && !prevInline && currentLineBox.fragmentCount > 0) {
-                    childrenLineBoxes.push_back(std::move(currentLineBox));
-                    currentLineBox = {};
-                    currentLineBoxIndex++;
-                }
 
                 SizeRequest childRequest {
                     .position = child->shared.position,
@@ -864,19 +816,14 @@ namespace tree {
                     .resolvingIntrinsicWidth = request.intrinsicWidthRequest.value_or(IntrinsicRequest::None) != IntrinsicRequest::None,
                     .resolvingIntrinsicHeight = request.intrinsicHeightRequest.value_or(IntrinsicRequest::None) != IntrinsicRequest::None,
                 };
-                PaddingResult padding {};
-
-                if (textResp.has_value()) {
-                    padding = resolvePadding(childRequest);
-
+                if (flow[i].kind == InlineFlowKind::Text) {
                     appendTextLineFragments(
                         *textResp,
-                        *getShapedRun(child.get()),
+                        *getShapedRun(child),
                         atoms,
-                        getWhiteSpace(child.get()).value_or(WhiteSpace::Normal),
-                        getWordBreak(child.get()).value_or(WordBreak::Normal),
-                        margins,
-                        padding,
+                        getWhiteSpace(child).value_or(WhiteSpace::Normal),
+                        getWordBreak(child).value_or(WordBreak::Normal),
+                        ResolvedMargins{},
                         isLtr,
                         availableWidth,
                         sizing.widthRequest,
@@ -888,8 +835,8 @@ namespace tree {
                         pendingWidth,
                         lastFragmentHasBreakOpportunity
                     );
-                } else {
-                    const auto sizeResult = evaluateSize(tree, child.get(), frameInfo, constraints, childRequest, sizeCache);
+                } else if (flow[i].kind == InlineFlowKind::Atomic) {
+                    const auto sizeResult = evaluateSize(tree, child, frameInfo, constraints, childRequest, sizeCache);
                     const auto& run = child->textBidiInput->runs.front();
                     appendAtomicInlineFragment(
                         atoms,
@@ -906,29 +853,94 @@ namespace tree {
                         pendingWidth,
                         lastFragmentHasBreakOpportunity
                     );
+                } else if (flow[i].kind == InlineFlowKind::Open) {
+                    const auto padding = resolvePadding(childRequest);
+                    const auto border = resolveBorder(childRequest);
+                    const auto* resolvedPaddingStart = std::get_if<float>(isLtr ? &padding.left : &padding.right);
+                    const auto* resolvedBorderStart = std::get_if<float>(isLtr ? &border.left : &border.right);
+                    const float margin = isLtr ? margins.left : margins.right;
+                    float width = 0.0f;
+
+                    if (resolvedPaddingStart) {
+                        width += *resolvedPaddingStart;
+                    }
+
+                    if (resolvedBorderStart) {
+                        width += *resolvedBorderStart;
+                    }
+
+                    if (lastFragmentHasBreakOpportunity) {
+                        commitPendingFragments(
+                            sizing.widthRequest,
+                            availableWidth,
+                            fragments,
+                            childrenLineBoxes,
+                            currentLineBox,
+                            currentLineBoxIndex,
+                            pendingStart,
+                            pendingWidth
+                        );
+                    }
+
+                    const auto fontMetrics = runtime::ContextManager::getContext().glyphCache.metrics(
+                        child->inheritedProperties.font,
+                        child->inheritedProperties.fontSize.resolveOr(Size::px(0.0f))
+                    );
+                    fragments.push_back({
+                        .kind = InlineFlowKind::Open,
+                        .width = width,
+                        .height = fontMetrics.lineHeight * child->inheritedProperties.lineHeight,
+                        .ascent = fontMetrics.ascent,
+                        .descent = fontMetrics.descent,
+                        .leadingMargin = margin
+                    });
+                    pendingWidth += margin + width;
+                    lastFragmentHasBreakOpportunity = false;
+                } else if (flow[i].kind == InlineFlowKind::Placeholder) {
+                    fragments.push_back({.kind = InlineFlowKind::Placeholder, .bidiLevel = layout::InheritedLevel{}});
+                } else if (flow[i].kind == InlineFlowKind::Close) {
+                    const auto padding = resolvePadding(childRequest);
+                    const auto border = resolveBorder(childRequest);
+                    const auto* resolvedPaddingEnd = std::get_if<float>(isLtr ? &padding.right : &padding.left);
+                    const auto* resolvedBorderEnd = std::get_if<float>(isLtr ? &border.right : &border.left);
+                    const float margin = isLtr ? margins.right : margins.left;
+                    float width = 0.0f;
+
+                    if (resolvedPaddingEnd) {
+                        width += *resolvedPaddingEnd;
+                    }
+
+                    if (resolvedBorderEnd) {
+                        width += *resolvedBorderEnd;
+                    }
+
+                    const auto fontMetrics = runtime::ContextManager::getContext().glyphCache.metrics(
+                        child->inheritedProperties.font,
+                        child->inheritedProperties.fontSize.resolveOr(Size::px(0.0f))
+                    );
+                    fragments.push_back({
+                        .kind = InlineFlowKind::Close,
+                        .width = width,
+                        .height = fontMetrics.lineHeight * child->inheritedProperties.lineHeight,
+                        .ascent = fontMetrics.ascent,
+                        .descent = fontMetrics.descent,
+                        .trailingMargin = margin
+                    });
+                    pendingWidth += margin + width;
                 }
 
                 const size_t childFragmentCount = fragments.size() - childFragmentStart;
-                const auto* paddingStart = std::get_if<float>(isLtr ? &padding.left : &padding.right);
-                const auto* paddingEnd = std::get_if<float>(isLtr ? &padding.right : &padding.left);
 
                 for (size_t f = childFragmentStart; f < fragments.size(); ++f) {
-                    fragments[f].elementIndex = i;
+                    fragments[f].elementIndex = child->id;
                     fragments[f].elementFragmentIndex = f - childFragmentStart;
                     fragments[f].elementFragmentCount = childFragmentCount;
-                    fragments[f].leadingMargin = isLtr ? margins.left : margins.right;
-                    fragments[f].trailingMargin = isLtr ? margins.right : margins.left;
 
-                    if (paddingStart) {
-                        fragments[f].leadingPadding = *paddingStart;
-                    }
-
-                    if (paddingEnd) {
-                        fragments[f].trailingPadding = *paddingEnd;
+                    if (flow[i].kind == InlineFlowKind::Atomic) {
+                        fragments[f].leadingMargin = isLtr ? margins.left : margins.right;
+                        fragments[f].trailingMargin = isLtr ? margins.right : margins.left;
                     }
                 }
-
-                prevInline = true;
             } else {
                 commitPendingFragments(
                     sizing.widthRequest,
@@ -941,13 +953,16 @@ namespace tree {
                     pendingWidth
                 );
                 lastFragmentHasBreakOpportunity = false;
-                prevInline = false;
+
+                if (currentLineBox.fragmentCount > 0) {
+                    childrenLineBoxes.push_back(std::move(currentLineBox));
+                    currentLineBox = {};
+                    currentLineBoxIndex++;
+                }
             }
 
-            childFragments.push_back({
-                .start = childFragmentStart,
-                .count = fragments.size() - childFragmentStart
-            });
+            auto& nodeRange = nodeFragments.try_emplace(child->id, layout::InlineFragmentRange{.start = childFragmentStart}).first->second;
+            nodeRange.count = fragments.size() - nodeRange.start;
         }
 
         commitPendingFragments(
@@ -977,7 +992,7 @@ namespace tree {
                 auto minContext = buildInlineBoxes(tree, node, frameInfo, constraints, request, minimumSizing, sizeCache);
                 context->minFragments = std::move(minContext->fragments);
                 context->minLineBoxes = std::move(minContext->lineBoxes);
-                context->minChildFragments = std::move(minContext->childFragments);
+                context->minNodeFragments = std::move(minContext->nodeFragments);
             }
 
             if (sizing.widthRequest != IntrinsicRequest::Maximum) {
@@ -989,7 +1004,7 @@ namespace tree {
                 auto maxContext = buildInlineBoxes(tree, node, frameInfo, constraints, request, maximumSizing, sizeCache);
                 context->maxFragments = std::move(maxContext->fragments);
                 context->maxLineBoxes = std::move(maxContext->lineBoxes);
-                context->maxChildFragments = std::move(maxContext->childFragments);
+                context->maxNodeFragments = std::move(maxContext->nodeFragments);
             }
 
             const auto& minLineBoxes = context->minLineBoxes.empty() ? context->lineBoxes : context->minLineBoxes;

@@ -1520,6 +1520,10 @@ namespace layout {
             if (childPos == Position::Absolute || childPos == Position::Fixed)
                 continue;
 
+            if (childNode->getDisplay() == Display::None) {
+                continue;
+            }
+
             SizeRequest childRequest {
                 .position = childNode->shared.position,
                 .specified = {
@@ -1556,12 +1560,6 @@ namespace layout {
                 .intrinsicWidthRequest = IntrinsicRequest::Both,
                 .intrinsicHeightRequest = IntrinsicRequest::None,
             };
-
-            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(tree, childNode, frameInfo, preparedChildConstraints, childRequest, {
-                .availableWidth = childRequest.available.width,
-                .widthRequest = childRequest.intrinsicWidthRequest,
-                .trackIntrinsicWidth = false,
-            }, sizeCache);
 
             const SizeResult childSizing = evaluateSize(tree, childNode, frameInfo, preparedChildConstraints, childRequest, sizeCache);
 
@@ -1739,12 +1737,6 @@ namespace layout {
                 .intrinsicWidthRequest = IntrinsicRequest::None,
                 .intrinsicHeightRequest = IntrinsicRequest::Both,
             };
-
-            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(tree, childNode, frameInfo, preparedChildConstraints, childRequest, {
-                .availableWidth = childRequest.available.width,
-                .widthRequest = childRequest.intrinsicWidthRequest,
-                .trackIntrinsicWidth = false,
-            }, sizeCache);
 
             SizeResult childSizing = evaluateSize( tree, childNode, frameInfo, preparedChildConstraints, childRequest, sizeCache);
 
@@ -1955,12 +1947,6 @@ namespace layout {
                 .automaticMinimumHeight = AutomaticMinimum::Zero
             };
 
-            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(tree, childNode, frameInfo, preparedChildConstraints, childRequest, {
-                .availableWidth = childRequest.available.width,
-                .widthRequest = childRequest.intrinsicWidthRequest,
-                .trackIntrinsicWidth = false,
-            }, sizeCache);
-
             const SizeResult childSizing = evaluateSize(tree, childNode, frameInfo, preparedChildConstraints, childRequest, sizeCache);
 
             const auto& margins = childNode->preLayout->resolvedMargins;
@@ -2051,12 +2037,6 @@ namespace layout {
                 .automaticMinimumWidth = AutomaticMinimum::Zero,
                 .automaticMinimumHeight = AutomaticMinimum::Zero,
             };
-
-            preparedChildConstraints.inlineFormatting = buildIsolatedInlineBoxes(tree, childNode, frameInfo, preparedChildConstraints, childRequest, {
-                .availableWidth = childRequest.available.width,
-                .widthRequest = childRequest.intrinsicWidthRequest,
-                .trackIntrinsicWidth = false,
-            }, sizeCache);
 
             tree.layoutRecursive(childNode, frameInfo, preparedChildConstraints, mutate, childRequest);
         }

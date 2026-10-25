@@ -8,6 +8,7 @@ project(gui
 option(GUI_ENABLE_INSPECTOR "Enable the debug inspector UI" OFF)
 option(GUI_ENABLE_INSTRUMENTATION "Enable render and layout instrumentation" ${GUI_ENABLE_INSPECTOR})
 option(GUI_PROFILE "Build with profiling-friendly frame pointers" OFF)
+option(GUI_ASAN "Build with AddressSanitizer" OFF)
 set(GUI_FRAME_WIDTH "512.0" CACHE STRING "Initial GUI content width in points")
 set(GUI_FRAME_HEIGHT "512.0" CACHE STRING "Initial GUI content height in points")
 

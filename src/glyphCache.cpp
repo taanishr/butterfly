@@ -71,6 +71,18 @@ float GlyphCache::lineHeight(const FontName& font) {
     return getFace(font)->size->metrics.height;
 }
 
+FontMetrics GlyphCache::metrics(const FontName& font, float fontSize) {
+    std::unique_lock<std::shared_mutex> lock(cacheMutex);
+    const auto& metrics = getFace(font)->size->metrics;
+    const float scale = fontSize / BASE_PIXEL_HEIGHT / FT_PIXEL_CF;
+
+    return {
+        .ascent = metrics.ascender * scale,
+        .descent = -metrics.descender * scale,
+        .lineHeight = metrics.height * scale
+    };
+}
+
 const Glyph& GlyphCache::retrieve(const FontName& font, uint32_t glyphId)
 {
     GlyphQuery query{glyphId, font};

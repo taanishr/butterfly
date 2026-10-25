@@ -20,8 +20,9 @@ namespace animation {
         constexpr size_t Height = 1;
         constexpr size_t Translate = 2;
         constexpr size_t Opacity = 3;
-        constexpr size_t Color = 4;
-        constexpr size_t Count = 5;
+        constexpr size_t BackgroundColor = 4;
+        constexpr size_t Color = 5;
+        constexpr size_t Count = 6;
     }
 
     struct AnimationState {

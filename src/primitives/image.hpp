@@ -100,7 +100,7 @@ namespace elements {
 
     struct ImageStorage {
         ImageStorage(UIContext& ctx):
-            atomsBuffer{ctx.allocator, 6*sizeof(ImagePoint), MaxOutstandingFrameCount},
+            atomsBuffer{ctx.allocator, 4*sizeof(ImagePoint), MaxOutstandingFrameCount},
             placementsBuffer{ctx.allocator, sizeof(simd_float2), MaxOutstandingFrameCount},
             uniformsBuffer{ctx.allocator, 6*sizeof(ImageUniforms), MaxOutstandingFrameCount},
             clipsBuffer{ctx.allocator, sizeof(ClipUniform) * 4, MaxOutstandingFrameCount}
@@ -118,6 +118,7 @@ namespace elements {
     template <typename S = ImageStorage>
     struct Image {
         static constexpr std::string_view elementName = "Image";
+        static constexpr bool isLeaf = true;
 
         Image(UIContext& ctx):
             desc{},
@@ -288,14 +289,12 @@ namespace elements {
             float height = 0.0f;
 
             // auto atomsBuffer = fragment.fragmentStorage.atomsBuffer.get();
-            size_t bufferLen = 6 * sizeof(ImagePoint);
+            size_t bufferLen = 4 * sizeof(ImagePoint);
 
-            std::array<ImagePoint, 6> points {{
+            std::array<ImagePoint, 4> points {{
                 {{0, 0},                {0, 0}, 0},
                 {{width, 0},            {1, 0}, 0},
                 {{0, height},           {0, 1}, 0},
-                {{0, height},           {0, 1}, 0},
-                {{width, 0},            {1, 0}, 0},
                 {{width, height},       {1, 1}, 0}
             }};
 
@@ -323,8 +322,8 @@ namespace elements {
         Atomized postLayout(Fragment<S>& fragment, Constraints&, SharedDescriptor& shared, ImageDescriptor& desc, Atomized& atomized, L& layout) {
                         std::vector<Atom> atoms {};
             
-            float width = layout.computedBox.width;
-            float height = layout.computedBox.height;
+            float width = layout.boxFragments.front().computedBox.width;
+            float height = layout.boxFragments.front().computedBox.height;
 
             if (width > 0.0f && height > 0.0f) {
                 uint32_t logicalWidth = ImageCache::quantize(width);
@@ -339,7 +338,7 @@ namespace elements {
             Atom atom;
             atom.atomBufferHandle = fragment.fragmentStorage.atomsBuffer.getBufferHandle(ctx.frameIndex);
             atom.offset = 0;
-            atom.length = 6*sizeof(ImagePoint);
+            atom.length = 4*sizeof(ImagePoint);
             atom.width = width;
             atom.height = height;
             
@@ -381,12 +380,12 @@ namespace elements {
 
             CornerRadii cornerRadius = style::resolveCornerRadii(
                 shared,
-                layout.computedBox.width,
-                layout.computedBox.height
+                layout.boxFragments.front().computedBox.width,
+                layout.boxFragments.front().computedBox.height
             );
 
-            float width = layout.computedBox.width;
-            float height = layout.computedBox.height;
+            float width = layout.boxFragments.front().computedBox.width;
+            float height = layout.boxFragments.front().computedBox.height;
             const auto& boxShadow = shared.boxShadow;
             float shadowBlur = std::max(boxShadow.blur.resolveOr(Size::px(width), 0.0f), 0.0f);
 
@@ -437,16 +436,14 @@ namespace elements {
             float minV = height > 0.0f ? minY / height : 0.0f;
             float maxV = height > 0.0f ? maxY / height : 1.0f;
 
-            std::array<ImagePoint, 6> atomPoints {{
+            std::array<ImagePoint, 4> atomPoints {{
                 {{minX, minY}, {minU, minV}, 0},
                 {{maxX, minY}, {maxU, minV}, 0},
                 {{minX, maxY}, {minU, maxV}, 0},
-                {{minX, maxY}, {minU, maxV}, 0},
-                {{maxX, minY}, {maxU, minV}, 0},
                 {{maxX, maxY}, {maxU, maxV}, 0}
             }};
 
-            fragment.fragmentStorage.atomsBuffer.write(ctx.frameIndex, atomPoints.data(), 6*sizeof(ImagePoint));
+            fragment.fragmentStorage.atomsBuffer.write(ctx.frameIndex, atomPoints.data(), 4*sizeof(ImagePoint));
 
             ImageUniforms uniforms {
                 .style = styleUniforms,
@@ -493,7 +490,7 @@ namespace elements {
             }
             
             encoder->setFragmentSamplerState(sampler, 0);
-            encoder->drawPrimitives(MTL::PrimitiveTypeTriangle, NS::UInteger(0), 6);
+            encoder->drawPrimitives(MTL::PrimitiveTypeTriangleStrip, NS::UInteger(0), NS::UInteger(4), NS::UInteger(1));
         }
 
         std::function<bool(HitTestContext<U>& context, simd_float2 testPoint)> setupHitTestFunction() {

@@ -20,6 +20,7 @@ namespace instrumentation {
 
     enum class Phase : uint8_t {
         Update,
+        Fixup,
         Atomize,
         PreLayout,
         Layout,
