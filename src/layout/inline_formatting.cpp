@@ -47,6 +47,10 @@ namespace tree {
 
     void appendInlineFlow(TreeNode* node, std::vector<InlineFlowItem>& flow) {
         for (auto& child : node->children) {
+            if (child->getDisplay() == Display::None) {
+                continue;
+            }
+
             if (getText(child.get()).has_value()) {
                 flow.push_back({.kind = InlineFlowKind::Text, .node = child.get()});
             } else if (child->element->isInline()) {
@@ -59,8 +63,10 @@ namespace tree {
                     appendInlineFlow(child.get(), flow);
                 }
                 flow.push_back({.kind = InlineFlowKind::Close, .node = child.get()});
+            } else if (child->getPosition() == Position::Absolute || child->getPosition() == Position::Fixed) {
+                continue;
             } else if (node->getDisplay() == Display::Inline) {
-                // in the <open><block><close> case 
+                // in the <open><block><close> case
                 // open and close live on diff lines
                 // but there wasnt a thing for the open placeholder to attach to for edges/reordering
                 // so placeholder fixes this
@@ -81,6 +87,10 @@ namespace tree {
     }
 
     void appendBidiText(TreeNode* node, std::string& paragraph) {
+        if (node->getDisplay() == Display::None) {
+            return;
+        }
+
         if (auto text = getText(node)) {
             std::string bidiText = *text;
             const auto whiteSpace = getWhiteSpace(node)
@@ -98,7 +108,7 @@ namespace tree {
             for (auto& child : node->children) {
                 appendBidiText(child.get(), paragraph);
             }
-        } else {
+        } else if (node->getPosition() != Position::Absolute && node->getPosition() != Position::Fixed) {
             // block handling; splits the line
             paragraph += "\n";
         }
@@ -764,6 +774,7 @@ namespace tree {
         size_t pendingStart = 0;
         float pendingWidth = 0.0f;
         bool lastFragmentHasBreakOpportunity = false;
+        layout::EdgeIntent edgeIntent = constraints.edgeIntent;
         SizeState availableWidth = calculateSize(sizing.availableWidth, std::monostate{});
         const bool isLtr = constraints.inheritedProperties.direction == layout::Direction::ltr;
 
@@ -775,47 +786,48 @@ namespace tree {
 
             size_t childFragmentStart = fragments.size();
 
-            if (flow[i].kind != InlineFlowKind::Block) {
-                auto textResp = getText(child);
-                auto margins = child->preLayout->resolvedMargins;
-                auto& atoms = child->atomized->atoms;
+            auto textResp = getText(child);
+            auto margins = child->preLayout->resolvedMargins;
+            auto& atoms = child->atomized->atoms;
 
-                SizeRequest childRequest {
-                    .position = child->shared.position,
-                    .specified = {
-                        .width = tree.animationManager.width(child->animations[animation::Animatable::Width], child->getWidth()),
-                        .height = tree.animationManager.height(child->animations[animation::Animatable::Height], child->getHeight()),
-                    },
-                    .minimum = {.width = child->shared.minWidth, .height = child->shared.minHeight},
-                    .maximum = {
-                        .width = child->shared.maxWidth ? SizeState{*child->shared.maxWidth} : SizeState{std::monostate{}},
-                        .height = child->shared.maxHeight ? SizeState{*child->shared.maxHeight} : SizeState{std::monostate{}},
-                    },
-                    .available = {.width = constraints.availableWidth, .height = constraints.availableHeight},
-                    .top = child->shared.top,
-                    .right = child->shared.right,
-                    .bottom = child->shared.bottom,
-                    .left = child->shared.left,
-                    .paddingTop = child->shared.paddingTop.value_or(child->shared.padding),
-                    .paddingRight = child->shared.paddingRight.value_or(child->shared.padding),
-                    .paddingBottom = child->shared.paddingBottom.value_or(child->shared.padding),
-                    .paddingLeft = child->shared.paddingLeft.value_or(child->shared.padding),
-                    .borderTop = child->shared.border.topWidth.value_or(child->shared.border.width),
-                    .borderRight = child->shared.border.rightWidth.value_or(child->shared.border.width),
-                    .borderBottom = child->shared.border.bottomWidth.value_or(child->shared.border.width),
-                    .borderLeft = child->shared.border.leftWidth.value_or(child->shared.border.width),
-                    .margins = margins,
-                    .aspectRatio = child->shared.aspectRatio,
-                    .automaticWidth = (child->getPosition() == Position::Absolute || child->getPosition() == Position::Fixed)
-                        ? AutomaticSizing::UseContent : AutomaticSizing::UseAvailable,
-                    .automaticHeight = AutomaticSizing::UseContent,
-                    .automaticMinimumWidth = AutomaticMinimum::Zero,
-                    .automaticMinimumHeight = AutomaticMinimum::Zero,
-                    .intrinsicWidthRequest = request.intrinsicWidthRequest,
-                    .intrinsicHeightRequest = request.intrinsicHeightRequest,
-                    .resolvingIntrinsicWidth = request.intrinsicWidthRequest.value_or(IntrinsicRequest::None) != IntrinsicRequest::None,
-                    .resolvingIntrinsicHeight = request.intrinsicHeightRequest.value_or(IntrinsicRequest::None) != IntrinsicRequest::None,
-                };
+            SizeRequest childRequest {
+                .position = child->shared.position,
+                .specified = {
+                    .width = tree.animationManager.width(child->animations[animation::Animatable::Width], child->getWidth()),
+                    .height = tree.animationManager.height(child->animations[animation::Animatable::Height], child->getHeight()),
+                },
+                .minimum = {.width = child->shared.minWidth, .height = child->shared.minHeight},
+                .maximum = {
+                    .width = child->shared.maxWidth ? SizeState{*child->shared.maxWidth} : SizeState{std::monostate{}},
+                    .height = child->shared.maxHeight ? SizeState{*child->shared.maxHeight} : SizeState{std::monostate{}},
+                },
+                .available = {.width = constraints.availableWidth, .height = constraints.availableHeight},
+                .top = child->shared.top,
+                .right = child->shared.right,
+                .bottom = child->shared.bottom,
+                .left = child->shared.left,
+                .paddingTop = child->shared.paddingTop.value_or(child->shared.padding),
+                .paddingRight = child->shared.paddingRight.value_or(child->shared.padding),
+                .paddingBottom = child->shared.paddingBottom.value_or(child->shared.padding),
+                .paddingLeft = child->shared.paddingLeft.value_or(child->shared.padding),
+                .borderTop = child->shared.border.topWidth.value_or(child->shared.border.width),
+                .borderRight = child->shared.border.rightWidth.value_or(child->shared.border.width),
+                .borderBottom = child->shared.border.bottomWidth.value_or(child->shared.border.width),
+                .borderLeft = child->shared.border.leftWidth.value_or(child->shared.border.width),
+                .margins = margins,
+                .aspectRatio = child->shared.aspectRatio,
+                .automaticWidth = (child->getPosition() == Position::Absolute || child->getPosition() == Position::Fixed)
+                    ? AutomaticSizing::UseContent : AutomaticSizing::UseAvailable,
+                .automaticHeight = AutomaticSizing::UseContent,
+                .automaticMinimumWidth = AutomaticMinimum::Zero,
+                .automaticMinimumHeight = AutomaticMinimum::Zero,
+                .intrinsicWidthRequest = request.intrinsicWidthRequest,
+                .intrinsicHeightRequest = request.intrinsicHeightRequest,
+                .resolvingIntrinsicWidth = request.intrinsicWidthRequest.value_or(IntrinsicRequest::None) != IntrinsicRequest::None,
+                .resolvingIntrinsicHeight = request.intrinsicHeightRequest.value_or(IntrinsicRequest::None) != IntrinsicRequest::None,
+            };
+
+            if (flow[i].kind != InlineFlowKind::Block) {
                 if (flow[i].kind == InlineFlowKind::Text) {
                     appendTextLineFragments(
                         *textResp,
@@ -955,13 +967,44 @@ namespace tree {
                 lastFragmentHasBreakOpportunity = false;
 
                 if (currentLineBox.fragmentCount > 0) {
+                    if (currentLineBox.height > 0.0f) {
+                        edgeIntent = {.edgeDisplayMode = Display::Inline, .collapsable = false};
+                    }
                     childrenLineBoxes.push_back(std::move(currentLineBox));
                     currentLineBox = {};
                     currentLineBoxIndex++;
                 }
+
+                const auto sizeResult = evaluateSize(tree, child, frameInfo, constraints, childRequest, sizeCache);
+                float advance = 0.0f;
+
+                if (edgeIntent.edgeDisplayMode == Display::Block) {
+                    advance += edgeIntent.collapsable && !child->getMarginTop().isAuto()
+                        ? std::max(edgeIntent.intent, margins.top) - edgeIntent.intent
+                        : margins.top;
+                }
+
+                if (std::holds_alternative<float>(sizeResult.borderBoxSize.height)) {
+                    advance += std::get<float>(sizeResult.borderBoxSize.height);
+                }
+
+                advance += margins.bottom;
+
+                fragments.push_back({
+                    .kind = InlineFlowKind::Block,
+                    .height = advance,
+                    .elementIndex = child->id,
+                    .lineBoxIndex = currentLineBoxIndex,
+                });
+                pendingStart = fragments.size();
+                edgeIntent = {
+                    .edgeDisplayMode = Display::Block,
+                    .intent = margins.bottom,
+                    .collapsable = !child->getMarginBottom().isAuto(),
+                };
             }
 
-            auto& nodeRange = nodeFragments.try_emplace(child->id, layout::InlineFragmentRange{.start = childFragmentStart}).first->second;
+            auto& nodeRange =nodeFragments.try_emplace(child->id, layout::InlineFragmentRange{.start = childFragmentStart}).first->second;
             nodeRange.count = fragments.size() - nodeRange.start;
         }
 

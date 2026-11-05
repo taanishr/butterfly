@@ -487,16 +487,24 @@ namespace layout {
         for (uint64_t i = 0; i < node->children.size(); ++i) {
             auto child = node->children[i].get();
 
-            childConstraints.inlineFormatting = {
-                .context = inlineFormatting,
-                .fragments = inlineFormatting->nodeFragments.at(child->id),
-                .minFragments = inlineFormatting->minNodeFragments.empty()
-                    ? InlineFragmentRange{}
-                    : inlineFormatting->minNodeFragments.at(child->id),
-                .maxFragments = inlineFormatting->maxNodeFragments.empty()
-                    ? InlineFragmentRange{}
-                    : inlineFormatting->maxNodeFragments.at(child->id),
-            };
+            if (child->getDisplay() == Display::None) {
+                continue;
+            }
+
+            childConstraints.inlineFormatting = {};
+
+            if (inlineFormatting->nodeFragments.contains(child->id)) {
+                childConstraints.inlineFormatting = {
+                    .context = inlineFormatting,
+                    .fragments = inlineFormatting->nodeFragments.at(child->id),
+                    .minFragments = inlineFormatting->minNodeFragments.empty()
+                        ? InlineFragmentRange{}
+                        : inlineFormatting->minNodeFragments.at(child->id),
+                    .maxFragments = inlineFormatting->maxNodeFragments.empty()
+                        ? InlineFragmentRange{}
+                        : inlineFormatting->maxNodeFragments.at(child->id),
+                };
+            }
 
             auto childOutput = tree.layoutRecursive(child, frameInfo, childConstraints, mutate, std::nullopt, sizeRequest.intrinsicWidthRequest, sizeRequest.intrinsicHeightRequest);
 

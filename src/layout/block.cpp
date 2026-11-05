@@ -292,16 +292,20 @@ namespace layout {
                 continue;
             }
 
-            childConstraints.inlineFormatting = {
-                .context = inlineFormatting,
-                .fragments = inlineFormatting->nodeFragments.at(child->id),
-                .minFragments = inlineFormatting->minNodeFragments.empty()
-                    ? InlineFragmentRange{}
-                    : inlineFormatting->minNodeFragments.at(child->id),
-                .maxFragments = inlineFormatting->maxNodeFragments.empty()
-                    ? InlineFragmentRange{}
-                    : inlineFormatting->maxNodeFragments.at(child->id),
-            };
+            childConstraints.inlineFormatting = {};
+
+            if (inlineFormatting->nodeFragments.contains(child->id)) {
+                childConstraints.inlineFormatting = {
+                    .context = inlineFormatting,
+                    .fragments = inlineFormatting->nodeFragments.at(child->id),
+                    .minFragments = inlineFormatting->minNodeFragments.empty()
+                        ? InlineFragmentRange{}
+                        : inlineFormatting->minNodeFragments.at(child->id),
+                    .maxFragments = inlineFormatting->maxNodeFragments.empty()
+                        ? InlineFragmentRange{}
+                        : inlineFormatting->maxNodeFragments.at(child->id),
+                };
+            }
 
             auto childOutput = tree.layoutRecursive(child, frameInfo, childConstraints, mutate, std::nullopt, sizeRequest.intrinsicWidthRequest, sizeRequest.intrinsicHeightRequest);
 
