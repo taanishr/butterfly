@@ -288,6 +288,10 @@ namespace layout {
         for (uint64_t i = 0; i < node->children.size(); ++i) {
             auto child = node->children[i].get();
 
+            if (child->getDisplay() == Display::None) {
+                continue;
+            }
+
             childConstraints.inlineFormatting = {
                 .context = inlineFormatting,
                 .fragments = inlineFormatting->nodeFragments.at(child->id),
@@ -302,24 +306,24 @@ namespace layout {
             auto childOutput = tree.layoutRecursive(child, frameInfo, childConstraints, mutate, std::nullopt, sizeRequest.intrinsicWidthRequest, sizeRequest.intrinsicHeightRequest);
 
             std::visit([&](const auto& childLayout) {
-            if (!childLayout.outOfFlow) {
-                if (sizeRequest.resolvingIntrinsicWidth) {
-                    const auto& margins = child->preLayout->resolvedMargins;
-                    intrinsicResult->minimum = std::max(intrinsicResult->minimum, margins.left + childOutput.intrinsicSizes->minimum + margins.right);
-                    intrinsicResult->maximum = std::max(intrinsicResult->maximum, margins.left + childOutput.intrinsicSizes->maximum + margins.right);
+                if (!childLayout.outOfFlow) {
+                    if (sizeRequest.resolvingIntrinsicWidth) {
+                        const auto& margins = child->preLayout->resolvedMargins;
+                        intrinsicResult->minimum = std::max(intrinsicResult->minimum, margins.left + childOutput.intrinsicSizes->minimum + margins.right);
+                        intrinsicResult->maximum = std::max(intrinsicResult->maximum, margins.left + childOutput.intrinsicSizes->maximum + margins.right);
+                    }
+
+                    if (sizeRequest.resolvingIntrinsicHeight) {
+                        float childOffset = childConstraints.cursor.y - childConstraints.origin.y;
+                        intrinsicResult->minimum = std::max(intrinsicResult->minimum, childOffset + childOutput.intrinsicSizes->minimum);
+                        intrinsicResult->maximum = std::max(intrinsicResult->maximum, childOffset + childOutput.intrinsicSizes->maximum);
+                    }
+
+                    childConstraints.cursor = childLayout.siblingCursor;
+                    childConstraints.edgeIntent = childLayout.edgeIntent;
+                    childConstraints.prevInlineHeight = childLayout.prevInlineHeight;
+
                 }
-
-                if (sizeRequest.resolvingIntrinsicHeight) {
-                    float childOffset = childConstraints.cursor.y - childConstraints.origin.y;
-                    intrinsicResult->minimum = std::max(intrinsicResult->minimum, childOffset + childOutput.intrinsicSizes->minimum);
-                    intrinsicResult->maximum = std::max(intrinsicResult->maximum, childOffset + childOutput.intrinsicSizes->maximum);
-                }
-
-                childConstraints.cursor = childLayout.siblingCursor;
-                childConstraints.edgeIntent = childLayout.edgeIntent;
-                childConstraints.prevInlineHeight = childLayout.prevInlineHeight;
-
-            }
             }, childOutput.layout);
         }
 

@@ -501,15 +501,15 @@ namespace layout {
             auto childOutput = tree.layoutRecursive(child, frameInfo, childConstraints, mutate, std::nullopt, sizeRequest.intrinsicWidthRequest, sizeRequest.intrinsicHeightRequest);
 
             std::visit([&](const auto& childLayout) {
-            if (!childLayout.outOfFlow) {
-                childConstraints.cursor = childLayout.siblingCursor;
-                childConstraints.edgeIntent = childLayout.edgeIntent;
-                childConstraints.prevInlineHeight = childLayout.prevInlineHeight;
+                if (!childLayout.outOfFlow) {
+                    childConstraints.cursor = childLayout.siblingCursor;
+                    childConstraints.edgeIntent = childLayout.edgeIntent;
+                    childConstraints.prevInlineHeight = childLayout.prevInlineHeight;
 
-                state.siblingCursor = childLayout.siblingCursor;
-                state.edgeIntent = childLayout.edgeIntent;
-                state.prevInlineHeight = childLayout.prevInlineHeight;
-            }
+                    state.siblingCursor = childLayout.siblingCursor;
+                    state.edgeIntent = childLayout.edgeIntent;
+                    state.prevInlineHeight = childLayout.prevInlineHeight;
+                }
             }, childOutput.layout);
         }
 

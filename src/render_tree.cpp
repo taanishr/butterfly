@@ -603,7 +603,7 @@ namespace tree {
                 } else {
                     current = child.get();
                 }
-            } else if (getText(child.get())) {
+            } else if (child->getDisplay() == Display::Inline) {
                 if (!current) {
                     auto box = makeAnonymousBox();
                     box->parent = parent;
@@ -627,8 +627,9 @@ namespace tree {
                 continue;
             }
 
-            bool whitespaceOnly = std::ranges::all_of(child->children, [](auto& text) {
-                return std::ranges::all_of(*getText(text.get()), [](char c) {
+            bool whitespaceOnly = std::ranges::all_of(child->children, [](auto& runChild) {
+                auto text = getText(runChild.get());
+                return text && std::ranges::all_of(*text, [](char c) {
                     return elements::isTextWhitespace(c);
                 });
             });
@@ -669,9 +670,28 @@ namespace tree {
         }
     }
 
+    bool hasMixedContent(TreeNode* node) {
+        bool hasInline = false;
+        bool hasBlock = false;
+
+        for (auto& child : node->children) {
+            if (child->metadata.anonymous || child->getDisplay() == Display::Inline) {
+                hasInline = true;
+            } else {
+                hasBlock = true;
+            }
+
+            if (hasInline && hasBlock) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     void normalizeAnonymousBoxes(RenderTree& tree, TreeNode* node) {
         auto display = node->getDisplay();
-        if (display == Display::Flex || display == Display::Grid) {
+        if (display == Display::Flex || display == Display::Grid || (display == Display::Block && hasMixedContent(node))) {
             wrapTextRuns(tree, node);
         } else {
             dissolveAnonymousBoxes(tree, node);
