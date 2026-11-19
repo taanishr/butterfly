@@ -790,44 +790,81 @@ namespace tree {
             auto margins = child->preLayout->resolvedMargins;
             auto& atoms = child->atomized->atoms;
 
-            SizeRequest childRequest {
-                .position = child->shared.position,
-                .specified = {
-                    .width = tree.animationManager.width(child->animations[animation::Animatable::Width], child->getWidth()),
-                    .height = tree.animationManager.height(child->animations[animation::Animatable::Height], child->getHeight()),
-                },
-                .minimum = {.width = child->shared.minWidth, .height = child->shared.minHeight},
-                .maximum = {
-                    .width = child->shared.maxWidth ? SizeState{*child->shared.maxWidth} : SizeState{std::monostate{}},
-                    .height = child->shared.maxHeight ? SizeState{*child->shared.maxHeight} : SizeState{std::monostate{}},
-                },
-                .available = {.width = constraints.availableWidth, .height = constraints.availableHeight},
-                .top = child->shared.top,
-                .right = child->shared.right,
-                .bottom = child->shared.bottom,
-                .left = child->shared.left,
-                .paddingTop = child->shared.paddingTop.value_or(child->shared.padding),
-                .paddingRight = child->shared.paddingRight.value_or(child->shared.padding),
-                .paddingBottom = child->shared.paddingBottom.value_or(child->shared.padding),
-                .paddingLeft = child->shared.paddingLeft.value_or(child->shared.padding),
-                .borderTop = child->shared.border.topWidth.value_or(child->shared.border.width),
-                .borderRight = child->shared.border.rightWidth.value_or(child->shared.border.width),
-                .borderBottom = child->shared.border.bottomWidth.value_or(child->shared.border.width),
-                .borderLeft = child->shared.border.leftWidth.value_or(child->shared.border.width),
-                .margins = margins,
-                .aspectRatio = child->shared.aspectRatio,
-                .automaticWidth = (child->getPosition() == Position::Absolute || child->getPosition() == Position::Fixed)
-                    ? AutomaticSizing::UseContent : AutomaticSizing::UseAvailable,
-                .automaticHeight = AutomaticSizing::UseContent,
-                .automaticMinimumWidth = AutomaticMinimum::Zero,
-                .automaticMinimumHeight = AutomaticMinimum::Zero,
-                .intrinsicWidthRequest = request.intrinsicWidthRequest,
-                .intrinsicHeightRequest = request.intrinsicHeightRequest,
-                .resolvingIntrinsicWidth = request.intrinsicWidthRequest.value_or(IntrinsicRequest::None) != IntrinsicRequest::None,
-                .resolvingIntrinsicHeight = request.intrinsicHeightRequest.value_or(IntrinsicRequest::None) != IntrinsicRequest::None,
-            };
+            // SizeRequest childRequest {
+            //     .position = child->shared.position,
+            //     .specified = {
+            //         .width = tree.animationManager.width(child->animations[animation::Animatable::Width], child->getWidth()),
+            //         .height = tree.animationManager.height(child->animations[animation::Animatable::Height], child->getHeight()),
+            //     }
+            //     .minimum = {.width = child->shared.minWidth, .height = child->shared.minHeight},
+            //     .maximum = {
+            //         .width = child->shared.maxWidth ? SizeState{*child->shared.maxWidth} : SizeState{std::monostate{}},
+            //         .height = child->shared.maxHeight ? SizeState{*child->shared.maxHeight} : SizeState{std::monostate{}},
+            //     },
+            //     .available = {.width = constraints.availableWidth, .height = constraints.availableHeight},
+            //     .top = child->shared.top,
+            //     .right = child->shared.right,
+            //     .bottom = child->shared.bottom,
+            //     .left = child->shared.left,
+            //     .paddingTop = child->shared.paddingTop.value_or(child->shared.padding),
+            //     .paddingRight = child->shared.paddingRight.value_or(child->shared.padding),
+            //     .paddingBottom = child->shared.paddingBottom.value_or(child->shared.padding),
+            //     .paddingLeft = child->shared.paddingLeft.value_or(child->shared.padding),
+            //     .borderTop = child->shared.border.topWidth.value_or(child->shared.border.width),
+            //     .borderRight = child->shared.border.rightWidth.value_or(child->shared.border.width),
+            //     .borderBottom = child->shared.border.bottomWidth.value_or(child->shared.border.width),
+            //     .borderLeft = child->shared.border.leftWidth.value_or(child->shared.border.width),
+            //     .margins = margins,
+            //     .aspectRatio = child->shared.aspectRatio,
+            //     .automaticWidth = (child->getPosition() == Position::Absolute || child->getPosition() == Position::Fixed)
+            //         ? AutomaticSizing::UseContent : AutomaticSizing::UseAvailable,
+            //     .automaticHeight = AutomaticSizing::UseContent,
+            //     .automaticMinimumWidth = AutomaticMinimum::Zero,
+            //     .automaticMinimumHeight = AutomaticMinimum::Zero,
+            //     .intrinsicWidthRequest = request.intrinsicWidthRequest,
+            //     .intrinsicHeightRequest = request.intrinsicHeightRequest,
+            //     .resolvingIntrinsicWidth = request.intrinsicWidthRequest.value_or(IntrinsicRequest::None) != IntrinsicRequest::None,
+            //     .resolvingIntrinsicHeight = request.intrinsicHeightRequest.value_or(IntrinsicRequest::None) != IntrinsicRequest::None,
+            // };
 
             if (flow[i].kind != InlineFlowKind::Block) {
+                SizeRequest childRequest {
+                    .position = child->shared.position,
+                    .specified = {
+                        .width = tree.animationManager.width(child->animations[animation::Animatable::Width], child->getWidth()),
+                        .height = tree.animationManager.height(child->animations[animation::Animatable::Height], child->getHeight()),
+                    },
+                    .minimum = {.width = child->shared.minWidth, .height = child->shared.minHeight},
+                    .maximum = {
+                        .width = child->shared.maxWidth ? SizeState{*child->shared.maxWidth} : SizeState{std::monostate{}},
+                        .height = child->shared.maxHeight ? SizeState{*child->shared.maxHeight} : SizeState{std::monostate{}},
+                    },
+                    .available = {.width = constraints.availableWidth, .height = constraints.availableHeight},
+                    .top = child->shared.top,
+                    .right = child->shared.right,
+                    .bottom = child->shared.bottom,
+                    .left = child->shared.left,
+                    .paddingTop = child->shared.paddingTop.value_or(child->shared.padding),
+                    .paddingRight = child->shared.paddingRight.value_or(child->shared.padding),
+                    .paddingBottom = child->shared.paddingBottom.value_or(child->shared.padding),
+                    .paddingLeft = child->shared.paddingLeft.value_or(child->shared.padding),
+                    .borderTop = child->shared.border.topWidth.value_or(child->shared.border.width),
+                    .borderRight = child->shared.border.rightWidth.value_or(child->shared.border.width),
+                    .borderBottom = child->shared.border.bottomWidth.value_or(child->shared.border.width),
+                    .borderLeft = child->shared.border.leftWidth.value_or(child->shared.border.width),
+                    .margins = margins,
+                    .aspectRatio = child->shared.aspectRatio,
+                    .automaticWidth = (child->getPosition() == Position::Absolute || child->getPosition() == Position::Fixed)
+                        ? AutomaticSizing::UseContent : AutomaticSizing::UseAvailable,
+                    .automaticHeight = AutomaticSizing::UseContent,
+                    .automaticMinimumWidth = AutomaticMinimum::Zero,
+                    .automaticMinimumHeight = AutomaticMinimum::Zero,
+                    .intrinsicWidthRequest = request.intrinsicWidthRequest,
+                    .intrinsicHeightRequest = request.intrinsicHeightRequest,
+                    .resolvingIntrinsicWidth = request.intrinsicWidthRequest.value_or(IntrinsicRequest::None) != IntrinsicRequest::None,
+                    .resolvingIntrinsicHeight = request.intrinsicHeightRequest.value_or(IntrinsicRequest::None) != IntrinsicRequest::None,
+                };
+
                 if (flow[i].kind == InlineFlowKind::Text) {
                     appendTextLineFragments(
                         *textResp,
@@ -953,7 +990,40 @@ namespace tree {
                         fragments[f].trailingMargin = isLtr ? margins.right : margins.left;
                     }
                 }
-            } else {
+            } else { // why is this split across two ifs? I dont fw this; probably because of a lgeacy sizing thing
+                SizeRequest childRequest {
+                    .position = child->shared.position,
+                    .specified = {
+                        .width = tree.animationManager.width(child->animations[animation::Animatable::Width], child->getWidth()),
+                        .height = tree.animationManager.height(child->animations[animation::Animatable::Height], child->getHeight()),
+                    },
+                    .minimum = {.width = child->shared.minWidth, .height = child->shared.minHeight},
+                    .maximum = {
+                        .width = child->shared.maxWidth ? SizeState{*child->shared.maxWidth} : SizeState{std::monostate{}},
+                        .height = child->shared.maxHeight ? SizeState{*child->shared.maxHeight} : SizeState{std::monostate{}},
+                    },
+                    .available = {.width = constraints.availableWidth, .height = constraints.availableHeight},
+                    .top = child->shared.top,
+                    .right = child->shared.right,
+                    .bottom = child->shared.bottom,
+                    .left = child->shared.left,
+                    .paddingTop = child->shared.paddingTop.value_or(child->shared.padding),
+                    .paddingRight = child->shared.paddingRight.value_or(child->shared.padding),
+                    .paddingBottom = child->shared.paddingBottom.value_or(child->shared.padding),
+                    .paddingLeft = child->shared.paddingLeft.value_or(child->shared.padding),
+                    .borderTop = child->shared.border.topWidth.value_or(child->shared.border.width),
+                    .borderRight = child->shared.border.rightWidth.value_or(child->shared.border.width),
+                    .borderBottom = child->shared.border.bottomWidth.value_or(child->shared.border.width),
+                    .borderLeft = child->shared.border.leftWidth.value_or(child->shared.border.width),
+                    .margins = margins,
+                    .aspectRatio = child->shared.aspectRatio,
+                    .automaticWidth = (child->getPosition() == Position::Absolute || child->getPosition() == Position::Fixed)
+                        ? AutomaticSizing::UseContent : AutomaticSizing::UseAvailable,
+                    .automaticHeight = AutomaticSizing::UseContent,
+                    .automaticMinimumWidth = AutomaticMinimum::Zero,
+                    .automaticMinimumHeight = AutomaticMinimum::Zero
+                };
+
                 commitPendingFragments(
                     sizing.widthRequest,
                     availableWidth,

@@ -297,6 +297,7 @@ namespace layout {
             if (inlineFormatting->nodeFragments.contains(child->id)) {
                 childConstraints.inlineFormatting = {
                     .context = inlineFormatting,
+                    .owner = child->id,
                     .fragments = inlineFormatting->nodeFragments.at(child->id),
                     .minFragments = inlineFormatting->minNodeFragments.empty()
                         ? InlineFragmentRange{}

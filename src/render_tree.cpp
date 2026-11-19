@@ -734,7 +734,8 @@ namespace tree {
         auto currPosition = node->getPosition();
         bool currOutOfFlow = currPosition == Position::Absolute || currPosition == Position::Fixed;
 
-        if (currOutOfFlow) {
+        // this eliminates flex/grid... is that what we want?
+        if (currOutOfFlow || node->getDisplay() != Display::Block) {
             firstInFlowCollapsableChild = nullptr;
             lastInFlowCollapsableChild = nullptr;
         }
@@ -942,11 +943,14 @@ namespace tree {
         }
 
         // local during layout (so origin always 0.0; becomes non-local in post-layout)
-        childConstraints.containingBlock = {
-            .origin = {0.0f, 0.0f},
-            .width = sizeResult.innerSize.width,
-            .height = sizeResult.innerSize.height,
-        };
+        // skip inline bc thats how this works i think
+        if (node->getDisplay() != Display::Inline) {
+            childConstraints.containingBlock = {
+                .origin = {0.0f, 0.0f},
+                .width = sizeResult.innerSize.width,
+                .height = sizeResult.innerSize.height,
+            };
+        }
 
         // here: absolute replaces its containing block if
         // not static or is transformed
@@ -1029,7 +1033,7 @@ namespace tree {
                         these modes size their container AND define how to place children
 
                     second class: so far, flex and grid
-                        these layout mdoes do not define how the container is sized; they define how the container places its children
+                        these layout modes do not define how the container is sized; they define how the container places its children
                         these are subsets of first class sizing modes
 
             because of the new *centralized* sizing resolver
