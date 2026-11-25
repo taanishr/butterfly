@@ -280,19 +280,17 @@ namespace elements {
             std::string renderedText{text};
             auto codepoints = utf8::codePoints(text);
             std::vector<uint8_t> collapsedWhitespace(text.size(), false);
-            bool previousLogicalCodepointWasWhitespace = false;
-            for (const auto& codepoint : codepoints) {
-                const bool whitespace = isTextWhitespace(codepoint.value);
-                collapsedWhitespace[codepoint.byteOffset] =
-                    collapseWhitespace &&
-                    whitespace &&
-                    previousLogicalCodepointWasWhitespace;
-
-                if (collapseWhitespace && whitespace) {
-                    renderedText[codepoint.byteOffset] = ' ';
+            
+            // 1) replace consecutive white space with a singular space char
+            // 2) mark it as collapsable so we can zero width it out later 
+            if (collapseWhitespace) {
+                for (size_t i = 0; i < text.size(); ++i) {
+                    if (!isTextWhitespace(text[i])) {
+                        continue;
+                    }
+                    renderedText[i] = ' ';
+                    collapsedWhitespace[i] = i > 0 && isTextWhitespace(text[i - 1]);
                 }
-
-                previousLogicalCodepointWasWhitespace = whitespace;
             }
 
             ShapedRun shapedRun;
