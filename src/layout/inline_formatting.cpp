@@ -209,6 +209,8 @@ namespace tree {
         size_t elementIndex,
         const ShapedRun& shapedRun,
         const std::vector<Atom>& atoms,
+        const FontMetrics& fontMetrics,
+        float lineHeight,
         size_t clusterStart,
         size_t clusterEnd,
         float totalWidth,
@@ -242,20 +244,13 @@ namespace tree {
             size_t atomStart = atoms.size();
             size_t atomEnd = 0;
             float width = 0.0f;
-            float height = 0.0f;
-            float ascent = 0.0f;
-            float descent = 0.0f;
 
             for (size_t i = runStart; i < runEnd; ++i) {
                 const auto& cluster = shapedRun.clusters[i];
                 atomStart = std::min(atomStart, cluster.glyphStart);
                 atomEnd = std::max(atomEnd, cluster.glyphStart + cluster.glyphCount);
                 for (size_t glyph = 0; glyph < cluster.glyphCount; ++glyph) {
-                    const auto& atom = atoms[cluster.glyphStart + glyph];
-                    width += atom.width;
-                    height = std::max(height, atom.lineHeight);
-                    ascent = std::max(ascent, atom.ascent);
-                    descent = std::max(descent, atom.descent);
+                    width += atoms[cluster.glyphStart + glyph].width;
                 }
             }
 
@@ -271,9 +266,9 @@ namespace tree {
             LineFragment fragment{
                 .kind = InlineFlowKind::Text,
                 .width = width,
-                .height = height,
-                .ascent = ascent,
-                .descent = descent,
+                .height = lineHeight,
+                .ascent = fontMetrics.ascent,
+                .descent = fontMetrics.descent,
                 .elementIndex = elementIndex,
                 .atomStart = atomStart,
                 .atomCount = atomEnd - atomStart,
@@ -649,7 +644,9 @@ namespace tree {
         size_t elementIndex,
         const std::string& text,
         const ShapedRun& shapedRun,
-        const std::vector<Atom>& atoms,
+        std::vector<Atom>& atoms,
+        const FontMetrics& fontMetrics,
+        float lineHeight,
         WhiteSpace whiteSpace,
         WordBreak wordBreak,
         ResolvedMargins margins,
@@ -670,6 +667,7 @@ namespace tree {
         const bool preserveLineFeeds = whiteSpace == WhiteSpace::Pre ||  whiteSpace == WhiteSpace::PreWrap;
         const bool allowSoftWrap = whiteSpace == WhiteSpace::Normal || whiteSpace == WhiteSpace::PreWrap;
         const bool breakInsideWords = allowSoftWrap && wordBreak == WordBreak::BreakAll;
+        const bool collapseSpaces = whiteSpace == WhiteSpace::Normal || whiteSpace == WhiteSpace::NoWrap;
 
         float runningWidth = marginStart;
         float runningEdge = marginStart;
@@ -681,13 +679,15 @@ namespace tree {
         while (idx < shapedRun.clusters.size()) {
             const auto& cluster = shapedRun.clusters[idx];
             char32_t ch = cluster.leadCodepoint;
-            const auto& firstAtom = atoms[cluster.glyphStart];
             float width = 0.0f;
             for (size_t i = 0; i < cluster.glyphCount; ++i) {
                 width += atoms[cluster.glyphStart + i].width;
             }
 
-            if (preserveLineFeeds && firstAtom.placeOnNewLine) {
+            const bool followsCarriageReturn = cluster.byteOffset > 0 && text[cluster.byteOffset - 1] == '\r';
+            const bool lineFeed = ch == U'\r' || (ch == U'\n' && !followsCarriageReturn);
+
+            if (preserveLineFeeds && lineFeed) {
                 runningWidth += width;
 
                 if (idx + 1 >= shapedRun.clusters.size()) {
@@ -715,6 +715,8 @@ namespace tree {
                     elementIndex,
                     shapedRun,
                     atoms,
+                    fontMetrics,
+                    lineHeight,
                     runningClusterStart,
                     idx + 1,
                     runningWidth - runningEdge,
@@ -771,6 +773,8 @@ namespace tree {
                     elementIndex,
                     shapedRun,
                     atoms,
+                    fontMetrics,
+                    lineHeight,
                     runningClusterStart,
                     idx + 1,
                     runningWidth - runningEdge,
@@ -794,12 +798,18 @@ namespace tree {
                 continue;
             }
 
+            bool firstSpace = true;
             while (idx < shapedRun.clusters.size() &&
                    isTextWhitespace(shapedRun.clusters[idx].leadCodepoint)) {
                 const auto& whitespace = shapedRun.clusters[idx];
                 for (size_t i = 0; i < whitespace.glyphCount; ++i) {
-                    runningWidth += atoms[whitespace.glyphStart + i].width;
+                    auto& atom = atoms[whitespace.glyphStart + i];
+                    if (collapseSpaces && !firstSpace) {
+                        atom.width = 0.0f;
+                    }
+                    runningWidth += atom.width;
                 }
+                firstSpace = false;
                 runningAtomCount += whitespace.glyphCount;
                 idx++;
             }
@@ -827,6 +837,8 @@ namespace tree {
                 elementIndex,
                 shapedRun,
                 atoms,
+                fontMetrics,
+                lineHeight,
                 runningClusterStart,
                 idx,
                 runningWidth - runningEdge,
@@ -863,6 +875,8 @@ namespace tree {
                 elementIndex,
                 shapedRun,
                 atoms,
+                fontMetrics,
+                lineHeight,
                 runningClusterStart,
                 shapedRun.clusters.size(),
                 runningWidth - runningEdge,
@@ -979,12 +993,19 @@ namespace tree {
                 };
 
                 if (flow[i].kind == InlineFlowKind::Text) {
+                    const auto fontMetrics = runtime::ContextManager::getContext().glyphCache.metrics(
+                        child->inheritedProperties.font,
+                        child->inheritedProperties.fontSize.resolveOr(Size::px(0.0f))
+                    );
+
                     appendTextLineFragments(
                         flow,
                         child->id,
                         *textResp,
                         *getShapedRun(child),
                         atoms,
+                        fontMetrics,
+                        fontMetrics.lineHeight * child->inheritedProperties.lineHeight,
                         getWhiteSpace(child).value_or(WhiteSpace::Normal),
                         getWordBreak(child).value_or(WordBreak::Normal),
                         ResolvedMargins{},

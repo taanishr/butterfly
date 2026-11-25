@@ -273,23 +273,16 @@ namespace elements {
             float scale = fontSize / BASE_PIXEL_HEIGHT;
             auto fontMetrics = ctx.glyphCache.metrics(inheritedProperties.font, fontSize);
             float defaultLineHeight = fontMetrics.lineHeight;
-            float resolvedLineHeight = defaultLineHeight * inheritedProperties.lineHeight;
             float ascent = fontMetrics.ascent;
-            float descent = fontMetrics.descent;
 
             std::string renderedText{text};
             auto codepoints = utf8::codePoints(text);
-            std::vector<uint8_t> collapsedWhitespace(text.size(), false);
-            
-            // 1) replace consecutive white space with a singular space char
-            // 2) mark it as collapsable so we can zero width it out later 
+
             if (collapseWhitespace) {
                 for (size_t i = 0; i < text.size(); ++i) {
-                    if (!isTextWhitespace(text[i])) {
-                        continue;
+                    if (isTextWhitespace(text[i])) {
+                        renderedText[i] = ' ';
                     }
-                    renderedText[i] = ' ';
-                    collapsedWhitespace[i] = i > 0 && isTextWhitespace(text[i - 1]);
                 }
             }
 
@@ -342,17 +335,10 @@ namespace elements {
                         atom.offset = (points.size() - 4) * sizeof(TextPoint);
                         atom.width = 0;
                         atom.height = defaultLineHeight;
-                        atom.lineHeight = resolvedLineHeight;
                         atom.ascent = ascent;
-                        atom.descent = descent;
-                        bool followsCarriageReturn = shapedGlyph.byteOffset > 0 &&
-                            text[shapedGlyph.byteOffset - 1] == '\r';
-                        atom.placeOnNewLine = !(codepoint == U'\n' && followsCarriageReturn);
 
                         atoms.push_back(atom);
                         continue;
-                    } else if (codepoint) {
-                        atom.canPlaceOnNewLine = true;
                     }
 
                     GlyphQuery glyphQuery { shapedGlyph.glyphId, inheritedProperties.font };
@@ -407,14 +393,9 @@ namespace elements {
                     atom.atomBufferHandle = glyphBuffer.handle();
                     atom.length = sizeof(TextPoint) * 4;
                     atom.offset = (points.size() - 4) * sizeof(TextPoint);
-                    float glyphWidth = shapedGlyph.xAdvance / FT_PIXEL_CF * scale;
-                    atom.width = collapsedWhitespace[shapedGlyph.byteOffset]
-                        ? 0.0f
-                        : glyphWidth;
+                    atom.width = shapedGlyph.xAdvance / FT_PIXEL_CF * scale;
                     atom.height = defaultLineHeight;
-                    atom.lineHeight = resolvedLineHeight;
                     atom.ascent = ascent;
-                    atom.descent = descent;
 
                     atoms.push_back(atom);
                 }
