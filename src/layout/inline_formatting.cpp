@@ -935,12 +935,13 @@ namespace tree {
                         child->inheritedProperties.font,
                         child->inheritedProperties.fontSize.resolveOr(Size::px(0.0f))
                     );
+                    const bool hasEdge = width > 0.0f || margin != 0.0f;
                     fragments.push_back({
                         .kind = InlineFlowKind::Open,
                         .width = width,
-                        .height = fontMetrics.lineHeight * child->inheritedProperties.lineHeight,
-                        .ascent = fontMetrics.ascent,
-                        .descent = fontMetrics.descent,
+                        .height = hasEdge ? fontMetrics.lineHeight * child->inheritedProperties.lineHeight : 0.0f,
+                        .ascent = hasEdge ? fontMetrics.ascent : 0.0f,
+                        .descent = hasEdge ? fontMetrics.descent : 0.0f,
                         .leadingMargin = margin
                     });
                     pendingWidth += margin + width;
@@ -967,12 +968,13 @@ namespace tree {
                         child->inheritedProperties.font,
                         child->inheritedProperties.fontSize.resolveOr(Size::px(0.0f))
                     );
+                    const bool hasEdge = width > 0.0f || margin != 0.0f;
                     fragments.push_back({
                         .kind = InlineFlowKind::Close,
                         .width = width,
-                        .height = fontMetrics.lineHeight * child->inheritedProperties.lineHeight,
-                        .ascent = fontMetrics.ascent,
-                        .descent = fontMetrics.descent,
+                        .height = hasEdge ? fontMetrics.lineHeight * child->inheritedProperties.lineHeight : 0.0f,
+                        .ascent = hasEdge ? fontMetrics.ascent : 0.0f,
+                        .descent = hasEdge ? fontMetrics.descent : 0.0f,
                         .trailingMargin = margin
                     });
                     pendingWidth += margin + width;

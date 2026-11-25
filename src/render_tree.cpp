@@ -853,6 +853,10 @@ namespace tree {
         std::optional<IntrinsicRequest> intrinsicWidthRequestOverride,
         std::optional<IntrinsicRequest> intrinsicHeightRequestOverride
     ) {
+        constraints.inheritedProperties.font = node->inheritedProperties.font;
+        constraints.inheritedProperties.fontSize = node->inheritedProperties.fontSize;
+        constraints.inheritedProperties.lineHeight = node->inheritedProperties.lineHeight;
+
         auto key = makeConstraintsKey(constraints);
 
         auto& atomized = *node->atomized;

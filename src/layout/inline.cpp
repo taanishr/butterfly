@@ -11,6 +11,7 @@
 #include "layout/sizing.hpp"
 #include "render_tree.hpp"
 #include "tree_node.hpp"
+#include "context_manager.hpp"
 #include <algorithm>
 #include <optional>
 #include <simd/vector_types.h>
@@ -88,6 +89,10 @@ namespace layout {
             .collapsable = false,
         };
 
+        const auto metrics = runtime::ContextManager::getContext().glyphCache.metrics(
+            constraints.inheritedProperties.font,
+            constraints.inheritedProperties.fontSize.resolveOr(Size::px(0.0f)));
+
         size_t fragmentIdx = 0;
         for (auto it = lineFragments.begin(); it != lineFragments.end(); ++it, ++fragmentIdx) {
             const LineFragment& fragment = *it;
@@ -157,8 +162,8 @@ namespace layout {
                 boxFragment.computedBox.x = startingX;
                 boxFragment.brokenLeft = true;
                 boxFragment.brokenRight = true;
-                boxFragment.computedInnerBox.y = newCursor.y + lineBox.ascent - lineFragments.front().ascent;
-                boxFragment.computedInnerBox.height = lineFragments.front().ascent + lineFragments.front().descent;
+                boxFragment.computedInnerBox.y = newCursor.y + lineBox.ascent - metrics.ascent;
+                boxFragment.computedInnerBox.height = metrics.ascent + metrics.descent;
                 lr.boxFragments.push_back(boxFragment);
             }
 
