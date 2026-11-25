@@ -11,6 +11,7 @@
 #include "layout/sizing.hpp"
 #include "render_tree.hpp"
 #include "tree_node.hpp"
+#include "context_manager.hpp"
 #include <algorithm>
 #include <optional>
 #include <simd/vector_types.h>
@@ -88,9 +89,26 @@ namespace layout {
             .collapsable = false,
         };
 
+        const auto metrics = runtime::ContextManager::getContext().glyphCache.metrics(
+            constraints.inheritedProperties.font,
+            constraints.inheritedProperties.fontSize.resolveOr(Size::px(0.0f)));
+
         size_t fragmentIdx = 0;
         for (auto it = lineFragments.begin(); it != lineFragments.end(); ++it, ++fragmentIdx) {
             const LineFragment& fragment = *it;
+
+            if (fragment.kind == InlineFlowKind::Block) {
+                if (prevLineBoxIndex != -1) {
+                    newCursor.y += lineBoxes[prevLineBoxIndex].height;
+                }
+
+                newCursor.y += fragment.height;
+                totalHeight += fragment.height;
+                totalWidth = std::max(currentTotalWidth, totalWidth);
+                currentTotalWidth = 0;
+                prevLineBoxIndex = -1;
+                continue;
+            }
 
             const auto& lineBox = lineBoxes[fragment.lineBoxIndex];
             float offset = fragment.offset;
@@ -144,40 +162,43 @@ namespace layout {
                 boxFragment.computedBox.x = startingX;
                 boxFragment.brokenLeft = true;
                 boxFragment.brokenRight = true;
-                boxFragment.computedInnerBox.y = newCursor.y + lineBox.ascent - lineFragments.front().ascent;
-                boxFragment.computedInnerBox.height = lineFragments.front().ascent + lineFragments.front().descent;
+                boxFragment.computedInnerBox.y = newCursor.y + lineBox.ascent - metrics.ascent;
+                boxFragment.computedInnerBox.height = metrics.ascent + metrics.descent;
                 lr.boxFragments.push_back(boxFragment);
             }
 
-            switch (fragment.kind) {
-                case InlineFlowKind::Atomic: {
-                    lr.boxFragments.back().brokenLeft = false;
-                    lr.boxFragments.back().brokenRight = false;
-                    break;
-                }
-                case InlineFlowKind::Open: {
-                    if (it == lineFragments.begin()) {
-                        if (isLtr) {
-                            lr.boxFragments.back().brokenLeft = false;
-                        } else {
-                            lr.boxFragments.back().brokenRight = false;
-                        }
+            if (fragment.elementIndex == constraints.inlineFormatting.owner) {
+                switch (fragment.kind) {
+                    case InlineFlowKind::Atomic: {
+                        lr.boxFragments.back().brokenLeft = false;
+                        lr.boxFragments.back().brokenRight = false;
+                        break;
                     }
-                    lr.childConstraints.cursor = newCursor;
-                    break;
-                }
-                case InlineFlowKind::Close: {
-                    if (std::next(it) == lineFragments.end()) {
-                        if (isLtr) {
-                            lr.boxFragments.back().brokenRight = false;
-                        } else {
-                            lr.boxFragments.back().brokenLeft = false;
+                    case InlineFlowKind::Open: {
+                        if (it == lineFragments.begin()) {
+                            if (isLtr) {
+                                lr.boxFragments.back().brokenLeft = false;
+                            } else {
+                                lr.boxFragments.back().brokenRight = false;
+                            }
                         }
+                        lr.childConstraints.cursor = newCursor;
+                        lr.childConstraints.prevInlineHeight = lineBox.height;
+                        break;
                     }
-                    break;
-                }
-                default: {
-                    break;
+                    case InlineFlowKind::Close: {
+                        if (std::next(it) == lineFragments.end()) {
+                            if (isLtr) {
+                                lr.boxFragments.back().brokenRight = false;
+                            } else {
+                                lr.boxFragments.back().brokenLeft = false;
+                            }
+                        }
+                        break;
+                    }
+                    default: {
+                        break;
+                    }
                 }
             }
 
@@ -186,12 +207,15 @@ namespace layout {
             lineBoxFragment.x = std::min(lineBoxFragment.x, startingX);
             lineBoxFragment.width = lineBoxFragmentEnd - lineBoxFragment.x;
 
-            size_t atomIndex = fragment.atomStart;
-            for (size_t i = 0; i < fragment.atomCount && atomIndex < atomized.atoms.size(); ++i, ++atomIndex) {
-                auto& atom = atomized.atoms[atomIndex];
+            // figure out how to clean up this split
+            if (fragment.elementIndex == constraints.inlineFormatting.owner) {
+                size_t atomIndex = fragment.atomStart;
+                for (size_t i = 0; i < fragment.atomCount && atomIndex < atomized.atoms.size(); ++i, ++atomIndex) {
+                    auto& atom = atomized.atoms[atomIndex];
 
-                atomOffsets[atomIndex] = newCursor + simd_float2{0.0f, lineBox.ascent - atom.ascent};
-                newCursor.x += atom.width;
+                    atomOffsets[atomIndex] = newCursor + simd_float2{0.0f, lineBox.ascent - atom.ascent};
+                    newCursor.x += atom.width;
+                }
             }
 
             currentTotalWidth += fragment.width;
@@ -487,29 +511,38 @@ namespace layout {
         for (uint64_t i = 0; i < node->children.size(); ++i) {
             auto child = node->children[i].get();
 
-            childConstraints.inlineFormatting = {
-                .context = inlineFormatting,
-                .fragments = inlineFormatting->nodeFragments.at(child->id),
-                .minFragments = inlineFormatting->minNodeFragments.empty()
-                    ? InlineFragmentRange{}
-                    : inlineFormatting->minNodeFragments.at(child->id),
-                .maxFragments = inlineFormatting->maxNodeFragments.empty()
-                    ? InlineFragmentRange{}
-                    : inlineFormatting->maxNodeFragments.at(child->id),
-            };
+            if (child->getDisplay() == Display::None) {
+                continue;
+            }
+
+            childConstraints.inlineFormatting = {};
+
+            if (inlineFormatting->nodeFragments.contains(child->id)) {
+                childConstraints.inlineFormatting = {
+                    .context = inlineFormatting,
+                    .owner = child->id, // eh, it could be better i think
+                    .fragments = inlineFormatting->nodeFragments.at(child->id),
+                    .minFragments = inlineFormatting->minNodeFragments.empty()
+                        ? InlineFragmentRange{}
+                        : inlineFormatting->minNodeFragments.at(child->id),
+                    .maxFragments = inlineFormatting->maxNodeFragments.empty()
+                        ? InlineFragmentRange{}
+                        : inlineFormatting->maxNodeFragments.at(child->id),
+                };
+            }
 
             auto childOutput = tree.layoutRecursive(child, frameInfo, childConstraints, mutate, std::nullopt, sizeRequest.intrinsicWidthRequest, sizeRequest.intrinsicHeightRequest);
 
             std::visit([&](const auto& childLayout) {
-            if (!childLayout.outOfFlow) {
-                childConstraints.cursor = childLayout.siblingCursor;
-                childConstraints.edgeIntent = childLayout.edgeIntent;
-                childConstraints.prevInlineHeight = childLayout.prevInlineHeight;
+                if (!childLayout.outOfFlow) {
+                    childConstraints.cursor = childLayout.siblingCursor;
+                    childConstraints.edgeIntent = childLayout.edgeIntent;
+                    childConstraints.prevInlineHeight = childLayout.prevInlineHeight;
 
-                state.siblingCursor = childLayout.siblingCursor;
-                state.edgeIntent = childLayout.edgeIntent;
-                state.prevInlineHeight = childLayout.prevInlineHeight;
-            }
+                    state.siblingCursor = childLayout.siblingCursor;
+                    state.edgeIntent = childLayout.edgeIntent;
+                    state.prevInlineHeight = childLayout.prevInlineHeight;
+                }
             }, childOutput.layout);
         }
 

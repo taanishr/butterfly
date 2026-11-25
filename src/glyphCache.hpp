@@ -10,6 +10,7 @@ struct FontMetrics {
     float ascent;
     float descent;
     float lineHeight;
+    float spaceAdvance;
 };
 
 struct GlyphFaceHash {

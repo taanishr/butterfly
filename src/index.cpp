@@ -7393,4 +7393,370 @@ div()
     //         )
     //     );
     // }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // Inline children: inline boxes that contain other boxes.
+    //   nested inline containers, edges stacking at open/close points
+    //   empty spans (with and without edges, margins, nesting)
+    //   block inside inline: the span splits around the block, edges only
+    //     on the first/last fragment, empty fragments keep edges
+    //   display none inside a span, inherited line height / white-space
+    //   appending to and removing from an inline box at runtime
+    // Browser reference: tests/layout/web/src/app/inline-children/page.tsx
+    // ═══════════════════════════════════════════════════════════════════
+    {
+        using S = gui::Size;
+
+        const auto ink = simd_float4{0.96,0.97,1.0,1.0};
+        const auto dark = simd_float4{0.078,0.090,0.110,1.0};
+        const auto panel = simd_float4{0.15,0.16,0.20,1.0};
+        const auto yellow = simd_float4{0.98,0.76,0.20,1.0};
+        const auto blue = simd_float4{0.45,0.80,0.98,1.0};
+        const auto pink = simd_float4{0.96,0.30,0.46,1.0};
+        const auto green = simd_float4{0.38,0.92,0.56,1.0};
+        const auto purple = simd_float4{0.64,0.42,0.96,1.0};
+        const auto cyan = simd_float4{0.08,0.72,0.86,1.0};
+
+        const auto label = [&](const char* s) {
+            return elements::span()
+                .font(Arial)
+                .fontSize(S::pt(12))
+                .color(green)(text(s));
+        };
+
+        const auto box = [&](float width) {
+            return div(S::px(width), S::autoSize(), panel)
+                .font(Arial)
+                .fontSize(S::pt(18))
+                .color(ink);
+        };
+
+        // span with a background, 6px horizontal padding and a 2px border
+        const auto pill = [&](simd_float4 background, simd_float4 border) {
+            return elements::span()
+                .backgroundColor(background)
+                .color(dark)
+                .paddingLeft(S::px(6))
+                .paddingRight(S::px(6))
+                .borderColor(border)
+                .borderWidth(S::px(2));
+        };
+
+        const auto block = [&](const char* s) {
+            return div()
+                .backgroundColor(cyan)
+                .color(dark)(text(s));
+        };
+
+        const auto testCase = [&](const char* name, auto content) {
+            return div()
+                .display(gui::Display::Flex)
+                .flexDirection(gui::FlexDirection::Col)
+                .alignItems(gui::AlignItems::FlexStart)
+                .flexGap(S::px(6))
+            (
+                label(name),
+                content
+            );
+        };
+
+        const auto column = [&]() {
+            return div(S::px(320), S::autoSize(), simd_float4{0.0,0.0,0.0,0.0})
+                .flexShrink(S::px(0))
+                .display(gui::Display::Flex)
+                .flexDirection(gui::FlexDirection::Col)
+                .alignItems(gui::AlignItems::FlexStart)
+                .flexGap(S::px(20));
+        };
+
+        // runtime: clicking "click to add" appends a text child to the inner span
+        auto growingSpan = pill(pink, ink)(text("inner"));
+        growingSpan(
+            text(" click to add")
+                .addEventListener(runtime::EventType::MouseDown, [growingSpan](auto&, Event&) mutable {
+                    growingSpan(text(" more"));
+                })
+        );
+
+        // runtime: clicking "click to remove" removes the block, the span rejoins into one box
+        auto removableBlock = block("block (removed on click)");
+        auto removed = false;
+
+        div(S::percent(1.0), S::percent(1.0), simd_float4{0.06,0.07,0.09,1.0})
+            .display(gui::Display::Flex)
+            .alignItems(gui::AlignItems::FlexStart)
+            .padding(S::px(24))
+            .flexGap(S::px(24))
+            .overflow(gui::Overflow::Scroll)
+        (
+            column()
+            (
+                testCase("NESTED 3 DEEP, EDGES STACK ON ONE LINE", box(300)
+                (
+                    text("a "),
+                    pill(blue, pink)
+                    (
+                        text("one "),
+                        pill(yellow, ink)
+                        (
+                            text("two "),
+                            pill(green, purple)(text("three"))
+                        ),
+                        text(" one")
+                    ),
+                    text(" b")
+                )),
+
+                testCase("NESTED 3 DEEP, ALL CLOSE TOGETHER AFTER WRAP", box(240)
+                (
+                    text("lead "),
+                    pill(blue, pink)
+                    (
+                        text("outer "),
+                        pill(yellow, ink)
+                        (
+                            text("middle "),
+                            pill(green, purple)(text("innermost text that wraps onto more lines"))
+                        )
+                    ),
+                    text(" tail")
+                )),
+
+                testCase("NESTED SPANS WITH NO TEXT OF THEIR OWN", box(300)
+                (
+                    text("x "),
+                    pill(blue, pink)
+                    (
+                        pill(yellow, ink)
+                        (
+                            pill(green, purple)(text("grandchild only"))
+                        )
+                    ),
+                    text(" y")
+                )),
+
+                testCase("NESTED: INNER FONT SIZE 28 IN 14 OUTER", box(300)
+                (
+                    text("base "),
+                    pill(blue, pink)
+                        .fontSize(S::pt(14))
+                    (
+                        text("small "),
+                        pill(yellow, ink)
+                            .fontSize(S::pt(28))(text("Big")),
+                        text(" small")
+                    ),
+                    text(" base")
+                )),
+
+                testCase("CLICK TO APPEND INTO NESTED SPAN", box(260)
+                (
+                    text("lead "),
+                    pill(blue, ink)
+                    (
+                        text("outer "),
+                        growingSpan,
+                        text(" outer")
+                    ),
+                    text(" tail")
+                ))
+            ),
+            column()
+            (
+                testCase("EMPTY SPAN, NO EDGES: \"leftright\"", box(300)
+                (
+                    text("left"),
+                    elements::span().backgroundColor(pink)(),
+                    text("right")
+                )),
+
+                testCase("EMPTY SPAN, PADDING 6 + BORDER 2", box(300)
+                (
+                    text("left "),
+                    pill(pink, yellow)(),
+                    text(" right")
+                )),
+
+                testCase("EMPTY SPAN, MARGIN 20 BOTH SIDES: 40PX GAP", box(300)
+                (
+                    text("left"),
+                    elements::span()
+                        .marginLeft(S::px(20))
+                        .marginRight(S::px(20))(),
+                    text("right")
+                )),
+
+                testCase("EMPTY NESTED SPANS WITH EDGES", box(300)
+                (
+                    text("left "),
+                    pill(blue, ink)
+                    (
+                        pill(pink, yellow)()
+                    ),
+                    text(" right")
+                )),
+
+                testCase("EMPTY SPANS AT START AND END OF WRAPPING TEXT", box(240)
+                (
+                    pill(pink, yellow)(),
+                    text("words that wrap onto a second line here"),
+                    pill(pink, yellow)()
+                )),
+
+                testCase("ONLY AN EMPTY SPAN, NO EDGES: ZERO HEIGHT", box(300)
+                    .borderColor(pink)
+                    .borderWidth(S::px(1))
+                (
+                    elements::span().backgroundColor(yellow)()
+                )),
+
+                testCase("ONLY AN EMPTY SPAN WITH EDGES: ONE LINE TALL", box(300)
+                    .borderColor(pink)
+                    .borderWidth(S::px(1))
+                (
+                    pill(yellow, ink)()
+                ))
+            ),
+            column()
+            (
+                testCase("BLOCK INSIDE SPAN: SPLITS AROUND IT", box(280)
+                (
+                    text("lead "),
+                    pill(yellow, pink)
+                    (
+                        text("before "),
+                        block("block child"),
+                        text(" after")
+                    ),
+                    text(" tail")
+                )),
+
+                testCase("BLOCK FIRST + LAST, EDGES KEEP EMPTY LINES", box(280)
+                (
+                    pill(yellow, pink)
+                    (
+                        block("first block"),
+                        text("middle"),
+                        block("last block")
+                    )
+                )),
+
+                testCase("BLOCK FIRST, BACKGROUND ONLY: NO EMPTY LINE", box(280)
+                (
+                    elements::span()
+                        .backgroundColor(yellow)
+                        .color(dark)
+                    (
+                        block("first block"),
+                        text("after")
+                    )
+                )),
+
+                testCase("BLOCK IN NESTED SPAN: BOTH ANCESTORS SPLIT", box(280)
+                (
+                    pill(blue, ink)
+                    (
+                        text("outer "),
+                        pill(pink, yellow)
+                        (
+                            text("inner "),
+                            block("deep block"),
+                            text(" inner")
+                        ),
+                        text(" outer")
+                    )
+                )),
+
+                testCase("TWO ADJACENT BLOCKS + FIXED-SIZE BLOCK", box(280)
+                (
+                    pill(yellow, pink)
+                    (
+                        text("a"),
+                        block("block one"),
+                        block("block two"),
+                        div(S::px(120), S::px(24), purple)
+                            .marginLeft(S::px(20))(),
+                        text("b")
+                    )
+                )),
+
+                testCase("TEXT-ALIGN CENTER ACROSS THE SPLIT", box(280).textAlign(gui::TextAlign::Center)
+                (
+                    pill(yellow, pink)
+                    (
+                        text("centered before"),
+                        block("block"),
+                        text("centered after")
+                    )
+                )),
+
+                testCase("DISPLAY NONE IN SPAN: NO SPLIT, ONE LINE", box(280)
+                (
+                    pill(yellow, pink)
+                    (
+                        text("one "),
+                        block("hidden").display(gui::Display::None),
+                        elements::span().display(gui::Display::None)(text("hidden")),
+                        text("line")
+                    )
+                )),
+
+                testCase("CLICK TO REMOVE THE BLOCK, SPAN REJOINS", box(280)
+                (
+                    pill(yellow, pink)
+                    (
+                        text("before "),
+                        removableBlock,
+                        text("click to remove")
+                            .addEventListener(runtime::EventType::MouseDown, [removableBlock, removed](auto&, Event&) mutable {
+                                if (removed) return;
+                                removed = true;
+                                removableBlock.remove();
+                            })
+                    )
+                ))
+            ),
+            column()
+            (
+                // GUI lineHeight multiplies the font's natural line height (~1.15 for Arial),
+                // so 2.0 here is line-height 2.3 in the browser reference
+                testCase("LINE HEIGHT 2 INHERITED THROUGH NESTED SPANS", box(260).lineHeight(2.0f)
+                (
+                    text("lead "),
+                    pill(blue, ink)
+                    (
+                        text("outer "),
+                        pill(pink, yellow)(text("inner span wraps with tall lines"))
+                    ),
+                    text(" tail")
+                )),
+
+                testCase("NOWRAP ON OUTER, INHERITED BY INNER", box(200)
+                (
+                    elements::span()
+                        .whiteSpace(gui::WhiteSpace::NoWrap)
+                        .backgroundColor(blue)
+                        .color(dark)
+                    (
+                        text("no wrap "),
+                        pill(pink, yellow)(text("inner stays on line"))
+                    ),
+                    text(" wraps normally after the span")
+                )),
+
+                testCase("WHITESPACE-ONLY TEXT AROUND BLOCK COLLAPSES", box(280)
+                (
+                    elements::span()
+                        .backgroundColor(yellow)
+                        .color(dark)
+                    (
+                        text(" "),
+                        block("block"),
+                        text(" ")
+                    ),
+                    text("after")
+                ))
+            )
+        );
+    }
 }

@@ -256,7 +256,9 @@ int countCubicIntersections(
         }
 
         float root = (lower + upper) * 0.5;
-        if (evaluateCubic(p0, p1, p2, p3, root).x > fragX) ++intersections;
+        if (evaluateCubic(p0, p1, p2, p3, root).x > fragX) {
+             ++intersections;
+        }
     }
 
     return intersections;

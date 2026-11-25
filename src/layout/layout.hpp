@@ -119,6 +119,7 @@ namespace layout {
 
     struct InlineFormattingInput {
         std::shared_ptr<const InlineFormattingContext> context;
+        uint64_t owner{};
         InlineFragmentRange fragments;
         InlineFragmentRange minFragments;
         InlineFragmentRange maxFragments;
